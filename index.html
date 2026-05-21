@@ -1112,7 +1112,7 @@ async function boot() {
   setLoadingMsg('Chargement de geopolitique.db…', 35);
   let buf;
   try {
-    const res = await fetch('https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/geopolitique.db');
+    const res = await fetch('https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/geopolitique.db?v=' + Date.now());
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     buf = await res.arrayBuffer();
   } catch(e) {
@@ -1272,7 +1272,7 @@ function loadDemoConfig(){
     {indicator:'densite',label:'Densité de population',table:'identite',category:'demographie',unit:'hab/km²',unit_display:'hab/km²',actif:true,radar:false,rank_inverted:false},
     {indicator:'age_median',label:'Âge médian',table:'identite',category:'demographie',unit:'ans',unit_display:'ans',actif:true,radar:true,rank_inverted:false},
     {indicator:'budget_defense_pib',label:'Budget défense / PIB',table:'identite',category:'militaire',unit:'%',unit_display:'%',actif:true,radar:false,rank_inverted:false},
-    {indicator:'depense_rd_pib',label:'Dépenses RD / PIB',table:'identite',category:'technologie',unit:'%',unit_display:'%',actif:true,radar:false,rank_inverted:false},
+    {indicator:'depense_rd_pib',label:'Dépenses R&D / PIB',table:'identite',category:'technologie',unit:'%',unit_display:'%',actif:true,radar:false,rank_inverted:false},
     {indicator:'brevets_deposes',label:'Brevets déposés',table:'identite',category:'technologie',unit:'brevets',unit_display:'brevets',actif:true,radar:false,rank_inverted:false},
     {indicator:'volume_armee',label:"Volume de l'armée",table:'identite',category:'militaire',unit:'personnes',unit_display:'personnes',actif:true,radar:false,rank_inverted:false},
     {indicator:'violent_death',label:'Morts conflits (pour 100k)',table:'identite',category:'stabilite',unit:'pour 100k',unit_display:'pour 100k',actif:true,radar:false,rank_inverted:true},
