@@ -21,7 +21,7 @@
   {"indicator":"import_commercial","label":"Commerce bilatéral","table":"flux","category":"commerce","chart_type":"line","unit":"USD","unit_display":"Mrd USD","aggregation":"sum","actif":false,"est_projection":false},
   {"indicator":"export_armement","label":"Export armement","table":"flux","category":"armement","chart_type":"line","unit":"SIPRI_TIV_M","unit_display":"SIPRI TIV (M)","aggregation":"sum","actif":false,"est_projection":false},
   {"indicator":"import_armement","label":"Import armement","table":"flux","category":"armement","chart_type":"line","unit":"SIPRI_TIV_M","unit_display":"SIPRI TIV (M)","aggregation":"sum","actif":false,"est_projection":false},
-  {"indicator":"dette_exterieure","label":"Dette extérieure","table":"flux","category":"finance","chart_type":"line","unit":"USD","unit_display":"Mrd USD","aggregation":"sum","actif":false,"est_projection":false},
+  {"indicator":"dette_exterieure","label":"Dette extérieure","table":"flux","category":"finance","chart_type":"line","unit":"USD","unit_display":"Mrd USD","aggregation":"sum","actif":true,"est_projection":false},
   {"indicator":"etudiants_international","label":"Étudiants internationaux","table":"flux","category":"education","chart_type":"line","unit":"personnes","unit_display":"personnes","aggregation":"sum","actif":false,"est_projection":false},
   {"indicator":"migrants","label":"Migrants","table":"flux","category":"migration","chart_type":"line","unit":"personnes","unit_display":"personnes","aggregation":"sum","actif":false,"est_projection":false},
   {"indicator":"tcc_onu","label":"Contributions ONU (TCC)","table":"flux","category":"diplomatie","chart_type":"line","unit":"personnes","unit_display":"personnes","aggregation":"sum","actif":false,"est_projection":false},
