@@ -1,1 +1,95 @@
+name: ETL Geopol
 
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Source a executer (vide = toutes)'
+        required: false
+        default: 'all'
+
+jobs:
+  etl:
+    name: Pipeline ETL complet
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests boto3
+
+      - name: Restore Comtrade checkpoint
+        uses: actions/cache@v4
+        with:
+          path: etl/comtrade_checkpoint.json
+          key: comtrade-checkpoint-${{ github.run_id }}
+          restore-keys: |
+            comtrade-checkpoint-
+
+      - name: Download existing DB from R2
+        env:
+          R2_ACCOUNT_ID:    ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_KEY:    ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET:        ${{ secrets.R2_BUCKET }}
+        run: |
+          python - <<'EOF'
+          import boto3, os
+          from botocore.config import Config
+          s3 = boto3.client(
+              "s3",
+              endpoint_url=f"https://{os.environ['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com",
+              aws_access_key_id=os.environ["R2_ACCESS_KEY_ID"],
+              aws_secret_access_key=os.environ["R2_SECRET_KEY"],
+              config=Config(signature_version="s3v4"),
+              region_name="auto",
+          )
+          try:
+              s3.download_file(os.environ["R2_BUCKET"], "geopolitique.db", "geopolitique.db")
+              size = os.path.getsize("geopolitique.db") / 1024 / 1024
+              print(f"DB telechargee : {size:.1f} Mo")
+          except Exception as e:
+              print(f"DB non trouvee sur R2 (premier import) : {e}")
+          EOF
+
+      - name: Run ETL pipeline
+        env:
+          R2_ACCOUNT_ID:    ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_KEY:    ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET:        ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_URL:    ${{ secrets.R2_PUBLIC_URL }}
+          COMTRADE_API_KEY: ${{ secrets.COMTRADE_API_KEY }}
+        run: python run_etl.py
+
+      - name: Save Comtrade checkpoint
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: etl/comtrade_checkpoint.json
+          key: comtrade-checkpoint-${{ github.run_id }}
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f status.json ]; then
+            echo "### Resume ETL" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat status.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "status.json non trouve" >> $GITHUB_STEP_SUMMARY
+          fi
