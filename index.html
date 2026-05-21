@@ -1205,11 +1205,11 @@ async function initWithDemoData(SQL) {
     pib:{FRA:0.02,DEU:0.018,GBR:0.019,ITA:0.008,ESP:0.02,NLD:0.02,BEL:0.018,POL:0.04,USA:0.022,CAN:0.02,BRA:0.025,MEX:0.03,ARG:0.015,CHN:0.085,JPN:0.008,IND:0.07,KOR:0.04,SAU:0.025,TUR:0.05,IRN:0.02,RUS:0.03,NGA:0.04,ZAF:0.025,EGY:0.04,DZA:0.03,MAR:0.04,AUS:0.025},
   };
 
-  const indsFixed=['esperance_vie','taux_fecondite','mortalite_infantile','taux_natalite','taux_mortalite','densite_pop','age_median','croissance_pop','migration_nette'];
-  const flds=['espvie','fec','mortin','atal','mortal','densite','age','croiss','mignet'];
-  const growths=[0.003,-0.008,-0.025,-0.005,0.001,0.004,0.008,-0.002,0.01];
-  const units=['ans','enfants/femme','‰','‰','‰','hab/km²','ans','%','personnes'];
-  const srcs=['OMS','ONU','OMS','ONU','ONU','Banque Mondiale','ONU','Banque Mondiale','ONU'];
+  const indsFixed=['fecondite','densite','age_median','budget_defense_pib','depense_rd_pib','brevets_deposes','volume_armee','violent_death','idps_securitaire','idps_climatique'];
+  const flds=['fec','densite','age','defpib','rdpib','brevets','armee','vdeath','idps_s','idps_c'];
+  const growths=[-0.008,0.004,0.008,-0.005,-0.002,0.02,0.005,0.01,0.005,0.005];
+  const units=['enfants/femme','hab/km²','ans','%','%','brevets','personnes','pour 100k','personnes','personnes'];
+  const srcs=['Banque Mondiale','Banque Mondiale','Our World In Data','Banque Mondiale','Banque Mondiale','Banque Mondiale','Our World In Data','Our World In Data','Our World In Data','Our World In Data'];
 
   for(const p of PAYS){
     const b=BASE[p.iso3]; if(!b) continue;
@@ -1268,18 +1268,17 @@ function loadDemoConfig(){
     {indicator:'population',label:'Population',table:'identite',category:'demographie',unit:'hab',unit_display:'M hab',actif:true,radar:true,rank_inverted:false},
     {indicator:'pib_usd',label:'PIB (USD courant)',table:'identite',category:'economie',unit:'USD',unit_display:'Mrd USD',actif:true,radar:true,rank_inverted:false},
     {indicator:'pib_par_hab',label:'PIB par habitant',table:'identite',category:'economie',unit:'USD',unit_display:'USD',actif:true,radar:true,rank_inverted:false},
-    {indicator:'esperance_vie',label:'Espérance de vie',table:'identite',category:'demographie',unit:'ans',unit_display:'ans',actif:true,est_projection:true,radar:true,rank_inverted:false},
-    {indicator:'taux_fecondite',label:'Taux de fécondité',table:'identite',category:'demographie',unit:'enfants/femme',unit_display:'enfants/femme',actif:true,radar:true,rank_inverted:false},
-    {indicator:'mortalite_infantile',label:'Mortalité infantile',table:'identite',category:'demographie',unit:'‰',unit_display:'‰',actif:true,radar:true,rank_inverted:true},
-    {indicator:'taux_natalite',label:'Taux de natalité',table:'identite',category:'demographie',unit:'‰',unit_display:'‰',actif:true,radar:false,rank_inverted:false},
-    {indicator:'taux_mortalite',label:'Taux de mortalité',table:'identite',category:'demographie',unit:'‰',unit_display:'‰',actif:true,radar:false,rank_inverted:true},
-    {indicator:'densite_pop',label:'Densité de population',table:'identite',category:'demographie',unit:'hab/km²',unit_display:'hab/km²',actif:true,radar:false,rank_inverted:false},
+    {indicator:'fecondite',label:'Taux de fécondité',table:'identite',category:'demographie',unit:'enfants/femme',unit_display:'enfants/femme',actif:true,radar:true,rank_inverted:false},
+    {indicator:'densite',label:'Densité de population',table:'identite',category:'demographie',unit:'hab/km²',unit_display:'hab/km²',actif:true,radar:false,rank_inverted:false},
     {indicator:'age_median',label:'Âge médian',table:'identite',category:'demographie',unit:'ans',unit_display:'ans',actif:true,radar:true,rank_inverted:false},
-    {indicator:'croissance_pop',label:'Croissance démographique',table:'identite',category:'demographie',unit:'%',unit_display:'%',actif:true,radar:true,rank_inverted:false},
-    {indicator:'migration_nette',label:'Migration nette',table:'identite',category:'demographie',unit:'personnes',unit_display:'personnes',actif:true,radar:false,rank_inverted:false},
-    {indicator:'import_commercial',label:'Commerce',table:'flux',category:'Commerce',unit:'USD',unit_display:'Mrd USD',actif:true,radar:false,rank_inverted:false},
-    {indicator:'dette_exterieure',label:'Dette extérieure',table:'flux',category:'Finance',unit:'USD',unit_display:'Mrd USD',actif:true,radar:false,rank_inverted:false},
-    {indicator:'export_armement',label:'Armement',table:'flux',category:'Armement',unit:'SIPRI_TIV_M',unit_display:'SIPRI TIV (M)',actif:true,radar:false,rank_inverted:false},
+    {indicator:'budget_defense_pib',label:'Budget défense / PIB',table:'identite',category:'militaire',unit:'%',unit_display:'%',actif:true,radar:false,rank_inverted:false},
+    {indicator:'depense_rd_pib',label:'Dépenses R&D / PIB',table:'identite',category:'technologie',unit:'%',unit_display:'%',actif:true,radar:false,rank_inverted:false},
+    {indicator:'brevets_deposes',label:'Brevets déposés',table:'identite',category:'technologie',unit:'brevets',unit_display:'brevets',actif:true,radar:false,rank_inverted:false},
+    {indicator:'volume_armee',label:"Volume de l'armée",table:'identite',category:'militaire',unit:'personnes',unit_display:'personnes',actif:true,radar:false,rank_inverted:false},
+    {indicator:'violent_death',label:'Morts conflits (pour 100k)',table:'identite',category:'stabilite',unit:'pour 100k',unit_display:'pour 100k',actif:true,radar:false,rank_inverted:true},
+    {indicator:'idps_securitaire',label:'Déplacés internes (conflits)',table:'identite',category:'stabilite',unit:'personnes',unit_display:'personnes',actif:true,radar:false,rank_inverted:true},
+    {indicator:'idps_climatique',label:'Déplacés internes (catastrophes)',table:'identite',category:'stabilite',unit:'personnes',unit_display:'personnes',actif:true,radar:false,rank_inverted:true},
+    {indicator:'refugies',label:'Réfugiés',table:'flux',category:'migration',unit:'personnes',unit_display:'personnes',actif:true,radar:false,rank_inverted:false},
   ];
 }
 
@@ -1291,8 +1290,8 @@ async function loadConfig(){
   } catch { loadDemoConfig(); }
   // Backfill : compléter les champs radar/rank_inverted s'ils ne sont pas présents
   // dans le config.json chargé. Liste par défaut alignée avec loadDemoConfig.
-  const RADAR_DEFAULTS = new Set(['population','pib_usd','pib_par_hab','esperance_vie','taux_fecondite','mortalite_infantile','age_median','croissance_pop']);
-  const INVERTED_DEFAULTS = new Set(['mortalite_infantile','taux_mortalite']);
+  const RADAR_DEFAULTS = new Set(['population','pib_usd','pib_par_hab','fecondite','age_median','budget_defense_pib']);
+  const INVERTED_DEFAULTS = new Set(['violent_death','idps_securitaire','idps_climatique']);
   for(const c of (state.config||[])){
     if(c.radar===undefined) c.radar = RADAR_DEFAULTS.has(c.indicator);
     if(c.rank_inverted===undefined) c.rank_inverted = INVERTED_DEFAULTS.has(c.indicator);
