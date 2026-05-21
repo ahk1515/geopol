@@ -21,7 +21,7 @@ from etl.config import PATH_DB, PATH_STATUS, load_admin_config
 # -------------------------------------------------------------
 # IMPORT DES SCRIPTS ETL
 # -------------------------------------------------------------
-from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants
+from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants, banque_mondiale_ids
 from etl import construits, build_db
 
 # -------------------------------------------------------------
@@ -55,6 +55,13 @@ PIPELINE = [
         "id":          "unhcr",
         "label":       "UNHCR Réfugiés",
         "module":      unhcr,
+        "type":        "automatique",
+        "obligatoire": False,
+    },
+    {
+        "id":          "banque_mondiale_ids",
+        "label":       "Dette bilatérale (IDS)",
+        "module":      banque_mondiale_ids,
         "type":        "automatique",
         "obligatoire": False,
     },
