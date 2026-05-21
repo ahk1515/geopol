@@ -44,42 +44,50 @@ def get_all_countries():
 
 def fetch_indicator(wb_code, iso3_list, annee_debut, annee_fin):
     """
-    Récupère toutes les valeurs d'un indicateur WB pour une liste de pays.
+    Récupère toutes les valeurs d'un indicateur WB pour tous les pays.
+    Utilise le code 'all' pour éviter les problèmes de batch.
     Retourne une liste de dicts prêts pour SQLite.
     """
-    # L'API WB accepte jusqu'à ~50 pays en une requête via point-virgule
-    BATCH = 50
     rows = []
+    page = 1
 
-    for i in range(0, len(iso3_list), BATCH):
-        batch = iso3_list[i:i+BATCH]
-        countries_str = ";".join(batch)
+    while True:
         url = (
-            f"{WB_API_BASE}/country/{countries_str}/indicator/{wb_code}"
+            f"{WB_API_BASE}/country/all/indicator/{wb_code}"
             f"?format=json&per_page={PER_PAGE}"
             f"&date={annee_debut}:{annee_fin}"
+            f"&page={page}"
         )
         try:
-            resp = requests.get(url, timeout=30)
+            resp = requests.get(url, timeout=60)
             resp.raise_for_status()
             data = resp.json()
 
-            # data[0] = metadata, data[1] = valeurs
             if len(data) < 2 or data[1] is None:
-                continue
+                break
 
             for entry in data[1]:
                 if entry.get("value") is None:
                     continue  # Règle : donnée absente → on n'insère pas
+                iso3 = entry.get("countryiso3code", "").strip()
+                if not iso3 or len(iso3) != 3:
+                    continue  # exclure agrégats régionaux
                 rows.append({
-                    "country_iso3": entry["countryiso3code"],
+                    "country_iso3": iso3,
                     "year":         int(entry["date"]),
                     "value":        float(entry["value"]),
                 })
-        except Exception as e:
-            print(f"  ⚠️  Erreur {wb_code} / batch {i//BATCH + 1} : {e}")
 
-        time.sleep(PAUSE)
+            # Pagination
+            total_pages = data[0].get("pages", 1)
+            if page >= total_pages:
+                break
+            page += 1
+            time.sleep(PAUSE)
+
+        except Exception as e:
+            print(f"  ⚠️  Erreur {wb_code} page {page} : {e}")
+            break
 
     return rows
 
