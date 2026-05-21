@@ -63,7 +63,7 @@ def fetch_owid(slug, col_value, annee_debut, annee_fin):
     """
     url = f"{OWID_BASE}/{slug}.csv"
     try:
-        resp = requests.get(url, timeout=60)
+        resp = requests.get(url, timeout=60, headers={"User-Agent": "Our World In Data data fetch/1.0"})
         resp.raise_for_status()
     except Exception as e:
         print(f"  ⚠️  Erreur téléchargement {slug} : {e}")
