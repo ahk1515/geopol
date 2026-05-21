@@ -45,6 +45,9 @@ IDS_INDICATORS = {
     "DT.DOD.PROP.CD": "crediteurs_prives",
 }
 
+# Noms des créditeurs chargés dynamiquement depuis l'API
+CREDITOR_NAMES = {}  # code_num → nom complet
+
 # Correspondance manuelle codes numériques IDS → ISO3
 # pour les principaux créditeurs (complétée dynamiquement)
 CREDITOR_ISO3_MAP = {
@@ -82,6 +85,7 @@ def load_creditor_codes():
             variables = data["source"][0]["concept"][0]["variable"]
             for v in variables:
                 creditor_names[v["id"]] = v["value"]
+                CREDITOR_NAMES[v["id"]] = v["value"]
             total_pages = data["pages"]
             if page >= total_pages:
                 break
@@ -272,8 +276,9 @@ def resolve_creditor(creditor_code, subcategory):
     if subcategory in ("obligations_privees", "crediteurs_prives"):
         return SENTINEL_PRIVATE, subcategory
 
-    # Inconnu mais on conserve avec le code numérique
-    return SENTINEL_MULTILATERAL, f"creditor_{creditor_code}"
+    # Utiliser le nom complet depuis l'API si disponible
+    name = CREDITOR_NAMES.get(creditor_code, f"creditor_{creditor_code}")
+    return SENTINEL_MULTILATERAL, name
 
 
 def upsert_rows(conn, debtor_iso3, subcategory, rows):
