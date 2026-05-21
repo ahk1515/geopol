@@ -331,6 +331,17 @@ def run():
 
     conn = sqlite3.connect(PATH_DB)
     ensure_flux_table(conn)
+
+    # Nettoyer les anciens enregistrements avec codes numériques (creditor_XXX)
+    print("  Nettoyage des anciens codes créditeurs...")
+    conn.execute("""
+        DELETE FROM flux
+        WHERE indicator = 'dette_exterieure'
+        AND subcategory_1 LIKE 'creditor_%'
+    """)
+    conn.commit()
+    print("  Nettoyage terminé.")
+
     total_insere = 0
 
     for i, debtor in enumerate(debtor_countries):
