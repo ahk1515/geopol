@@ -238,22 +238,58 @@ def ensure_flux_table(conn):
     conn.commit()
 
 
+# Sentinelles pour créditeurs non-ISO3
+SENTINEL_MULTILATERAL = "__multilateral__"
+SENTINEL_PRIVATE      = "__private__"
+
+# Institutions multilatérales connues (code IDS → nom court)
+MULTILATERAL_NAMES = {
+    "031": "IMF",        "044": "World Bank",   "046": "IDA",
+    "048": "IBRD",       "063": "ADB",          "064": "AfDB",
+    "066": "IDB",        "068": "IADB",         "071": "EIB",
+    "074": "IFAD",       "075": "IsDB",         "076": "EBRD",
+    "081": "EU",         "084": "NDB",          "085": "AIIB",
+}
+
+
+def resolve_creditor(creditor_code, subcategory):
+    """
+    Retourne (country_from, subcategory_1) selon le type de créditeur.
+    - Pays ISO3 identifiable → (ISO3, subcategory)
+    - Institution multilatérale → (__multilateral__, nom)
+    - Créditeur privé → (__private__, subcategory)
+    - Inconnu → (__multilateral__, code_num) pour ne rien perdre
+    """
+    iso3 = CREDITOR_ISO3_MAP.get(creditor_code)
+    if iso3:
+        return iso3, subcategory
+
+    # Institution multilatérale connue
+    if creditor_code in MULTILATERAL_NAMES:
+        return SENTINEL_MULTILATERAL, MULTILATERAL_NAMES[creditor_code]
+
+    # Créditeurs privés
+    if subcategory in ("obligations_privees", "crediteurs_prives"):
+        return SENTINEL_PRIVATE, subcategory
+
+    # Inconnu mais on conserve avec le code numérique
+    return SENTINEL_MULTILATERAL, f"creditor_{creditor_code}"
+
+
 def upsert_rows(conn, debtor_iso3, subcategory, rows):
     data = []
     for row in rows:
-        creditor_iso3 = CREDITOR_ISO3_MAP.get(row["creditor_code"])
-        if not creditor_iso3:
-            continue  # créditeur non identifié → on ignore
+        country_from, subcat1 = resolve_creditor(row["creditor_code"], subcategory)
 
         data.append((
-            creditor_iso3,   # country_from = créditeur
-            debtor_iso3,     # country_to   = débiteur
+            country_from,
+            debtor_iso3,
             "dette_exterieure",
             row["year"],
             row["value"],
             "USD",
             SOURCE,
-            subcategory,
+            subcat1,
             None,
             None,
         ))
