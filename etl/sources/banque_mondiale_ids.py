@@ -170,7 +170,12 @@ def fetch_ids(debtor_iso3, series_code, annee_debut, annee_fin):
             resp.raise_for_status()
             data = resp.json()
 
-            entries = data.get("source", [{}])[0].get("data", [])
+            # source est un dict (pas une liste) dans cette API
+            source_data = data.get("source", {})
+            if isinstance(source_data, list):
+                source_data = source_data[0] if source_data else {}
+            entries = source_data.get("data", [])
+
             for entry in entries:
                 if entry.get("value") is None:
                     continue  # Règle transparence
