@@ -38,12 +38,12 @@ OWID_SLUGS = {
         "column": "Armed forces personnel",
     },
     "violent_death": {
-        "slug":   "deaths-conflict-terrorism-per-100000",
-        "column": "Conflict and terrorism deaths per 100,000 people",
+        "slug":   "death-rate-in-armed-conflicts",
+        "column": "Death rate in armed conflicts",
     },
     "idps_securitaire": {
-        "slug":   "internally-displaced-persons-from-conflict",
-        "column": "Internally displaced persons from conflict and violence",
+        "slug":   "internally-displaced-people-due-to-conflict",
+        "column": "Internally displaced people due to conflict",
     },
     "idps_climatique": {
         "slug":   "internally-displaced-persons-from-disasters",
