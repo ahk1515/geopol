@@ -58,13 +58,15 @@ PIPELINE = [
         "type":        "automatique",
         "obligatoire": False,
     },
-    {
-        "id":          "etudiants",
-        "label":       "Étudiants internationaux",
-        "module":      etudiants,
-        "type":        "automatique",
-        "obligatoire": False,
-    },
+    # Étudiants internationaux — désactivé temporairement
+    # En attente d'inspection du fichier OPRI.zip (UNESCO)
+    # {
+    #     "id":          "etudiants",
+    #     "label":       "Étudiants internationaux",
+    #     "module":      etudiants,
+    #     "type":        "automatique",
+    #     "obligatoire": False,
+    # },
 ]
 
 # -------------------------------------------------------------
