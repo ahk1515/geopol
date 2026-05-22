@@ -3896,11 +3896,19 @@ async function confirmUpload() {
 
   try {
     // Récupérer SHA si le fichier existe déjà (pour update)
+    // 404 = fichier inexistant = nouveau commit (SHA null)
     let sha = null;
     try {
-      const existing = await ghReadFile(ctx.targetPath);
-      sha = existing.sha;
-    } catch(e) { /* 404 ok */ }
+      const rCheck = await ghFetchRaw(`/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/contents/${ctx.targetPath}?ref=${PILOT.ghBranch}`);
+      if (rCheck.ok) {
+        const data = await rCheck.json();
+        sha = data.sha;
+      }
+      // rCheck.status === 404 → fichier nouveau, sha reste null
+    } catch(e) {
+      // erreur réseau → on continue quand même, GitHub renverra une erreur claire au PUT si besoin
+      console.warn('ghReadFile check failed:', e);
+    }
 
     // Encoder en base64. Pour les CSV (texte UTF-8), passer par encodeURIComponent.
     // Pour les binaires (xlsx), on a lu en readAsBinaryString.
