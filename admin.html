@@ -373,6 +373,95 @@ tbody td{padding:7px 11px;vertical-align:middle}
   margin-top:18px;text-align:right;
   font-family:var(--mono);font-size:9.5px;color:var(--text3);letter-spacing:.05em;
 }
+
+/* ── ÉTAPE 2 — Pilotage DB ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.kpi-cell{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
+.kpi-k{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.kpi-v{font-family:var(--mono);font-size:18px;font-weight:500;color:var(--text);margin-bottom:3px}
+.kpi-s{font-size:11px;color:var(--text2)}
+.kpi-cell.warn{border-color:var(--orange-b);background:var(--orange-d)}
+.kpi-cell.warn .kpi-v{color:var(--orange)}
+
+.slider-block{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:16px 18px;margin-bottom:12px;
+}
+.slider-row{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.slider-row:last-child{margin-bottom:0}
+.slider-label{
+  font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text3);width:90px;flex-shrink:0;
+}
+.slider-input{
+  flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+  background:var(--bg4);outline:none;cursor:pointer;
+}
+.slider-input::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--green);cursor:pointer;border:2px solid var(--bg2);
+  box-shadow:0 0 0 1px var(--green);
+}
+.slider-input::-moz-range-thumb{
+  width:16px;height:16px;border-radius:50%;background:var(--green);
+  cursor:pointer;border:2px solid var(--bg2);box-shadow:0 0 0 1px var(--green);
+}
+.slider-val{
+  font-family:var(--mono);font-size:14px;font-weight:600;color:var(--green);
+  min-width:54px;text-align:right;
+}
+.slider-current{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  text-align:right;margin-top:4px;
+}
+
+.toggle-line{
+  display:flex;align-items:center;gap:10px;padding:7px 10px;
+  border-bottom:1px solid var(--border);transition:background .1s;
+}
+.toggle-line:last-child{border-bottom:none}
+.toggle-line:hover{background:var(--bg3)}
+.toggle-sw{
+  position:relative;width:32px;height:18px;flex-shrink:0;cursor:pointer;
+  background:var(--bg4);border-radius:9px;transition:background .15s;
+}
+.toggle-sw::after{
+  content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;
+  background:var(--text3);border-radius:50%;transition:all .18s;
+}
+.toggle-sw.on{background:var(--green-d);border:1px solid var(--green-b)}
+.toggle-sw.on::after{left:15px;background:var(--green);top:1px}
+.toggle-info{flex:1;min-width:0}
+.toggle-name{font-size:12px;color:var(--text)}
+.toggle-meta{font-family:var(--mono);font-size:9.5px;color:var(--text3);margin-top:2px}
+.toggle-badge{
+  font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;
+  background:var(--bg4);color:var(--text3);letter-spacing:.05em;
+}
+.toggle-badge.flux{background:rgba(96,165,250,.1);color:var(--blue)}
+
+.indicators-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:0 18px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:6px 12px;
+}
+@media(max-width:900px){.indicators-grid{grid-template-columns:1fr}}
+
+.cat-header{
+  font-family:var(--mono);font-size:9px;color:var(--text3);
+  letter-spacing:.15em;text-transform:uppercase;
+  padding:10px 10px 4px;border-bottom:1px solid var(--border);
+  grid-column:1/-1;margin-top:4px;
+}
+.cat-header:first-child{margin-top:0}
+
+.dirty-banner{
+  display:flex;align-items:center;gap:12px;
+  background:var(--orange-d);border:1px solid var(--orange-b);border-radius:6px;
+  padding:11px 14px;margin-bottom:14px;
+}
+.dirty-banner-ico{font-size:18px}
+.dirty-banner-t{font-size:12px;color:var(--orange);flex:1}
 </style>
 </head>
 <body>
@@ -463,13 +552,10 @@ tbody td{padding:7px 11px;vertical-align:middle}
 <!-- ══════════════════ PANEL: PILOTAGE DB ══════════════════ -->
 <div class="panel" id="panel-pilotage">
   <div class="ptitle">Pilotage de la base</div>
-  <div class="psub">Bornes temporelles, périmètre pays, estimation de taille, déclenchement de reconstruction.</div>
+  <div class="psub">Bornes temporelles, périmètre pays, indicateurs affichés. Modifie <code class="mono">etl_config.json</code> et <code class="mono">config.json</code> via commit GitHub.</div>
 
-  <div class="placeholder">
-    <div class="placeholder-ico">⚙️</div>
-    <div class="placeholder-t">Onglet Pilotage DB</div>
-    <div class="placeholder-s">Curseurs années (début/fin), sélection pays, aperçu taille, commit etl_config.json.</div>
-    <div class="placeholder-tag">À DÉVELOPPER — ÉTAPE 2</div>
+  <div id="pilotageContent">
+    <div class="empty"><div class="empty-ico">⚙️</div>Chargement…</div>
   </div>
 </div>
 
@@ -2100,6 +2186,455 @@ updateAuthBadge = function() {
   const suiviPanel = document.getElementById('panel-suivi');
   if (suiviPanel && suiviPanel.classList.contains('active')) {
     refreshSuivi();
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 2 — PILOTAGE DB (etl_config.json + config.json)
+// ═══════════════════════════════════════════════════════════
+
+const Pilotage = {
+  // etl_config.json
+  etlConfig:     null,     // contenu actuel
+  etlConfigSha:  null,     // SHA pour update (null si fichier à créer)
+  etlConfigDraft: null,    // brouillon en cours d'édition
+
+  // config.json
+  appConfig:     null,
+  appConfigSha:  null,
+  appConfigDraft: null,    // brouillon avec toggles
+
+  // UI
+  loaded:        false,
+  loading:       false,
+};
+
+const ETL_CONFIG_PATH = 'etl_config.json';
+const APP_CONFIG_PATH = 'config.json';
+
+// Valeurs par défaut alignées sur etl/config.py
+const DEFAULT_ETL_CONFIG = {
+  annee_debut: 2000,
+  annee_fin:   2024,
+  pays:        'tous',
+};
+
+// Bornes des curseurs (validées Étape 2)
+const YEAR_MIN = 1980;
+const YEAR_MAX = 2050;
+
+// ── Chargement des configs depuis GitHub ──
+async function loadPilotageConfigs() {
+  if (Pilotage.loading) return;
+  Pilotage.loading = true;
+
+  // etl_config.json (peut ne pas exister)
+  try {
+    const f = await ghReadFile(ETL_CONFIG_PATH);
+    Pilotage.etlConfig    = JSON.parse(f.content);
+    Pilotage.etlConfigSha = f.sha;
+  } catch(e) {
+    // 404 = fichier inexistant, on prépare une création
+    Pilotage.etlConfig    = null;
+    Pilotage.etlConfigSha = null;
+  }
+  // Brouillon = copie actuelle ou défauts
+  Pilotage.etlConfigDraft = JSON.parse(JSON.stringify(Pilotage.etlConfig || DEFAULT_ETL_CONFIG));
+
+  // config.json (doit exister, sinon erreur)
+  try {
+    const f = await ghReadFile(APP_CONFIG_PATH);
+    Pilotage.appConfig    = JSON.parse(f.content);
+    Pilotage.appConfigSha = f.sha;
+    // Brouillon = clone profond
+    Pilotage.appConfigDraft = JSON.parse(JSON.stringify(Pilotage.appConfig));
+  } catch(e) {
+    Pilotage.appConfig = null;
+    Pilotage.appConfigDraft = null;
+    console.warn('config.json read failed:', e);
+  }
+
+  Pilotage.loaded = true;
+  Pilotage.loading = false;
+}
+
+// ── Détection des modifications (dirty state) ──
+function isEtlDirty() {
+  if (!Pilotage.etlConfigDraft) return false;
+  const cur = Pilotage.etlConfig || DEFAULT_ETL_CONFIG;
+  return JSON.stringify(cur) !== JSON.stringify(Pilotage.etlConfigDraft);
+}
+function isAppDirty() {
+  if (!Pilotage.appConfigDraft || !Pilotage.appConfig) return false;
+  return JSON.stringify(Pilotage.appConfig) !== JSON.stringify(Pilotage.appConfigDraft);
+}
+function isDirty() { return isEtlDirty() || isAppDirty(); }
+
+// ── Estimation de taille DB après modification ──
+function estimateDbSize() {
+  const s = Pilot.status;
+  if (!s || !s.db_size_mb || !s.stats) return null;
+  const sizeMb   = s.db_size_mb;
+  const yMinDb   = s.stats.annee_min;
+  const yMaxDb   = s.stats.annee_max;
+  if (!yMinDb || !yMaxDb || yMaxDb <= yMinDb) return null;
+  const spanCur  = yMaxDb - yMinDb + 1;
+  const perYear  = sizeMb / spanCur;
+  const d = Pilotage.etlConfigDraft;
+  const spanNew  = (d.annee_fin - d.annee_debut + 1);
+  if (spanNew <= 0) return 0;
+  return Math.round(perYear * spanNew * 10) / 10;
+}
+
+// ── Rendu de l'onglet ──
+function renderPilotage() {
+  if (!Pilot.pat) {
+    document.getElementById('pilotageContent').innerHTML = `
+      <div class="alert ai">
+        <span class="alert-ico">ℹ</span>
+        <div>Connexion GitHub requise pour piloter la configuration.
+        <a href="#" onclick="event.preventDefault();openAuthModal()" style="color:var(--blue)">Se connecter →</a></div>
+      </div>
+    `;
+    return;
+  }
+  if (!Pilotage.loaded) {
+    document.getElementById('pilotageContent').innerHTML = `
+      <div class="empty"><div class="empty-ico">⚙️</div>Chargement de la configuration…</div>
+    `;
+    return;
+  }
+
+  const s        = Pilot.status || {};
+  const stats    = s.stats || {};
+  const d        = Pilotage.etlConfigDraft;
+  const cur      = Pilotage.etlConfig || DEFAULT_ETL_CONFIG;
+  const yMinDb   = stats.annee_min || '—';
+  const yMaxDb   = stats.annee_max || '—';
+  const sizeMb   = s.db_size_mb || 0;
+  const estimated= estimateDbSize();
+
+  // Indicateur de désynchro : config vs DB réelle
+  let syncWarn = null;
+  if (cur && stats.annee_min && stats.annee_max) {
+    if (cur.annee_debut !== stats.annee_min || cur.annee_fin !== stats.annee_max) {
+      syncWarn = `Config dit ${cur.annee_debut}–${cur.annee_fin}, DB contient ${stats.annee_min}–${stats.annee_max}. Relance le pipeline pour synchroniser.`;
+    }
+  }
+
+  // ── KPIs ──
+  const kpis = `
+    <div class="kpi-grid">
+      <div class="kpi-cell ${syncWarn?'warn':''}">
+        <div class="kpi-k">Bornes config actuelle</div>
+        <div class="kpi-v">${cur ? cur.annee_debut+' → '+cur.annee_fin : '— (à créer)'}</div>
+        <div class="kpi-s">${cur ? 'Pays : '+(cur.pays==='tous'?'tous':cur.pays) : 'Fichier etl_config.json absent'}</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-k">Période réelle DB</div>
+        <div class="kpi-v">${yMinDb} → ${yMaxDb}</div>
+        <div class="kpi-s">${sizeMb.toFixed(1)} Mo · ${(stats.nb_lignes_identite + stats.nb_lignes_flux || 0).toLocaleString('fr-FR')} lignes</div>
+      </div>
+      <div class="kpi-cell">
+        <div class="kpi-k">Estimation après modif</div>
+        <div class="kpi-v">${estimated !== null ? estimated.toFixed(1)+' Mo' : '—'}</div>
+        <div class="kpi-s">Période visée : ${d.annee_debut} → ${d.annee_fin} (${d.annee_fin-d.annee_debut+1} ans)</div>
+      </div>
+    </div>
+    ${syncWarn ? `
+      <div class="alert ao">
+        <span class="alert-ico">⚠</span>
+        <div>${escapeHtml(syncWarn)}</div>
+      </div>
+    ` : ''}
+  `;
+
+  // ── Curseurs années + pays ──
+  const sliders = `
+    <div class="card">
+      <div class="ch">
+        <span class="ctitle">Bornes du pipeline ETL</span>
+        ${isEtlDirty() ? '<span class="badge bo">modifié</span>' : '<span class="badge bg">synchro</span>'}
+      </div>
+      <div class="cb">
+        <div class="slider-block">
+          <div class="slider-row">
+            <div class="slider-label">Année début</div>
+            <input type="range" class="slider-input" id="sliderDebut"
+                   min="${YEAR_MIN}" max="${YEAR_MAX}" value="${d.annee_debut}"
+                   oninput="updateEtlDraft('annee_debut', this.value)">
+            <div class="slider-val" id="valDebut">${d.annee_debut}</div>
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">Année fin</div>
+            <input type="range" class="slider-input" id="sliderFin"
+                   min="${YEAR_MIN}" max="${YEAR_MAX}" value="${d.annee_fin}"
+                   oninput="updateEtlDraft('annee_fin', this.value)">
+            <div class="slider-val" id="valFin">${d.annee_fin}</div>
+          </div>
+          <div class="slider-current">
+            actuel : ${cur.annee_debut} → ${cur.annee_fin}
+            ${d.annee_fin < d.annee_debut ? ' · <span class="red">⚠ fin &lt; début</span>' : ''}
+          </div>
+        </div>
+
+        <div class="slider-block" style="margin-top:10px">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="slider-label">Pays</div>
+            <div class="toggle-sw ${d.pays==='tous'?'on':''}" onclick="updateEtlDraft('pays', '${d.pays==='tous'?'none':'tous'}')"></div>
+            <div style="flex:1;font-size:12px;color:var(--text2)">
+              ${d.pays==='tous' ? 'Tous les pays (~217)' : 'Sélection personnalisée (non disponible dans cette version)'}
+            </div>
+          </div>
+          <div class="slider-current" style="margin-top:6px">
+            La sélection fine pays par pays sera ajoutée plus tard si besoin. Pour l'instant : tout ou rien.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // ── Toggles indicateurs (config.json) ──
+  let indicators = '';
+  if (Pilotage.appConfigDraft && Array.isArray(Pilotage.appConfigDraft)) {
+    // Grouper par catégorie
+    const byCat = {};
+    Pilotage.appConfigDraft.forEach((ind, idx) => {
+      const cat = ind.category || 'autre';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push({ind, idx});
+    });
+    const cats = Object.keys(byCat).sort();
+
+    const lines = cats.map(cat => {
+      const items = byCat[cat].map(({ind, idx}) => `
+        <div class="toggle-line">
+          <div class="toggle-sw ${ind.actif?'on':''}" onclick="toggleIndicator(${idx})"></div>
+          <div class="toggle-info">
+            <div class="toggle-name">${escapeHtml(ind.label || ind.indicator)}</div>
+            <div class="toggle-meta">${escapeHtml(ind.indicator)} · ${escapeHtml(ind.unit_display||ind.unit||'?')}</div>
+          </div>
+          <span class="toggle-badge ${ind.table==='flux'?'flux':''}">${escapeHtml(ind.table)}</span>
+        </div>
+      `).join('');
+      return `
+        <div class="cat-header">${escapeHtml(cat)}</div>
+        ${items}
+      `;
+    }).join('');
+
+    const nActifs = Pilotage.appConfigDraft.filter(x=>x.actif).length;
+    const nTotal  = Pilotage.appConfigDraft.length;
+
+    indicators = `
+      <div class="card">
+        <div class="ch">
+          <span class="ctitle">Indicateurs affichés dans l'app — ${nActifs}/${nTotal}</span>
+          ${isAppDirty() ? '<span class="badge bo">modifié</span>' : '<span class="badge bg">synchro</span>'}
+        </div>
+        <div class="cb" style="padding:0">
+          <div class="indicators-grid">${lines}</div>
+        </div>
+      </div>
+    `;
+  } else {
+    indicators = `
+      <div class="alert ar">
+        <span class="alert-ico">✕</span>
+        <div>Impossible de charger <code>config.json</code> depuis GitHub.</div>
+      </div>
+    `;
+  }
+
+  // ── Bandeau d'actions ──
+  const dirty = isDirty();
+  const validRange = d.annee_fin >= d.annee_debut;
+
+  const actions = `
+    ${dirty ? `
+      <div class="dirty-banner">
+        <span class="dirty-banner-ico">●</span>
+        <div class="dirty-banner-t">
+          Modifications non commitées : ${isEtlDirty() ? 'etl_config.json' : ''}${isEtlDirty()&&isAppDirty() ? ' + ' : ''}${isAppDirty() ? 'config.json' : ''}
+        </div>
+        <button class="btn btn-s btn-sm" onclick="resetPilotage()">Annuler</button>
+        <button class="btn btn-g btn-sm" onclick="applyPilotage()" ${validRange?'':'disabled'}>
+          ⬆ Commit + (option) relance pipeline
+        </button>
+      </div>
+    ` : `
+      <div class="alert ag">
+        <span class="alert-ico">✓</span>
+        <div>Configuration synchronisée avec GitHub.</div>
+      </div>
+    `}
+  `;
+
+  document.getElementById('pilotageContent').innerHTML = kpis + actions + sliders + indicators;
+
+  // Garder le focus sur les sliders après re-render
+  // (pas critique mais améliore l'UX si on bouge vite)
+}
+
+// ── Handlers UI ──
+function updateEtlDraft(field, value) {
+  if (!Pilotage.etlConfigDraft) return;
+  if (field === 'annee_debut' || field === 'annee_fin') {
+    const v = parseInt(value);
+    if (!isNaN(v)) Pilotage.etlConfigDraft[field] = v;
+  } else if (field === 'pays') {
+    Pilotage.etlConfigDraft.pays = value;
+  }
+  // Re-render léger : juste mettre à jour les valeurs et la bannière
+  renderPilotage();
+}
+
+function toggleIndicator(idx) {
+  if (!Pilotage.appConfigDraft) return;
+  Pilotage.appConfigDraft[idx].actif = !Pilotage.appConfigDraft[idx].actif;
+  renderPilotage();
+}
+
+function resetPilotage() {
+  if (!confirm('Abandonner les modifications non commitées ?')) return;
+  Pilotage.etlConfigDraft = JSON.parse(JSON.stringify(Pilotage.etlConfig || DEFAULT_ETL_CONFIG));
+  Pilotage.appConfigDraft = JSON.parse(JSON.stringify(Pilotage.appConfig || []));
+  renderPilotage();
+}
+
+// ── Application des modifications ──
+async function applyPilotage() {
+  if (!Pilot.pat) { openAuthModal(); return; }
+  if (!isDirty()) return;
+
+  // Validation
+  const d = Pilotage.etlConfigDraft;
+  if (d.annee_fin < d.annee_debut) {
+    alert('L\'année de fin doit être supérieure ou égale à l\'année de début.');
+    return;
+  }
+
+  // Construction du message de commit synthétique
+  const parts = [];
+  if (isEtlDirty()) {
+    const cur = Pilotage.etlConfig || DEFAULT_ETL_CONFIG;
+    parts.push(`etl_config: ${cur.annee_debut}–${cur.annee_fin} → ${d.annee_debut}–${d.annee_fin}`);
+  }
+  if (isAppDirty()) {
+    const oldActifs = (Pilotage.appConfig||[]).filter(x=>x.actif).length;
+    const newActifs = Pilotage.appConfigDraft.filter(x=>x.actif).length;
+    parts.push(`config: ${oldActifs} → ${newActifs} indicateurs actifs`);
+  }
+  const message = '[admin] ' + parts.join(' · ');
+
+  // Confirmation
+  if (!confirm(`Commit sur GitHub avec le message :\n\n${message}\n\nContinuer ?`)) return;
+
+  const banner = createPilotageStatusBanner();
+  banner.show('⏳ Commit en cours…', 'loading');
+
+  try {
+    // 1. Commit etl_config.json si modifié
+    if (isEtlDirty()) {
+      banner.show('⏳ Commit etl_config.json…', 'loading');
+      const result = await ghWriteFile(
+        ETL_CONFIG_PATH,
+        JSON.stringify(d, null, 2) + '\n',
+        message,
+        Pilotage.etlConfigSha  // null si création
+      );
+      Pilotage.etlConfigSha = result.content.sha;
+      Pilotage.etlConfig    = JSON.parse(JSON.stringify(d));
+    }
+
+    // 2. Commit config.json si modifié
+    if (isAppDirty()) {
+      banner.show('⏳ Commit config.json…', 'loading');
+      // Format identique au fichier original (1 indicateur par ligne)
+      const lines = Pilotage.appConfigDraft.map(ind => '  ' + JSON.stringify(ind));
+      const content = '[\n' + lines.join(',\n') + '\n]\n';
+      const result = await ghWriteFile(
+        APP_CONFIG_PATH,
+        content,
+        message,
+        Pilotage.appConfigSha
+      );
+      Pilotage.appConfigSha = result.content.sha;
+      Pilotage.appConfig    = JSON.parse(JSON.stringify(Pilotage.appConfigDraft));
+    }
+
+    banner.show('✓ Commit effectué sur GitHub', 'success');
+    renderPilotage();
+
+    // 3. Proposer la relance du pipeline si etl_config a changé
+    if (parts.some(p => p.startsWith('etl_config:'))) {
+      setTimeout(async () => {
+        if (confirm('Configuration ETL commitée.\n\nRelancer le pipeline maintenant pour appliquer ?\n(Sinon, la prochaine exécution du lundi prendra en compte la nouvelle config.)')) {
+          try {
+            const r = await ghFetchRaw(
+              `/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/actions/workflows/${PILOT.ghWorkflow}/dispatches`,
+              { method: 'POST', body: JSON.stringify({ ref: PILOT.ghBranch, inputs: { source: 'all' } }) }
+            );
+            if (!r.ok && r.status !== 204) throw new Error(`HTTP ${r.status}`);
+            Suivi.lastTriggerAt = Date.now();
+            banner.show('✓ Pipeline relancé — voir onglet Suivi ETL', 'success');
+          } catch(e) {
+            banner.show('Pipeline non relancé : ' + e.message, 'error');
+          }
+        }
+      }, 600);
+    }
+
+  } catch(e) {
+    banner.show('Échec : ' + e.message, 'error');
+  }
+}
+
+// ── Bannière de statut volatile (réutilisable) ──
+function createPilotageStatusBanner() {
+  let el = document.getElementById('pilotageStatusBanner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'pilotageStatusBanner';
+    el.style.cssText = 'margin-bottom:14px';
+    const content = document.getElementById('pilotageContent');
+    content.parentNode.insertBefore(el, content);
+  }
+  return {
+    show(msg, type) {
+      const cls = type === 'success' ? 'ag' : type === 'error' ? 'ar' : 'ai';
+      const ico = type === 'success' ? '✓' : type === 'error' ? '✕' : '<span class="spin">⟳</span>';
+      el.innerHTML = `<div class="alert ${cls}"><span class="alert-ico">${ico}</span><div>${escapeHtml(msg)}</div></div>`;
+      // Auto-clear succès après 5 s
+      if (type === 'success') setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
+    }
+  };
+}
+
+// ── Hook : quand on arrive sur Pilotage, on charge si pas déjà fait ──
+const _originalShowPanel2 = window.showPanel;
+window.showPanel = async function(name) {
+  if (typeof _originalShowPanel2 === 'function') _originalShowPanel2(name);
+  if (name === 'pilotage') {
+    if (Pilot.pat && !Pilotage.loaded) {
+      renderPilotage(); // affiche "chargement..."
+      await loadPilotageConfigs();
+    }
+    renderPilotage();
+  }
+};
+
+// Quand on se connecte, si on est déjà sur Pilotage, recharger
+const _originalUpdateAuthBadge2 = updateAuthBadge;
+updateAuthBadge = async function() {
+  _originalUpdateAuthBadge2();
+  const pilotagePanel = document.getElementById('panel-pilotage');
+  if (pilotagePanel && pilotagePanel.classList.contains('active')) {
+    if (Pilot.pat && !Pilotage.loaded) {
+      renderPilotage();
+      await loadPilotageConfigs();
+    }
+    renderPilotage();
   }
 };
 
