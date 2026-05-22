@@ -21,7 +21,7 @@ from etl.config import PATH_DB, PATH_STATUS, load_admin_config
 # -------------------------------------------------------------
 # IMPORT DES SCRIPTS ETL
 # -------------------------------------------------------------
-from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants, banque_mondiale_ids
+from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants, banque_mondiale_ids, sipri, manuel
 from etl import construits, build_db
 
 # -------------------------------------------------------------
@@ -63,6 +63,20 @@ PIPELINE = [
         "label":       "Dette bilatérale (IDS)",
         "module":      banque_mondiale_ids,
         "type":        "automatique",
+        "obligatoire": False,
+    },
+    {
+        "id":          "sipri",
+        "label":       "SIPRI Arms Transfers",
+        "module":      sipri,
+        "type":        "semi-automatique",
+        "obligatoire": False,
+    },
+    {
+        "id":          "manuel",
+        "label":       "Imports manuels (IA)",
+        "module":      manuel,
+        "type":        "manuel",
         "obligatoire": False,
     },
     # Étudiants internationaux — désactivé temporairement
