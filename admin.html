@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GÉOPOL — Interface d'import</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0c0e12;
+  --bg2:     #12151b;
+  --bg3:     #181c24;
+  --bg4:     #1e2330;
+  --bg5:     #252b3a;
+  --border:  #272d3d;
+  --border2: #333d54;
+  --text:    #cdd3e0;
+  --text2:   #7a869e;
+  --text3:   #48536a;
+  --green:   #00c97a;
+  --green-d: rgba(0,201,122,.12);
+  --green-b: rgba(0,201,122,.3);
+  --orange:  #f59e0b;
+  --orange-d:rgba(245,158,11,.11);
+  --orange-b:rgba(245,158,11,.3);
+  --red:     #ef4444;
+  --red-d:   rgba(239,68,68,.1);
+  --red-b:   rgba(239,68,68,.28);
+  --blue:    #60a5fa;
+  --blue-d:  rgba(96,165,250,.1);
+  --mono:    'IBM Plex Mono', monospace;
+  --sans:    'IBM Plex Sans', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.5}
+
+/* ── LAYOUT ── */
+.shell{display:grid;grid-template-rows:52px 1fr;height:100vh}
+.body{display:grid;grid-template-columns:236px 1fr;overflow:hidden}
+main{overflow-y:auto;padding:24px}
+
+/* ── HEADER ── */
+header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;position:relative;z-index:50;
+}
+.logo{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.2em;color:var(--green);display:flex;align-items:center;gap:10px}
+.logo-sep{color:var(--border2);font-size:18px;font-weight:200}
+.logo-sub{font-size:9px;font-weight:400;letter-spacing:.15em;color:var(--text3);text-transform:uppercase}
+.db-badge{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:10px;color:var(--text2);
+  background:var(--bg3);border:1px solid var(--border);
+  padding:5px 12px;border-radius:4px;cursor:pointer;
+  transition:border-color .15s;
+}
+.db-badge:hover{border-color:var(--border2)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.dot.on{background:var(--green);box-shadow:0 0 7px var(--green)}
+.dot.loading{background:var(--orange);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.db-name{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── NAV ── */
+nav{
+  background:var(--bg2);border-right:1px solid var(--border);
+  padding:16px 0;overflow-y:auto;
+}
+.nav-grp{padding-bottom:14px}
+.nav-label{
+  font-family:var(--mono);font-size:9px;letter-spacing:.2em;
+  color:var(--text3);text-transform:uppercase;
+  padding:0 18px 6px;display:block;
+}
+.nav-btn{
+  width:100%;display:flex;align-items:center;gap:9px;
+  padding:8px 18px;border:none;background:none;cursor:pointer;
+  color:var(--text2);font-family:var(--sans);font-size:12.5px;
+  border-left:2px solid transparent;transition:all .12s;
+  text-align:left;
+}
+.nav-btn:hover{color:var(--text);background:var(--bg3)}
+.nav-btn.active{color:var(--green);border-left-color:var(--green);background:var(--green-d)}
+.nav-ico{width:17px;text-align:center;font-size:14px;flex-shrink:0}
+.nav-tag{
+  margin-left:auto;background:var(--orange);color:#000;
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;
+}
+
+/* ── PANELS ── */
+.panel{display:none;animation:up .18s ease}
+.panel.active{display:block}
+@keyframes up{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.ptitle{
+  font-family:var(--mono);font-size:15px;font-weight:600;
+  letter-spacing:.04em;margin-bottom:4px;
+}
+.psub{font-size:12px;color:var(--text2);margin-bottom:20px}
+
+/* ── CARD ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:14px;overflow:hidden}
+.ch{
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ctitle{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--text2)}
+.cb{padding:16px}
+
+/* ── STEPS ── */
+.steps{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:20px}
+.step{
+  flex:1;padding:9px 14px;border-right:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;color:var(--text3);background:var(--bg2);transition:all .15s;
+}
+.step:last-child{border-right:none}
+.step.active{color:var(--text);background:var(--bg3)}
+.step.done{color:var(--green)}
+.step-n{
+  width:19px;height:19px;border-radius:50%;
+  border:1px solid currentColor;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:9px;font-weight:600;flex-shrink:0;
+}
+.step.done .step-n::before{content:'✓'}
+
+/* ── DROP ZONE ── */
+.dropzone{
+  border:2px dashed var(--border2);border-radius:6px;
+  padding:44px 24px;text-align:center;cursor:pointer;
+  transition:all .18s;position:relative;
+}
+.dropzone:hover,.dropzone.over{border-color:var(--green);background:var(--green-d)}
+.dropzone.over{transform:scale(1.003)}
+
+.drop-ico{font-size:30px;margin-bottom:10px;opacity:.4}
+.drop-t{font-size:14px;font-weight:500;margin-bottom:5px}
+.drop-s{font-size:11.5px;color:var(--text2)}
+.drop-fmt{
+  margin-top:12px;font-family:var(--mono);font-size:10px;color:var(--text3);
+  background:var(--bg3);border:1px solid var(--border);
+  padding:5px 12px;border-radius:4px;display:inline-block;
+}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 14px;border-radius:4px;
+  font-family:var(--sans);font-size:12px;font-weight:500;
+  cursor:pointer;border:none;transition:all .12s;white-space:nowrap;
+}
+.btn:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
+.btn-g{background:var(--green);color:#000}
+.btn-g:hover{background:#00e68a}
+.btn-s{background:var(--bg4);color:var(--text);border:1px solid var(--border2)}
+.btn-s:hover{background:var(--bg5)}
+.btn-r{background:var(--red-d);color:var(--red);border:1px solid var(--red-b)}
+.btn-r:hover{background:rgba(239,68,68,.18)}
+.btn-o{background:var(--orange-d);color:var(--orange);border:1px solid var(--orange-b)}
+.btn-o:hover{background:rgba(245,158,11,.2)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-xs{padding:2px 8px;font-size:10px;font-family:var(--mono)}
+
+/* ── ALERTS ── */
+.alert{
+  padding:9px 13px;border-radius:4px;
+  font-size:12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:12px;
+}
+.alert-ico{flex-shrink:0;font-size:14px;margin-top:1px}
+.ag{background:var(--green-d);border:1px solid var(--green-b);color:var(--green)}
+.ar{background:var(--red-d);border:1px solid var(--red-b);color:var(--red)}
+.ao{background:var(--orange-d);border:1px solid var(--orange-b);color:var(--orange)}
+.ai{background:var(--blue-d);border:1px solid rgba(96,165,250,.3);color:var(--blue)}
+
+/* ── META GRID ── */
+.mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.mcell{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:10px 12px}
+.mk{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+.mv{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
+
+/* ── VALIDATION ── */
+.vrow{display:flex;align-items:flex-start;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.vrow:last-child{border-bottom:none}
+.vi{font-size:13px;flex-shrink:0;margin-top:1px}
+.vl{flex:1}
+.vd{font-family:var(--mono);font-size:10px;color:var(--text2);margin-top:2px}
+
+/* ── PROGRESS ── */
+.pbar-w{background:var(--bg3);border:1px solid var(--border);border-radius:3px;height:5px;overflow:hidden;margin:10px 0}
+.pbar{height:100%;background:var(--green);border-radius:3px;transition:width .3s ease;width:0%}
+.pbar.warn{background:var(--orange)}
+.plbl{font-family:var(--mono);font-size:10px;color:var(--text2);display:flex;justify-content:space-between}
+
+/* ── TABLE ── */
+.tbl-w{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:var(--mono)}
+thead th{
+  padding:7px 11px;background:var(--bg3);border-bottom:1px solid var(--border2);
+  color:var(--text2);font-weight:500;font-size:9.5px;letter-spacing:.08em;text-align:left;white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:hover{background:var(--bg3)}
+tbody td{padding:7px 11px;vertical-align:middle}
+.old{color:var(--text2)}
+.new{color:var(--orange)}
+.res-btns{display:flex;gap:5px}
+
+/* ── JOURNAL ── */
+.jhead,.jrow{
+  display:grid;
+  grid-template-columns:145px 1fr 80px 54px 58px 58px 78px 74px;
+  gap:6px;padding:7px 14px;font-family:var(--mono);font-size:10.5px;align-items:center;
+}
+.jhead{font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;background:var(--bg3);border-bottom:1px solid var(--border2)}
+.jrow{border-bottom:1px solid var(--border);transition:background .1s}
+.jrow:hover{background:var(--bg3)}
+.fname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:10px}
+
+/* ── BADGE ── */
+.badge{
+  display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;
+  font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:var(--mono);
+}
+.bg{background:var(--green-d);color:var(--green);border:1px solid var(--green-b)}
+.br{background:var(--red-d);color:var(--red);border:1px solid var(--red-b)}
+.bo{background:var(--orange-d);color:var(--orange);border:1px solid var(--orange-b)}
+.bc{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+
+/* ── STATS ── */
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.scell{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
+.sn{font-family:var(--mono);font-size:24px;font-weight:600;margin-bottom:3px}
+.sl{font-size:11px;color:var(--text2)}
+.scell.cg .sn{color:var(--green)}
+.scell.co .sn{color:var(--orange)}
+.scell.cr .sn{color:var(--red)}
+
+/* ── MODAL ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:center;justify-content:center;animation:up .15s}
+.modal-bg.hidden{display:none}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:24px;width:430px;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.modal-t{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.05em;margin-bottom:6px}
+.modal-s{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.modal-info{background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:12px;font-family:var(--mono);font-size:11px;margin-bottom:20px}
+.modal-row{display:flex;justify-content:space-between;margin-bottom:4px}
+.modal-row:last-child{margin-bottom:0}
+.modal-k{color:var(--text2)}
+.modal-v{color:var(--text)}
+
+/* ── MISC ── */
+.divider{height:1px;background:var(--border);margin:14px 0}
+.frow{display:flex;gap:8px;align-items:center}
+.frow-end{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.hidden{display:none!important}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mono{font-family:var(--mono)}
+.txt2{color:var(--text2)}
+.txt3{color:var(--text3)}
+.green{color:var(--green)}
+.orange{color:var(--orange)}
+.red{color:var(--red)}
+.mt8{margin-top:8px}
+.mt12{margin-top:12px}
+.mt16{margin-top:16px}
+.empty{text-align:center;padding:40px;color:var(--text3);font-size:12px}
+.empty-ico{font-size:28px;opacity:.25;margin-bottom:10px}
+
+@keyframes pulse-btn {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50%      { box-shadow: 0 0 0 4px rgba(239,68,68,0.3); }
+}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    GÉOPOL <span class="logo-sep">|</span>
+    <span class="logo-sub">Interface d'import — Administrateur</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="db-badge" onclick="document.getElementById('dbFileInput').click()" title="Charger une base .db">
+      <div class="dot" id="dbDot"></div>
+      <span class="db-name" id="dbName">Aucune base chargée</span>
+      <span style="color:var(--text3);font-size:10px">· CHANGER</span>
+    </div>
+    <button class="btn btn-g btn-sm" id="btnSaveDb" disabled onclick="saveDb()">⬇ Exporter .db</button>
+    <input type="file" id="dbFileInput" accept=".db" style="display:none" onchange="loadDbFile(this)">
+  </div>
+</header>
+
+<div class="body">
+<!-- NAV -->
+<nav>
+  <div class="nav-grp">
+    <span class="nav-label">Import</span>
+    <button class="nav-btn active" id="nav-import" onclick="showPanel('import')">
+      <span class="nav-ico">📥</span> Importer un CSV
+    </button>
+  </div>
+  <div class="nav-grp">
+    <span class="nav-label">Base</span>
+    <button class="nav-btn" id="nav-journal" onclick="showPanel('journal')">
+      <span class="nav-ico">📋</span> Journal
+    </button>
+    <button class="nav-btn" id="nav-stats" onclick="showPanel('stats')">
+      <span class="nav-ico">📊</span> Statistiques
+    </button>
+    <button class="nav-btn" id="nav-migrations" onclick="showPanel('migrations')">
+      <span class="nav-ico">🔧</span> Migrations
+    </button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+<!-- ══════════════════ PANEL: IMPORT ══════════════════ -->
+<div class="panel active" id="panel-import">
+  <div class="ptitle">Importer un fichier CSV</div>
+  <div class="psub">Glissez un fichier CSV normalisé ou cliquez pour parcourir. La base doit être chargée au préalable.</div>
+
+  <!-- Steps -->
+  <div class="steps">
+    <div class="step active" id="step1"><div class="step-n">1</div> Fichier CSV</div>
+    <div class="step" id="step2"><div class="step-n">2</div> Validation</div>
+    <div class="step" id="step3"><div class="step-n">3</div> Conflits</div>
+    <div class="step" id="step4"><div class="step-n">4</div> Import</div>
+  </div>
+
+  <!-- Step 1: Drop -->
+  <div id="zone1">
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('csvFileInput').click()">
+      <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCsvFile(this.files[0])">
+      <div class="drop-ico">📄</div>
+      <div class="drop-t">Glisser-déposer un fichier CSV</div>
+      <div class="drop-s">ou cliquer pour parcourir</div>
+      <div class="drop-fmt">[TYPE]_[indicateur]_[SOURCE]_[annee_min]-[annee_max]_[YYYYMMDD].csv</div>
+    </div>
+  </div>
+
+  <!-- Step 2: Validation -->
+  <div id="zone2" class="hidden">
+    <div class="card">
+      <div class="ch"><span class="ctitle">Métadonnées du fichier</span> <span id="valFileName" class="mono txt2" style="font-size:10px"></span></div>
+      <div class="cb">
+        <div class="mgrid" id="metaGrid"></div>
+        <div id="valReport"></div>
+        <div class="frow-end">
+          <button class="btn btn-s btn-sm" onclick="resetImport()">✕ Annuler</button>
+          <button class="btn btn-g btn-sm" id="btnProceed" disabled onclick="proceedToConflicts()">Analyser les conflits →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Conflicts -->
+  <div id="zone3" class="hidden">
+    <div id="conflictSummary"></div>
+    <div id="conflictArea"></div>
+    <div class="frow-end" id="conflictActions">
+      <button class="btn btn-s btn-sm" onclick="resetImport()">✕ Annuler</button>
+      <button class="btn btn-o btn-sm" id="btnKeepAll" onclick="resolveAll('keep')">Conserver tout l'existant</button>
+      <button class="btn btn-o btn-sm" id="btnOverwriteAll" onclick="resolveAll('overwrite')">Écraser tout</button>
+      <button class="btn btn-g btn-sm" id="btnDoImport" onclick="doImport()">Importer →</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Result -->
+  <div id="zone4" class="hidden">
+    <div id="importResult"></div>
+    <div class="frow-end">
+      <button class="btn btn-s btn-sm" onclick="resetImport()">Importer un autre fichier</button>
+      <button class="btn btn-r btn-sm" id="btnRollback" onclick="openRollbackModal()">↩ Annuler cet import (rollback)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: JOURNAL ══════════════════ -->
+<div class="panel" id="panel-journal">
+  <div class="ptitle">Journal des imports</div>
+  <div class="psub">Historique complet de chaque opération d'import.</div>
+  <div class="card">
+    <div class="ch">
+      <span class="ctitle">Entrées</span>
+      <button class="btn btn-s btn-sm" onclick="loadJournal()">↻ Rafraîchir</button>
+    </div>
+    <div id="journalContent">
+      <div class="empty"><div class="empty-ico">📋</div>Chargement en cours…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: STATS ══════════════════ -->
+<div class="panel" id="panel-stats">
+  <div class="ptitle">Statistiques de la base</div>
+  <div class="psub">Vue d'ensemble du contenu actuel de <code class="mono">geopolitique.db</code>.</div>
+  <div id="statsContent">
+    <div class="empty"><div class="empty-ico">📊</div>Chargement en cours…</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: MIGRATIONS ══════════════════ -->
+<div class="panel" id="panel-migrations">
+  <div class="ptitle">Gestion des migrations</div>
+  <div class="psub">Versioning du schéma de la base de données.</div>
+  <div class="card">
+    <div class="ch"><span class="ctitle">Historique des migrations</span></div>
+    <div id="migrationsContent">
+      <div class="empty"><div class="empty-ico">🔧</div>Chargement en cours…</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ctitle">Appliquer une migration manuelle</span></div>
+    <div class="cb">
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Numéro de version</div>
+          <input id="migVersion" type="number" min="1" placeholder="ex: 2"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-family:var(--mono);font-size:12px">
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Description</div>
+          <input id="migDesc" type="text" placeholder="ex: Ajout colonne region dans identite"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:4px;font-family:var(--sans);font-size:12px">
+        </div>
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">SQL à exécuter</div>
+        <textarea id="migSql" rows="4" placeholder="ALTER TABLE identite ADD COLUMN region TEXT;"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:4px;font-family:var(--mono);font-size:11.5px;resize:vertical"></textarea>
+      </div>
+      <div class="frow-end">
+        <button class="btn btn-o btn-sm" onclick="applyMigration()">⚡ Appliquer la migration</button>
+      </div>
+      <div id="migResult" class="mt8"></div>
+    </div>
+  </div>
+</div>
+
+</main><!-- /main -->
+</div><!-- /body -->
+</div><!-- /shell -->
+
+<!-- ROLLBACK MODAL -->
+<div class="modal-bg hidden" id="rollbackModal">
+  <div class="modal">
+    <div class="modal-t">↩ Confirmer le rollback</div>
+    <div class="modal-s">Cette opération supprimera toutes les lignes insérées lors de l'import ci-dessous. Les données antérieures ne seront pas affectées.</div>
+    <div class="modal-info" id="rollbackInfo"></div>
+    <div class="frow-end">
+      <button class="btn btn-s btn-sm" onclick="closeRollbackModal()">Annuler</button>
+      <button class="btn btn-r btn-sm" onclick="doRollback()">Confirmer le rollback</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let SQL = null;
+let db  = null;
+let dbFileName = null;
+let parsedRows  = [];
+let csvMeta     = {};
+let conflicts   = [];
+let duplicates  = 0;
+let resolutions = {}; // index -> 'keep'|'overwrite'
+let lastImportId = null;
+let lastInsertedKeys = [];
+
+// Known allowed values (from spec)
+const ALLOWED_INDICATORS_IDENTITE = [
+  'pib_usd','pib_par_hab','exports_biens_services','imports_biens_services',
+  'densite_pop','idps_violence','idps_climatique','depenses_militaires',
+  'morts_missions_onu','contribution_maintien_paix','morts_conflits','population',
+  'taux_fecondite','age_median','esperance_vie','taux_mortalite','taux_natalite',
+  'mortalite_infantile','croissance_pop','migration_nette'
+];
+const ALLOWED_INDICATORS_FLUX = [
+  'export_armement','dette_exterieure','export_commercial','import_commercial',
+  'refugies','deplaces_internes','apatrides','stock_migrants','flux_etudiants'
+];
+const ALLOWED_TYPES = [
+  'pays','banque_developpement','institution_internationale','fonds_developpement',
+  'organisation_internationale','groupe_arme','groupe_sans_etat','territoire_conteste',
+  'acteur_non_etatique','apatride','inconnu'
+];
+const REQUIRED_COLS = {
+  identite: ['country_iso3','year','indicator','category','subcategory','value','unit','source'],
+  flux:     ['country_from','from_type','country_to','to_type','year','indicator','category','subcategory_1','subcategory_2','subcategory_3','value','unit','source'],
+  zones:    ['zone_id','zone_nom','zone_type','country_iso3']
+};
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+async function initSql() {
+  setDot('loading');
+  try {
+    SQL = await initSqlJs({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`
+    });
+    setDot(false);
+    addAlert('ai', '⚙️', 'sql.js chargé. Ouvrez une base <code>.db</code> via le badge en haut à droite.', document.getElementById('zone1'), true);
+  } catch(e) {
+    setDot(false);
+    addAlert('ar', '✕', 'Erreur chargement sql.js : '+e.message, document.getElementById('zone1'), true);
+  }
+}
+
+function setDot(state) {
+  const d = document.getElementById('dbDot');
+  d.className = 'dot' + (state==='loading'?' loading':state?' on':'');
+}
+
+// ═══════════════════════════════════════════════════════════
+// DB FILE HANDLING
+// ═══════════════════════════════════════════════════════════
+function loadDbFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      db = new SQL.Database(new Uint8Array(e.target.result));
+      dbFileName = file.name;
+      document.getElementById('dbName').textContent = file.name;
+      document.getElementById('btnSaveDb').disabled = false;
+      setDot(true);
+      loadJournal();
+      loadStats();
+      loadMigrations();
+    } catch(err) {
+      alert('Impossible d\'ouvrir la base : ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ═══════════════════════════════════════════════════════════
+// UNSAVED CHANGES TRACKING
+// ═══════════════════════════════════════════════════════════
+let hasUnsavedChanges = false;
+
+function markUnsaved() {
+  hasUnsavedChanges = true;
+  const btn = document.getElementById('btnSaveDb');
+  btn.innerHTML = '⬇ Exporter .db <span style="background:#ef4444;color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:4px;font-family:var(--mono)">NON SAUVEGARDÉ</span>';
+  btn.style.animation = 'pulse-btn 2s infinite';
+}
+
+function markSaved() {
+  hasUnsavedChanges = false;
+  const btn = document.getElementById('btnSaveDb');
+  btn.innerHTML = '⬇ Exporter .db';
+  btn.style.animation = '';
+}
+
+window.addEventListener('beforeunload', e => {
+  if (hasUnsavedChanges) {
+    e.preventDefault();
+    e.returnValue = 'Des imports n\'ont pas été exportés. Quitter sans sauvegarder la base ?';
+    return e.returnValue;
+  }
+});
+
+function saveDb() {
+  if (!db) return;
+  const data = db.export();
+  const blob = new Blob([data], {type:'application/x-sqlite3'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = dbFileName || 'geopolitique.db';
+  a.click();
+  markSaved();
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════════
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+  if (id==='journal') loadJournal();
+  if (id==='stats') loadStats();
+  if (id==='migrations') loadMigrations();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DROP ZONE
+// ═══════════════════════════════════════════════════════════
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave', ()=>dz.classList.remove('over'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.csv')) handleCsvFile(f);
+  else alert('Veuillez déposer un fichier .csv');
+});
+
+// ═══════════════════════════════════════════════════════════
+// STEP 1 → 2: PARSE + VALIDATE
+// ═══════════════════════════════════════════════════════════
+function handleCsvFile(file) {
+  if (!db) { alert('Veuillez d\'abord charger une base .db via le badge en haut à droite.'); return; }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    let raw = e.target.result;
+    // BOM strip
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+
+    csvMeta = parseFilename(file.name);
+    const lines = raw.split(/\r?\n/).filter(l=>l.trim());
+    const headers = lines[0].split(';').map(h=>h.trim());
+    parsedRows = [];
+    for (let i=1;i<lines.length;i++){
+      const vals = lines[i].split(';');
+      if (vals.length < headers.length) continue;
+      const row = {};
+      headers.forEach((h,j)=> row[h] = vals[j]?.trim() ?? '');
+      parsedRows.push(row);
+    }
+
+    document.getElementById('valFileName').textContent = file.name;
+    renderMeta(csvMeta, parsedRows.length);
+    const errors = validateRows(parsedRows, csvMeta.tableType, headers);
+    renderValidation(errors, parsedRows.length);
+
+    setStep(2);
+    document.getElementById('zone1').classList.add('hidden');
+    document.getElementById('zone2').classList.remove('hidden');
+    document.getElementById('btnProceed').disabled = errors.filter(e=>e.level==='error').length > 0;
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function parseFilename(name) {
+  // [TYPE]_[indicateur]_[SOURCE]_[annee_min]-[annee_max]_[YYYYMMDD].csv
+  const base = name.replace(/\.csv$/i,'');
+  const parts = base.split('_');
+  const m = base.match(/^([A-Z]+)_(.+)_([A-Z0-9]+)_(\d{4})-(\d{4})_(\d{8})$/i);
+  if (m) return {
+    tableType: m[1].toLowerCase(),
+    indicator: m[2],
+    source:    m[3],
+    yearMin:   m[4],
+    yearMax:   m[5],
+    date:      m[6],
+    valid:     true
+  };
+  return { tableType: parts[0]?.toLowerCase()||'?', indicator:'?', source:'?', yearMin:'?', yearMax:'?', date:'?', valid:false };
+}
+
+function renderMeta(meta, rows) {
+  const g = document.getElementById('metaGrid');
+  g.innerHTML = [
+    ['Table cible', meta.tableType.toUpperCase()],
+    ['Indicateur',  meta.indicator],
+    ['Source',      meta.source],
+    ['Plage',       meta.yearMin+' – '+meta.yearMax],
+    ['Date fichier',meta.date ? meta.date.replace(/(\d{4})(\d{2})(\d{2})/,'$3/$2/$1') : '?'],
+    ['Lignes CSV',  rows.toString()],
+  ].map(([k,v])=>`<div class="mcell"><div class="mk">${k}</div><div class="mv">${v}</div></div>`).join('');
+}
+
+function validateRows(rows, tableType, headers) {
+  const errs = [];
+
+  // 1. Nom de fichier
+  if (!csvMeta.valid) errs.push({level:'error', label:'Convention de nommage', detail:'Le nom du fichier ne respecte pas le format [TYPE]_[indicateur]_[SOURCE]_[annee_min]-[annee_max]_[YYYYMMDD].csv'});
+  else errs.push({level:'ok', label:'Convention de nommage', detail: csvMeta.tableType.toUpperCase()+' · '+csvMeta.indicator+' · '+csvMeta.source});
+
+  // 2. Type de table reconnu
+  const knownTypes = ['identite','flux','zones'];
+  if (!knownTypes.includes(tableType)) errs.push({level:'error', label:'Type de table inconnu', detail:`"${tableType}" — valeurs acceptées : identite, flux, zones`});
+  else errs.push({level:'ok', label:'Type de table', detail:tableType});
+
+  // 3. Colonnes obligatoires
+  const reqCols = REQUIRED_COLS[tableType] || [];
+  const missing = reqCols.filter(c=>!headers.includes(c));
+  if (missing.length) errs.push({level:'error', label:'Colonnes manquantes', detail: missing.join(', ')});
+  else errs.push({level:'ok', label:'Colonnes obligatoires', detail: reqCols.join(', ')});
+
+  // 4. Séparateur
+  if (rows.length && headers.length < 3) errs.push({level:'error', label:'Séparateur', detail:'Séparateur attendu : point-virgule ( ; )'});
+  else errs.push({level:'ok', label:'Séparateur', detail:'Point-virgule détecté'});
+
+  // 5. Valeurs numériques
+  let badNum = 0, badYear = 0, sampleNum = '';
+  for (const r of rows) {
+    if (r.value !== undefined && r.value !== '') {
+      const v = parseFloat(r.value.replace(',','.'));
+      if (isNaN(v)) { badNum++; if (!sampleNum) sampleNum=r.value; }
+    }
+    if (r.year !== undefined) {
+      const y = parseInt(r.year);
+      if (isNaN(y) || y<1900 || y>2200) badYear++;
+    }
+  }
+  if (badNum) errs.push({level:'error', label:'Valeurs numériques (value)', detail:`${badNum} valeur(s) non numérique(s) — ex: "${sampleNum}"`});
+  else errs.push({level:'ok', label:'Valeurs numériques (value)', detail:'Toutes valides'});
+  if (badYear) errs.push({level:'warn', label:'Années (year)', detail:`${badYear} année(s) hors plage (1900–2200)`});
+  else errs.push({level:'ok', label:'Années (year)', detail:'Format valide'});
+
+  // 6. Codes ISO
+  if (tableType==='identite' || tableType==='zones') {
+    const col = tableType==='identite' ? 'country_iso3' : 'country_iso3';
+    const badIso = rows.filter(r => r[col] && !/^[A-Z]{3}$/.test(r[col]));
+    if (badIso.length) errs.push({level:'error', label:'Codes pays ISO alpha-3', detail:`${badIso.length} code(s) invalide(s) — ex: "${badIso[0][col]}"`});
+    else errs.push({level:'ok', label:'Codes pays ISO alpha-3', detail:'Format XXX respecté'});
+  }
+  if (tableType==='flux') {
+    const badFrom = rows.filter(r => r.country_from && !/^[A-Z0-9\-_\s]{2,}$/.test(r.country_from));
+    errs.push({level:'ok', label:'Entités (country_from/to)', detail:'Acceptées (pays + acteurs non-étatiques)'});
+  }
+
+  // 7. Indicateurs
+  if (tableType==='identite') {
+    const badInd = rows.filter(r => r.indicator && !ALLOWED_INDICATORS_IDENTITE.includes(r.indicator));
+    if (badInd.length) errs.push({level:'warn', label:'Indicateurs (identite)', detail:`${[...new Set(badInd.map(r=>r.indicator))].join(', ')} — inconnus dans le référentiel`});
+    else errs.push({level:'ok', label:'Indicateurs', detail:'Tous dans le référentiel'});
+  }
+  if (tableType==='flux') {
+    const badInd = rows.filter(r => r.indicator && !ALLOWED_INDICATORS_FLUX.includes(r.indicator));
+    if (badInd.length) errs.push({level:'warn', label:'Indicateurs (flux)', detail:`${[...new Set(badInd.map(r=>r.indicator))].join(', ')} — inconnus`});
+    else errs.push({level:'ok', label:'Indicateurs', detail:'Tous dans le référentiel'});
+  }
+
+  // 8. From/To types for flux
+  if (tableType==='flux') {
+    const badFT = rows.filter(r => r.from_type && !ALLOWED_TYPES.includes(r.from_type));
+    const badTT = rows.filter(r => r.to_type   && !ALLOWED_TYPES.includes(r.to_type));
+    if (badFT.length || badTT.length)
+      errs.push({level:'warn', label:'Types d\'acteurs', detail:`${badFT.length+badTT.length} type(s) inconnu(s)`});
+    else errs.push({level:'ok', label:'Types d\'acteurs', detail:'Tous valides'});
+  }
+
+  // 9. Zones: zone_type
+  if (tableType==='zones') {
+    const badZT = rows.filter(r => r.zone_type && !['geographique','organisationnel'].includes(r.zone_type));
+    if (badZT.length) errs.push({level:'warn', label:'zone_type', detail:`${badZT.length} valeur(s) hors référentiel`});
+    else errs.push({level:'ok', label:'zone_type', detail:'Valeurs conformes'});
+    // Check iso3 vs identite
+    try {
+      const knownIso = new Set(db.exec("SELECT DISTINCT country_iso3 FROM identite")[0]?.values.map(r=>r[0]) || []);
+      const unknownIso = rows.filter(r => r.country_iso3 && !knownIso.has(r.country_iso3));
+      if (unknownIso.length) errs.push({level:'error', label:'Cohérence zones↔identite', detail:`${unknownIso.length} code(s) pays absent(s) de identite : ${[...new Set(unknownIso.map(r=>r.country_iso3))].slice(0,5).join(', ')}`});
+      else errs.push({level:'ok', label:'Cohérence zones↔identite', detail:'Tous les codes pays existent dans identite'});
+    } catch(e) {}
+  }
+
+  return errs;
+}
+
+function renderValidation(errs, totalRows) {
+  const hasErrors = errs.some(e=>e.level==='error');
+  const warnings  = errs.filter(e=>e.level==='warn').length;
+  const html = `
+    <div class="alert ${hasErrors?'ar':warnings?'ao':'ag'}">
+      <div class="alert-ico">${hasErrors?'✕':warnings?'⚠':'✓'}</div>
+      <div>${totalRows} lignes analysées · ${errs.filter(e=>e.level==='error').length} erreur(s) · ${warnings} avertissement(s)</div>
+    </div>
+    <div class="card"><div class="cb">${errs.map(e=>`
+      <div class="vrow">
+        <div class="vi">${e.level==='ok'?'<span class="green">✓</span>':e.level==='error'?'<span class="red">✕</span>':'<span class="orange">⚠</span>'}</div>
+        <div><div class="vl">${e.label}</div><div class="vd">${e.detail}</div></div>
+      </div>`).join('')}</div></div>`;
+  document.getElementById('valReport').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// STEP 2 → 3: CONFLICTS
+// ═══════════════════════════════════════════════════════════
+function proceedToConflicts() {
+  if (!db) return;
+  conflicts   = [];
+  duplicates  = 0;
+  resolutions = {};
+
+  const tt = csvMeta.tableType;
+
+  for (let i=0; i<parsedRows.length; i++) {
+    const r = parsedRows[i];
+    let existing = null;
+
+    try {
+      if (tt==='identite') {
+        const res = db.exec(`SELECT value, source FROM identite WHERE country_iso3=? AND year=? AND indicator=? AND subcategory=?`,
+          [r.country_iso3, parseInt(r.year), r.indicator, r.subcategory]);
+        if (res.length && res[0].values.length) existing = {value: res[0].values[0][0], source: res[0].values[0][1]};
+      } else if (tt==='flux') {
+        const res = db.exec(`SELECT value, source FROM flux WHERE country_from=? AND country_to=? AND year=? AND indicator=? AND subcategory_1=? AND subcategory_2=? AND subcategory_3=?`,
+          [r.country_from, r.country_to, parseInt(r.year), r.indicator, r.subcategory_1||'', r.subcategory_2||'', r.subcategory_3||'']);
+        if (res.length && res[0].values.length) existing = {value: res[0].values[0][0], source: res[0].values[0][1]};
+      } else if (tt==='zones') {
+        const res = db.exec(`SELECT zone_nom, zone_type FROM zones WHERE zone_id=? AND country_iso3=?`,
+          [r.zone_id, r.country_iso3]);
+        if (res.length && res[0].values.length) existing = {value: res[0].values[0][0], source: res[0].values[0][1]};
+      }
+    } catch(e) {}
+
+    if (existing !== null) {
+      const newVal = parseFloat((r.value||r.zone_nom||'').replace(',','.'));
+      const oldVal = parseFloat(existing.value);
+      if (Math.abs(newVal - oldVal) < 1e-10 || r.value === String(existing.value) || r.zone_nom === existing.value) {
+        duplicates++;
+      } else {
+        conflicts.push({ idx: i, row: r, oldVal: existing.value, oldSrc: existing.source });
+      }
+    }
+  }
+
+  renderConflicts();
+  setStep(3);
+  document.getElementById('zone2').classList.add('hidden');
+  document.getElementById('zone3').classList.remove('hidden');
+}
+
+function renderConflicts() {
+  const tt = csvMeta.tableType;
+  const newRows = parsedRows.length - duplicates - conflicts.length;
+
+  document.getElementById('conflictSummary').innerHTML = `
+    <div class="sgrid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+      <div class="scell"><div class="sn">${parsedRows.length}</div><div class="sl">Lignes CSV</div></div>
+      <div class="scell cg"><div class="sn">${newRows}</div><div class="sl">Nouvelles lignes</div></div>
+      <div class="scell"><div class="sn" style="color:var(--text2)">${duplicates}</div><div class="sl">Doublons exacts</div></div>
+      <div class="scell co"><div class="sn">${conflicts.length}</div><div class="sl">Conflits</div></div>
+    </div>`;
+
+  if (!conflicts.length) {
+    document.getElementById('conflictArea').innerHTML = `
+      <div class="alert ag"><div class="alert-ico">✓</div><div>Aucun conflit détecté. L'import peut être effectué directement.</div></div>`;
+    document.getElementById('btnKeepAll').classList.add('hidden');
+    document.getElementById('btnOverwriteAll').classList.add('hidden');
+    return;
+  }
+
+  let rows = '';
+  for (const c of conflicts) {
+    const key = tt==='identite'
+      ? `${c.row.country_iso3} · ${c.row.year} · ${c.row.indicator} · ${c.row.subcategory}`
+      : tt==='flux'
+      ? `${c.row.country_from}→${c.row.country_to} · ${c.row.year} · ${c.row.indicator}`
+      : `${c.row.zone_id} · ${c.row.country_iso3}`;
+    const res = resolutions[c.idx] || 'pending';
+    rows += `<tr id="ctr-${c.idx}">
+      <td class="mono" style="font-size:10px;color:var(--text2)">${key}</td>
+      <td class="old">${c.oldVal}</td>
+      <td class="new">${c.row.value || c.row.zone_nom || '—'}</td>
+      <td class="old" style="font-size:10px">${c.oldSrc||'—'}</td>
+      <td class="new" style="font-size:10px">${c.row.source||'—'}</td>
+      <td>
+        <div class="res-btns">
+          <button class="btn btn-xs ${res==='keep'?'btn-g':'btn-s'}" onclick="resolve(${c.idx},'keep')">Garder</button>
+          <button class="btn btn-xs ${res==='overwrite'?'btn-o':'btn-s'}" onclick="resolve(${c.idx},'overwrite')">Écraser</button>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  document.getElementById('conflictArea').innerHTML = `
+    <div class="alert ao"><div class="alert-ico">⚠</div><div>${conflicts.length} conflit(s) nécessitent une résolution avant l'import.</div></div>
+    <div class="card">
+      <div class="ch"><span class="ctitle">Conflits à résoudre</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text2)" id="resCount">0 / ${conflicts.length} résolus</span></div>
+      <div class="tbl-w">
+        <table>
+          <thead><tr><th>Clé</th><th>Valeur existante</th><th>Nouvelle valeur</th><th>Source actuelle</th><th>Nouvelle source</th><th>Résolution</th></tr></thead>
+          <tbody id="conflictTbody">${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  updateResCount();
+}
+
+function resolve(idx, choice) {
+  resolutions[idx] = choice;
+  const row = document.getElementById(`ctr-${idx}`);
+  if (row) {
+    const btns = row.querySelectorAll('button');
+    btns[0].className = `btn btn-xs ${choice==='keep'?'btn-g':'btn-s'}`;
+    btns[1].className = `btn btn-xs ${choice==='overwrite'?'btn-o':'btn-s'}`;
+  }
+  updateResCount();
+}
+
+function resolveAll(choice) {
+  conflicts.forEach(c => resolve(c.idx, choice));
+}
+
+function updateResCount() {
+  const n = Object.keys(resolutions).length;
+  const el = document.getElementById('resCount');
+  if (el) el.textContent = `${n} / ${conflicts.length} résolus`;
+  document.getElementById('btnDoImport').disabled = n < conflicts.length;
+}
+
+// ═══════════════════════════════════════════════════════════
+// STEP 3 → 4: IMPORT
+// ═══════════════════════════════════════════════════════════
+function doImport() {
+  if (!db) return;
+  const tt = csvMeta.tableType;
+  let added = 0;
+  let overwritten = 0;
+  lastInsertedKeys = [];
+
+  try {
+    db.run('BEGIN TRANSACTION');
+
+    for (let i=0; i<parsedRows.length; i++) {
+      const r = parsedRows[i];
+      const isConflict = conflicts.find(c=>c.idx===i);
+      const isDuplicate = !isConflict && checkDuplicate(r, tt);
+
+      if (isDuplicate) continue;
+
+      if (isConflict) {
+        if (resolutions[i] === 'keep') continue;
+        // overwrite
+        if (tt==='identite') {
+          db.run(`UPDATE identite SET value=?,unit=?,source=? WHERE country_iso3=? AND year=? AND indicator=? AND subcategory=?`,
+            [parseFloat(r.value.replace(',','.')), r.unit, r.source, r.country_iso3, parseInt(r.year), r.indicator, r.subcategory]);
+        } else if (tt==='flux') {
+          db.run(`UPDATE flux SET value=?,unit=?,source=? WHERE country_from=? AND country_to=? AND year=? AND indicator=? AND subcategory_1=? AND subcategory_2=? AND subcategory_3=?`,
+            [parseFloat(r.value.replace(',','.')), r.unit, r.source, r.country_from, r.country_to, parseInt(r.year), r.indicator, r.subcategory_1||'', r.subcategory_2||'', r.subcategory_3||'']);
+        }
+        overwritten++;
+        continue;
+      }
+
+      // Insert new
+      if (tt==='identite') {
+        db.run(`INSERT OR IGNORE INTO identite(country_iso3,year,indicator,category,subcategory,value,unit,source) VALUES(?,?,?,?,?,?,?,?)`,
+          [r.country_iso3, parseInt(r.year), r.indicator, r.category||'', r.subcategory||'', parseFloat(r.value.replace(',','.')), r.unit||'', r.source||'']);
+        lastInsertedKeys.push({country_iso3:r.country_iso3, year:parseInt(r.year), indicator:r.indicator, subcategory:r.subcategory});
+      } else if (tt==='flux') {
+        db.run(`INSERT OR IGNORE INTO flux(country_from,from_type,country_to,to_type,year,order_year,indicator,category,subcategory_1,subcategory_2,subcategory_3,value,unit,source) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [r.country_from,r.from_type||'pays',r.country_to,r.to_type||'pays',parseInt(r.year),parseInt(r.order_year||r.year),r.indicator,r.category||'',r.subcategory_1||'',r.subcategory_2||'',r.subcategory_3||'',parseFloat(r.value.replace(',','.')),r.unit||'',r.source||'']);
+        lastInsertedKeys.push({country_from:r.country_from,country_to:r.country_to,year:parseInt(r.year),indicator:r.indicator});
+      } else if (tt==='zones') {
+        db.run(`INSERT OR IGNORE INTO zones(zone_id,zone_nom,zone_type,country_iso3) VALUES(?,?,?,?)`,
+          [r.zone_id, r.zone_nom||'', r.zone_type||'', r.country_iso3]);
+        lastInsertedKeys.push({zone_id:r.zone_id,country_iso3:r.country_iso3});
+      }
+      added++;
+    }
+
+    // Journal
+    const now = new Date().toISOString();
+    db.run(`INSERT INTO journal_imports(date_import,nom_fichier,type_table,lignes_ajoutees,doublons_ignores,conflits_detectes,statut,rollback_possible) VALUES(?,?,?,?,?,?,?,?)`,
+      [now, csvMeta.fileName||'fichier.csv', tt, added, duplicates, conflicts.length, 'succes', 1]);
+    const idRes = db.exec("SELECT last_insert_rowid()");
+    lastImportId = idRes[0].values[0][0];
+
+    db.run('COMMIT');
+
+    renderImportResult(added, overwritten, duplicates, conflicts.length, true, null);
+    setStep(4);
+    document.getElementById('zone3').classList.add('hidden');
+    document.getElementById('zone4').classList.remove('hidden');
+    markUnsaved();
+    loadJournal();
+    loadStats();
+
+  } catch(err) {
+    try { db.run('ROLLBACK'); } catch(e){}
+    db.run(`INSERT INTO journal_imports(date_import,nom_fichier,type_table,lignes_ajoutees,doublons_ignores,conflits_detectes,statut,rollback_possible) VALUES(?,?,?,?,?,?,?,?)`,
+      [new Date().toISOString(), 'fichier.csv', csvMeta.tableType||'?', 0, 0, 0, 'echec', 0]);
+    renderImportResult(0, 0, 0, 0, false, err.message);
+    setStep(4);
+    document.getElementById('zone3').classList.add('hidden');
+    document.getElementById('zone4').classList.remove('hidden');
+  }
+}
+
+function checkDuplicate(r, tt) {
+  try {
+    if (tt==='identite') {
+      const res = db.exec(`SELECT value FROM identite WHERE country_iso3=? AND year=? AND indicator=? AND subcategory=?`,
+        [r.country_iso3, parseInt(r.year), r.indicator, r.subcategory||'']);
+      if (res.length && res[0].values.length) {
+        const oldV = parseFloat(res[0].values[0][0]);
+        const newV = parseFloat(r.value.replace(',','.'));
+        return Math.abs(oldV - newV) < 1e-10;
+      }
+    }
+    // For flux/zones, conflicts handled upstream
+  } catch(e){}
+  return false;
+}
+
+function renderImportResult(added, overwritten, dupes, conflictsN, success, errMsg) {
+  document.getElementById('importResult').innerHTML = success ? `
+    <div class="alert ag"><div class="alert-ico">✓</div><div>Import terminé avec succès.</div></div>
+    <div class="sgrid">
+      <div class="scell cg"><div class="sn">${added}</div><div class="sl">Lignes ajoutées</div></div>
+      <div class="scell co"><div class="sn">${overwritten}</div><div class="sl">Lignes écrasées</div></div>
+      <div class="scell"><div class="sn" style="color:var(--text2)">${dupes}</div><div class="sl">Doublons ignorés</div></div>
+      <div class="scell"><div class="sn" style="color:var(--text2)">${conflictsN}</div><div class="sl">Conflits traités</div></div>
+    </div>
+    <div class="alert ai mt8"><div class="alert-ico">💾</div><div>Pensez à exporter la base <strong>.db</strong> (bouton en haut à droite) pour synchroniser avec le Drive partagé.</div></div>`
+  : `<div class="alert ar"><div class="alert-ico">✕</div><div>Échec de l'import — rollback automatique effectué.<br><code class="mono" style="font-size:10px">${errMsg}</code></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROLLBACK
+// ═══════════════════════════════════════════════════════════
+function openRollbackModal() {
+  if (!lastImportId) return;
+  try {
+    const res = db.exec(`SELECT nom_fichier, type_table, lignes_ajoutees, date_import FROM journal_imports WHERE id=?`, [lastImportId]);
+    if (!res.length) return;
+    const [nom, type, lignes, date] = res[0].values[0];
+    document.getElementById('rollbackInfo').innerHTML = `
+      <div class="modal-row"><span class="modal-k">Fichier</span><span class="modal-v mono" style="font-size:10px">${nom}</span></div>
+      <div class="modal-row"><span class="modal-k">Table</span><span class="modal-v">${type}</span></div>
+      <div class="modal-row"><span class="modal-k">Lignes ajoutées</span><span class="modal-v">${lignes}</span></div>
+      <div class="modal-row"><span class="modal-k">Date</span><span class="modal-v">${date}</span></div>`;
+    document.getElementById('rollbackModal').classList.remove('hidden');
+  } catch(e){}
+}
+
+function closeRollbackModal() {
+  document.getElementById('rollbackModal').classList.add('hidden');
+}
+
+function doRollback() {
+  if (!lastImportId || !db) return;
+  try {
+    const tt = csvMeta.tableType;
+    db.run('BEGIN TRANSACTION');
+
+    // Delete inserted keys
+    for (const key of lastInsertedKeys) {
+      if (tt==='identite') {
+        db.run(`DELETE FROM identite WHERE country_iso3=? AND year=? AND indicator=? AND subcategory=?`,
+          [key.country_iso3, key.year, key.indicator, key.subcategory]);
+      } else if (tt==='flux') {
+        db.run(`DELETE FROM flux WHERE country_from=? AND country_to=? AND year=? AND indicator=?`,
+          [key.country_from, key.country_to, key.year, key.indicator]);
+      } else if (tt==='zones') {
+        db.run(`DELETE FROM zones WHERE zone_id=? AND country_iso3=?`,
+          [key.zone_id, key.country_iso3]);
+      }
+    }
+
+    db.run(`UPDATE journal_imports SET statut='annulé', rollback_possible=0 WHERE id=?`, [lastImportId]);
+    db.run('COMMIT');
+
+    closeRollbackModal();
+    document.getElementById('importResult').innerHTML = `
+      <div class="alert ao"><div class="alert-ico">↩</div><div>Rollback effectué. ${lastInsertedKeys.length} ligne(s) supprimée(s). Statut du journal mis à jour.</div></div>`;
+    document.getElementById('btnRollback').disabled = true;
+    lastInsertedKeys = [];
+    markUnsaved();
+    loadJournal();
+    loadStats();
+  } catch(e) {
+    try{ db.run('ROLLBACK'); }catch(x){}
+    alert('Erreur lors du rollback : ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// JOURNAL
+// ═══════════════════════════════════════════════════════════
+function loadJournal() {
+  if (!db) { document.getElementById('journalContent').innerHTML = '<div class="empty"><div class="empty-ico">📋</div>Aucune base chargée.</div>'; return; }
+  try {
+    const res = db.exec(`SELECT id,date_import,nom_fichier,type_table,lignes_ajoutees,doublons_ignores,conflits_detectes,statut,rollback_possible FROM journal_imports ORDER BY id DESC`);
+    if (!res.length || !res[0].values.length) {
+      document.getElementById('journalContent').innerHTML = '<div class="empty"><div class="empty-ico">📋</div>Aucun import enregistré.</div>';
+      return;
+    }
+    const rows = res[0].values.map(r => {
+      const [id,date,nom,type,added,dupes,cfls,statut,rb] = r;
+      const badgeCls = statut==='succes'?'bg':statut==='echec'?'br':statut==='annulé'?'bc':'bo';
+      return `<div class="jrow">
+        <span class="mono txt2" style="font-size:10px">${(date||'').replace('T',' ').slice(0,19)}</span>
+        <span class="fname">${nom||'—'}</span>
+        <span class="mono">${type||'—'}</span>
+        <span class="mono green">${added??0}</span>
+        <span class="mono txt2">${dupes??0}</span>
+        <span class="mono orange">${cfls??0}</span>
+        <span><div class="badge ${badgeCls}">${statut}</div></span>
+        <span>${rb ? `<button class="btn btn-xs btn-r" onclick="rollbackById(${id},'${nom}','${type}',${added})">↩ Rollback</button>` : '<span class="txt3 mono" style="font-size:10px">—</span>'}</span>
+      </div>`;
+    }).join('');
+    document.getElementById('journalContent').innerHTML =
+      `<div class="jhead"><span>Date</span><span>Fichier</span><span>Table</span><span>Ajouts</span><span>Doublons</span><span>Conflits</span><span>Statut</span><span>Action</span></div>${rows}`;
+  } catch(e) {
+    document.getElementById('journalContent').innerHTML = `<div class="empty">Erreur : ${e.message}</div>`;
+  }
+}
+
+function rollbackById(id, nom, type, lignes) {
+  if (!confirm(`Rollback de l'import #${id} (${nom}) ?\nCette opération supprimera les ${lignes} ligne(s) associées.`)) return;
+  alert('Note : Le rollback depuis le journal nécessite que les clés insérées soient connues. Pour un rollback fiable, utilisez le bouton dédié immédiatement après l\'import.\n\nMarquage du statut comme "annulé".');
+  try {
+    db.run(`UPDATE journal_imports SET statut='annulé', rollback_possible=0 WHERE id=?`, [id]);
+    loadJournal();
+  } catch(e) { alert('Erreur : '+e.message); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════════
+function loadStats() {
+  if (!db) { document.getElementById('statsContent').innerHTML = '<div class="empty"><div class="empty-ico">📊</div>Aucune base chargée.</div>'; return; }
+  try {
+    const nId   = db.exec("SELECT COUNT(*) FROM identite")[0].values[0][0];
+    const nFlux = db.exec("SELECT COUNT(*) FROM flux")[0].values[0][0];
+    const nZones= db.exec("SELECT COUNT(*) FROM zones")[0].values[0][0];
+    const nImps = db.exec("SELECT COUNT(*) FROM journal_imports")[0].values[0][0];
+    const indics= db.exec("SELECT DISTINCT indicator, COUNT(*) as n FROM identite GROUP BY indicator ORDER BY n DESC");
+    const pays  = db.exec("SELECT COUNT(DISTINCT country_iso3) FROM identite")[0].values[0][0];
+    const years = db.exec("SELECT MIN(year), MAX(year) FROM identite")[0].values[0];
+
+    let indRows = '';
+    if (indics.length && indics[0].values.length) {
+      indRows = indics[0].values.map(([ind,n])=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:11.5px">
+          <span class="mono">${ind}</span>
+          <span class="mono green">${n.toLocaleString()}</span>
+        </div>`).join('');
+    }
+
+    document.getElementById('statsContent').innerHTML = `
+      <div class="sgrid">
+        <div class="scell cg"><div class="sn">${nId.toLocaleString()}</div><div class="sl">Lignes identite</div></div>
+        <div class="scell"><div class="sn">${nFlux.toLocaleString()}</div><div class="sl">Lignes flux</div></div>
+        <div class="scell"><div class="sn">${nZones.toLocaleString()}</div><div class="sl">Zones</div></div>
+        <div class="scell"><div class="sn">${nImps}</div><div class="sl">Imports journalisés</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card">
+          <div class="ch"><span class="ctitle">Pays couverts (identite)</span></div>
+          <div class="cb">
+            <div style="font-family:var(--mono);font-size:32px;font-weight:600;color:var(--green)">${pays}</div>
+            <div class="txt2" style="font-size:11px;margin-top:4px">Plage : ${years[0]} – ${years[1]}</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ctitle">Indicateurs (identite)</span></div>
+          <div class="cb">${indRows || '<div class="txt3 mono" style="font-size:11px">Aucune donnée</div>'}</div>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('statsContent').innerHTML = `<div class="empty">Erreur : ${e.message}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// MIGRATIONS
+// ═══════════════════════════════════════════════════════════
+function loadMigrations() {
+  if (!db) { document.getElementById('migrationsContent').innerHTML = '<div class="empty">Aucune base chargée.</div>'; return; }
+  try {
+    const res = db.exec(`SELECT id,version,description,date_appliquee FROM migrations ORDER BY version DESC`);
+    if (!res.length || !res[0].values.length) {
+      document.getElementById('migrationsContent').innerHTML = '<div class="empty"><div class="empty-ico">🔧</div>Aucune migration enregistrée.</div>';
+      return;
+    }
+    const head = `<div style="display:grid;grid-template-columns:60px 1fr 140px;gap:12px;padding:7px 14px;background:var(--bg3);border-bottom:1px solid var(--border2);font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase">
+      <span>Version</span><span>Description</span><span>Date</span></div>`;
+    const rows = res[0].values.map(([id,v,desc,date])=>`
+      <div style="display:grid;grid-template-columns:60px 1fr 140px;gap:12px;padding:9px 14px;border-bottom:1px solid var(--border);align-items:center;transition:background .1s" onmouseenter="this.style.background='var(--bg3)'" onmouseleave="this.style.background=''">
+        <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--blue)">v${v}</span>
+        <span style="font-size:12px">${desc}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text2)">${date||'—'}</span>
+      </div>`).join('');
+    document.getElementById('migrationsContent').innerHTML = head + rows;
+  } catch(e) {
+    document.getElementById('migrationsContent').innerHTML = `<div class="empty">Erreur : ${e.message}</div>`;
+  }
+}
+
+function applyMigration() {
+  if (!db) { alert('Aucune base chargée.'); return; }
+  const version = parseInt(document.getElementById('migVersion').value);
+  const desc    = document.getElementById('migDesc').value.trim();
+  const sql     = document.getElementById('migSql').value.trim();
+  const el      = document.getElementById('migResult');
+
+  if (!version || !desc || !sql) { el.innerHTML='<div class="alert ar"><div class="alert-ico">✕</div><div>Renseignez tous les champs.</div></div>'; return; }
+
+  // Check version not already applied
+  try {
+    const exists = db.exec(`SELECT COUNT(*) FROM migrations WHERE version=?`,[version]);
+    if (exists[0].values[0][0] > 0) { el.innerHTML='<div class="alert ar"><div class="alert-ico">✕</div><div>La migration v'+version+' est déjà enregistrée.</div></div>'; return; }
+
+    db.run('BEGIN TRANSACTION');
+    db.run(sql);
+    db.run(`INSERT INTO migrations(version,description,date_appliquee) VALUES(?,?,?)`,
+      [version, desc, new Date().toISOString().slice(0,10)]);
+    db.run('COMMIT');
+
+    el.innerHTML='<div class="alert ag"><div class="alert-ico">✓</div><div>Migration v'+version+' appliquée avec succès.</div></div>';
+    document.getElementById('migVersion').value='';
+    document.getElementById('migDesc').value='';
+    document.getElementById('migSql').value='';
+    loadMigrations();
+  } catch(e) {
+    try{ db.run('ROLLBACK'); }catch(x){}
+    el.innerHTML=`<div class="alert ar"><div class="alert-ico">✕</div><div>Erreur : ${e.message}</div></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// STEP INDICATOR
+// ═══════════════════════════════════════════════════════════
+function setStep(n) {
+  for (let i=1;i<=4;i++) {
+    const el = document.getElementById('step'+i);
+    el.classList.remove('active','done');
+    if (i < n) el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESET
+// ═══════════════════════════════════════════════════════════
+function resetImport() {
+  parsedRows=[]; csvMeta={}; conflicts=[]; duplicates=0; resolutions={}; lastImportId=null; lastInsertedKeys=[];
+  document.getElementById('zone2').classList.add('hidden');
+  document.getElementById('zone3').classList.add('hidden');
+  document.getElementById('zone4').classList.add('hidden');
+  document.getElementById('zone1').classList.remove('hidden');
+  document.getElementById('csvFileInput').value='';
+  document.getElementById('metaGrid').innerHTML='';
+  document.getElementById('valReport').innerHTML='';
+  document.getElementById('conflictSummary').innerHTML='';
+  document.getElementById('conflictArea').innerHTML='';
+  document.getElementById('btnKeepAll').classList.remove('hidden');
+  document.getElementById('btnOverwriteAll').classList.remove('hidden');
+  document.getElementById('btnRollback').disabled=false;
+  setStep(1);
+}
+
+function addAlert(cls, ico, msg, container, prepend) {
+  const d = document.createElement('div');
+  d.className = `alert ${cls} mt8`;
+  d.innerHTML = `<div class="alert-ico">${ico}</div><div>${msg}</div>`;
+  if (prepend) container.insertBefore(d, container.firstChild);
+  else container.appendChild(d);
+}
+
+// ── STORE FILENAME IN META ──
+const origHandleCsvFile = handleCsvFile;
+// (we set it in the FileReader so filename is stored in csvMeta above)
+
+// ── CSV filename fix ──
+document.getElementById('csvFileInput').addEventListener('change', function() {
+  if (this.files[0]) {
+    csvMeta._rawFile = this.files[0];
+  }
+});
+const origParser = parseFilename;
+// Patch handleCsvFile to also store filename
+function handleCsvFile(file) {
+  if (!db) { alert('Veuillez d\'abord charger une base .db via le badge en haut à droite.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    let raw = e.target.result;
+    if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+
+    csvMeta = parseFilename(file.name);
+    csvMeta.fileName = file.name;
+
+    const lines = raw.split(/\r?\n/).filter(l=>l.trim());
+    const headers = lines[0].split(';').map(h=>h.trim());
+    parsedRows = [];
+    for (let i=1;i<lines.length;i++){
+      const vals = lines[i].split(';');
+      if (vals.length < 2) continue;
+      const row = {};
+      headers.forEach((h,j)=> row[h] = vals[j]?.trim() ?? '');
+      parsedRows.push(row);
+    }
+
+    document.getElementById('valFileName').textContent = file.name;
+    renderMeta(csvMeta, parsedRows.length);
+    const errors = validateRows(parsedRows, csvMeta.tableType, headers);
+    renderValidation(errors, parsedRows.length);
+
+    setStep(2);
+    document.getElementById('zone1').classList.add('hidden');
+    document.getElementById('zone2').classList.remove('hidden');
+    document.getElementById('btnProceed').disabled = errors.filter(e=>e.level==='error').length > 0;
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ── CLICK OUTSIDE MODAL ──
+document.getElementById('rollbackModal').addEventListener('click', function(e){
+  if (e.target === this) closeRollbackModal();
+});
+
+// ── BOOT ──
+initSql();
+</script>
+</body>
+</html>
