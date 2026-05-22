@@ -462,6 +462,84 @@ tbody td{padding:7px 11px;vertical-align:middle}
 }
 .dirty-banner-ico{font-size:18px}
 .dirty-banner-t{font-size:12px;color:var(--orange);flex:1}
+
+/* ── ÉTAPE 3 — Couverture ── */
+.cov-filters{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:11px 14px;margin-bottom:14px;
+}
+.cov-filter-grp{display:flex;align-items:center;gap:6px}
+.cov-filter-label{
+  font-family:var(--mono);font-size:9.5px;color:var(--text3);
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.cov-filter-select{
+  background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:5px 9px;border-radius:4px;font-size:11.5px;font-family:var(--sans);
+  cursor:pointer;min-width:130px;
+}
+.cov-filter-select:focus{outline:none;border-color:var(--green)}
+.cov-filter-search{
+  background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:5px 9px;border-radius:4px;font-size:11.5px;font-family:var(--sans);
+  min-width:160px;flex:1;max-width:240px;
+}
+.cov-filter-search:focus{outline:none;border-color:var(--green)}
+
+.cov-row{
+  cursor:pointer;transition:background .1s;
+}
+.cov-row:hover{background:var(--bg3)}
+.cov-row.inactif{opacity:.55}
+
+.cov-bar{
+  display:inline-block;width:90px;height:7px;background:var(--bg4);
+  border-radius:4px;overflow:hidden;vertical-align:middle;margin-right:7px;
+}
+.cov-bar-fill{
+  height:100%;background:var(--green);transition:width .3s;
+}
+.cov-bar-fill.warn{background:var(--orange)}
+.cov-bar-fill.low {background:var(--red)}
+.cov-pct{
+  font-family:var(--mono);font-size:10.5px;color:var(--text2);
+  vertical-align:middle;
+}
+
+.cov-mini{
+  font-family:var(--mono);font-size:9.5px;color:var(--text3);
+  margin-top:1px;
+}
+
+.cov-summary{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;
+}
+.cov-sum-cell{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 13px;text-align:center}
+.cov-sum-v{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text)}
+.cov-sum-l{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* Modal drill-down */
+.drill-section{
+  background:var(--bg3);border:1px solid var(--border);border-radius:5px;
+  padding:11px 13px;margin-bottom:10px;
+}
+.drill-section-t{
+  font-family:var(--mono);font-size:10px;color:var(--text2);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.drill-chips{display:flex;flex-wrap:wrap;gap:5px}
+.drill-chip{
+  font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:3px;
+  background:var(--bg);border:1px solid var(--border);color:var(--text2);
+}
+.drill-chip.absent{color:var(--red);border-color:rgba(248,113,113,.3)}
+.drill-chip.partial{color:var(--orange);border-color:var(--orange-b)}
+.drill-continent{
+  font-size:10px;color:var(--text3);margin:8px 0 4px;
+  text-transform:uppercase;letter-spacing:.08em;
+}
 </style>
 </head>
 <body>
@@ -562,13 +640,10 @@ tbody td{padding:7px 11px;vertical-align:middle}
 <!-- ══════════════════ PANEL: COUVERTURE ══════════════════ -->
 <div class="panel" id="panel-couverture">
   <div class="ptitle">Couverture des données</div>
-  <div class="psub">Matrice indicateurs × pays × années, identification des données manquantes.</div>
+  <div class="psub">Matrice indicateurs × pays × années. Identification des données manquantes par filtres.</div>
 
-  <div class="placeholder">
-    <div class="placeholder-ico">🌐</div>
-    <div class="placeholder-t">Onglet Couverture</div>
-    <div class="placeholder-s">Matrice de qualité, filtres par continent et organisation, drill-down pays manquants.</div>
-    <div class="placeholder-tag">À DÉVELOPPER — ÉTAPE 3</div>
+  <div id="couvertureContent">
+    <div class="empty"><div class="empty-ico">🌐</div>Chargement…</div>
   </div>
 </div>
 
@@ -730,6 +805,19 @@ tbody td{padding:7px 11px;vertical-align:middle}
       <button class="btn btn-r btn-sm" id="btnAuthDisconnect" onclick="disconnectAuth()">Déconnecter</button>
       <button class="btn btn-s btn-sm" onclick="closeAuthModal()">Annuler</button>
       <button class="btn btn-g btn-sm" onclick="saveAuth()">Connecter</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRILL-DOWN MODAL (Étape 3 — Couverture) -->
+<div class="modal-bg hidden" id="drillModal">
+  <div class="modal" style="width:680px;max-height:80vh;display:flex;flex-direction:column">
+    <div class="modal-t" id="drillModalTitle">Détails de couverture</div>
+    <div class="modal-s" id="drillModalSubtitle">—</div>
+    <div id="drillModalBody" style="flex:1;overflow-y:auto;max-height:55vh"></div>
+    <div class="frow-end" style="margin-top:14px">
+      <button class="btn btn-s btn-sm" onclick="exportDrillCsv()">⬇ Exporter en CSV</button>
+      <button class="btn btn-g btn-sm" onclick="closeDrillModal()">Fermer</button>
     </div>
   </div>
 </div>
@@ -2636,6 +2724,528 @@ updateAuthBadge = async function() {
     }
     renderPilotage();
   }
+};
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 3 — COUVERTURE
+// ═══════════════════════════════════════════════════════════
+const Couv = {
+  // Données calculées
+  rows:       [],   // [{indicator, label, category, table, n_pays, total_pays, span, n_cells, theo_cells, pays_set:Set}]
+  zones:      [],   // [{zone_id, zone_nom, country_iso3}] depuis table zones
+  zoneList:   [],   // [{zone_id, zone_nom, count}] dédupliquée
+  continents: [],   // [{code, label, pays_iso3:[]}] extrait des zones GEO_*
+  allPays:    [],   // Set des pays iso3 vus dans la DB
+
+  // État UI
+  loaded:        false,
+  loading:       false,
+  filter: {
+    category:   'all',
+    table:      'all',
+    zone:       'all',    // organisation (zone_id) ou continent (GEO_*)
+    search:     '',
+  },
+
+  // Drill-down courant
+  drillData: null,
+};
+
+// ── Calcul de couverture pour tous les indicateurs ──
+async function computeCoverage() {
+  if (Couv.loading) return;
+  if (!db) { Couv.loaded = false; return; }
+  Couv.loading = true;
+
+  try {
+    // 1. Charger config.json (depuis Pilotage si déjà chargé, sinon depuis GitHub)
+    let configIndicators = null;
+    if (Pilotage.appConfig) {
+      configIndicators = Pilotage.appConfig;
+    } else if (Pilot.pat) {
+      try {
+        const f = await ghReadFile('config.json');
+        configIndicators = JSON.parse(f.content);
+      } catch(e) {}
+    }
+    // Fallback : charger via fetch direct sur GitHub Pages
+    if (!configIndicators) {
+      try {
+        const r = await fetch('config.json?v=' + Date.now());
+        if (r.ok) configIndicators = await r.json();
+      } catch(e) {}
+    }
+    if (!configIndicators) {
+      throw new Error('config.json indisponible — connexion GitHub ou présence du fichier requise');
+    }
+
+    // 2. Charger les pays de la DB (union identite + flux)
+    const paysIdentite = db.exec(`SELECT DISTINCT country_iso3 FROM identite WHERE country_iso3 IS NOT NULL`)[0]?.values?.flat() || [];
+    let paysFlux = [];
+    try {
+      const fluxFrom = db.exec(`SELECT DISTINCT country_from FROM flux WHERE country_from IS NOT NULL AND country_from NOT LIKE '__%'`)[0]?.values?.flat() || [];
+      const fluxTo   = db.exec(`SELECT DISTINCT country_to   FROM flux WHERE country_to   IS NOT NULL AND country_to   NOT LIKE '__%'`)[0]?.values?.flat() || [];
+      paysFlux = [...new Set([...fluxFrom, ...fluxTo])];
+    } catch(e) {}
+    const paysSet = new Set([...paysIdentite, ...paysFlux].filter(p => p && p.length === 3));
+    Couv.allPays = [...paysSet].sort();
+
+    // 3. Charger les zones
+    Couv.zones = [];
+    Couv.zoneList = [];
+    Couv.continents = [];
+    try {
+      const zr = db.exec(`SELECT zone_id, zone_nom, country_iso3 FROM zones`);
+      if (zr.length) {
+        for (const row of zr[0].values) {
+          Couv.zones.push({ zone_id: row[0], zone_nom: row[1], country_iso3: row[2] });
+        }
+        // Liste dédupliquée pour le filtre, avec count
+        const zoneMap = {};
+        Couv.zones.forEach(z => {
+          if (!zoneMap[z.zone_id]) zoneMap[z.zone_id] = { zone_id: z.zone_id, zone_nom: z.zone_nom, count: 0 };
+          zoneMap[z.zone_id].count++;
+        });
+        Couv.zoneList = Object.values(zoneMap).sort((a,b) => a.zone_nom.localeCompare(b.zone_nom));
+      }
+    } catch(e) { console.warn('Table zones non disponible:', e); }
+
+    // 4. Calculer la couverture pour chaque indicateur
+    Couv.rows = [];
+    for (const cfg of configIndicators) {
+      const indicator = cfg.indicator;
+      const table     = cfg.table;
+      let row = {
+        indicator,
+        label:        cfg.label || indicator,
+        category:     cfg.category || 'autre',
+        table,
+        actif:        cfg.actif !== false,
+        n_pays:       0,
+        pays_set:     new Set(),
+        span_min:     null,
+        span_max:     null,
+        n_cells:      0,
+      };
+
+      try {
+        if (table === 'identite') {
+          // Couverture identite : pays distincts + ligne count + années
+          const q = db.exec(`
+            SELECT country_iso3, MIN(year), MAX(year), COUNT(*) FROM identite
+            WHERE indicator = '${indicator}' AND value IS NOT NULL
+            GROUP BY country_iso3
+          `);
+          if (q.length) {
+            let globalMin = Infinity, globalMax = -Infinity, totalCells = 0;
+            for (const r of q[0].values) {
+              row.pays_set.add(r[0]);
+              if (r[1] < globalMin) globalMin = r[1];
+              if (r[2] > globalMax) globalMax = r[2];
+              totalCells += r[3];
+            }
+            row.n_pays   = row.pays_set.size;
+            row.span_min = globalMin === Infinity ? null : globalMin;
+            row.span_max = globalMax === -Infinity ? null : globalMax;
+            row.n_cells  = totalCells;
+          }
+        } else if (table === 'flux') {
+          // Couverture flux : pays from OR to, en excluant sentinelles
+          const q = db.exec(`
+            SELECT
+              country_from, country_to, MIN(year), MAX(year), COUNT(*)
+            FROM flux
+            WHERE indicator = '${indicator}' AND value IS NOT NULL
+              AND country_from NOT LIKE '__%' AND country_to NOT LIKE '__%'
+            GROUP BY country_from, country_to
+          `);
+          if (q.length) {
+            let globalMin = Infinity, globalMax = -Infinity, totalCells = 0;
+            for (const r of q[0].values) {
+              if (r[0] && r[0].length === 3) row.pays_set.add(r[0]);
+              if (r[1] && r[1].length === 3) row.pays_set.add(r[1]);
+              if (r[2] < globalMin) globalMin = r[2];
+              if (r[3] > globalMax) globalMax = r[3];
+              totalCells += r[4];
+            }
+            row.n_pays   = row.pays_set.size;
+            row.span_min = globalMin === Infinity ? null : globalMin;
+            row.span_max = globalMax === -Infinity ? null : globalMax;
+            row.n_cells  = totalCells;
+          }
+        }
+      } catch(e) {
+        console.warn(`Erreur couverture ${indicator}:`, e);
+      }
+
+      Couv.rows.push(row);
+    }
+
+    Couv.loaded = true;
+  } catch(e) {
+    console.error('computeCoverage failed:', e);
+    Couv.loaded = false;
+    Couv.error = e.message;
+  }
+  Couv.loading = false;
+}
+
+// ── Application des filtres + calcul couverture relative ──
+function getFilteredRows() {
+  // 1. Déterminer le set de pays pertinent selon le filtre zone
+  let zonePays = null;  // null = tous les pays
+  if (Couv.filter.zone !== 'all') {
+    zonePays = new Set(
+      Couv.zones.filter(z => z.zone_id === Couv.filter.zone).map(z => z.country_iso3)
+    );
+  }
+  const totalPaysRef = zonePays ? zonePays.size : Couv.allPays.length;
+
+  return Couv.rows
+    .filter(r => {
+      if (Couv.filter.category !== 'all' && r.category !== Couv.filter.category) return false;
+      if (Couv.filter.table    !== 'all' && r.table    !== Couv.filter.table)    return false;
+      if (Couv.filter.search) {
+        const s = Couv.filter.search.toLowerCase();
+        if (!r.label.toLowerCase().includes(s) && !r.indicator.toLowerCase().includes(s)) return false;
+      }
+      return true;
+    })
+    .map(r => {
+      // Recalculer la couverture selon le filtre zone
+      let n_pays_filt = r.n_pays;
+      if (zonePays) {
+        n_pays_filt = [...r.pays_set].filter(p => zonePays.has(p)).length;
+      }
+      const span = (r.span_min != null && r.span_max != null) ? (r.span_max - r.span_min + 1) : 0;
+      // Pourcentage couverture pays : n_pays_filt / totalPaysRef
+      const pctPays = totalPaysRef > 0 ? (n_pays_filt / totalPaysRef * 100) : 0;
+      // Pourcentage couverture exhaustive : n_cells / (totalPaysRef * span)
+      // NB : pour flux, c'est moins pertinent (n_cells = couples), on garde mais on signale
+      let pctCells = 0;
+      if (r.table === 'identite' && span > 0 && totalPaysRef > 0) {
+        pctCells = Math.min(100, r.n_cells / (totalPaysRef * span) * 100);
+      } else if (r.table === 'flux' && span > 0 && totalPaysRef > 0) {
+        // Pour flux on garde un ratio approximatif basé sur (n_cells réels / théo max)
+        // mais ce n'est qu'indicatif — on l'affiche comme densité bilatérale
+        pctCells = Math.min(100, r.n_cells / (totalPaysRef * totalPaysRef * span) * 100);
+      }
+      return {
+        ...r,
+        n_pays_filt,
+        total_pays_ref: totalPaysRef,
+        span,
+        pct_pays:  pctPays,
+        pct_cells: pctCells,
+      };
+    });
+}
+
+// ── Rendu de l'onglet Couverture ──
+function renderCouverture() {
+  if (!db) {
+    document.getElementById('couvertureContent').innerHTML = `
+      <div class="alert ao">
+        <span class="alert-ico">⚠</span>
+        <div>DB non chargée. Va sur l'onglet Suivi ETL et attends le chargement R2.</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (Couv.loading) {
+    document.getElementById('couvertureContent').innerHTML = `
+      <div class="empty"><div class="empty-ico"><span class="spin">⟳</span></div>Calcul de la couverture…</div>
+    `;
+    return;
+  }
+
+  if (!Couv.loaded) {
+    document.getElementById('couvertureContent').innerHTML = `
+      <div class="alert ar">
+        <span class="alert-ico">✕</span>
+        <div>Échec du calcul de couverture. ${escapeHtml(Couv.error || '')}</div>
+      </div>
+    `;
+    return;
+  }
+
+  const filtered = getFilteredRows();
+  const cats = [...new Set(Couv.rows.map(r => r.category))].sort();
+
+  // Synthèse
+  const nActifs = Couv.rows.filter(r => r.actif).length;
+  const nTotal  = Couv.rows.length;
+  const nVides  = Couv.rows.filter(r => r.n_pays === 0).length;
+  const moyPays = filtered.length > 0
+    ? Math.round(filtered.reduce((a,b)=>a+b.pct_pays, 0) / filtered.length)
+    : 0;
+
+  // Filtres
+  const filters = `
+    <div class="cov-filters">
+      <div class="cov-filter-grp">
+        <span class="cov-filter-label">Catégorie</span>
+        <select class="cov-filter-select" onchange="updateCouvFilter('category', this.value)">
+          <option value="all" ${Couv.filter.category==='all'?'selected':''}>Toutes</option>
+          ${cats.map(c => `<option value="${escapeHtml(c)}" ${Couv.filter.category===c?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="cov-filter-grp">
+        <span class="cov-filter-label">Table</span>
+        <select class="cov-filter-select" onchange="updateCouvFilter('table', this.value)">
+          <option value="all" ${Couv.filter.table==='all'?'selected':''}>Toutes</option>
+          <option value="identite" ${Couv.filter.table==='identite'?'selected':''}>identite</option>
+          <option value="flux" ${Couv.filter.table==='flux'?'selected':''}>flux</option>
+        </select>
+      </div>
+      <div class="cov-filter-grp">
+        <span class="cov-filter-label">Zone</span>
+        <select class="cov-filter-select" onchange="updateCouvFilter('zone', this.value)" style="min-width:170px">
+          <option value="all" ${Couv.filter.zone==='all'?'selected':''}>Toutes (${Couv.allPays.length} pays)</option>
+          ${(() => {
+            // Séparer continents / organisations
+            const geo = Couv.zoneList.filter(z => z.zone_id.startsWith('GEO_'));
+            const org = Couv.zoneList.filter(z => !z.zone_id.startsWith('GEO_'));
+            const optGeo = geo.map(z => `<option value="${escapeHtml(z.zone_id)}" ${Couv.filter.zone===z.zone_id?'selected':''}>${escapeHtml(z.zone_nom)} (${z.count})</option>`).join('');
+            const optOrg = org.map(z => `<option value="${escapeHtml(z.zone_id)}" ${Couv.filter.zone===z.zone_id?'selected':''}>${escapeHtml(z.zone_nom)} (${z.count})</option>`).join('');
+            return `<optgroup label="── Continents/Régions ──">${optGeo}</optgroup><optgroup label="── Organisations ──">${optOrg}</optgroup>`;
+          })()}
+        </select>
+      </div>
+      <input type="text" class="cov-filter-search" placeholder="Rechercher…" value="${escapeHtml(Couv.filter.search)}" oninput="updateCouvFilter('search', this.value)">
+      <button class="btn btn-s btn-sm" onclick="resetCouvFilter()">Réinitialiser</button>
+      <button class="btn btn-s btn-sm" onclick="recomputeCoverage()">↻ Recalculer</button>
+    </div>
+  `;
+
+  // Synthèse
+  const summary = `
+    <div class="cov-summary">
+      <div class="cov-sum-cell"><div class="cov-sum-v">${filtered.length}/${nTotal}</div><div class="cov-sum-l">Indicateurs affichés</div></div>
+      <div class="cov-sum-cell"><div class="cov-sum-v">${nActifs}/${nTotal}</div><div class="cov-sum-l">Marqués actifs (config.json)</div></div>
+      <div class="cov-sum-cell"><div class="cov-sum-v">${nVides}</div><div class="cov-sum-l">Sans aucune donnée</div></div>
+      <div class="cov-sum-cell"><div class="cov-sum-v">${moyPays}%</div><div class="cov-sum-l">Couverture pays moyenne</div></div>
+    </div>
+  `;
+
+  // Tableau
+  const rowsHtml = filtered.length === 0
+    ? `<tr><td colspan="6"><div class="empty"><div class="empty-ico">🔍</div>Aucun indicateur ne correspond aux filtres.</div></td></tr>`
+    : filtered.map((r, idx) => {
+        const pctP = r.pct_pays;
+        const pctC = r.pct_cells;
+        const cls  = pctP >= 70 ? '' : pctP >= 40 ? 'warn' : 'low';
+        const spanLabel = r.span > 0 ? `${r.span_min}–${r.span_max} (${r.span}a)` : '—';
+        return `
+          <tr class="cov-row ${r.actif?'':'inactif'}" onclick="openDrillModal('${escapeHtml(r.indicator)}')">
+            <td>
+              <strong style="color:var(--text)">${escapeHtml(r.label)}</strong>
+              <div class="cov-mini">${escapeHtml(r.indicator)} · ${escapeHtml(r.category)} · ${escapeHtml(r.table)}${r.actif?'':' · <span class="orange">inactif</span>'}</div>
+            </td>
+            <td class="mono">${r.n_pays_filt}/${r.total_pays_ref}</td>
+            <td class="mono">${spanLabel}</td>
+            <td>
+              <span class="cov-bar"><span class="cov-bar-fill ${cls}" style="width:${pctP.toFixed(0)}%"></span></span>
+              <span class="cov-pct">${pctP.toFixed(0)}% pays</span>
+              <div class="cov-mini">${pctC.toFixed(1)}% ${r.table==='flux'?'densité bil.':'cellules'}</div>
+            </td>
+            <td class="mono" style="text-align:right">${r.n_cells.toLocaleString('fr-FR')}</td>
+            <td style="text-align:right"><span class="run-link">détails →</span></td>
+          </tr>
+        `;
+      }).join('');
+
+  const table = `
+    <div class="card">
+      <div class="ch">
+        <span class="ctitle">Matrice de couverture</span>
+        <span class="txt3" style="font-size:10.5px">${Couv.filter.zone !== 'all' ? 'Filtre actif : ' + escapeHtml(Couv.zoneList.find(z=>z.zone_id===Couv.filter.zone)?.zone_nom || Couv.filter.zone) : ''}</span>
+      </div>
+      <div class="tbl-w">
+        <table>
+          <thead><tr>
+            <th>Indicateur</th>
+            <th>Pays</th>
+            <th>Années</th>
+            <th>Couverture</th>
+            <th style="text-align:right">Lignes</th>
+            <th></th>
+          </tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  const note = `
+    <div class="alert ai" style="margin-top:14px">
+      <span class="alert-ico">ℹ</span>
+      <div>
+        <strong>Lecture :</strong>
+        "Pays" = nb de pays avec au moins une donnée / pays du périmètre (filtre zone si actif).
+        "Cellules" = % des couples pays×année effectivement remplis sur table identite.
+        Pour les flux bilatéraux, on affiche une densité indicative.
+        <strong>Clique une ligne</strong> pour voir les pays manquants et exporter en CSV.
+      </div>
+    </div>
+  `;
+
+  document.getElementById('couvertureContent').innerHTML = filters + summary + table + note;
+}
+
+// ── Filtres ──
+function updateCouvFilter(field, value) {
+  Couv.filter[field] = value;
+  renderCouverture();
+}
+function resetCouvFilter() {
+  Couv.filter = { category: 'all', table: 'all', zone: 'all', search: '' };
+  renderCouverture();
+}
+async function recomputeCoverage() {
+  Couv.loaded = false;
+  renderCouverture();
+  await computeCoverage();
+  renderCouverture();
+}
+
+// ── Drill-down ──
+function openDrillModal(indicator) {
+  const row = Couv.rows.find(r => r.indicator === indicator);
+  if (!row) return;
+
+  // Périmètre pays selon filtre zone courant
+  let zonePays = null, zoneNom = null;
+  if (Couv.filter.zone !== 'all') {
+    zonePays = new Set(Couv.zones.filter(z => z.zone_id === Couv.filter.zone).map(z => z.country_iso3));
+    zoneNom  = Couv.zoneList.find(z => z.zone_id === Couv.filter.zone)?.zone_nom || Couv.filter.zone;
+  }
+  const refPays = zonePays ? [...zonePays] : Couv.allPays;
+
+  // Pays manquants
+  const paysPresents = new Set([...row.pays_set].filter(p => !zonePays || zonePays.has(p)));
+  const paysAbsents  = refPays.filter(p => !paysPresents.has(p)).sort();
+
+  // Groupage par continent depuis zones GEO_*
+  const continentByPays = {};
+  Couv.zones.filter(z => z.zone_id.startsWith('GEO_')).forEach(z => {
+    if (!continentByPays[z.country_iso3]) continentByPays[z.country_iso3] = z.zone_nom;
+  });
+  const absentsByCont = {};
+  paysAbsents.forEach(p => {
+    const cont = continentByPays[p] || '?';
+    if (!absentsByCont[cont]) absentsByCont[cont] = [];
+    absentsByCont[cont].push(p);
+  });
+
+  // Stocker pour export
+  Couv.drillData = {
+    indicator: row.indicator,
+    label:     row.label,
+    zone:      zoneNom,
+    refPays,
+    paysPresents: [...paysPresents].sort(),
+    paysAbsents,
+    span_min:  row.span_min,
+    span_max:  row.span_max,
+  };
+
+  document.getElementById('drillModalTitle').textContent = row.label;
+  document.getElementById('drillModalSubtitle').innerHTML =
+    `<span class="mono">${escapeHtml(row.indicator)}</span> · ${row.table} · ${zoneNom ? 'zone : ' + escapeHtml(zoneNom) : 'tous pays (' + refPays.length + ')'}`;
+
+  const presentSection = paysPresents.size > 0 ? `
+    <div class="drill-section">
+      <div class="drill-section-t">
+        <span>Pays présents (${paysPresents.size}/${refPays.length})</span>
+        <span class="mono txt3" style="font-size:9.5px">période : ${row.span_min||'—'}–${row.span_max||'—'}</span>
+      </div>
+      <div class="drill-chips">
+        ${[...paysPresents].sort().map(p => `<span class="drill-chip">${escapeHtml(p)}</span>`).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  let absentSection = '';
+  if (paysAbsents.length > 0) {
+    const contKeys = Object.keys(absentsByCont).sort();
+    absentSection = `
+      <div class="drill-section">
+        <div class="drill-section-t">
+          <span style="color:var(--red)">Pays manquants (${paysAbsents.length}/${refPays.length})</span>
+          <span class="mono txt3" style="font-size:9.5px">groupés par continent</span>
+        </div>
+        ${contKeys.map(cont => `
+          <div class="drill-continent">${escapeHtml(cont)} · ${absentsByCont[cont].length} pays</div>
+          <div class="drill-chips">
+            ${absentsByCont[cont].map(p => `<span class="drill-chip absent">${escapeHtml(p)}</span>`).join('')}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else {
+    absentSection = `
+      <div class="alert ag">
+        <span class="alert-ico">✓</span>
+        <div>Aucun pays manquant dans le périmètre sélectionné.</div>
+      </div>
+    `;
+  }
+
+  document.getElementById('drillModalBody').innerHTML = absentSection + presentSection;
+  document.getElementById('drillModal').classList.remove('hidden');
+}
+
+function closeDrillModal() {
+  document.getElementById('drillModal').classList.add('hidden');
+}
+
+function exportDrillCsv() {
+  const d = Couv.drillData;
+  if (!d) return;
+  const lines = ['indicator,country_iso3,status'];
+  d.paysPresents.forEach(p => lines.push(`${d.indicator},${p},present`));
+  d.paysAbsents.forEach(p => lines.push(`${d.indicator},${p},absent`));
+  const csv = lines.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `couverture_${d.indicator}${d.zone ? '_' + d.zone.replace(/[^a-z0-9]+/gi,'_') : ''}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Click outside modal
+document.addEventListener('DOMContentLoaded', () => {
+  const dm = document.getElementById('drillModal');
+  if (dm) dm.addEventListener('click', function(e){ if (e.target === this) closeDrillModal(); });
+});
+
+// ── Hook : quand on arrive sur Couverture, calculer si pas déjà fait ──
+const _originalShowPanel3 = window.showPanel;
+window.showPanel = async function(name) {
+  if (typeof _originalShowPanel3 === 'function') await _originalShowPanel3(name);
+  if (name === 'couverture') {
+    if (!Couv.loaded && !Couv.loading) {
+      renderCouverture(); // affiche "Calcul…"
+      await computeCoverage();
+      renderCouverture();
+    } else {
+      renderCouverture();
+    }
+  }
+};
+
+// Recalculer la couverture si la DB est rechargée
+const _origLoadDbFromR2 = loadDbFromR2;
+loadDbFromR2 = async function() {
+  const ok = await _origLoadDbFromR2();
+  if (ok) {
+    Couv.loaded = false;  // forcer recalcul à la prochaine ouverture
+  }
+  return ok;
 };
 
 // ═══════════════════════════════════════════════════════════
