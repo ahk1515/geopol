@@ -326,6 +326,53 @@ tbody td{padding:7px 11px;vertical-align:middle}
   background:var(--bg3);border:1px solid var(--border);color:var(--text2);
 }
 .src-pill .dot{width:5px;height:5px}
+
+/* ── ÉTAPE 1 — Suivi ETL ── */
+.run-banner{
+  display:flex;align-items:center;gap:12px;
+  background:var(--orange-d);border:1px solid var(--orange-b);border-radius:6px;
+  padding:11px 14px;margin-bottom:14px;
+}
+.run-banner.queued{background:var(--blue-d);border-color:rgba(96,165,250,.3)}
+.run-banner-ico{
+  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:var(--orange);color:#000;font-weight:700;flex-shrink:0;animation:pulse-orange 2s infinite;
+}
+.run-banner.queued .run-banner-ico{background:var(--blue);animation:pulse-blue 2s infinite}
+@keyframes pulse-orange{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.5)}50%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}
+@keyframes pulse-blue  {0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,.5)}50%{box-shadow:0 0 0 8px rgba(96,165,250,0)}}
+.run-banner-t{font-weight:500;color:var(--text);font-size:12.5px;margin-bottom:2px}
+.run-banner-s{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+.dur-cell{font-family:var(--mono);font-size:10.5px;color:var(--text2);text-align:right;white-space:nowrap}
+
+.run-row{
+  display:grid;grid-template-columns:18px 100px 1fr 90px 80px 80px;
+  gap:10px;padding:9px 14px;font-family:var(--mono);font-size:11px;
+  border-bottom:1px solid var(--border);align-items:center;
+}
+.run-row:hover{background:var(--bg3)}
+.run-row:last-child{border-bottom:none}
+.run-head{
+  font-size:9px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;
+  background:var(--bg3);border-bottom:1px solid var(--border2);
+}
+.run-status-ico{font-size:13px;text-align:center}
+.run-link{color:var(--blue);text-decoration:none;font-size:10px}
+.run-link:hover{text-decoration:underline}
+
+.action-row{
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+  margin-bottom:14px;
+}
+.action-row .hint{font-size:11px;color:var(--text2);flex:1;min-width:200px}
+.action-row .hint.warn{color:var(--orange)}
+
+.quota-footer{
+  margin-top:18px;text-align:right;
+  font-family:var(--mono);font-size:9.5px;color:var(--text3);letter-spacing:.05em;
+}
 </style>
 </head>
 <body>
@@ -1710,79 +1757,137 @@ function escapeHtml(s) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ÉTAPE 0 — RENDU MINIMAL ONGLET SUIVI (sera étoffé en Étape 1)
+// ÉTAPE 1 — SUIVI ETL COMPLET
 // ═══════════════════════════════════════════════════════════
-function renderSuiviEtl() {
-  const s = Pilot.status;
-  if (!s) return;
+const Suivi = {
+  runs:          [],      // liste des derniers runs GitHub Actions
+  pollTimer:     null,    // setTimeout pour auto-refresh
+  pollActive:    false,
+  rateRemaining: null,    // X-RateLimit-Remaining renvoyé par GitHub
+  rateLimit:     null,
+  lastTriggerAt: null,    // timestamp du dernier déclenchement local
+};
 
-  const lastRun = s.last_run ? new Date(s.last_run) : null;
-  const ago     = lastRun ? formatAgo(lastRun) : '—';
-
-  const sources = Object.values(s.sources || {});
-  const rowsTotal = sources.reduce((a,b)=>a + (b.rows||0), 0);
-
-  const statusColor = {
-    'ok':      'cg',
-    'error':   'cr',
-    'warning': 'co',
-  };
-
-  const html = `
-    <div class="sgrid">
-      <div class="scell cg">
-        <div class="sn">${(s.db_size_mb||0).toFixed(1)} Mo</div>
-        <div class="sl">Taille DB · ${escapeHtml(s.db_size_status||'?')}</div>
-      </div>
-      <div class="scell cg">
-        <div class="sn">${rowsTotal.toLocaleString('fr-FR')}</div>
-        <div class="sl">Lignes au total</div>
-      </div>
-      <div class="scell cg">
-        <div class="sn">${sources.length}</div>
-        <div class="sl">Sources tracées</div>
-      </div>
-      <div class="scell cg">
-        <div class="sn" style="font-size:14px;line-height:1.7">${ago}</div>
-        <div class="sl">Dernier run</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="ch">
-        <span class="ctitle">Sources — dernier run</span>
-        <button class="btn btn-s btn-sm" onclick="loadStatusJson()">↻ Rafraîchir</button>
-      </div>
-      <div class="tbl-w">
-        <table>
-          <thead><tr>
-            <th>Source</th><th>Type</th><th>Statut</th><th style="text-align:right">Lignes</th><th>Erreur</th>
-          </tr></thead>
-          <tbody>
-            ${sources.map(src => `
-              <tr>
-                <td><strong style="color:var(--text)">${escapeHtml(src.label||src.id)}</strong>
-                    <div class="mono txt3" style="font-size:9.5px">${escapeHtml(src.id)}</div></td>
-                <td><span class="src-pill"><div class="dot ${src.status==='ok'?'on':''}"></div>${escapeHtml(src.type||'?')}</span></td>
-                <td><span class="badge ${src.status==='ok'?'bg':src.status==='error'?'br':'bo'}">${escapeHtml(src.status||'?')}</span></td>
-                <td style="text-align:right" class="mono">${(src.rows||0).toLocaleString('fr-FR')}</td>
-                <td class="mono txt2" style="font-size:10px">${escapeHtml(src.error||'—')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="alert ai mt12">
-      <span class="alert-ico">ℹ</span>
-      <div>Cet onglet sera étoffé à l'<strong>Étape 1</strong> : logs détaillés du dernier run, bouton de déclenchement manuel, historique des runs.</div>
-    </div>
-  `;
-
-  document.getElementById('suiviContent').innerHTML = html;
+// Wrapper ghFetch qui capture les rate-limit headers
+async function ghFetchRaw(path, opts = {}) {
+  if (!Pilot.pat) throw new Error('Non connecté à GitHub. Cliquez sur le badge en haut à droite.');
+  const url = path.startsWith('http') ? path : `https://api.github.com${path}`;
+  const r = await fetch(url, {
+    ...opts,
+    headers: {
+      'Authorization': `Bearer ${Pilot.pat}`,
+      'Accept':        'application/vnd.github+json',
+      ...(opts.headers || {})
+    }
+  });
+  // Capture quota
+  const rem = r.headers.get('X-RateLimit-Remaining');
+  const lim = r.headers.get('X-RateLimit-Limit');
+  if (rem !== null) Suivi.rateRemaining = parseInt(rem);
+  if (lim !== null) Suivi.rateLimit     = parseInt(lim);
+  return r;
 }
 
+// Liste les derniers runs du workflow ETL
+async function fetchRuns(perPage = 8) {
+  const r = await ghFetchRaw(
+    `/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/actions/workflows/${PILOT.ghWorkflow}/runs?per_page=${perPage}`
+  );
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const data = await r.json();
+  return data.workflow_runs || [];
+}
+
+// Déclenche un run manuel
+async function triggerEtlRun() {
+  if (!Pilot.pat) { openAuthModal(); return; }
+
+  const btn = document.getElementById('btnTriggerRun');
+  const hint = document.getElementById('triggerHint');
+  if (!btn) return;
+
+  if (!confirm('Déclencher un nouveau run du pipeline ETL ?\n\nUn run complet prend ~5 à 10 minutes et reconstruit la DB.')) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⟳</span> Démarrage…';
+  if (hint) { hint.textContent = 'Demande envoyée à GitHub Actions…'; hint.className = 'hint'; }
+
+  try {
+    const r = await ghFetchRaw(
+      `/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/actions/workflows/${PILOT.ghWorkflow}/dispatches`,
+      { method: 'POST', body: JSON.stringify({ ref: PILOT.ghBranch, inputs: { source: 'all' } }) }
+    );
+    if (!r.ok && r.status !== 204) {
+      const txt = await r.text().catch(()=>'');
+      throw new Error(`HTTP ${r.status} ${txt.slice(0,150)}`);
+    }
+    Suivi.lastTriggerAt = Date.now();
+    if (hint) { hint.innerHTML = '✓ Run déclenché. Rafraîchissement dans 3 s…'; hint.className = 'hint'; hint.style.color = 'var(--green)'; }
+    setTimeout(() => { refreshSuivi(); startPollIfRunning(); }, 3000);
+  } catch(e) {
+    if (hint) { hint.textContent = `Échec : ${e.message}`; hint.className = 'hint warn'; }
+    btn.disabled = false;
+    btn.innerHTML = '▶ Déclencher un run manuel';
+  }
+}
+
+// Rafraîchit status.json + runs en parallèle
+async function refreshSuivi() {
+  const promises = [loadStatusJson()];
+  if (Pilot.pat) promises.push(fetchRuns().then(r => { Suivi.runs = r; }).catch(e => console.warn('fetchRuns:', e)));
+  await Promise.allSettled(promises);
+  renderSuiviEtl();
+}
+
+// Démarre l'auto-refresh si un run est en cours
+function startPollIfRunning() {
+  stopPoll();
+  const hasActive = Suivi.runs.some(r => r.status === 'in_progress' || r.status === 'queued');
+  if (!hasActive && !Suivi.lastTriggerAt) return;
+  // Polling si run actif OU dans les 60s après un déclenchement (le run met du temps à apparaître)
+  if (!hasActive && Suivi.lastTriggerAt && (Date.now() - Suivi.lastTriggerAt > 60000)) return;
+  Suivi.pollActive = true;
+  Suivi.pollTimer = setTimeout(async () => {
+    await refreshSuivi();
+    startPollIfRunning();
+  }, 30000);
+}
+
+function stopPoll() {
+  if (Suivi.pollTimer) clearTimeout(Suivi.pollTimer);
+  Suivi.pollTimer = null;
+  Suivi.pollActive = false;
+}
+
+// Formatage durée en français court
+function formatDuration(startStr, endStr) {
+  if (!startStr) return '—';
+  const start = new Date(startStr).getTime();
+  const end   = endStr ? new Date(endStr).getTime() : Date.now();
+  let sec = Math.max(0, Math.floor((end - start) / 1000));
+  if (sec < 60) return `${sec} s`;
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  if (m < 60) return s ? `${m}m ${s}s` : `${m} min`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${m%60}m`;
+}
+
+// Statut run → icône + couleur
+function runStatusBadge(run) {
+  const status = run.status;       // queued, in_progress, completed
+  const concl  = run.conclusion;   // success, failure, cancelled, skipped, null
+  if (status === 'queued')      return { ico: '⏳', cls: 'bo', label: 'en file' };
+  if (status === 'in_progress') return { ico: '🔄', cls: 'bo', label: 'en cours' };
+  if (concl === 'success')      return { ico: '✓',  cls: 'bg', label: 'succès' };
+  if (concl === 'failure')      return { ico: '✕',  cls: 'br', label: 'échec' };
+  if (concl === 'cancelled')    return { ico: '⊘',  cls: 'bc', label: 'annulé' };
+  return { ico: '○', cls: 'bc', label: concl || status || '?' };
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 1 — RENDU COMPLET ONGLET SUIVI
+// ═══════════════════════════════════════════════════════════
 function formatAgo(date) {
   const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diffSec < 60)     return 'à l\'instant';
@@ -1791,6 +1896,212 @@ function formatAgo(date) {
   if (diffSec < 604800) return `il y a ${Math.floor(diffSec/86400)} j`;
   return date.toLocaleDateString('fr-FR');
 }
+
+function renderSuiviEtl() {
+  const s = Pilot.status;
+
+  // Cas : status.json non chargé → on garde l'erreur déjà affichée
+  if (!s) return;
+
+  const lastRun = s.last_run ? new Date(s.last_run) : null;
+  const ago     = lastRun ? formatAgo(lastRun) : '—';
+
+  const sources   = Object.values(s.sources || {});
+  const rowsTotal = sources.reduce((a,b)=>a + (b.rows||0), 0);
+
+  // Détection d'un run actif (pour bannière)
+  const activeRun = Suivi.runs.find(r => r.status === 'in_progress' || r.status === 'queued');
+
+  // ── Bannière "run en cours" ──
+  let banner = '';
+  if (activeRun) {
+    const isQueued = activeRun.status === 'queued';
+    banner = `
+      <div class="run-banner ${isQueued?'queued':''}">
+        <div class="run-banner-ico">${isQueued?'⏳':'⚙️'}</div>
+        <div style="flex:1">
+          <div class="run-banner-t">Pipeline ETL ${isQueued?'en file d\'attente':'en cours d\'exécution'}</div>
+          <div class="run-banner-s">
+            Démarré ${formatAgo(new Date(activeRun.run_started_at || activeRun.created_at))}
+            · durée ${formatDuration(activeRun.run_started_at || activeRun.created_at, null)}
+            · <a class="run-link" href="${activeRun.html_url}" target="_blank">voir sur GitHub →</a>
+          </div>
+        </div>
+        <button class="btn btn-s btn-sm" onclick="refreshSuivi()">↻ Rafraîchir</button>
+      </div>
+    `;
+  } else if (Suivi.lastTriggerAt && (Date.now() - Suivi.lastTriggerAt < 60000)) {
+    banner = `
+      <div class="run-banner queued">
+        <div class="run-banner-ico">⏳</div>
+        <div style="flex:1">
+          <div class="run-banner-t">Run déclenché — en attente du démarrage GitHub</div>
+          <div class="run-banner-s">Peut prendre jusqu'à 60 secondes pour apparaître ci-dessous…</div>
+        </div>
+        <button class="btn btn-s btn-sm" onclick="refreshSuivi()">↻ Rafraîchir</button>
+      </div>
+    `;
+  }
+
+  // ── Vignettes de synthèse ──
+  const sizeCls = s.db_size_status === 'ok' ? 'cg' : (s.db_size_status === 'warning' ? 'co' : 'cr');
+  const tiles = `
+    <div class="sgrid">
+      <div class="scell ${sizeCls}">
+        <div class="sn">${(s.db_size_mb||0).toFixed(1)} Mo</div>
+        <div class="sl">Taille DB · ${escapeHtml(s.db_size_status||'?')}</div>
+      </div>
+      <div class="scell cg">
+        <div class="sn">${rowsTotal.toLocaleString('fr-FR')}</div>
+        <div class="sl">Lignes total dernier run</div>
+      </div>
+      <div class="scell cg">
+        <div class="sn">${sources.filter(x=>x.status==='ok').length}/${sources.length}</div>
+        <div class="sl">Sources OK</div>
+      </div>
+      <div class="scell cg">
+        <div class="sn" style="font-size:14px;line-height:1.7">${ago}</div>
+        <div class="sl">Dernier run · ${lastRun?lastRun.toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}):'—'}</div>
+      </div>
+    </div>
+  `;
+
+  // ── Tableau des sources avec durées ──
+  const sourcesTable = `
+    <div class="card">
+      <div class="ch">
+        <span class="ctitle">Sources — dernier run</span>
+        <button class="btn btn-s btn-sm" onclick="refreshSuivi()">↻ Rafraîchir</button>
+      </div>
+      <div class="tbl-w">
+        <table>
+          <thead><tr>
+            <th>Source</th>
+            <th>Type</th>
+            <th>Statut</th>
+            <th style="text-align:right">Lignes</th>
+            <th style="text-align:right">Durée</th>
+            <th>Erreur</th>
+          </tr></thead>
+          <tbody>
+            ${sources.map(src => `
+              <tr>
+                <td>
+                  <strong style="color:var(--text)">${escapeHtml(src.label||src.id)}</strong>
+                  <div class="mono txt3" style="font-size:9.5px">${escapeHtml(src.id)}</div>
+                </td>
+                <td><span class="src-pill"><div class="dot ${src.status==='ok'?'on':''}"></div>${escapeHtml(src.type||'?')}</span></td>
+                <td><span class="badge ${src.status==='ok'?'bg':src.status==='error'?'br':'bo'}">${escapeHtml(src.status||'?')}</span></td>
+                <td style="text-align:right" class="mono">${(src.rows||0).toLocaleString('fr-FR')}</td>
+                <td class="dur-cell">${formatDuration(src.start, src.end)}</td>
+                <td class="mono txt2" style="font-size:10px">${escapeHtml(src.error||'—')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // ── Action : déclencher un run ──
+  const canTrigger = !!Pilot.pat;
+  const actionRow = `
+    <div class="action-row">
+      <button class="btn ${canTrigger?'btn-g':'btn-s'} btn-sm" id="btnTriggerRun" onclick="triggerEtlRun()" ${activeRun?'disabled':''}>
+        ▶ Déclencher un run manuel
+      </button>
+      <div class="hint ${canTrigger?'':'warn'}" id="triggerHint">
+        ${canTrigger
+          ? (activeRun
+              ? 'Un run est déjà en cours — attendre sa fin avant d\'en déclencher un autre.'
+              : 'Lance le pipeline ETL complet (toutes les sources). Durée habituelle : 5 à 10 min.')
+          : 'Connexion GitHub requise pour déclencher un run. Clique sur le badge en haut à droite.'}
+      </div>
+      <a class="btn btn-s btn-sm" href="https://github.com/${PILOT.ghOwner}/${PILOT.ghRepo}/actions/workflows/${PILOT.ghWorkflow}" target="_blank">↗ Actions GitHub</a>
+    </div>
+  `;
+
+  // ── Historique des runs (si PAT connecté) ──
+  let runsBlock = '';
+  if (Pilot.pat) {
+    if (Suivi.runs.length === 0) {
+      runsBlock = `
+        <div class="card">
+          <div class="ch"><span class="ctitle">Historique des runs (5 derniers)</span></div>
+          <div class="cb"><div class="empty"><div class="empty-ico">⏱</div>Aucun run trouvé.</div></div>
+        </div>
+      `;
+    } else {
+      const last5 = Suivi.runs.slice(0, 5);
+      runsBlock = `
+        <div class="card">
+          <div class="ch"><span class="ctitle">Historique des runs (5 derniers)</span></div>
+          <div class="run-row run-head">
+            <div></div>
+            <div>Statut</div>
+            <div>Déclencheur</div>
+            <div>Démarré</div>
+            <div style="text-align:right">Durée</div>
+            <div style="text-align:right">Lien</div>
+          </div>
+          ${last5.map(run => {
+            const b = runStatusBadge(run);
+            return `
+              <div class="run-row">
+                <div class="run-status-ico">${b.ico}</div>
+                <div><span class="badge ${b.cls}">${b.label}</span></div>
+                <div class="txt2">${escapeHtml(run.event)} · ${escapeHtml(run.actor?.login || '—')}</div>
+                <div class="txt2">${formatAgo(new Date(run.run_started_at || run.created_at))}</div>
+                <div class="dur-cell">${formatDuration(run.run_started_at || run.created_at, run.updated_at)}</div>
+                <div style="text-align:right"><a class="run-link" href="${run.html_url}" target="_blank">↗</a></div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+  } else {
+    runsBlock = `
+      <div class="alert ai">
+        <span class="alert-ico">ℹ</span>
+        <div>L'historique des runs nécessite une connexion GitHub. <a href="#" onclick="event.preventDefault();openAuthModal()" style="color:var(--blue)">Se connecter →</a></div>
+      </div>
+    `;
+  }
+
+  // ── Footer quota ──
+  let quotaFooter = '';
+  if (Pilot.pat && Suivi.rateRemaining !== null) {
+    quotaFooter = `<div class="quota-footer">API GitHub : ${Suivi.rateRemaining}/${Suivi.rateLimit||5000} requêtes restantes${Suivi.pollActive?' · auto-refresh actif (30s)':''}</div>`;
+  }
+
+  // ── Assemblage final ──
+  document.getElementById('suiviContent').innerHTML =
+    banner + tiles + actionRow + sourcesTable + runsBlock + quotaFooter;
+}
+
+// Hook : quand on arrive sur l'onglet Suivi, on rafraîchit les runs (si PAT)
+const _originalShowPanel = window.showPanel;
+window.showPanel = function(name) {
+  if (typeof _originalShowPanel === 'function') _originalShowPanel(name);
+  if (name === 'suivi') {
+    refreshSuivi();
+    startPollIfRunning();
+  } else {
+    stopPoll();
+  }
+};
+
+// Hook : quand on se connecte/déconnecte, on re-rend l'onglet Suivi
+const _originalUpdateAuthBadge = updateAuthBadge;
+updateAuthBadge = function() {
+  _originalUpdateAuthBadge();
+  // Si l'onglet Suivi est actif, rafraîchir pour afficher l'historique des runs
+  const suiviPanel = document.getElementById('panel-suivi');
+  if (suiviPanel && suiviPanel.classList.contains('active')) {
+    refreshSuivi();
+  }
+};
 
 // ═══════════════════════════════════════════════════════════
 // ÉTAPE 0 — BOOT
