@@ -211,6 +211,122 @@ def write_status(stats, size_mb, size_status, upload_ok, sources_status):
 
 
 # -------------------------------------------------------------
+# TABLE ZONES (groupes prédéfinis pour l'app)
+# -------------------------------------------------------------
+
+def build_zones(referentiel_path=None):
+    """
+    Peuple la table zones dans la DB depuis referentiel.json.
+    Chaque organisation devient un groupe sélectionnable dans l'app.
+    """
+    # Chercher referentiel.json
+    if not referentiel_path:
+        candidates = [
+            os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "referentiel.json"),
+            "referentiel.json",
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                referentiel_path = c
+                break
+
+    if not referentiel_path or not os.path.exists(referentiel_path):
+        print("  ⚠️  referentiel.json non trouvé — table zones ignorée")
+        return 0
+
+    with open(referentiel_path, encoding="utf-8") as f:
+        referentiel = json.load(f)
+
+    # Noms complets des organisations
+    ORG_NOMS = {
+        "OTAN": "OTAN", "UE": "Union Européenne", "OCDE": "OCDE",
+        "G7": "G7", "G20": "G20", "BRICS": "BRICS",
+        "OCS": "Organisation de Coopération de Shanghai",
+        "OTSC": "Organisation du Traité de Sécurité Collective",
+        "OPEP": "OPEP", "OPEP+": "OPEP+",
+        "ASEAN": "ASEAN", "ANZUS": "ANZUS",
+        "Five Eyes": "Five Eyes", "QUAD": "QUAD", "AUKUS": "AUKUS",
+        "LA": "Ligue Arabe", "MERCOSUR": "MERCOSUR",
+        "UNASUR": "UNASUR", "ACEUM": "ACEUM", "CELAC": "CELAC",
+        "UA": "Union Africaine", "CEDEAO": "CEDEAO",
+        "CEEAC": "CEEAC", "IGAD": "IGAD", "SADC": "SADC",
+        "EAC": "EAC", "COI": "Commission Océan Indien",
+        "UMA": "Union du Maghreb Arabe", "CEN-SAD": "CEN-SAD",
+        "COMESA": "COMESA", "OEA": "OEA", "ALBA": "ALBA",
+        "CARICOM": "CARICOM", "Commonwealth": "Commonwealth",
+        "Francophonie": "Francophonie", "APEC": "APEC",
+        "SAARC": "SAARC", "PIF": "Forum Îles du Pacifique",
+        "RCEP": "RCEP", "CEI": "CEI",
+        "Conseil Europe": "Conseil de l'Europe",
+        "OMC": "OMC", "AIIB": "AIIB", "GAFI": "GAFI",
+        "BRI": "Initiative Ceinture et Route", "IEA": "IEA",
+        "GECF": "GECF", "TNP": "TNP", "CPI": "CPI",
+        "Paris": "Accord de Paris", "CNUDM": "CNUDM",
+        "CWC": "Convention Armes Chimiques", "ATT": "Traité Commerce Armes",
+    }
+
+    # Groupes géographiques depuis continent/région
+    GEO_GROUPES = {}
+    for iso3, data in referentiel.items():
+        continent = data.get("continent", "")
+        region    = data.get("region", "")
+        if continent:
+            GEO_GROUPES.setdefault(f"GEO_{continent}", {"nom": continent, "pays": []})
+            GEO_GROUPES[f"GEO_{continent}"]["pays"].append(iso3)
+        if region:
+            key = f"GEO_{region.replace(' ', '_')}"
+            GEO_GROUPES.setdefault(key, {"nom": region, "pays": []})
+            GEO_GROUPES[key]["pays"].append(iso3)
+
+    # Construction des zones organisations
+    zones = {}  # zone_id -> {nom, pays: set}
+    STATUTS_MEMBRES = {"membre", "ratifié", "signataire", "allié", "partenaire"}
+
+    for iso3, data in referentiel.items():
+        for org, statut in data.get("organisations", {}).items():
+            if statut in STATUTS_MEMBRES:
+                if org not in zones:
+                    zones[org] = {"nom": ORG_NOMS.get(org, org), "pays": set()}
+                zones[org]["pays"].add(iso3)
+
+    # Insertion en DB
+    conn = sqlite3.connect(PATH_DB)
+    conn.execute("DROP TABLE IF EXISTS zones")
+    conn.execute("""
+        CREATE TABLE zones (
+            zone_id      TEXT,
+            zone_nom     TEXT,
+            country_iso3 TEXT
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_zones_id ON zones(zone_id)")
+
+    rows = []
+    # Organisations
+    for zone_id, data in zones.items():
+        for iso3 in sorted(data["pays"]):
+            rows.append((zone_id, data["nom"], iso3))
+
+    # Groupes géographiques
+    for zone_id, data in GEO_GROUPES.items():
+        for iso3 in sorted(data["pays"]):
+            rows.append((zone_id, data["nom"], iso3))
+
+    conn.executemany(
+        "INSERT INTO zones (zone_id, zone_nom, country_iso3) VALUES (?, ?, ?)",
+        rows
+    )
+    conn.commit()
+
+    nb_zones = len(zones) + len(GEO_GROUPES)
+    nb_rows  = len(rows)
+    conn.close()
+
+    print(f"  ✅ {nb_zones} groupes créés ({nb_rows} lignes)")
+    return nb_rows
+
+
+# -------------------------------------------------------------
 # POINT D'ENTRÉE
 # -------------------------------------------------------------
 
@@ -235,7 +351,11 @@ def run(sources_status=None):
     elif size_status == "warning":
         print(f"  ⚠️  Attention : DB approche la limite ({size_mb:.1f} Mo)")
 
-    # 2. Optimisation
+    # 2. Construction table zones
+    print("\n→ Construction table zones")
+    build_zones()
+
+    # 3. Optimisation
     print("\n→ Optimisation DB")
     optimize_db()
 
