@@ -12,12 +12,14 @@
   - Activation/désactivation par source
   - Configuration fréquence
 - [ ] **Semi-automatique** (CSV + parser Python)
-  - Dépôt de fichier dans admin
+  - Dépôt de fichier dans admin → upload sur R2 dossier `uploads/`
+  - GitHub Actions détecte et télécharge le fichier depuis R2
   - Parser dédié par source (SIPRI, Energy Institute, UNDESA, Lowy...)
   - Mise à jour régulière (annuelle, biennale)
+  - Sources prêtes : SIPRI (sipri.py validé — 6675 lignes)
 - [ ] **Manuel assisté IA** (données ponctuelles)
-  - Template CSV standard à fournir à l'IA
-  - Import du fichier formaté
+  - Template CSV standard à fournir à l'IA (prompts_transformation_csv.md)
+  - Import du fichier formaté via admin → R2 → GitHub Actions
   - Pas de parser dédié — format cible standardisé
 
 ### Onglet 3 — Pilotage DB
@@ -42,22 +44,29 @@
 ### Automatiques
 - [ ] Comtrade — créer compte sur comtradeplus.un.org + ajouter clé dans secrets GitHub
 
-### Semi-automatiques (fichiers à récupérer)
-- [ ] SIPRI — armement export/import bilatéral (Excel annuel)
-- [ ] Energy Institute — hydrocarbures (Excel annuel)
-- [ ] UNDESA — migrants (fichier biennal)
-- [ ] Lowy Institute — représentations diplomatiques (fichier annuel)
-- [ ] ZEE — Flanders Marine (données statiques)
+### Semi-automatiques (parsers prêts ou à coder)
+- [x] SIPRI — parser sipri.py validé (6675 lignes) — en attente intégration admin
+- [ ] Energy Institute — hydrocarbures (Excel annuel) — parser à coder
+- [ ] UNDESA — migrants (fichier biennal) — parser à coder
+- [ ] Lowy Institute — représentations diplomatiques — parser à coder
+- [ ] ZEE — Flanders Marine (données statiques) — parser à coder
 - [ ] UNESCO étudiants — inspecter OPRI.zip avant de coder
 
 ### Manuels assistés IA
-- [ ] Définir template CSV standard (aligné schéma identite/flux)
+- [x] Template CSV standard défini (prompts_transformation_csv.md)
 - [ ] Alignement ONU, bases militaires, langue commune, représentations nationales
 
 ---
 
+## Architecture semi-automatique (à implémenter dans admin)
+- Dépôt fichier dans admin → upload R2 dossier `uploads/`
+- GitHub Actions télécharge depuis R2 avant parsing
+- Un parser Python dédié par source dans `etl/sources/`
+
+---
+
 ## Index.html
-- [ ] Versionner l'URL du fetch DB de manière plus propre (numéro de version fixe plutôt que Date.now())
+- [ ] Versionner l'URL du fetch DB de manière plus propre
 
 ## Notice
 - [ ] Compléter le PDF avec les procédures ETL
