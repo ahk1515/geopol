@@ -1,0 +1,6462 @@
+{
+  "CHN": {
+    "iso2": "CN",
+    "nom": "China",
+    "continent": "ASIE",
+    "region": "ASIE ORIENTALE",
+    "organisations": {
+      "OCS": "membre",
+      "BRICS": "membre",
+      "G20": "membre",
+      "IGAD": "observateur",
+      "APEC": "membre",
+      "SAARC": "observateur",
+      "PIF": "observateur",
+      "RCEP": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": true,
+      "puissance_nucleaire_declaree": true,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "China",
+      "unhcr": "China",
+      "undesa": "China",
+      "dette": "China"
+    }
+  },
+  "ARE": {
+    "iso2": "AE",
+    "nom": "United Arab Emirates",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "BRICS": "membre",
+      "LA": "membre",
+      "OPEP": "membre",
+      "OCS": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "UAE",
+      "unhcr": "United Arab Emirates",
+      "undesa": "United Arab Emirates",
+      "dette": "United Arab Emirates"
+    }
+  },
+  "IND": {
+    "iso2": "IN",
+    "nom": "India",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "OCS": "membre",
+      "BRICS": "membre",
+      "QUAD": "membre",
+      "G20": "membre",
+      "Commonwealth": "membre",
+      "COI": "observateur",
+      "SAARC": "membre",
+      "PIF": "observateur",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "India",
+      "unhcr": "India",
+      "undesa": "India",
+      "dette": "India"
+    }
+  },
+  "RUS": {
+    "iso2": "RU",
+    "nom": "Russian Federation",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "OTSC": "membre",
+      "OCS": "membre",
+      "BRICS": "membre",
+      "OPEP": "membre_suspendu",
+      "G20": "membre",
+      "CEI": "membre",
+      "APEC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "OPEP+": "allié",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "CPI": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": true,
+      "puissance_nucleaire_declaree": true,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "Russia",
+      "unhcr": "Russian Federation",
+      "undesa": "Russian Federation",
+      "dette": "Russian Federation"
+    }
+  },
+  "TUR": {
+    "iso2": "TR",
+    "nom": "Türkiye",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "OTAN": "membre",
+      "BRICS": "observateur",
+      "OCDE": "membre",
+      "OCS": "observateur",
+      "G20": "membre",
+      "UE": "candidat",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Turkiye",
+      "unhcr": "TÃ¼rkiye",
+      "undesa": "Türkiye",
+      "dette": "Turkiye"
+    }
+  },
+  "IRN": {
+    "iso2": "IR",
+    "nom": "Iran (Islamic Republic of)",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "OCS": "membre",
+      "BRICS": "membre",
+      "OPEP": "membre",
+      "SAARC": "observateur",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "ATT": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "non_signataire"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Iran",
+      "unhcr": "Iran (Islamic Rep. of)",
+      "undesa": "Iran (Islamic Republic of)",
+      "dette": "Iran, Islamic Republic Of"
+    }
+  },
+  "SAU": {
+    "iso2": "SA",
+    "nom": "Saudi Arabia",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "BRICS": "membre",
+      "LA": "membre",
+      "OPEP": "membre",
+      "OCS": "observateur",
+      "G20": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Saudi Arabia",
+      "unhcr": "Saudi Arabia",
+      "undesa": "Saudi Arabia",
+      "dette": "Saudi Arabia"
+    }
+  },
+  "QAT": {
+    "iso2": "QA",
+    "nom": "Qatar",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "OCS": "observateur",
+      "Francophonie": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Qatar",
+      "unhcr": "Qatar",
+      "undesa": "Qatar",
+      "dette": "Qatar"
+    }
+  },
+  "KWT": {
+    "iso2": "KW",
+    "nom": "Kuwait",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "OPEP": "membre",
+      "OCS": "observateur",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Kuwait",
+      "unhcr": "Kuwait",
+      "undesa": "Kuwait",
+      "dette": "Kuwait"
+    }
+  },
+  "BRA": {
+    "iso2": "BR",
+    "nom": "Brazil",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "BRICS": "membre",
+      "MERCOSUR": "membre",
+      "UNASUR": "membre",
+      "G20": "membre",
+      "CELAC": "membre",
+      "OEA": "observateur",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Brazil",
+      "unhcr": "Brazil",
+      "undesa": "Brazil",
+      "dette": "Brazil"
+    }
+  },
+  "ZAF": {
+    "iso2": "ZA",
+    "nom": "South Africa",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "BRICS": "membre",
+      "G20": "membre",
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "South Africa",
+      "unhcr": "South Africa",
+      "undesa": "South Africa",
+      "dette": "South Africa"
+    }
+  },
+  "BLR": {
+    "iso2": "BY",
+    "nom": "Belarus",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "OTSC": "membre",
+      "OCS": "membre",
+      "CEI": "membre",
+      "BRICS": "partenaire",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Belarus",
+      "unhcr": "Belarus",
+      "undesa": "Belarus",
+      "dette": "Belarus"
+    }
+  },
+  "EGY": {
+    "iso2": "EG",
+    "nom": "Egypt",
+    "continent": "AFRI",
+    "region": "AFR SEPTENTRIONALE",
+    "organisations": {
+      "BRICS": "membre",
+      "LA": "membre",
+      "OCS": "observateur",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "IGAD": "observateur",
+      "CEN-SAD": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Egypt",
+      "unhcr": "Egypt",
+      "undesa": "Egypt",
+      "dette": "Egypt"
+    }
+  },
+  "PAK": {
+    "iso2": "PK",
+    "nom": "Pakistan",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "OCS": "membre",
+      "Commonwealth": "membre",
+      "SAARC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "Pakistan",
+      "unhcr": "Pakistan",
+      "undesa": "PAK",
+      "dette": "Pakistan"
+    }
+  },
+  "IDN": {
+    "iso2": "ID",
+    "nom": "Indonesia",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "BRICS": "observateur",
+      "ASEAN": "membre",
+      "G20": "membre",
+      "APEC": "membre",
+      "PIF": "observateur",
+      "RCEP": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Indonesia",
+      "unhcr": "Indonesia",
+      "undesa": "Indonesia",
+      "dette": "Indonesia"
+    }
+  },
+  "NLD": {
+    "iso2": "NL",
+    "nom": "Netherlands",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Netherlands",
+      "unhcr": "Netherlands (Kingdom of the)",
+      "undesa": "Netherlands*",
+      "dette": "Netherlands"
+    }
+  },
+  "CAN": {
+    "iso2": "CA",
+    "nom": "Canada",
+    "continent": "AMER",
+    "region": "AMERIQUE DU NORD",
+    "organisations": {
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "G7": "membre",
+      "Five Eyes": "membre",
+      "G20": "membre",
+      "Commonwealth": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "observateur",
+      "OEA": "membre",
+      "ACEUM": "membre",
+      "APEC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Canada",
+      "unhcr": "Canada",
+      "undesa": "Canada",
+      "dette": "Canada"
+    }
+  },
+  "ISR": {
+    "iso2": "IL",
+    "nom": "ISR",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "OCDE": "membre",
+      "Conseil Europe": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "CPI": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "non_signataire"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "ISR",
+      "unhcr": "Israel",
+      "undesa": "ISR",
+      "dette": "ISR"
+    }
+  },
+  "PRT": {
+    "iso2": "PT",
+    "nom": "Portugal",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Portugal",
+      "unhcr": "Portugal",
+      "undesa": "Portugal",
+      "dette": "Portugal"
+    }
+  },
+  "CHE": {
+    "iso2": "CH",
+    "nom": "Switzerland",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Switzerland",
+      "unhcr": "Switzerland",
+      "undesa": "Switzerland",
+      "dette": "Switzerland"
+    }
+  },
+  "JPN": {
+    "iso2": "JP",
+    "nom": "Japan",
+    "continent": "ASIE",
+    "region": "ASIE ORIENTALE",
+    "organisations": {
+      "OCDE": "membre",
+      "G7": "membre",
+      "QUAD": "membre",
+      "G20": "membre",
+      "Conseil Europe": "observateur",
+      "APEC": "membre",
+      "SAARC": "observateur",
+      "PIF": "observateur",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Japan",
+      "unhcr": "Japan",
+      "undesa": "Japan",
+      "dette": "Japan"
+    }
+  },
+  "KOR": {
+    "iso2": "KR",
+    "nom": "Republic of Korea",
+    "continent": "ASIE",
+    "region": "ASIE ORIENTALE",
+    "organisations": {
+      "OCDE": "membre",
+      "G20": "membre",
+      "Francophonie": "observateur",
+      "APEC": "membre",
+      "SAARC": "observateur",
+      "PIF": "observateur",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "South Korea",
+      "unhcr": "Rep. of Korea",
+      "undesa": "Republic of Korea",
+      "dette": "Korea, Republic of"
+    }
+  },
+  "BEL": {
+    "iso2": "BE",
+    "nom": "Belgium",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Belgium",
+      "unhcr": "Belgium",
+      "undesa": "Belgium",
+      "dette": "Belgium"
+    }
+  },
+  "ESP": {
+    "iso2": "ES",
+    "nom": "Spain",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "PIF": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Spain",
+      "unhcr": "Spain",
+      "undesa": "Spain*",
+      "dette": "Spain"
+    }
+  },
+  "DEU": {
+    "iso2": "DE",
+    "nom": "Germany",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "G7": "membre",
+      "G20": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Germany",
+      "unhcr": "Germany",
+      "undesa": "Germany",
+      "dette": "Germany, Fed. Rep. of"
+    }
+  },
+  "ITA": {
+    "iso2": "IT",
+    "nom": "Italy",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "G7": "membre",
+      "G20": "membre",
+      "Conseil Europe": "membre",
+      "IGAD": "observateur",
+      "PIF": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Italy",
+      "unhcr": "Italy",
+      "undesa": "Italy",
+      "dette": "Italy"
+    }
+  },
+  "GBR": {
+    "iso2": "GB",
+    "nom": "United Kingdom",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "G7": "membre",
+      "Five Eyes": "membre",
+      "AUKUS": "membre",
+      "G20": "membre",
+      "Commonwealth": "membre",
+      "Conseil Europe": "membre",
+      "IGAD": "observateur",
+      "PIF": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": true,
+      "puissance_nucleaire_declaree": true,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "United Kingdom",
+      "unhcr": "United Kingdom of Great Britain and Northern Ireland",
+      "undesa": "United Kingdom*",
+      "dette": "United Kingdom"
+    }
+  },
+  "USA": {
+    "iso2": "US",
+    "nom": "United States of America",
+    "continent": "AMER",
+    "region": "AMERIQUE DU NORD",
+    "organisations": {
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "G7": "membre",
+      "ANZUS": "membre",
+      "Five Eyes": "membre",
+      "QUAD": "membre",
+      "AUKUS": "membre",
+      "G20": "membre",
+      "Conseil Europe": "observateur",
+      "IGAD": "observateur",
+      "OEA": "membre",
+      "ACEUM": "membre",
+      "APEC": "membre",
+      "SAARC": "observateur",
+      "PIF": "observateur",
+      "OMC": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "signataire",
+      "CPI": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "non_signataire"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": true,
+      "puissance_nucleaire_declaree": true,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "United States",
+      "unhcr": "United States of America",
+      "undesa": "United States of America*",
+      "dette": "United States"
+    }
+  },
+  "FRA": {
+    "iso2": "FR",
+    "nom": "France",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "G7": "membre",
+      "G20": "membre",
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "IGAD": "observateur",
+      "COI": "membre",
+      "PIF": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": true,
+      "puissance_nucleaire_declaree": true,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "France",
+      "unhcr": "France",
+      "undesa": "France*",
+      "dette": "France"
+    }
+  },
+  "PRK": {
+    "iso2": "KP",
+    "nom": "Dem. People's Republic of Korea",
+    "continent": "ASIE",
+    "region": "ASIE ORIENTALE",
+    "organisations": {
+      "TNP": "retrait",
+      "CWC": "non_signataire",
+      "CNUDM": "non_signataire"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": true
+    },
+    "noms_sources": {
+      "sipri": "North Korea",
+      "unhcr": "Dem. People's Rep. of Korea",
+      "undesa": "Dem. People's Republic of Korea",
+      "dette": "Korea, D.P.R. of"
+    }
+  },
+  "DZA": {
+    "iso2": "DZ",
+    "nom": "Algeria",
+    "continent": "AFRI",
+    "region": "AFR SEPTENTRIONALE",
+    "organisations": {
+      "BRICS": "observateur",
+      "LA": "membre",
+      "OPEP": "membre",
+      "Commonwealth": "observateur",
+      "UA": "membre",
+      "UMA": "membre",
+      "OMC": "observateur",
+      "GECF": "membre",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Algeria",
+      "unhcr": "Algeria",
+      "undesa": "Algeria",
+      "dette": "Algeria"
+    }
+  },
+  "AZE": {
+    "iso2": "AZ",
+    "nom": "Azerbaijan",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "OPEP": "membre_suspendu",
+      "OCS": "observateur",
+      "CEI": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "OPEP+": "allié",
+      "GECF": "observateur",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Azerbaijan",
+      "unhcr": "Azerbaijan",
+      "undesa": "Azerbaijan",
+      "dette": "Azerbaijan"
+    }
+  },
+  "IRQ": {
+    "iso2": "IQ",
+    "nom": "Iraq",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "OPEP": "membre",
+      "OMC": "observateur",
+      "BRI": "signataire",
+      "GECF": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Iraq",
+      "unhcr": "Iraq",
+      "undesa": "Iraq",
+      "dette": "Iraq"
+    }
+  },
+  "OMN": {
+    "iso2": "OM",
+    "nom": "Oman",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "OPEP": "membre_suspendu",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "OPEP+": "allié",
+      "GECF": "observateur",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Oman",
+      "unhcr": "Oman",
+      "undesa": "Oman",
+      "dette": "Oman"
+    }
+  },
+  "RWA": {
+    "iso2": "RW",
+    "nom": "Rwanda",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "observateur",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "EAC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Rwanda",
+      "unhcr": "Rwanda",
+      "undesa": "Rwanda",
+      "dette": "Rwanda"
+    }
+  },
+  "ARM": {
+    "iso2": "AM",
+    "nom": "Armenia",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "OTSC": "membre",
+      "OCS": "observateur",
+      "Francophonie": "membre",
+      "CEI": "membre",
+      "Conseil Europe": "membre",
+      "PIF": "observateur",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Armenia",
+      "unhcr": "Armenia",
+      "undesa": "Armenia",
+      "dette": "Armenia"
+    }
+  },
+  "AUS": {
+    "iso2": "AU",
+    "nom": "Australia",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "ASEAN": "observateur",
+      "OCDE": "membre",
+      "ANZUS": "membre",
+      "Five Eyes": "membre",
+      "QUAD": "membre",
+      "AUKUS": "membre",
+      "G20": "membre",
+      "Commonwealth": "membre",
+      "APEC": "membre",
+      "SAARC": "observateur",
+      "PIF": "membre",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Australia",
+      "unhcr": "Australia",
+      "undesa": "Australia*",
+      "dette": "Australia"
+    }
+  },
+  "AUT": {
+    "iso2": "AT",
+    "nom": "Austria",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OCDE": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Austria",
+      "unhcr": "Austria",
+      "undesa": "Austria",
+      "dette": "Austria"
+    }
+  },
+  "TWN": {
+    "iso2": "TW",
+    "nom": "China, Taiwan Province of China",
+    "continent": "ASIE",
+    "region": "ASIE ORIENTALE",
+    "organisations": {
+      "APEC": "membre",
+      "OMC": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Taiwan",
+      "unhcr": "China, Taiwan Province of China",
+      "undesa": "China, Taiwan Province of China",
+      "dette": ""
+    }
+  },
+  "DNK": {
+    "iso2": "DK",
+    "nom": "Denmark",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Denmark",
+      "unhcr": "Denmark",
+      "undesa": "Denmark*",
+      "dette": "Denmark"
+    }
+  },
+  "EST": {
+    "iso2": "EE",
+    "nom": "Estonia",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Estonia",
+      "unhcr": "Estonia",
+      "undesa": "Estonia",
+      "dette": "Estonia"
+    }
+  },
+  "FIN": {
+    "iso2": "FI",
+    "nom": "Finland",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Finland",
+      "unhcr": "Finland",
+      "undesa": "Finland*",
+      "dette": "Finland"
+    }
+  },
+  "GRC": {
+    "iso2": "GR",
+    "nom": "Greece",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Greece",
+      "unhcr": "Greece",
+      "undesa": "Greece",
+      "dette": "Greece"
+    }
+  },
+  "HUN": {
+    "iso2": "HU",
+    "nom": "Hungary",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Hungary",
+      "unhcr": "Hungary",
+      "undesa": "Hungary",
+      "dette": "Hungary"
+    }
+  },
+  "ISL": {
+    "iso2": "IS",
+    "nom": "Iceland",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "GAFI": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Iceland",
+      "unhcr": "Iceland",
+      "undesa": "Iceland",
+      "dette": "Iceland"
+    }
+  },
+  "IRL": {
+    "iso2": "IE",
+    "nom": "Ireland",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OCDE": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Ireland",
+      "unhcr": "Ireland",
+      "undesa": "Ireland",
+      "dette": "Ireland"
+    }
+  },
+  "LTU": {
+    "iso2": "LT",
+    "nom": "Lithuania",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Lithuania",
+      "unhcr": "Lithuania",
+      "undesa": "Lithuania",
+      "dette": "Lithuania"
+    }
+  },
+  "LUX": {
+    "iso2": "LU",
+    "nom": "Luxembourg",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Luxembourg",
+      "unhcr": "Luxembourg",
+      "undesa": "Luxembourg",
+      "dette": "Luxembourg"
+    }
+  },
+  "MLT": {
+    "iso2": "MT",
+    "nom": "Malta",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "membre",
+      "Commonwealth": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Malta",
+      "unhcr": "Malta",
+      "undesa": "Malta",
+      "dette": "Malta"
+    }
+  },
+  "MAR": {
+    "iso2": "MA",
+    "nom": "Morocco",
+    "continent": "AFRI",
+    "region": "AFR SEPTENTRIONALE",
+    "organisations": {
+      "LA": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "UMA": "membre",
+      "CEN-SAD": "membre",
+      "PIF": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Morocco",
+      "unhcr": "Morocco",
+      "undesa": "Morocco",
+      "dette": "Morocco"
+    }
+  },
+  "NOR": {
+    "iso2": "NO",
+    "nom": "Norway",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "GECF": "observateur",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Norway",
+      "unhcr": "Norway",
+      "undesa": "Norway*",
+      "dette": "Norway"
+    }
+  },
+  "POL": {
+    "iso2": "PL",
+    "nom": "Poland",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Poland",
+      "unhcr": "Poland",
+      "undesa": "Poland",
+      "dette": "Poland"
+    }
+  },
+  "SGP": {
+    "iso2": "SG",
+    "nom": "Singapore",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "ASEAN": "membre",
+      "Commonwealth": "membre",
+      "APEC": "membre",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Singapore",
+      "unhcr": "Singapore",
+      "undesa": "Singapore",
+      "dette": "Singapore"
+    }
+  },
+  "SVK": {
+    "iso2": "SK",
+    "nom": "Slovakia",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Slovakia",
+      "unhcr": "Slovakia",
+      "undesa": "Slovakia",
+      "dette": "Slovak Republic"
+    }
+  },
+  "SVN": {
+    "iso2": "SI",
+    "nom": "Slovenia",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Slovenia",
+      "unhcr": "Slovenia",
+      "undesa": "Slovenia",
+      "dette": "Slovenia"
+    }
+  },
+  "SWE": {
+    "iso2": "SE",
+    "nom": "Sweden",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Sweden",
+      "unhcr": "Sweden",
+      "undesa": "Sweden",
+      "dette": "Sweden"
+    }
+  },
+  "TUN": {
+    "iso2": "TN",
+    "nom": "Tunisia",
+    "continent": "AFRI",
+    "region": "AFR SEPTENTRIONALE",
+    "organisations": {
+      "LA": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "UMA": "membre",
+      "CEN-SAD": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Tunisia",
+      "unhcr": "Tunisia",
+      "undesa": "Tunisia",
+      "dette": "Tunisia"
+    }
+  },
+  "UKR": {
+    "iso2": "UA",
+    "nom": "Ukraine",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "OTAN": "observateur",
+      "OCS": "observateur",
+      "Francophonie": "observateur",
+      "UE": "candidat",
+      "CEI": "associé",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Ukraine",
+      "unhcr": "Ukraine",
+      "undesa": "Ukraine*",
+      "dette": "Ukraine"
+    }
+  },
+  "AFG": {
+    "iso2": "AF",
+    "nom": "Afghanistan",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "OCS": "observateur",
+      "CEI": "observateur",
+      "SAARC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Afghanistan",
+      "unhcr": "Afghanistan",
+      "undesa": "Afghanistan",
+      "dette": "Afghanistan"
+    }
+  },
+  "ALB": {
+    "iso2": "AL",
+    "nom": "Albania",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "OTAN": "membre",
+      "Francophonie": "membre",
+      "UE": "candidat",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Albania",
+      "unhcr": "Albania",
+      "undesa": "Albania",
+      "dette": "Albania"
+    }
+  },
+  "AND": {
+    "iso2": "AD",
+    "nom": "Andorra",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "observateur",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Andorra",
+      "unhcr": "Andorra",
+      "undesa": "Andorra",
+      "dette": "Andorra"
+    }
+  },
+  "AGO": {
+    "iso2": "AO",
+    "nom": "Angola",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "OPEP": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "SADC": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Angola",
+      "unhcr": "Angola",
+      "undesa": "Angola",
+      "dette": "Angola"
+    }
+  },
+  "ATG": {
+    "iso2": "AG",
+    "nom": "Antigua and Barbuda",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Antigua and Barbuda",
+      "unhcr": "Antigua and Barbuda",
+      "undesa": "Antigua and Barbuda",
+      "dette": "Antigua"
+    }
+  },
+  "ARG": {
+    "iso2": "AR",
+    "nom": "Argentina",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "BRICS": "membre",
+      "MERCOSUR": "membre",
+      "UNASUR": "membre",
+      "G20": "membre",
+      "Francophonie": "observateur",
+      "CELAC": "membre",
+      "OEA": "observateur",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Argentina",
+      "unhcr": "Argentina",
+      "undesa": "Argentina",
+      "dette": "Argentina"
+    }
+  },
+  "BHS": {
+    "iso2": "BS",
+    "nom": "Bahamas",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Bahamas",
+      "unhcr": "Bahamas",
+      "undesa": "Bahamas",
+      "dette": "Bahamas"
+    }
+  },
+  "BHR": {
+    "iso2": "BH",
+    "nom": "Bahrain",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "BRICS": "observateur",
+      "LA": "membre",
+      "OPEP": "membre_suspendu",
+      "OCS": "observateur",
+      "OMC": "membre",
+      "OPEP+": "allié",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Bahrain",
+      "unhcr": "Bahrain",
+      "undesa": "Bahrain",
+      "dette": "Bahrain"
+    }
+  },
+  "BGD": {
+    "iso2": "BD",
+    "nom": "Bangladesh",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "Commonwealth": "observateur",
+      "SAARC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Bangladesh",
+      "unhcr": "Bangladesh",
+      "undesa": "Bangladesh",
+      "dette": "Bangladesh"
+    }
+  },
+  "BRB": {
+    "iso2": "BB",
+    "nom": "Barbados",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Barbados",
+      "unhcr": "Barbados",
+      "undesa": "Barbados",
+      "dette": "Barbados"
+    }
+  },
+  "BLZ": {
+    "iso2": "BZ",
+    "nom": "Belize",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Belize",
+      "unhcr": "Belize",
+      "undesa": "Belize",
+      "dette": "Belize"
+    }
+  },
+  "BEN": {
+    "iso2": "BJ",
+    "nom": "Benin",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Benin",
+      "unhcr": "Benin",
+      "undesa": "Benin",
+      "dette": "Benin"
+    }
+  },
+  "BTN": {
+    "iso2": "BT",
+    "nom": "Bhutan",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "SAARC": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Bhutan",
+      "unhcr": "Bhutan",
+      "undesa": "Bhutan",
+      "dette": "Bhutan"
+    }
+  },
+  "BOL": {
+    "iso2": "BO",
+    "nom": "Bolivia (Plurinational State of)",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "MERCOSUR": "associé",
+      "UNASUR": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "BRICS": "partenaire",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Bolivia",
+      "unhcr": "Bolivia (Plurinational State of)",
+      "undesa": "Bolivia (Plurinational State of)",
+      "dette": "Bolivia"
+    }
+  },
+  "BIH": {
+    "iso2": "BA",
+    "nom": "Bosnia and Herzegovina",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "OTAN": "observateur",
+      "UE": "candidat",
+      "Conseil Europe": "membre",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Bosnia-Herzegovina",
+      "unhcr": "Bosnia and Herzegovina",
+      "undesa": "Bosnia and Herzegovina",
+      "dette": "Bosnia-Herzegovina"
+    }
+  },
+  "BWA": {
+    "iso2": "BW",
+    "nom": "Botswana",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Botswana",
+      "unhcr": "Botswana",
+      "undesa": "Botswana",
+      "dette": "Botswana"
+    }
+  },
+  "BRN": {
+    "iso2": "BN",
+    "nom": "Brunei Darussalam",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "ASEAN": "membre",
+      "OPEP": "membre_suspendu",
+      "Commonwealth": "membre",
+      "APEC": "membre",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "OPEP+": "allié",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Brunei",
+      "unhcr": "Brunei Darussalam",
+      "undesa": "Brunei Darussalam",
+      "dette": ""
+    }
+  },
+  "BGR": {
+    "iso2": "BG",
+    "nom": "Bulgaria",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Bulgaria",
+      "unhcr": "Bulgaria",
+      "undesa": "Bulgaria",
+      "dette": "Bulgaria"
+    }
+  },
+  "BFA": {
+    "iso2": "BF",
+    "nom": "Burkina Faso",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "suspendu",
+      "CEDEAO": "suspendu",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Burkina Faso",
+      "unhcr": "Burkina Faso",
+      "undesa": "Burkina Faso",
+      "dette": "Burkina Faso"
+    }
+  },
+  "BDI": {
+    "iso2": "BI",
+    "nom": "Burundi",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "observateur",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "EAC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Burundi",
+      "unhcr": "Burundi",
+      "undesa": "Burundi",
+      "dette": "Burundi"
+    }
+  },
+  "CPV": {
+    "iso2": "CV",
+    "nom": "Cabo Verde",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Cabo Verde",
+      "unhcr": "Cabo Verde",
+      "undesa": "Cabo Verde",
+      "dette": "Cabo Verde"
+    }
+  },
+  "KHM": {
+    "iso2": "KH",
+    "nom": "Cambodia",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "ASEAN": "membre",
+      "OCS": "observateur",
+      "Francophonie": "membre",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Cambodia",
+      "unhcr": "Cambodia",
+      "undesa": "Cambodia",
+      "dette": "Cambodia"
+    }
+  },
+  "CMR": {
+    "iso2": "CM",
+    "nom": "Cameroon",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "Commonwealth": "observateur",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Cameroon",
+      "unhcr": "Cameroon",
+      "undesa": "Cameroon",
+      "dette": "Cameroon"
+    }
+  },
+  "CAF": {
+    "iso2": "CF",
+    "nom": "Central African Republic",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "BRICS": "candidat",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Central African Republic",
+      "unhcr": "Central African Rep.",
+      "undesa": "Central African Republic",
+      "dette": "Central African Republic"
+    }
+  },
+  "TCD": {
+    "iso2": "TD",
+    "nom": "Chad",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "suspendu",
+      "CEEAC": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Chad",
+      "unhcr": "Chad",
+      "undesa": "Chad",
+      "dette": "Chad"
+    }
+  },
+  "CHL": {
+    "iso2": "CL",
+    "nom": "Chile",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "UNASUR": "membre",
+      "OCDE": "membre",
+      "CELAC": "membre",
+      "OEA": "observateur",
+      "MERCOSUR": "associé",
+      "APEC": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Chile",
+      "unhcr": "Chile",
+      "undesa": "Chile",
+      "dette": "Chile"
+    }
+  },
+  "COL": {
+    "iso2": "CO",
+    "nom": "Colombia",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "UNASUR": "membre",
+      "OCDE": "membre",
+      "CELAC": "membre",
+      "OEA": "observateur",
+      "MERCOSUR": "associé",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Colombia",
+      "unhcr": "Colombia",
+      "undesa": "Colombia",
+      "dette": "Colombia"
+    }
+  },
+  "COM": {
+    "iso2": "KM",
+    "nom": "Comoros",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "LA": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "EAC": "observateur",
+      "COI": "membre",
+      "CEN-SAD": "membre",
+      "COMESA": "membre",
+      "OMC": "observateur",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Comoros",
+      "unhcr": "Comoros",
+      "undesa": "Comoros",
+      "dette": "Comoros"
+    }
+  },
+  "COG": {
+    "iso2": "CG",
+    "nom": "Congo",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "OPEP": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Congo",
+      "unhcr": "Congo",
+      "undesa": "Congo",
+      "dette": "Congo, Rep."
+    }
+  },
+  "CRI": {
+    "iso2": "CR",
+    "nom": "Costa Rica",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "OCDE": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Costa Rica",
+      "unhcr": "Costa Rica",
+      "undesa": "Costa Rica",
+      "dette": "Costa Rica"
+    }
+  },
+  "CIV": {
+    "iso2": "CI",
+    "nom": "Côte d'Ivoire",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Cote d'Ivoire",
+      "unhcr": "Cote d'Ivoire",
+      "undesa": "Côte d'Ivoire",
+      "dette": "Cote D`Ivoire, Republic Of"
+    }
+  },
+  "HRV": {
+    "iso2": "HR",
+    "nom": "Croatia",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "Conseil Europe": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Croatia",
+      "unhcr": "Croatia",
+      "undesa": "Croatia",
+      "dette": "Croatia"
+    }
+  },
+  "CUB": {
+    "iso2": "CU",
+    "nom": "Cuba",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "CELAC": "membre",
+      "OEA": "suspendu",
+      "ALBA": "membre",
+      "PIF": "observateur",
+      "BRICS": "partenaire",
+      "OMC": "observateur",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Cuba",
+      "unhcr": "Cuba",
+      "undesa": "Cuba",
+      "dette": "Cuba"
+    }
+  },
+  "CYP": {
+    "iso2": "CY",
+    "nom": "Cyprus",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "UE": "membre",
+      "Commonwealth": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Cyprus",
+      "unhcr": "Cyprus",
+      "undesa": "Cyprus",
+      "dette": "Cyprus"
+    }
+  },
+  "CZE": {
+    "iso2": "CZ",
+    "nom": "Czechia",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "observateur",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Czechia",
+      "unhcr": "Czechia",
+      "undesa": "Czechia",
+      "dette": "Czechia"
+    }
+  },
+  "COD": {
+    "iso2": "CD",
+    "nom": "Democratic Republic of the Congo",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "SADC": "membre",
+      "EAC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "DR Congo",
+      "unhcr": "Dem. Rep. of the Congo",
+      "undesa": "Democratic Republic of the Congo",
+      "dette": "Congo, Dem. Rep."
+    }
+  },
+  "DJI": {
+    "iso2": "DJ",
+    "nom": "Djibouti",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "LA": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "IGAD": "membre",
+      "CEN-SAD": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Djibouti",
+      "unhcr": "Djibouti",
+      "undesa": "Djibouti",
+      "dette": "Djibouti"
+    }
+  },
+  "DMA": {
+    "iso2": "DM",
+    "nom": "Dominica",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "Francophonie": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Dominica",
+      "unhcr": "Dominica",
+      "undesa": "Dominica",
+      "dette": "Dominica"
+    }
+  },
+  "DOM": {
+    "iso2": "DO",
+    "nom": "Dominican Republic",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "CELAC": "membre",
+      "OEA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Dominican Republic",
+      "unhcr": "Dominican Rep.",
+      "undesa": "Dominican Republic",
+      "dette": "Dominican Republic"
+    }
+  },
+  "ECU": {
+    "iso2": "EC",
+    "nom": "Ecuador",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "UNASUR": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "MERCOSUR": "associé",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Ecuador",
+      "unhcr": "Ecuador",
+      "undesa": "Ecuador",
+      "dette": "Ecuador"
+    }
+  },
+  "SLV": {
+    "iso2": "SV",
+    "nom": "El Salvador",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "CELAC": "membre",
+      "OEA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "El Salvador",
+      "unhcr": "El Salvador",
+      "undesa": "El Salvador",
+      "dette": "El Salvador"
+    }
+  },
+  "GNQ": {
+    "iso2": "GQ",
+    "nom": "Equatorial Guinea",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "OPEP": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Equatorial Guinea",
+      "unhcr": "Equatorial Guinea",
+      "undesa": "Equatorial Guinea",
+      "dette": "Equatorial Guinea"
+    }
+  },
+  "ERI": {
+    "iso2": "ER",
+    "nom": "Eritrea",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "UA": "membre",
+      "IGAD": "membre",
+      "EAC": "observateur",
+      "CEN-SAD": "membre",
+      "COMESA": "membre",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Eritrea",
+      "unhcr": "Eritrea",
+      "undesa": "Eritrea",
+      "dette": "Eritrea"
+    }
+  },
+  "SWZ": {
+    "iso2": "SZ",
+    "nom": "Eswatini",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Eswatini",
+      "unhcr": "Eswatini",
+      "undesa": "Eswatini",
+      "dette": "Eswatini"
+    }
+  },
+  "ETH": {
+    "iso2": "ET",
+    "nom": "Ethiopia",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "BRICS": "membre",
+      "UA": "membre",
+      "IGAD": "membre",
+      "EAC": "observateur",
+      "COMESA": "membre",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Ethiopia",
+      "unhcr": "Ethiopia",
+      "undesa": "Ethiopia",
+      "dette": "Ethiopia"
+    }
+  },
+  "FJI": {
+    "iso2": "FJ",
+    "nom": "Fiji",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "PIF": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Fiji",
+      "unhcr": "Fiji",
+      "undesa": "Fiji",
+      "dette": "Fiji"
+    }
+  },
+  "GAB": {
+    "iso2": "GA",
+    "nom": "Gabon",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "OPEP": "membre",
+      "Francophonie": "membre",
+      "UA": "suspendu",
+      "CEEAC": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Gabon",
+      "unhcr": "Gabon",
+      "undesa": "Gabon",
+      "dette": "Gabon"
+    }
+  },
+  "GMB": {
+    "iso2": "GM",
+    "nom": "Gambia",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Gambia",
+      "unhcr": "Gambia",
+      "undesa": "Gambia",
+      "dette": "Gambia, The"
+    }
+  },
+  "GEO": {
+    "iso2": "GE",
+    "nom": "Georgia",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "OTAN": "observateur",
+      "Francophonie": "observateur",
+      "UE": "candidat",
+      "Conseil Europe": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Georgia",
+      "unhcr": "Georgia",
+      "undesa": "Georgia",
+      "dette": "Georgia"
+    }
+  },
+  "GHA": {
+    "iso2": "GH",
+    "nom": "Ghana",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "Francophonie": "associé",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Ghana",
+      "unhcr": "Ghana",
+      "undesa": "Ghana",
+      "dette": "Ghana"
+    }
+  },
+  "GRD": {
+    "iso2": "GD",
+    "nom": "Grenada",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Grenada",
+      "unhcr": "Grenada",
+      "undesa": "Grenada",
+      "dette": "Grenada"
+    }
+  },
+  "GTM": {
+    "iso2": "GT",
+    "nom": "Guatemala",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "CELAC": "membre",
+      "OEA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Guatemala",
+      "unhcr": "Guatemala",
+      "undesa": "Guatemala",
+      "dette": "Guatemala"
+    }
+  },
+  "GIN": {
+    "iso2": "GN",
+    "nom": "Guinea",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "suspendu",
+      "CEDEAO": "suspendu",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Guinea",
+      "unhcr": "Guinea",
+      "undesa": "Guinea",
+      "dette": "Guinea"
+    }
+  },
+  "GNB": {
+    "iso2": "GW",
+    "nom": "Guinea-Bissau",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Guinea-Bissau",
+      "unhcr": "Guinea-Bissau",
+      "undesa": "Guinea-Bissau",
+      "dette": "Guinea-Bissau"
+    }
+  },
+  "GUY": {
+    "iso2": "GY",
+    "nom": "Guyana",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "UNASUR": "membre",
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "MERCOSUR": "associé",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Guyana",
+      "unhcr": "Guyana",
+      "undesa": "Guyana",
+      "dette": "Guyana"
+    }
+  },
+  "HTI": {
+    "iso2": "HT",
+    "nom": "Haiti",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Francophonie": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "CARICOM": "observateur",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Haiti",
+      "unhcr": "Haiti",
+      "undesa": "Haiti",
+      "dette": "Haiti"
+    }
+  },
+  "HND": {
+    "iso2": "HN",
+    "nom": "Honduras",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "CELAC": "membre",
+      "OEA": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Honduras",
+      "unhcr": "Honduras",
+      "undesa": "Honduras",
+      "dette": "Honduras"
+    }
+  },
+  "JAM": {
+    "iso2": "JM",
+    "nom": "Jamaica",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Jamaica",
+      "unhcr": "Jamaica",
+      "undesa": "Jamaica",
+      "dette": "Jamaica"
+    }
+  },
+  "JOR": {
+    "iso2": "JO",
+    "nom": "Jordan",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Jordan",
+      "unhcr": "Jordan",
+      "undesa": "Jordan",
+      "dette": "Jordan"
+    }
+  },
+  "KAZ": {
+    "iso2": "KZ",
+    "nom": "Kazakhstan",
+    "continent": "ASIE",
+    "region": "ASIE CENTRALE",
+    "organisations": {
+      "OTSC": "membre",
+      "OCS": "membre",
+      "OPEP": "membre_suspendu",
+      "CEI": "membre",
+      "BRICS": "partenaire",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "OPEP+": "allié",
+      "GECF": "observateur",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Kazakhstan",
+      "unhcr": "Kazakhstan",
+      "undesa": "Kazakhstan",
+      "dette": "Kazakhstan"
+    }
+  },
+  "KEN": {
+    "iso2": "KE",
+    "nom": "Kenya",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "IGAD": "membre",
+      "EAC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Kenya",
+      "unhcr": "Kenya",
+      "undesa": "Kenya",
+      "dette": "Kenya"
+    }
+  },
+  "KIR": {
+    "iso2": "KI",
+    "nom": "Kiribati",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "PIF": "membre",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Kiribati",
+      "unhcr": "Kiribati",
+      "undesa": "Kiribati",
+      "dette": "Kiribati"
+    }
+  },
+  "KGZ": {
+    "iso2": "KG",
+    "nom": "Kyrgyzstan",
+    "continent": "ASIE",
+    "region": "ASIE CENTRALE",
+    "organisations": {
+      "OTSC": "membre",
+      "OCS": "membre",
+      "CEI": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Kyrgyz Republic",
+      "unhcr": "Kyrgyzstan",
+      "undesa": "Kyrgyzstan",
+      "dette": "Kyrgyz Republic"
+    }
+  },
+  "LAO": {
+    "iso2": "LA",
+    "nom": "Lao People's Democratic Republic",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "ASEAN": "membre",
+      "Francophonie": "membre",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Laos",
+      "unhcr": "Lao People's Dem. Rep.",
+      "undesa": "Lao People's Democratic Republic",
+      "dette": "Lao People's Democratic Rep."
+    }
+  },
+  "LVA": {
+    "iso2": "LV",
+    "nom": "Latvia",
+    "continent": "EURO",
+    "region": "EURO SEPTENTRIONALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "OCDE": "membre",
+      "Francophonie": "associé",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Latvia",
+      "unhcr": "Latvia",
+      "undesa": "Latvia",
+      "dette": "Latvia"
+    }
+  },
+  "LBN": {
+    "iso2": "LB",
+    "nom": "Lebanon",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "Francophonie": "membre",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Lebanon",
+      "unhcr": "Lebanon",
+      "undesa": "Lebanon",
+      "dette": "Lebanon"
+    }
+  },
+  "LSO": {
+    "iso2": "LS",
+    "nom": "Lesotho",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Lesotho",
+      "unhcr": "Lesotho",
+      "undesa": "Lesotho",
+      "dette": "Lesotho"
+    }
+  },
+  "LBR": {
+    "iso2": "LR",
+    "nom": "Liberia",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Liberia",
+      "unhcr": "Liberia",
+      "undesa": "Liberia",
+      "dette": "Liberia"
+    }
+  },
+  "LBY": {
+    "iso2": "LY",
+    "nom": "Libya",
+    "continent": "AFRI",
+    "region": "AFR SEPTENTRIONALE",
+    "organisations": {
+      "LA": "membre",
+      "OPEP": "membre",
+      "UA": "membre",
+      "UMA": "membre",
+      "CEN-SAD": "membre",
+      "COMESA": "membre",
+      "OMC": "observateur",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Libya",
+      "unhcr": "Libya",
+      "undesa": "Libya",
+      "dette": "Libya"
+    }
+  },
+  "LIE": {
+    "iso2": "LI",
+    "nom": "Liechtenstein",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "Liechtenstein",
+      "undesa": "Liechtenstein",
+      "dette": ""
+    }
+  },
+  "MDG": {
+    "iso2": "MG",
+    "nom": "Madagascar",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "EAC": "observateur",
+      "COI": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Madagascar",
+      "unhcr": "Madagascar",
+      "undesa": "Madagascar",
+      "dette": "Madagascar"
+    }
+  },
+  "MWI": {
+    "iso2": "MW",
+    "nom": "Malawi",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Malawi",
+      "unhcr": "Malawi",
+      "undesa": "Malawi",
+      "dette": "Malawi"
+    }
+  },
+  "MYS": {
+    "iso2": "MY",
+    "nom": "Malaysia",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "ASEAN": "membre",
+      "OPEP": "membre_suspendu",
+      "Commonwealth": "membre",
+      "APEC": "membre",
+      "PIF": "observateur",
+      "RCEP": "membre",
+      "BRICS": "partenaire",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "BRI": "signataire",
+      "OPEP+": "allié",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Malaysia",
+      "unhcr": "Malaysia",
+      "undesa": "Malaysia",
+      "dette": "Malaysia"
+    }
+  },
+  "MDV": {
+    "iso2": "MV",
+    "nom": "Maldives",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "OCS": "observateur",
+      "Commonwealth": "membre",
+      "COI": "observateur",
+      "SAARC": "membre",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Maldives",
+      "unhcr": "Maldives",
+      "undesa": "Maldives",
+      "dette": "Maldives"
+    }
+  },
+  "MLI": {
+    "iso2": "ML",
+    "nom": "Mali",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "suspendu",
+      "CEDEAO": "suspendu",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Mali",
+      "unhcr": "Mali",
+      "undesa": "Mali",
+      "dette": "Mali"
+    }
+  },
+  "MRT": {
+    "iso2": "MR",
+    "nom": "Mauritania",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "UMA": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Mauritania",
+      "unhcr": "Mauritania",
+      "undesa": "Mauritania",
+      "dette": "Mauritania"
+    }
+  },
+  "MUS": {
+    "iso2": "MU",
+    "nom": "Mauritius",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "COI": "membre",
+      "COMESA": "membre",
+      "SAARC": "observateur",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Mauritius",
+      "unhcr": "Mauritius",
+      "undesa": "Mauritius",
+      "dette": "Mauritius"
+    }
+  },
+  "MEX": {
+    "iso2": "MX",
+    "nom": "Mexico",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "BRICS": "observateur",
+      "OPEP": "membre_suspendu",
+      "OCDE": "membre",
+      "G20": "membre",
+      "Francophonie": "observateur",
+      "CELAC": "membre",
+      "Conseil Europe": "observateur",
+      "OEA": "membre",
+      "MERCOSUR": "observateur",
+      "CARICOM": "observateur",
+      "ACEUM": "membre",
+      "APEC": "membre",
+      "OMC": "membre",
+      "GAFI": "membre",
+      "OPEP+": "allié",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Mexico",
+      "unhcr": "Mexico",
+      "undesa": "Mexico",
+      "dette": "Mexico"
+    }
+  },
+  "FSM": {
+    "iso2": "FM",
+    "nom": "Micronesia (Fed. States of)",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "PIF": "membre",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Micronesia",
+      "unhcr": "Micronesia (Federated States of)",
+      "undesa": "Micronesia (Fed. States of)",
+      "dette": ""
+    }
+  },
+  "MCO": {
+    "iso2": "MC",
+    "nom": "Monaco",
+    "continent": "EURO",
+    "region": "EURO OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Monaco",
+      "unhcr": "Monaco",
+      "undesa": "Monaco",
+      "dette": "Monaco"
+    }
+  },
+  "MNG": {
+    "iso2": "MN",
+    "nom": "Mongolia",
+    "continent": "ASIE",
+    "region": "ASIE ORIENTALE",
+    "organisations": {
+      "OCS": "observateur",
+      "CEI": "observateur",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Mongolia",
+      "unhcr": "Mongolia",
+      "undesa": "Mongolia",
+      "dette": "Mongolia"
+    }
+  },
+  "MNE": {
+    "iso2": "ME",
+    "nom": "Montenegro",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "OTAN": "membre",
+      "Francophonie": "observateur",
+      "UE": "candidat",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Montenegro",
+      "unhcr": "Montenegro",
+      "undesa": "Montenegro",
+      "dette": "Montenegro"
+    }
+  },
+  "MOZ": {
+    "iso2": "MZ",
+    "nom": "Mozambique",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "COI": "observateur",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Mozambique",
+      "unhcr": "Mozambique",
+      "undesa": "Mozambique",
+      "dette": "Mozambique"
+    }
+  },
+  "MMR": {
+    "iso2": "MM",
+    "nom": "Myanmar",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "ASEAN": "membre",
+      "SAARC": "observateur",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Myanmar",
+      "unhcr": "Myanmar",
+      "undesa": "Myanmar",
+      "dette": "Myanmar"
+    }
+  },
+  "NAM": {
+    "iso2": "",
+    "nom": "Namibia",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Namibia",
+      "unhcr": "Namibia",
+      "undesa": "Namibia",
+      "dette": "Namibia"
+    }
+  },
+  "NRU": {
+    "iso2": "NR",
+    "nom": "Nauru",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "PIF": "membre",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "Nauru",
+      "undesa": "Nauru",
+      "dette": ""
+    }
+  },
+  "NPL": {
+    "iso2": "NP",
+    "nom": "Nepal",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "OCS": "observateur",
+      "SAARC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Nepal",
+      "unhcr": "Nepal",
+      "undesa": "Nepal",
+      "dette": "Nepal"
+    }
+  },
+  "NZL": {
+    "iso2": "NZ",
+    "nom": "New Zealand",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "OCDE": "membre",
+      "ANZUS": "membre",
+      "Five Eyes": "membre",
+      "Commonwealth": "membre",
+      "MERCOSUR": "observateur",
+      "APEC": "membre",
+      "PIF": "membre",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "GAFI": "membre",
+      "IEA": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "New Zealand",
+      "unhcr": "New Zealand",
+      "undesa": "New Zealand*",
+      "dette": "New Zealand"
+    }
+  },
+  "NIC": {
+    "iso2": "NI",
+    "nom": "Nicaragua",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Nicaragua",
+      "unhcr": "Nicaragua",
+      "undesa": "Nicaragua",
+      "dette": "Nicaragua"
+    }
+  },
+  "NER": {
+    "iso2": "NE",
+    "nom": "Niger",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "suspendu",
+      "CEDEAO": "suspendu",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Niger",
+      "unhcr": "Niger",
+      "undesa": "Niger",
+      "dette": "Niger"
+    }
+  },
+  "NGA": {
+    "iso2": "NG",
+    "nom": "Nigeria",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "BRICS": "observateur",
+      "OPEP": "membre",
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Nigeria",
+      "unhcr": "Nigeria",
+      "undesa": "Nigeria",
+      "dette": "Nigeria"
+    }
+  },
+  "MKD": {
+    "iso2": "MK",
+    "nom": "North Macedonia",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "OTAN": "membre",
+      "Francophonie": "membre",
+      "UE": "candidat",
+      "Conseil Europe": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "North Macedonia",
+      "unhcr": "North Macedonia",
+      "undesa": "North Macedonia",
+      "dette": "North Macedonia"
+    }
+  },
+  "PLW": {
+    "iso2": "PW",
+    "nom": "Palau",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "PIF": "membre",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "Palau",
+      "undesa": "Palau",
+      "dette": ""
+    }
+  },
+  "PAN": {
+    "iso2": "PA",
+    "nom": "Panama",
+    "continent": "AMER",
+    "region": "AMERIQUE CENTRALE",
+    "organisations": {
+      "CELAC": "membre",
+      "OEA": "membre",
+      "CARICOM": "observateur",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Panama",
+      "unhcr": "Panama",
+      "undesa": "Panama",
+      "dette": "Panama"
+    }
+  },
+  "PNG": {
+    "iso2": "PG",
+    "nom": "Papua New Guinea",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "ASEAN": "observateur",
+      "Commonwealth": "membre",
+      "APEC": "membre",
+      "PIF": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Papua New Guinea",
+      "unhcr": "Papua New Guinea",
+      "undesa": "Papua New Guinea",
+      "dette": "Papua New Guinea"
+    }
+  },
+  "PRY": {
+    "iso2": "PY",
+    "nom": "Paraguay",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "MERCOSUR": "membre",
+      "UNASUR": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Paraguay",
+      "unhcr": "Paraguay",
+      "undesa": "Paraguay",
+      "dette": "Paraguay"
+    }
+  },
+  "PER": {
+    "iso2": "PE",
+    "nom": "Peru",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "UNASUR": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "MERCOSUR": "associé",
+      "APEC": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "GECF": "observateur",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Peru",
+      "unhcr": "Peru",
+      "undesa": "Peru",
+      "dette": "Peru"
+    }
+  },
+  "PHL": {
+    "iso2": "PH",
+    "nom": "Philippines",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "ASEAN": "membre",
+      "APEC": "membre",
+      "PIF": "observateur",
+      "RCEP": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Philippines",
+      "unhcr": "Philippines",
+      "undesa": "Philippines",
+      "dette": "Philippines"
+    }
+  },
+  "MDA": {
+    "iso2": "MD",
+    "nom": "Republic of Moldova",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UE": "candidat",
+      "CEI": "membre",
+      "Conseil Europe": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Moldova",
+      "unhcr": "Rep. of Moldova",
+      "undesa": "Republic of Moldova*",
+      "dette": "Moldova"
+    }
+  },
+  "ROU": {
+    "iso2": "RO",
+    "nom": "Romania",
+    "continent": "EURO",
+    "region": "EURO ORIENTALE",
+    "organisations": {
+      "UE": "membre",
+      "OTAN": "membre",
+      "Francophonie": "membre",
+      "Conseil Europe": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Romania",
+      "unhcr": "Romania",
+      "undesa": "Romania",
+      "dette": "Romania"
+    }
+  },
+  "KNA": {
+    "iso2": "KN",
+    "nom": "Saint Kitts and Nevis",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "St. Kitts And Nevis",
+      "unhcr": "Saint Kitts and Nevis",
+      "undesa": "Saint Kitts and Nevis",
+      "dette": "St. Kitts And Nevis"
+    }
+  },
+  "LCA": {
+    "iso2": "LC",
+    "nom": "Saint Lucia",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "St. Lucia",
+      "unhcr": "Saint Lucia",
+      "undesa": "Saint Lucia",
+      "dette": "St. Lucia"
+    }
+  },
+  "VCT": {
+    "iso2": "VC",
+    "nom": "Saint Vincent and the Grenadines",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "Saint Vincent and the Grenadines",
+      "undesa": "Saint Vincent and the Grenadines",
+      "dette": "St. Vincent & The Grenadines"
+    }
+  },
+  "WSM": {
+    "iso2": "WS",
+    "nom": "Samoa",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "PIF": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Samoa",
+      "unhcr": "Samoa",
+      "undesa": "Samoa",
+      "dette": "Samoa"
+    }
+  },
+  "SMR": {
+    "iso2": "SM",
+    "nom": "San Marino",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "Conseil Europe": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "San Marino",
+      "undesa": "San Marino",
+      "dette": ""
+    }
+  },
+  "STP": {
+    "iso2": "ST",
+    "nom": "Sao Tome and Principe",
+    "continent": "AFRI",
+    "region": "AFR CENTRALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEEAC": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Sao Tome & Principe",
+      "unhcr": "Sao Tome and Principe",
+      "undesa": "Sao Tome and Principe",
+      "dette": "Sao Tome & Principe"
+    }
+  },
+  "SEN": {
+    "iso2": "SN",
+    "nom": "Senegal",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "BRICS": "candidat",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Senegal",
+      "unhcr": "Senegal",
+      "undesa": "Senegal",
+      "dette": "Senegal"
+    }
+  },
+  "SRB": {
+    "iso2": "RS",
+    "nom": "Serbia",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "candidat",
+      "Conseil Europe": "membre",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Serbia",
+      "unhcr": "Serbia and XKX: S/RES/1244 (1999)",
+      "undesa": "Serbia*",
+      "dette": "Serbia"
+    }
+  },
+  "SYC": {
+    "iso2": "SC",
+    "nom": "Seychelles",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Francophonie": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "COI": "membre",
+      "COMESA": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Seychelles",
+      "unhcr": "Seychelles",
+      "undesa": "Seychelles",
+      "dette": "Seychelles"
+    }
+  },
+  "SLE": {
+    "iso2": "SL",
+    "nom": "Sierra Leone",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Sierra Leone",
+      "unhcr": "Sierra Leone",
+      "undesa": "Sierra Leone",
+      "dette": "Sierra Leone"
+    }
+  },
+  "SLB": {
+    "iso2": "SB",
+    "nom": "Solomon Islands",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "PIF": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Solomon Islands",
+      "unhcr": "Solomon Islands",
+      "undesa": "Solomon Islands",
+      "dette": "Solomon Islands"
+    }
+  },
+  "SOM": {
+    "iso2": "SO",
+    "nom": "Somalia",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "LA": "membre",
+      "UA": "membre",
+      "IGAD": "membre",
+      "EAC": "membre",
+      "CEN-SAD": "membre",
+      "COMESA": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Somalia",
+      "unhcr": "Somalia",
+      "undesa": "Somalia",
+      "dette": "Somalia"
+    }
+  },
+  "SSD": {
+    "iso2": "SS",
+    "nom": "South Sudan",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "OPEP": "membre_suspendu",
+      "UA": "membre",
+      "IGAD": "membre",
+      "EAC": "membre",
+      "OPEP+": "allié",
+      "TNP": "non_signataire",
+      "CWC": "non_signataire"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "South Sudan",
+      "unhcr": "South Sudan",
+      "undesa": "South Sudan",
+      "dette": "South Sudan"
+    }
+  },
+  "LKA": {
+    "iso2": "LK",
+    "nom": "Sri Lanka",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD",
+    "organisations": {
+      "Commonwealth": "membre",
+      "SAARC": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Sri Lanka",
+      "unhcr": "Sri Lanka",
+      "undesa": "Sri Lanka",
+      "dette": "Sri Lanka"
+    }
+  },
+  "PSE": {
+    "iso2": "PS",
+    "nom": "State of Palestine",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Palestine",
+      "unhcr": "State of Palestine",
+      "undesa": "State of Palestine",
+      "dette": ""
+    }
+  },
+  "SDN": {
+    "iso2": "SD",
+    "nom": "Sudan",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "LA": "membre",
+      "OPEP": "membre_suspendu",
+      "UA": "suspendu",
+      "IGAD": "membre",
+      "CEN-SAD": "membre",
+      "COMESA": "membre",
+      "OPEP+": "allié",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Sudan",
+      "unhcr": "Sudan",
+      "undesa": "Sudan",
+      "dette": "Sudan"
+    }
+  },
+  "SUR": {
+    "iso2": "SR",
+    "nom": "Suriname",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "UNASUR": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "MERCOSUR": "associé",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Suriname",
+      "unhcr": "Suriname",
+      "undesa": "Suriname",
+      "dette": "Suriname"
+    }
+  },
+  "SYR": {
+    "iso2": "SY",
+    "nom": "Syrian Arab Republic",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "suspendu",
+      "OMC": "observateur",
+      "BRI": "signataire",
+      "ATT": "signataire",
+      "CPI": "signataire",
+      "Paris": "ratifié",
+      "CNUDM": "non_signataire"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Syria",
+      "unhcr": "Syrian Arab Rep.",
+      "undesa": "Syrian Arab Republic",
+      "dette": "Syrian Arab Republic"
+    }
+  },
+  "TJK": {
+    "iso2": "TJ",
+    "nom": "Tajikistan",
+    "continent": "ASIE",
+    "region": "ASIE CENTRALE",
+    "organisations": {
+      "OTSC": "membre",
+      "OCS": "membre",
+      "CEI": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Tajikistan",
+      "unhcr": "Tajikistan",
+      "undesa": "Tajikistan",
+      "dette": "Tajikistan"
+    }
+  },
+  "THA": {
+    "iso2": "TH",
+    "nom": "Thailand",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "BRICS": "candidat",
+      "ASEAN": "membre",
+      "Francophonie": "observateur",
+      "APEC": "membre",
+      "PIF": "observateur",
+      "RCEP": "membre",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "IEA": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Thailand",
+      "unhcr": "Thailand",
+      "undesa": "Thailand",
+      "dette": "Thailand"
+    }
+  },
+  "TLS": {
+    "iso2": "TL",
+    "nom": "Timor-Leste",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "ASEAN": "observateur",
+      "PIF": "observateur",
+      "TNP": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Timor-Leste",
+      "unhcr": "Timor-Leste",
+      "undesa": "Timor-Leste",
+      "dette": "Timor-Leste"
+    }
+  },
+  "TGO": {
+    "iso2": "TG",
+    "nom": "Togo",
+    "continent": "AFRI",
+    "region": "AFR OCCIDENTALE",
+    "organisations": {
+      "Commonwealth": "observateur",
+      "Francophonie": "membre",
+      "UA": "membre",
+      "CEDEAO": "membre",
+      "CEN-SAD": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Togo",
+      "unhcr": "Togo",
+      "undesa": "Togo",
+      "dette": "Togo"
+    }
+  },
+  "TON": {
+    "iso2": "TO",
+    "nom": "Tonga",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "PIF": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Tonga",
+      "unhcr": "Tonga",
+      "undesa": "Tonga",
+      "dette": "Tonga"
+    }
+  },
+  "TTO": {
+    "iso2": "TT",
+    "nom": "Trinidad and Tobago",
+    "continent": "AMER",
+    "region": "CARAIBES",
+    "organisations": {
+      "Commonwealth": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "CARICOM": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Trinidad & Tobago",
+      "unhcr": "Trinidad and Tobago",
+      "undesa": "Trinidad and Tobago",
+      "dette": "Trinidad & Tobago"
+    }
+  },
+  "TKM": {
+    "iso2": "TM",
+    "nom": "Turkmenistan",
+    "continent": "ASIE",
+    "region": "ASIE CENTRALE",
+    "organisations": {
+      "CEI": "associé",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Turkmenistan",
+      "unhcr": "Turkmenistan",
+      "undesa": "Turkmenistan",
+      "dette": "Turkmenistan"
+    }
+  },
+  "UGA": {
+    "iso2": "UG",
+    "nom": "Uganda",
+    "continent": "AFRI",
+    "region": "AFR EST",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "IGAD": "membre",
+      "EAC": "membre",
+      "COMESA": "membre",
+      "BRICS": "partenaire",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Uganda",
+      "unhcr": "Uganda",
+      "undesa": "Uganda",
+      "dette": "Uganda"
+    }
+  },
+  "TZA": {
+    "iso2": "TZ",
+    "nom": "United Republic of Tanzania",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "EAC": "membre",
+      "COI": "observateur",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Tanzania",
+      "unhcr": "United Rep. of Tanzania",
+      "undesa": "United Republic of Tanzania",
+      "dette": "Tanzania"
+    }
+  },
+  "URY": {
+    "iso2": "UY",
+    "nom": "Uruguay",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "MERCOSUR": "membre",
+      "UNASUR": "membre",
+      "Francophonie": "observateur",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Uruguay",
+      "unhcr": "Uruguay",
+      "undesa": "Uruguay",
+      "dette": "Uruguay"
+    }
+  },
+  "UZB": {
+    "iso2": "UZ",
+    "nom": "Uzbekistan",
+    "continent": "ASIE",
+    "region": "ASIE CENTRALE",
+    "organisations": {
+      "OCS": "membre",
+      "CEI": "membre",
+      "BRICS": "partenaire",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Uzbekistan",
+      "unhcr": "Uzbekistan",
+      "undesa": "Uzbekistan",
+      "dette": "Uzbekistan"
+    }
+  },
+  "VUT": {
+    "iso2": "VU",
+    "nom": "Vanuatu",
+    "continent": "OCEA",
+    "region": "OCEANIE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "Francophonie": "membre",
+      "PIF": "membre",
+      "OMC": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Vanuatu",
+      "unhcr": "Vanuatu",
+      "undesa": "Vanuatu",
+      "dette": "Vanuatu"
+    }
+  },
+  "VEN": {
+    "iso2": "VE",
+    "nom": "Venezuela (Bolivarian Republic of)",
+    "continent": "AMER",
+    "region": "AMERIQUE DU SUD",
+    "organisations": {
+      "MERCOSUR": "associé",
+      "UNASUR": "membre",
+      "OPEP": "membre",
+      "CELAC": "membre",
+      "OEA": "membre",
+      "ALBA": "membre",
+      "CARICOM": "observateur",
+      "OMC": "observateur",
+      "GECF": "membre",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "non_signataire"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Venezuela",
+      "unhcr": "Venezuela (Bolivarian Republic of)",
+      "undesa": "Venezuela (Bolivarian Republic of)",
+      "dette": "Venezuela, Republic Bolivarian"
+    }
+  },
+  "VNM": {
+    "iso2": "VN",
+    "nom": "Viet Nam",
+    "continent": "ASIE",
+    "region": "ASIE DU SUD EST",
+    "organisations": {
+      "ASEAN": "membre",
+      "Francophonie": "membre",
+      "APEC": "membre",
+      "RCEP": "membre",
+      "BRICS": "partenaire",
+      "OCDE": "candidat",
+      "OMC": "membre",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Viet Nam",
+      "unhcr": "Viet Nam",
+      "undesa": "Viet Nam",
+      "dette": "Viet Nam"
+    }
+  },
+  "XKX": {
+    "iso2": "XK",
+    "nom": "XKX (under UNSC res. 1244)",
+    "continent": "EURO",
+    "region": "EURO MERIDIONALE",
+    "organisations": {
+      "UE": "candidat"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "XKX",
+      "unhcr": "XKX (under UNSC res. 1244)",
+      "undesa": "XKX (under UNSC res. 1244)",
+      "dette": "XKX"
+    }
+  },
+  "YEM": {
+    "iso2": "YE",
+    "nom": "Yemen",
+    "continent": "ASIE",
+    "region": "ASIE OCCIDENTALE",
+    "organisations": {
+      "LA": "membre",
+      "Commonwealth": "observateur",
+      "OMC": "observateur",
+      "AIIB": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Yemen",
+      "unhcr": "Yemen",
+      "undesa": "Yemen",
+      "dette": "Yemen, Republic Of"
+    }
+  },
+  "ZMB": {
+    "iso2": "ZM",
+    "nom": "Zambia",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "Commonwealth": "membre",
+      "UA": "membre",
+      "SADC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "ATT": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Zambia",
+      "unhcr": "Zambia",
+      "undesa": "Zambia",
+      "dette": "Zambia"
+    }
+  },
+  "ZWE": {
+    "iso2": "ZW",
+    "nom": "Zimbabwe",
+    "continent": "AFRI",
+    "region": "AFR AUSTRALE",
+    "organisations": {
+      "UA": "membre",
+      "SADC": "membre",
+      "COMESA": "membre",
+      "OMC": "membre",
+      "BRI": "signataire",
+      "TNP": "ratifié",
+      "CWC": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "Zimbabwe",
+      "unhcr": "Zimbabwe",
+      "undesa": "Zimbabwe",
+      "dette": "Zimbabwe"
+    }
+  },
+  "EUX": {
+    "iso2": "",
+    "nom": "EUX",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "G7": "observateur",
+      "G20": "observateur",
+      "COI": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "TUV": {
+    "iso2": "",
+    "nom": "TUV",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "Commonwealth": "membre",
+      "PIF": "membre",
+      "TNP": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "UAE": {
+    "iso2": "",
+    "nom": "UAE",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "Francophonie": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "KOS": {
+    "iso2": "",
+    "nom": "KOS",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "Francophonie": "associé"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "EUR": {
+    "iso2": "",
+    "nom": "EUR",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "IGAD": "observateur",
+      "SAARC": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "MYT": {
+    "iso2": "",
+    "nom": "MYT",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "COI": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "REU": {
+    "iso2": "",
+    "nom": "REU",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "COI": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "MNT": {
+    "iso2": "",
+    "nom": "MNT",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CARICOM": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "ABW": {
+    "iso2": "",
+    "nom": "ABW",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CARICOM": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "BMU": {
+    "iso2": "",
+    "nom": "BMU",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CARICOM": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "BES": {
+    "iso2": "",
+    "nom": "BES",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CARICOM": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "CYM": {
+    "iso2": "",
+    "nom": "CYM",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CARICOM": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "CUW": {
+    "iso2": "",
+    "nom": "CUW",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CARICOM": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "TCA": {
+    "iso2": "",
+    "nom": "TCA",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CARICOM": "observateur"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "HKG": {
+    "iso2": "",
+    "nom": "HKG",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "APEC": "membre",
+      "OMC": "membre",
+      "GAFI": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "COK": {
+    "iso2": "",
+    "nom": "COK",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "PIF": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "MHL": {
+    "iso2": "",
+    "nom": "MHL",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "PIF": "membre",
+      "TNP": "ratifié",
+      "CPI": "ratifié",
+      "Paris": "ratifié",
+      "CNUDM": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "NIU": {
+    "iso2": "",
+    "nom": "NIU",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "PIF": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "MAC": {
+    "iso2": "",
+    "nom": "MAC",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "OMC": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "BHT": {
+    "iso2": "",
+    "nom": "BHT",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "OMC": "observateur",
+      "AIIB": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "MON": {
+    "iso2": "",
+    "nom": "MON",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "AIIB": "membre"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "SAO": {
+    "iso2": "",
+    "nom": "SAO",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CPI": "ratifié"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  },
+  "BUR": {
+    "iso2": "",
+    "nom": "BUR",
+    "continent": "",
+    "region": "",
+    "organisations": {
+      "CPI": "retrait"
+    },
+    "attributs": {
+      "membre_permanent_cs_onu": false,
+      "puissance_nucleaire_declaree": false,
+      "puissance_nucleaire": false
+    },
+    "noms_sources": {
+      "sipri": "",
+      "unhcr": "",
+      "undesa": "",
+      "dette": ""
+    }
+  }
+}
