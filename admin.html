@@ -277,6 +277,55 @@ tbody td{padding:7px 11px;vertical-align:middle}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--bg)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── ÉTAPE 0 — Header auth & badges ── */
+.auth-badge{
+  display:flex;align-items:center;gap:7px;
+  font-family:var(--mono);font-size:10px;color:var(--text2);
+  background:var(--bg3);border:1px solid var(--border);
+  padding:5px 12px;border-radius:4px;cursor:pointer;
+  transition:border-color .15s;
+}
+.auth-badge:hover{border-color:var(--border2)}
+.auth-badge.connected{color:var(--green);border-color:var(--green-b);background:var(--green-d)}
+.auth-badge.connected .dot{background:var(--green);box-shadow:0 0 7px var(--green)}
+
+/* ── ÉTAPE 0 — Placeholders ── */
+.placeholder{
+  background:var(--bg2);border:1px dashed var(--border2);border-radius:6px;
+  padding:48px 24px;text-align:center;color:var(--text2);
+}
+.placeholder-ico{font-size:36px;opacity:.3;margin-bottom:12px}
+.placeholder-t{font-size:14px;font-weight:500;color:var(--text);margin-bottom:6px}
+.placeholder-s{font-size:12px;color:var(--text3);margin-bottom:14px}
+.placeholder-tag{
+  display:inline-block;font-family:var(--mono);font-size:10px;
+  color:var(--orange);background:var(--orange-d);border:1px solid var(--orange-b);
+  padding:3px 10px;border-radius:3px;letter-spacing:.08em;
+}
+
+/* ── ÉTAPE 0 — Modal PAT ── */
+.modal-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:9px 11px;border-radius:4px;font-family:var(--mono);font-size:11.5px;
+  margin-bottom:10px;
+}
+.modal-input:focus{outline:none;border-color:var(--green)}
+.modal-help{
+  background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+  padding:11px 13px;font-size:11.5px;color:var(--text2);line-height:1.55;margin-bottom:14px;
+}
+.modal-help code{background:var(--bg);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:10.5px}
+.modal-help ol{margin:6px 0 6px 18px}
+.modal-help li{margin-bottom:3px}
+
+/* ── ÉTAPE 0 — Source pill ── */
+.src-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:11px;
+  font-family:var(--mono);font-size:10px;font-weight:500;
+  background:var(--bg3);border:1px solid var(--border);color:var(--text2);
+}
+.src-pill .dot{width:5px;height:5px}
 </style>
 </head>
 <body>
@@ -286,10 +335,14 @@ tbody td{padding:7px 11px;vertical-align:middle}
 <header>
   <div class="logo">
     GÉOPOL <span class="logo-sep">|</span>
-    <span class="logo-sub">Interface d'import — Administrateur</span>
+    <span class="logo-sub">Console d'administration</span>
   </div>
   <div style="display:flex;gap:10px;align-items:center">
-    <div class="db-badge" onclick="document.getElementById('dbFileInput').click()" title="Charger une base .db">
+    <div class="auth-badge" id="authBadge" onclick="openAuthModal()" title="Connexion GitHub">
+      <div class="dot"></div>
+      <span id="authLabel">Non connecté</span>
+    </div>
+    <div class="db-badge" onclick="document.getElementById('dbFileInput').click()" title="Charger une base .db locale (override R2)">
       <div class="dot" id="dbDot"></div>
       <span class="db-name" id="dbName">Aucune base chargée</span>
       <span style="color:var(--text3);font-size:10px">· CHANGER</span>
@@ -303,13 +356,25 @@ tbody td{padding:7px 11px;vertical-align:middle}
 <!-- NAV -->
 <nav>
   <div class="nav-grp">
-    <span class="nav-label">Import</span>
-    <button class="nav-btn active" id="nav-import" onclick="showPanel('import')">
-      <span class="nav-ico">📥</span> Importer un CSV
+    <span class="nav-label">Pilotage</span>
+    <button class="nav-btn active" id="nav-suivi" onclick="showPanel('suivi')">
+      <span class="nav-ico">📡</span> Suivi ETL
+    </button>
+    <button class="nav-btn" id="nav-imports" onclick="showPanel('imports')">
+      <span class="nav-ico">📥</span> Imports
+    </button>
+    <button class="nav-btn" id="nav-pilotage" onclick="showPanel('pilotage')">
+      <span class="nav-ico">⚙️</span> Pilotage DB
+    </button>
+    <button class="nav-btn" id="nav-couverture" onclick="showPanel('couverture')">
+      <span class="nav-ico">🌐</span> Couverture
     </button>
   </div>
   <div class="nav-grp">
-    <span class="nav-label">Base</span>
+    <span class="nav-label">Outils</span>
+    <button class="nav-btn" id="nav-import" onclick="showPanel('import')">
+      <span class="nav-ico">📄</span> Import CSV local
+    </button>
     <button class="nav-btn" id="nav-journal" onclick="showPanel('journal')">
       <span class="nav-ico">📋</span> Journal
     </button>
@@ -325,8 +390,57 @@ tbody td{padding:7px 11px;vertical-align:middle}
 <!-- MAIN -->
 <main>
 
-<!-- ══════════════════ PANEL: IMPORT ══════════════════ -->
-<div class="panel active" id="panel-import">
+<!-- ══════════════════ PANEL: SUIVI ETL ══════════════════ -->
+<div class="panel active" id="panel-suivi">
+  <div class="ptitle">Suivi du pipeline ETL</div>
+  <div class="psub">État du dernier run, sources actives, déclenchement manuel.</div>
+
+  <div id="suiviContent">
+    <div class="empty"><div class="empty-ico">📡</div>Lecture de status.json depuis R2…</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: IMPORTS ══════════════════ -->
+<div class="panel" id="panel-imports">
+  <div class="ptitle">Imports de données</div>
+  <div class="psub">Sources automatiques (API), semi-automatiques (CSV) et manuelles (assisté IA).</div>
+
+  <div class="placeholder">
+    <div class="placeholder-ico">📥</div>
+    <div class="placeholder-t">Onglet Imports</div>
+    <div class="placeholder-s">Toggles indicateurs, sources auto, dépôt CSV semi-auto et manuel IA.</div>
+    <div class="placeholder-tag">À DÉVELOPPER — ÉTAPE 4</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: PILOTAGE DB ══════════════════ -->
+<div class="panel" id="panel-pilotage">
+  <div class="ptitle">Pilotage de la base</div>
+  <div class="psub">Bornes temporelles, périmètre pays, estimation de taille, déclenchement de reconstruction.</div>
+
+  <div class="placeholder">
+    <div class="placeholder-ico">⚙️</div>
+    <div class="placeholder-t">Onglet Pilotage DB</div>
+    <div class="placeholder-s">Curseurs années (début/fin), sélection pays, aperçu taille, commit etl_config.json.</div>
+    <div class="placeholder-tag">À DÉVELOPPER — ÉTAPE 2</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: COUVERTURE ══════════════════ -->
+<div class="panel" id="panel-couverture">
+  <div class="ptitle">Couverture des données</div>
+  <div class="psub">Matrice indicateurs × pays × années, identification des données manquantes.</div>
+
+  <div class="placeholder">
+    <div class="placeholder-ico">🌐</div>
+    <div class="placeholder-t">Onglet Couverture</div>
+    <div class="placeholder-s">Matrice de qualité, filtres par continent et organisation, drill-down pays manquants.</div>
+    <div class="placeholder-tag">À DÉVELOPPER — ÉTAPE 3</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: IMPORT (CSV LOCAL — OUTIL) ══════════════════ -->
+<div class="panel" id="panel-import">
   <div class="ptitle">Importer un fichier CSV</div>
   <div class="psub">Glissez un fichier CSV normalisé ou cliquez pour parcourir. La base doit être chargée au préalable.</div>
 
@@ -451,6 +565,41 @@ tbody td{padding:7px 11px;vertical-align:middle}
 </main><!-- /main -->
 </div><!-- /body -->
 </div><!-- /shell -->
+
+<!-- AUTH PAT MODAL -->
+<div class="modal-bg hidden" id="authModal">
+  <div class="modal" style="width:480px">
+    <div class="modal-t" id="authModalTitle">🔐 Connexion GitHub</div>
+    <div class="modal-s">
+      Un token personnel (PAT) est requis pour piloter le pipeline ETL,
+      modifier la configuration et déposer des fichiers semi-automatiques.
+      Il est stocké uniquement dans ce navigateur.
+    </div>
+
+    <div class="modal-help">
+      <strong style="color:var(--text)">Comment créer le token (une seule fois) :</strong>
+      <ol>
+        <li>Aller sur <code>github.com → Settings → Developer settings</code></li>
+        <li><code>Personal access tokens → Fine-grained tokens → Generate new token</code></li>
+        <li>Repository access : <strong>seulement</strong> <code>ahk1515/geopol</code></li>
+        <li>Permissions : <code>Contents: Read &amp; Write</code> + <code>Actions: Read &amp; Write</code></li>
+        <li>Coller le token ci-dessous (commence par <code>github_pat_</code>)</li>
+      </ol>
+    </div>
+
+    <input type="password" id="patInput" class="modal-input" placeholder="github_pat_..." autocomplete="off">
+
+    <div id="authError" class="hidden" style="margin-bottom:10px">
+      <div class="alert ar"><span class="alert-ico">✕</span><span id="authErrorMsg"></span></div>
+    </div>
+
+    <div class="frow-end">
+      <button class="btn btn-r btn-sm" id="btnAuthDisconnect" onclick="disconnectAuth()">Déconnecter</button>
+      <button class="btn btn-s btn-sm" onclick="closeAuthModal()">Annuler</button>
+      <button class="btn btn-g btn-sm" onclick="saveAuth()">Connecter</button>
+    </div>
+  </div>
+</div>
 
 <!-- ROLLBACK MODAL -->
 <div class="modal-bg hidden" id="rollbackModal">
@@ -1313,9 +1462,361 @@ function handleCsvFile(file) {
 document.getElementById('rollbackModal').addEventListener('click', function(e){
   if (e.target === this) closeRollbackModal();
 });
+document.getElementById('authModal').addEventListener('click', function(e){
+  if (e.target === this) closeAuthModal();
+});
 
-// ── BOOT ──
-initSql();
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 0 — CONFIGURATION PILOTAGE
+// ═══════════════════════════════════════════════════════════
+const PILOT = {
+  // R2 — lecture publique (CORS configuré, pas de clé requise)
+  r2Public:  'https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev',
+  dbKey:     'geopolitique.db',
+  statusKey: 'status.json',
+
+  // GitHub — pour l'écriture (PAT requis)
+  ghOwner:   'ahk1515',
+  ghRepo:    'geopol',
+  ghBranch:  'main',
+  ghWorkflow:'etl.yml',
+
+  // Local storage keys
+  lsPat:     'geopol_admin_pat',
+};
+
+// État global Pilotage
+const Pilot = {
+  pat:    null,
+  status: null,   // contenu de status.json
+  dbFromR2: false,
+};
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 0 — AUTHENTIFICATION GITHUB (PAT)
+// ═══════════════════════════════════════════════════════════
+function loadStoredPat() {
+  try {
+    const stored = localStorage.getItem(PILOT.lsPat);
+    if (stored && stored.length > 20) {
+      Pilot.pat = stored;
+      updateAuthBadge();
+    }
+  } catch(e) { /* localStorage indisponible */ }
+}
+
+function updateAuthBadge() {
+  const badge = document.getElementById('authBadge');
+  const label = document.getElementById('authLabel');
+  const btnDisconnect = document.getElementById('btnAuthDisconnect');
+
+  if (Pilot.pat) {
+    badge.classList.add('connected');
+    label.textContent = 'GitHub connecté';
+    if (btnDisconnect) btnDisconnect.classList.remove('hidden');
+  } else {
+    badge.classList.remove('connected');
+    label.textContent = 'Non connecté';
+    if (btnDisconnect) btnDisconnect.classList.add('hidden');
+  }
+}
+
+function openAuthModal() {
+  const modal = document.getElementById('authModal');
+  const input = document.getElementById('patInput');
+  const err   = document.getElementById('authError');
+  const btnDc = document.getElementById('btnAuthDisconnect');
+
+  input.value = '';
+  err.classList.add('hidden');
+  btnDc.classList.toggle('hidden', !Pilot.pat);
+
+  modal.classList.remove('hidden');
+  setTimeout(() => input.focus(), 50);
+}
+
+function closeAuthModal() {
+  document.getElementById('authModal').classList.add('hidden');
+}
+
+async function saveAuth() {
+  const input = document.getElementById('patInput');
+  const err   = document.getElementById('authError');
+  const msg   = document.getElementById('authErrorMsg');
+  const pat   = input.value.trim();
+
+  if (!pat || pat.length < 20) {
+    msg.textContent = 'Token vide ou trop court.';
+    err.classList.remove('hidden');
+    return;
+  }
+
+  // Validation : ping API GitHub pour vérifier le token
+  msg.textContent = 'Vérification du token…';
+  err.classList.remove('hidden');
+  err.querySelector('.alert').classList.remove('ar');
+  err.querySelector('.alert').classList.add('ai');
+
+  try {
+    const r = await fetch(`https://api.github.com/repos/${PILOT.ghOwner}/${PILOT.ghRepo}`, {
+      headers: { 'Authorization': `Bearer ${pat}`, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status} — ${r.status === 401 ? 'token invalide' : 'accès refusé'}`);
+    }
+    // OK
+    Pilot.pat = pat;
+    try { localStorage.setItem(PILOT.lsPat, pat); } catch(e) {}
+    updateAuthBadge();
+    closeAuthModal();
+    err.querySelector('.alert').classList.remove('ai');
+    err.querySelector('.alert').classList.add('ar');
+  } catch(e) {
+    err.querySelector('.alert').classList.remove('ai');
+    err.querySelector('.alert').classList.add('ar');
+    msg.textContent = `Échec : ${e.message}`;
+  }
+}
+
+function disconnectAuth() {
+  Pilot.pat = null;
+  try { localStorage.removeItem(PILOT.lsPat); } catch(e) {}
+  updateAuthBadge();
+  closeAuthModal();
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 0 — HELPERS GITHUB API (préparés pour étapes 2-4)
+// ═══════════════════════════════════════════════════════════
+
+// Appel générique à l'API GitHub avec le PAT
+async function ghFetch(path, opts = {}) {
+  if (!Pilot.pat) throw new Error('Non connecté à GitHub. Cliquez sur le badge en haut à droite.');
+  const url = path.startsWith('http') ? path : `https://api.github.com${path}`;
+  const r = await fetch(url, {
+    ...opts,
+    headers: {
+      'Authorization': `Bearer ${Pilot.pat}`,
+      'Accept':        'application/vnd.github+json',
+      ...(opts.headers || {})
+    }
+  });
+  if (!r.ok) {
+    const txt = await r.text().catch(()=>'');
+    throw new Error(`GitHub API ${r.status} : ${txt.slice(0,200)}`);
+  }
+  return r.json();
+}
+
+// Lit un fichier du repo (utile pour récupérer config.json, etl_config.json)
+async function ghReadFile(path) {
+  const data = await ghFetch(`/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/contents/${path}?ref=${PILOT.ghBranch}`);
+  const content = atob(data.content.replace(/\n/g,''));
+  return { content, sha: data.sha };
+}
+
+// Commit un fichier (création ou mise à jour). Si sha absent → création.
+async function ghWriteFile(path, content, message, sha = null) {
+  const body = {
+    message,
+    content: btoa(unescape(encodeURIComponent(content))),
+    branch:  PILOT.ghBranch,
+  };
+  if (sha) body.sha = sha;
+  return ghFetch(`/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/contents/${path}`, {
+    method: 'PUT',
+    body:   JSON.stringify(body),
+  });
+}
+
+// Déclenche le workflow ETL manuellement
+async function ghTriggerWorkflow(inputs = {}) {
+  return ghFetch(`/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/actions/workflows/${PILOT.ghWorkflow}/dispatches`, {
+    method: 'POST',
+    body:   JSON.stringify({ ref: PILOT.ghBranch, inputs }),
+  });
+}
+
+// Récupère les derniers runs du workflow
+async function ghListRuns(perPage = 5) {
+  return ghFetch(`/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/actions/workflows/${PILOT.ghWorkflow}/runs?per_page=${perPage}`);
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 0 — CHARGEMENT DB DEPUIS R2
+// ═══════════════════════════════════════════════════════════
+async function loadDbFromR2() {
+  document.getElementById('dbName').textContent = 'Chargement depuis R2…';
+  setDot('loading');
+
+  try {
+    if (!SQL) {
+      // Au cas où le boot a échoué, on retente
+      SQL = await initSqlJs({
+        locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`
+      });
+    }
+    const url = `${PILOT.r2Public}/${PILOT.dbKey}?v=${Date.now()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    db = new SQL.Database(new Uint8Array(buf));
+    dbFileName = 'geopolitique.db (R2)';
+    Pilot.dbFromR2 = true;
+
+    const sizeMb = (buf.byteLength / 1024 / 1024).toFixed(1);
+    document.getElementById('dbName').textContent = `geopolitique.db · ${sizeMb} Mo`;
+    document.getElementById('btnSaveDb').disabled = false;
+    setDot(true);
+
+    // Recharger les vues qui en dépendent (panels Outils)
+    try { loadJournal(); } catch(e) {}
+    try { loadStats(); }   catch(e) {}
+    try { loadMigrations(); } catch(e) {}
+
+    return true;
+  } catch(e) {
+    setDot(false);
+    document.getElementById('dbName').textContent = 'Échec chargement R2';
+    console.warn('R2 fetch failed:', e);
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 0 — LECTURE STATUS.JSON
+// ═══════════════════════════════════════════════════════════
+async function loadStatusJson() {
+  try {
+    const url = `${PILOT.r2Public}/${PILOT.statusKey}?v=${Date.now()}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    Pilot.status = await res.json();
+    renderSuiviEtl();
+    return true;
+  } catch(e) {
+    document.getElementById('suiviContent').innerHTML = `
+      <div class="alert ar">
+        <span class="alert-ico">✕</span>
+        <div><strong>Impossible de charger status.json</strong><br>
+        <span class="mono" style="font-size:10.5px">${escapeHtml(e.message)}</span></div>
+      </div>`;
+    return false;
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 0 — RENDU MINIMAL ONGLET SUIVI (sera étoffé en Étape 1)
+// ═══════════════════════════════════════════════════════════
+function renderSuiviEtl() {
+  const s = Pilot.status;
+  if (!s) return;
+
+  const lastRun = s.last_run ? new Date(s.last_run) : null;
+  const ago     = lastRun ? formatAgo(lastRun) : '—';
+
+  const sources = Object.values(s.sources || {});
+  const rowsTotal = sources.reduce((a,b)=>a + (b.rows||0), 0);
+
+  const statusColor = {
+    'ok':      'cg',
+    'error':   'cr',
+    'warning': 'co',
+  };
+
+  const html = `
+    <div class="sgrid">
+      <div class="scell cg">
+        <div class="sn">${(s.db_size_mb||0).toFixed(1)} Mo</div>
+        <div class="sl">Taille DB · ${escapeHtml(s.db_size_status||'?')}</div>
+      </div>
+      <div class="scell cg">
+        <div class="sn">${rowsTotal.toLocaleString('fr-FR')}</div>
+        <div class="sl">Lignes au total</div>
+      </div>
+      <div class="scell cg">
+        <div class="sn">${sources.length}</div>
+        <div class="sl">Sources tracées</div>
+      </div>
+      <div class="scell cg">
+        <div class="sn" style="font-size:14px;line-height:1.7">${ago}</div>
+        <div class="sl">Dernier run</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch">
+        <span class="ctitle">Sources — dernier run</span>
+        <button class="btn btn-s btn-sm" onclick="loadStatusJson()">↻ Rafraîchir</button>
+      </div>
+      <div class="tbl-w">
+        <table>
+          <thead><tr>
+            <th>Source</th><th>Type</th><th>Statut</th><th style="text-align:right">Lignes</th><th>Erreur</th>
+          </tr></thead>
+          <tbody>
+            ${sources.map(src => `
+              <tr>
+                <td><strong style="color:var(--text)">${escapeHtml(src.label||src.id)}</strong>
+                    <div class="mono txt3" style="font-size:9.5px">${escapeHtml(src.id)}</div></td>
+                <td><span class="src-pill"><div class="dot ${src.status==='ok'?'on':''}"></div>${escapeHtml(src.type||'?')}</span></td>
+                <td><span class="badge ${src.status==='ok'?'bg':src.status==='error'?'br':'bo'}">${escapeHtml(src.status||'?')}</span></td>
+                <td style="text-align:right" class="mono">${(src.rows||0).toLocaleString('fr-FR')}</td>
+                <td class="mono txt2" style="font-size:10px">${escapeHtml(src.error||'—')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="alert ai mt12">
+      <span class="alert-ico">ℹ</span>
+      <div>Cet onglet sera étoffé à l'<strong>Étape 1</strong> : logs détaillés du dernier run, bouton de déclenchement manuel, historique des runs.</div>
+    </div>
+  `;
+
+  document.getElementById('suiviContent').innerHTML = html;
+}
+
+function formatAgo(date) {
+  const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diffSec < 60)     return 'à l\'instant';
+  if (diffSec < 3600)   return `il y a ${Math.floor(diffSec/60)} min`;
+  if (diffSec < 86400)  return `il y a ${Math.floor(diffSec/3600)} h`;
+  if (diffSec < 604800) return `il y a ${Math.floor(diffSec/86400)} j`;
+  return date.toLocaleDateString('fr-FR');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 0 — BOOT
+// ═══════════════════════════════════════════════════════════
+async function bootPilot() {
+  // 1. Charger le PAT depuis localStorage
+  loadStoredPat();
+
+  // 2. Init sql.js (compatible avec initSql() existant)
+  try {
+    SQL = await initSqlJs({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`
+    });
+  } catch(e) {
+    console.error('sql.js failed:', e);
+  }
+
+  // 3. Charger en parallèle : DB depuis R2 + status.json
+  await Promise.allSettled([
+    loadDbFromR2(),
+    loadStatusJson(),
+  ]);
+}
+
+// Lancer le bootstrap Pilotage (remplace l'ancien initSql() seul)
+bootPilot();
 </script>
 </body>
 </html>
