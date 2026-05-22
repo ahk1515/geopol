@@ -540,6 +540,78 @@ tbody td{padding:7px 11px;vertical-align:middle}
   font-size:10px;color:var(--text3);margin:8px 0 4px;
   text-transform:uppercase;letter-spacing:.08em;
 }
+
+/* ── ÉTAPE 4 — Imports ── */
+.subtabs{
+  display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:6px;padding:3px;margin-bottom:14px;
+}
+.subtab{
+  flex:1;padding:9px 14px;background:transparent;border:none;color:var(--text2);
+  font-size:11.5px;font-family:var(--sans);cursor:pointer;border-radius:4px;
+  transition:all .15s;display:flex;align-items:center;gap:7px;justify-content:center;
+}
+.subtab:hover{background:var(--bg3);color:var(--text)}
+.subtab.active{background:var(--bg4);color:var(--text);font-weight:500}
+.subtab-ico{font-size:13px}
+.subtab-cnt{
+  font-family:var(--mono);font-size:9.5px;color:var(--text3);
+  background:var(--bg);padding:1px 5px;border-radius:8px;
+}
+.subtab.active .subtab-cnt{color:var(--green);background:var(--green-d)}
+
+.src-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:14px 16px;margin-bottom:10px;
+}
+.src-card-head{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.src-card-t{font-weight:500;color:var(--text);font-size:13px;flex:1}
+.src-card-meta{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px}
+.src-card-body{font-size:11.5px;color:var(--text2);line-height:1.5}
+
+.src-badge{
+  font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;
+  letter-spacing:.05em;
+}
+.src-badge.auto{background:rgba(96,165,250,.1);color:var(--blue)}
+.src-badge.semi{background:rgba(245,158,11,.1);color:var(--orange)}
+.src-badge.man {background:rgba(167,139,250,.1);color:#a78bfa}
+.src-badge.ok  {background:var(--green-d);color:var(--green)}
+.src-badge.todo{background:var(--bg4);color:var(--text3)}
+.src-badge.err {background:rgba(248,113,113,.1);color:var(--red)}
+
+.dropzone{
+  border:2px dashed var(--border2);border-radius:6px;padding:22px;text-align:center;
+  background:var(--bg3);transition:all .15s;cursor:pointer;margin-top:10px;
+}
+.dropzone:hover, .dropzone.dragover{border-color:var(--green);background:var(--green-d)}
+.dropzone-ico{font-size:24px;opacity:.5;margin-bottom:6px}
+.dropzone-t{font-size:12px;color:var(--text2);margin-bottom:3px}
+.dropzone-s{font-size:10.5px;color:var(--text3)}
+
+.prompt-block{
+  background:var(--bg);border:1px solid var(--border);border-radius:5px;
+  padding:11px 13px;margin:10px 0;position:relative;
+}
+.prompt-text{
+  font-family:var(--mono);font-size:10.5px;color:var(--text2);
+  white-space:pre-wrap;line-height:1.55;max-height:260px;overflow-y:auto;
+}
+.prompt-copy{
+  position:absolute;top:8px;right:8px;font-size:10px;padding:3px 8px;
+}
+
+.conflict-summary{
+  background:var(--bg3);border:1px solid var(--border);border-radius:5px;
+  padding:11px 13px;margin:10px 0;
+}
+.conflict-line{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;
+}
+.conflict-line:last-child{border-bottom:none}
+
+.upload-modal-body{max-height:55vh;overflow-y:auto}
 </style>
 </head>
 <body>
@@ -617,13 +689,10 @@ tbody td{padding:7px 11px;vertical-align:middle}
 <!-- ══════════════════ PANEL: IMPORTS ══════════════════ -->
 <div class="panel" id="panel-imports">
   <div class="ptitle">Imports de données</div>
-  <div class="psub">Sources automatiques (API), semi-automatiques (CSV) et manuelles (assisté IA).</div>
+  <div class="psub">Sources automatiques (API), semi-automatiques (CSV via parser) et manuelles (assisté IA).</div>
 
-  <div class="placeholder">
-    <div class="placeholder-ico">📥</div>
-    <div class="placeholder-t">Onglet Imports</div>
-    <div class="placeholder-s">Toggles indicateurs, sources auto, dépôt CSV semi-auto et manuel IA.</div>
-    <div class="placeholder-tag">À DÉVELOPPER — ÉTAPE 4</div>
+  <div id="importsContent">
+    <div class="empty"><div class="empty-ico">📥</div>Chargement…</div>
   </div>
 </div>
 
@@ -805,6 +874,19 @@ tbody td{padding:7px 11px;vertical-align:middle}
       <button class="btn btn-r btn-sm" id="btnAuthDisconnect" onclick="disconnectAuth()">Déconnecter</button>
       <button class="btn btn-s btn-sm" onclick="closeAuthModal()">Annuler</button>
       <button class="btn btn-g btn-sm" onclick="saveAuth()">Connecter</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD CSV MODAL (Étape 4) -->
+<div class="modal-bg hidden" id="uploadModal">
+  <div class="modal" style="width:680px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-t" id="uploadModalTitle">Déposer un fichier</div>
+    <div class="modal-s" id="uploadModalSubtitle">—</div>
+    <div id="uploadModalBody" class="upload-modal-body"></div>
+    <div class="frow-end" style="margin-top:14px">
+      <button class="btn btn-s btn-sm" onclick="closeUploadModal()">Annuler</button>
+      <button class="btn btn-g btn-sm" id="btnUploadConfirm" onclick="confirmUpload()" disabled>⬆ Commit sur GitHub</button>
     </div>
   </div>
 </div>
@@ -3246,6 +3328,633 @@ loadDbFromR2 = async function() {
     Couv.loaded = false;  // forcer recalcul à la prochaine ouverture
   }
   return ok;
+};
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 4 — IMPORTS (auto vue / semi-auto upload / manuel IA)
+// ═══════════════════════════════════════════════════════════
+
+const Imp = {
+  activeSubtab: 'auto',  // 'auto' | 'semi' | 'manuel'
+  prompts:      null,    // contenu de prompts_transformation_csv.md
+  uploadCtx:    null,    // contexte d'upload courant
+};
+
+// Liste des sources semi-automatiques (parser Python disponible ou non)
+const SOURCES_SEMI = [
+  { id: 'sipri',         label: 'SIPRI — Armement',              folder: 'etl/sources/uploads',         filename: 'trade-register.csv',  freq: 'annuelle',  parser: true,  note: 'Trade Register CSV — parser sipri.py validé (6675 lignes)' },
+  { id: 'energy',        label: 'Energy Institute — Hydrocarbures', folder: 'etl/sources/uploads',      filename: 'energy-data.csv',     freq: 'annuelle',  parser: false, note: 'Statistical Review of World Energy — parser à coder' },
+  { id: 'undesa',        label: 'UNDESA — Migrants',             folder: 'etl/sources/uploads',         filename: 'undesa-migrants.csv', freq: 'biennale',  parser: false, note: 'International Migrant Stock — parser à coder' },
+  { id: 'lowy',          label: 'Lowy Institute — Représentations', folder: 'etl/sources/uploads',      filename: 'lowy-diplomacy.csv',  freq: 'annuelle',  parser: false, note: 'Global Diplomacy Index — parser à coder' },
+  { id: 'zee',           label: 'Flanders Marine — ZEE',         folder: 'etl/sources/uploads',         filename: 'eez.csv',             freq: 'statique',  parser: false, note: 'Données statiques — parser à coder' },
+  { id: 'unesco',        label: 'UNESCO — Étudiants',            folder: 'etl/sources/uploads',         filename: 'unesco-students.csv', freq: 'annuelle',  parser: false, note: 'OPRI.zip à inspecter' },
+];
+
+// Pour 4c manuel
+const MANUEL_FOLDER = 'uploads/manuel';
+
+// ── Chargement du fichier prompts ──
+async function loadPrompts() {
+  if (Imp.prompts !== null) return;
+  // Essai 1 : via GitHub API (PAT)
+  if (Pilot.pat) {
+    try {
+      const f = await ghReadFile('prompts_transformation_csv.md');
+      Imp.prompts = f.content;
+      return;
+    } catch(e) {}
+  }
+  // Essai 2 : via fetch direct (GitHub Pages)
+  try {
+    const r = await fetch('prompts_transformation_csv.md?v=' + Date.now());
+    if (r.ok) Imp.prompts = await r.text();
+  } catch(e) {}
+}
+
+// Extraction des deux blocs de prompts (entre ```)
+function extractPromptBlocks(md) {
+  if (!md) return { identite: '', flux: '' };
+  const blocks = [];
+  const re = /```\s*\n([\s\S]*?)\n```/g;
+  let m;
+  while ((m = re.exec(md)) !== null) blocks.push(m[1]);
+  return {
+    identite: blocks[0] || '(prompt identite non trouvé)',
+    flux:     blocks[1] || '(prompt flux non trouvé)',
+  };
+}
+
+// ── Rendu principal ──
+function renderImports() {
+  // Sous-onglets
+  const stats   = (Pilot.status && Pilot.status.sources) || {};
+  const nAuto   = Object.values(stats).filter(s => s.type === 'automatique').length;
+  const nSemi   = SOURCES_SEMI.length;
+  const sub = `
+    <div class="subtabs">
+      <button class="subtab ${Imp.activeSubtab==='auto'?'active':''}" onclick="setImpSubtab('auto')">
+        <span class="subtab-ico">⚡</span> Automatique
+        <span class="subtab-cnt">${nAuto}</span>
+      </button>
+      <button class="subtab ${Imp.activeSubtab==='semi'?'active':''}" onclick="setImpSubtab('semi')">
+        <span class="subtab-ico">📤</span> Semi-automatique
+        <span class="subtab-cnt">${nSemi}</span>
+      </button>
+      <button class="subtab ${Imp.activeSubtab==='manuel'?'active':''}" onclick="setImpSubtab('manuel')">
+        <span class="subtab-ico">🤖</span> Manuel assisté IA
+      </button>
+    </div>
+  `;
+
+  let body = '';
+  if (Imp.activeSubtab === 'auto')   body = renderSubAuto();
+  if (Imp.activeSubtab === 'semi')   body = renderSubSemi();
+  if (Imp.activeSubtab === 'manuel') body = renderSubManuel();
+
+  document.getElementById('importsContent').innerHTML = sub + body;
+}
+
+function setImpSubtab(name) {
+  Imp.activeSubtab = name;
+  renderImports();
+  if (name === 'manuel' && Imp.prompts === null) {
+    loadPrompts().then(() => renderImports());
+  }
+}
+
+// ── 4a Automatique ──
+function renderSubAuto() {
+  const s = Pilot.status;
+  if (!s) {
+    return `<div class="empty"><div class="empty-ico">📡</div>status.json indisponible. Va sur Suivi ETL.</div>`;
+  }
+  const sources = Object.values(s.sources || {}).filter(x => x.type === 'automatique');
+
+  const cards = sources.map(src => {
+    const end  = src.end ? new Date(src.end) : null;
+    const stCls = src.status === 'ok' ? 'ok' : src.status === 'error' ? 'err' : 'todo';
+    return `
+      <div class="src-card">
+        <div class="src-card-head">
+          <div style="flex:1">
+            <div class="src-card-t">${escapeHtml(src.label || src.id)}</div>
+            <div class="src-card-meta">${escapeHtml(src.id)} · ${end ? formatAgo(end) : '—'}</div>
+          </div>
+          <span class="src-badge auto">automatique</span>
+          <span class="src-badge ${stCls}">${escapeHtml(src.status || '?')}</span>
+        </div>
+        <div class="src-card-body">
+          ${(src.rows||0).toLocaleString('fr-FR')} lignes${src.error ? ' · <span style="color:var(--red)">'+escapeHtml(src.error)+'</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="alert ai" style="margin-bottom:12px">
+      <span class="alert-ico">ℹ</span>
+      <div>Les sources automatiques tournent toutes les semaines (lundi 3h UTC) ou sur déclenchement manuel depuis <strong>Suivi ETL</strong>. Cette vue est en lecture seule.</div>
+    </div>
+    ${cards}
+  `;
+}
+
+// ── 4b Semi-automatique ──
+function renderSubSemi() {
+  const cards = SOURCES_SEMI.map(src => {
+    return `
+      <div class="src-card">
+        <div class="src-card-head">
+          <div style="flex:1">
+            <div class="src-card-t">${escapeHtml(src.label)}</div>
+            <div class="src-card-meta">${escapeHtml(src.id)} · fréquence ${escapeHtml(src.freq)} · ${escapeHtml(src.folder)}/${escapeHtml(src.filename)}</div>
+          </div>
+          <span class="src-badge semi">semi-auto</span>
+          <span class="src-badge ${src.parser?'ok':'todo'}">${src.parser?'parser OK':'parser à coder'}</span>
+        </div>
+        <div class="src-card-body">
+          ${escapeHtml(src.note)}
+        </div>
+        <div class="dropzone" id="dz-${src.id}"
+             ondragover="dzOver(event,'${src.id}')"
+             ondragleave="dzLeave(event,'${src.id}')"
+             ondrop="dzDrop(event,'semi','${src.id}')"
+             onclick="document.getElementById('file-${src.id}').click()">
+          <div class="dropzone-ico">📄</div>
+          <div class="dropzone-t">Déposer ${escapeHtml(src.filename)}</div>
+          <div class="dropzone-s">Glisser-déposer ou cliquer pour parcourir · commit dans ${escapeHtml(src.folder)}/</div>
+          <input type="file" id="file-${src.id}" style="display:none"
+                 accept=".csv,.xlsx,.xls"
+                 onchange="onFilePicked(event,'semi','${src.id}')">
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="alert ai" style="margin-bottom:12px">
+      <span class="alert-ico">ℹ</span>
+      <div>Dépôt de fichiers issus de sources qui nécessitent un téléchargement manuel.
+      Le fichier est commité dans <code>etl/sources/uploads/</code> du repo, puis traité par le parser Python au prochain run du pipeline.</div>
+    </div>
+    ${cards}
+  `;
+}
+
+// ── 4c Manuel IA ──
+function renderSubManuel() {
+  const blocks = extractPromptBlocks(Imp.prompts);
+  return `
+    <div class="alert ai" style="margin-bottom:12px">
+      <span class="alert-ico">ℹ</span>
+      <div>
+        <strong>Workflow :</strong> (1) tu copies le prompt approprié, (2) tu le donnes à une IA avec ton fichier source (PDF, Excel...), (3) tu déposes le CSV résultat ci-dessous.
+        Le fichier est commité dans <code>${MANUEL_FOLDER}/</code> et traité par <code>etl/sources/manuel.py</code> au prochain run.
+      </div>
+    </div>
+
+    <div class="src-card">
+      <div class="src-card-head">
+        <div style="flex:1">
+          <div class="src-card-t">📋 Prompt — Table <code style="font-family:var(--mono)">identite</code></div>
+          <div class="src-card-meta">Indicateurs par pays (population, PIB, projection PIB, etc.)</div>
+        </div>
+      </div>
+      <div class="prompt-block">
+        <button class="btn btn-s btn-sm prompt-copy" onclick="copyToClip(this, ${JSON.stringify(blocks.identite).replace(/"/g,'&quot;')})">📋 Copier</button>
+        <div class="prompt-text">${escapeHtml(blocks.identite)}</div>
+      </div>
+    </div>
+
+    <div class="src-card">
+      <div class="src-card-head">
+        <div style="flex:1">
+          <div class="src-card-t">📋 Prompt — Table <code style="font-family:var(--mono)">flux</code></div>
+          <div class="src-card-meta">Indicateurs bilatéraux entre deux pays (commerce, migration, etc.)</div>
+        </div>
+      </div>
+      <div class="prompt-block">
+        <button class="btn btn-s btn-sm prompt-copy" onclick="copyToClip(this, ${JSON.stringify(blocks.flux).replace(/"/g,'&quot;')})">📋 Copier</button>
+        <div class="prompt-text">${escapeHtml(blocks.flux)}</div>
+      </div>
+    </div>
+
+    <div class="src-card">
+      <div class="src-card-head">
+        <div style="flex:1">
+          <div class="src-card-t">⬆ Déposer un CSV formaté par l'IA</div>
+          <div class="src-card-meta">Validation automatique + détection de conflits avec la DB existante</div>
+        </div>
+        <span class="src-badge man">manuel IA</span>
+      </div>
+      <div class="dropzone" id="dz-manuel"
+           ondragover="dzOver(event,'manuel')"
+           ondragleave="dzLeave(event,'manuel')"
+           ondrop="dzDrop(event,'manuel','manuel')"
+           onclick="document.getElementById('file-manuel').click()">
+        <div class="dropzone-ico">📄</div>
+        <div class="dropzone-t">Déposer un CSV (identite ou flux)</div>
+        <div class="dropzone-s">Format attendu : voir prompts ci-dessus · commit dans ${MANUEL_FOLDER}/</div>
+        <input type="file" id="file-manuel" style="display:none" accept=".csv"
+               onchange="onFilePicked(event,'manuel','manuel')">
+      </div>
+    </div>
+  `;
+}
+
+// ── Helpers UI ──
+function copyToClip(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copié';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  }).catch(e => alert('Impossible de copier : ' + e.message));
+}
+
+function dzOver(e, id)  { e.preventDefault(); document.getElementById('dz-'+id)?.classList.add('dragover'); }
+function dzLeave(e, id) { document.getElementById('dz-'+id)?.classList.remove('dragover'); }
+function dzDrop(e, mode, id) {
+  e.preventDefault();
+  document.getElementById('dz-'+id)?.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFileUpload(f, mode, id);
+}
+function onFilePicked(e, mode, id) {
+  const f = e.target.files[0];
+  if (f) handleFileUpload(f, mode, id);
+  e.target.value = ''; // reset pour re-déposer le même
+}
+
+// ── Gestion de l'upload ──
+async function handleFileUpload(file, mode, sourceId) {
+  if (!Pilot.pat) { openAuthModal(); return; }
+
+  if (file.size > 25 * 1024 * 1024) {
+    alert('Fichier trop volumineux (' + (file.size/1024/1024).toFixed(1) + ' Mo). Limite à 25 Mo via GitHub API.');
+    return;
+  }
+
+  // Lecture du contenu (toujours en texte pour CSV ; binaire pour xlsx)
+  const isCsv = file.name.toLowerCase().endsWith('.csv');
+  const reader = new FileReader();
+
+  reader.onload = async (e) => {
+    const content = e.target.result;
+
+    let conflictReport = null;
+    let parseReport   = null;
+    if (mode === 'manuel' && isCsv) {
+      parseReport    = parseCsvForValidation(content);
+      conflictReport = parseReport.rows.length > 0 ? detectConflicts(parseReport) : null;
+    }
+
+    // Définir cible
+    let targetPath, displayName;
+    if (mode === 'semi') {
+      const src = SOURCES_SEMI.find(x => x.id === sourceId);
+      targetPath = `${src.folder}/${src.filename}`;
+      displayName = src.label;
+    } else {
+      // Manuel : préfixer par date + nom safe
+      const ts = new Date().toISOString().replace(/[-:]/g,'').replace('T','_').split('.')[0];
+      const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+      targetPath = `${MANUEL_FOLDER}/${ts}_${safe}`;
+      displayName = 'CSV manuel IA';
+    }
+
+    Imp.uploadCtx = {
+      mode, sourceId, file, content, targetPath, displayName,
+      isCsv, parseReport, conflictReport,
+    };
+    showUploadModal();
+  };
+
+  if (isCsv) reader.readAsText(file, 'utf-8');
+  else       reader.readAsBinaryString(file);
+}
+
+// ── Validation CSV manuel ──
+function parseCsvForValidation(content) {
+  const lines = content.split(/\r?\n/).filter(l => l.length > 0);
+  if (lines.length < 2) return { format: null, headers: [], rows: [], errors: ['Fichier vide ou sans données'] };
+
+  const headers = parseCsvLine(lines[0]).map(h => h.trim().toLowerCase());
+
+  const HEADER_IDENTITE = ['country_iso3','indicator','year','value','unit','source','subcategory'];
+  const HEADER_FLUX     = ['country_from','country_to','indicator','year','value','unit','source','subcategory_1','subcategory_2','subcategory_3'];
+
+  let format = null;
+  if (arraysEqual(headers, HEADER_IDENTITE)) format = 'identite';
+  else if (arraysEqual(headers, HEADER_FLUX)) format = 'flux';
+
+  if (!format) {
+    return {
+      format: null,
+      headers,
+      rows: [],
+      errors: [`En-tête non reconnue. Attendu :\n  identite : ${HEADER_IDENTITE.join(',')}\n  flux : ${HEADER_FLUX.join(',')}`]
+    };
+  }
+
+  const rows = [];
+  const errors = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCsvLine(lines[i]);
+    if (cells.length !== headers.length) {
+      errors.push(`Ligne ${i+1} : ${cells.length} colonnes au lieu de ${headers.length}`);
+      continue;
+    }
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = cells[idx]);
+
+    // Validation rapide
+    try {
+      const year = parseInt(obj.year);
+      const val  = parseFloat(obj.value);
+      if (isNaN(year) || year < 1980 || year > 2050) {
+        errors.push(`Ligne ${i+1} : année invalide '${obj.year}'`); continue;
+      }
+      if (isNaN(val)) {
+        errors.push(`Ligne ${i+1} : value non numérique '${obj.value}'`); continue;
+      }
+      if (format === 'identite') {
+        if (!/^[A-Z]{3}$/.test(obj.country_iso3)) {
+          errors.push(`Ligne ${i+1} : ISO3 invalide '${obj.country_iso3}'`); continue;
+        }
+      } else {
+        const isOkFrom = /^[A-Z]{3}$/.test(obj.country_from) || obj.country_from.startsWith('__');
+        const isOkTo   = /^[A-Z]{3}$/.test(obj.country_to)   || obj.country_to.startsWith('__');
+        if (!isOkFrom || !isOkTo) {
+          errors.push(`Ligne ${i+1} : ISO3 invalide (${obj.country_from} → ${obj.country_to})`); continue;
+        }
+      }
+      if (!obj.indicator || !obj.indicator.trim()) {
+        errors.push(`Ligne ${i+1} : indicator vide`); continue;
+      }
+      rows.push({ ...obj, year, value: val });
+    } catch(e) {
+      errors.push(`Ligne ${i+1} : ${e.message}`);
+    }
+  }
+
+  return { format, headers, rows, errors };
+}
+
+// Mini-parser CSV (gère les virgules dans les champs entre guillemets)
+function parseCsvLine(line) {
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      result.push(cur); cur = '';
+    } else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+function arraysEqual(a, b) { return a.length === b.length && a.every((v,i)=>v===b[i]); }
+
+// ── Détection des conflits avec la DB en mémoire ──
+function detectConflicts(parseReport) {
+  if (!db || !parseReport.rows.length) return null;
+
+  const conflicts = [];
+  const noConflict = [];
+
+  for (const row of parseReport.rows) {
+    let existing = null;
+    try {
+      if (parseReport.format === 'identite') {
+        const q = db.exec(`
+          SELECT value, source FROM identite
+          WHERE country_iso3 = '${row.country_iso3}'
+            AND indicator    = '${row.indicator.replace(/'/g,"''")}'
+            AND year         = ${row.year}
+        `);
+        if (q.length && q[0].values.length) {
+          existing = { value: q[0].values[0][0], source: q[0].values[0][1] };
+        }
+      } else {
+        // flux : clé inclut subcategory_1
+        const sc1 = (row.subcategory_1 || '').replace(/'/g,"''");
+        const q = db.exec(`
+          SELECT value, source FROM flux
+          WHERE country_from = '${row.country_from}'
+            AND country_to   = '${row.country_to}'
+            AND indicator    = '${row.indicator.replace(/'/g,"''")}'
+            AND year         = ${row.year}
+            AND (subcategory_1 = '${sc1}' OR (subcategory_1 IS NULL AND '${sc1}' = ''))
+        `);
+        if (q.length && q[0].values.length) {
+          existing = { value: q[0].values[0][0], source: q[0].values[0][1] };
+        }
+      }
+    } catch(e) { /* requête bizarre, on ignore */ }
+
+    if (existing !== null) conflicts.push({ row, existing });
+    else                   noConflict.push(row);
+  }
+
+  // Synthèse par indicateur × source existante
+  const summary = {};
+  for (const c of conflicts) {
+    const k = c.row.indicator + ' ← ' + (c.existing.source || '?');
+    summary[k] = (summary[k] || 0) + 1;
+  }
+
+  return {
+    totalConflicts: conflicts.length,
+    totalNew:       noConflict.length,
+    summary,
+    sampleConflicts: conflicts.slice(0, 5),
+  };
+}
+
+// ── Modal d'upload ──
+function showUploadModal() {
+  const ctx = Imp.uploadCtx;
+  if (!ctx) return;
+
+  let bodyHtml = '';
+
+  // Bloc d'info fichier
+  bodyHtml += `
+    <div class="conflict-summary">
+      <div class="conflict-line"><span class="txt2">Fichier</span><span>${escapeHtml(ctx.file.name)} · ${(ctx.file.size/1024).toFixed(1)} Ko</span></div>
+      <div class="conflict-line"><span class="txt2">Cible</span><span class="mono" style="font-size:10.5px">${escapeHtml(ctx.targetPath)}</span></div>
+      <div class="conflict-line"><span class="txt2">Mode</span><span>${ctx.mode === 'semi' ? 'Semi-automatique' : 'Manuel IA'}</span></div>
+    </div>
+  `;
+
+  let canProceed = true;
+
+  // Pour manuel CSV : afficher la validation
+  if (ctx.mode === 'manuel' && ctx.isCsv && ctx.parseReport) {
+    const pr = ctx.parseReport;
+    if (!pr.format) {
+      bodyHtml += `
+        <div class="alert ar">
+          <span class="alert-ico">✕</span>
+          <div><strong>Format CSV non reconnu</strong><br>${escapeHtml(pr.errors[0])}</div>
+        </div>
+      `;
+      canProceed = false;
+    } else {
+      bodyHtml += `
+        <div class="alert ag">
+          <span class="alert-ico">✓</span>
+          <div>Format <strong>${pr.format}</strong> détecté · <strong>${pr.rows.length}</strong> lignes valides${pr.errors.length ? ' · '+pr.errors.length+' ignorées' : ''}</div>
+        </div>
+      `;
+
+      if (pr.errors.length > 0) {
+        bodyHtml += `
+          <div class="conflict-summary">
+            <div class="txt2" style="font-size:11px;margin-bottom:6px"><strong>Lignes ignorées (${pr.errors.length}) :</strong></div>
+            ${pr.errors.slice(0,5).map(e=>`<div class="conflict-line mono" style="font-size:10px;color:var(--orange)">${escapeHtml(e)}</div>`).join('')}
+            ${pr.errors.length > 5 ? `<div class="txt3 mono" style="font-size:10px;margin-top:4px">... et ${pr.errors.length-5} autres</div>` : ''}
+          </div>
+        `;
+      }
+
+      // Conflits
+      if (ctx.conflictReport && ctx.conflictReport.totalConflicts > 0) {
+        const cr = ctx.conflictReport;
+        bodyHtml += `
+          <div class="alert ao">
+            <span class="alert-ico">⚠</span>
+            <div>
+              <strong>${cr.totalConflicts} ligne(s) vont écraser des données existantes</strong> ·
+              ${cr.totalNew} ligne(s) sont nouvelles
+            </div>
+          </div>
+          <div class="conflict-summary">
+            <div class="txt2" style="font-size:11px;margin-bottom:6px"><strong>Écrasements par source :</strong></div>
+            ${Object.entries(cr.summary).map(([k,n]) => `
+              <div class="conflict-line">
+                <span class="mono" style="font-size:10.5px">${escapeHtml(k)}</span>
+                <span class="mono" style="color:var(--orange)">${n}</span>
+              </div>
+            `).join('')}
+            <div class="txt3" style="font-size:10.5px;margin-top:8px;line-height:1.5">
+              ⚠ Si tu veux préserver les données existantes et juste ajouter de la prospective,
+              vérifie que tes années ne chevauchent pas la couverture des sources automatiques.
+            </div>
+          </div>
+        `;
+      } else if (ctx.conflictReport) {
+        bodyHtml += `
+          <div class="alert ag">
+            <span class="alert-ico">✓</span>
+            <div>Aucun conflit détecté · ${ctx.conflictReport.totalNew} lignes nouvelles</div>
+          </div>
+        `;
+      }
+    }
+  } else if (ctx.mode === 'semi') {
+    bodyHtml += `
+      <div class="alert ai">
+        <span class="alert-ico">ℹ</span>
+        <div>Le fichier sera traité par <code>etl/sources/${escapeHtml(ctx.sourceId)}.py</code> au prochain run du pipeline. Pas de validation côté admin pour les formats source-spécifiques (CSV bruts SIPRI, Excel Energy...).</div>
+      </div>
+    `;
+  }
+
+  // Message de commit
+  bodyHtml += `
+    <div style="margin-top:14px">
+      <label style="font-size:11px;color:var(--text3);font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase">Message de commit</label>
+      <input type="text" class="modal-input" id="commitMessageInput" value="[admin] ${ctx.mode === 'semi' ? 'upload semi-auto '+ctx.sourceId : 'upload manuel '+ctx.file.name}" style="margin-top:4px">
+    </div>
+  `;
+
+  document.getElementById('uploadModalTitle').textContent = ctx.displayName;
+  document.getElementById('uploadModalSubtitle').textContent = ctx.targetPath;
+  document.getElementById('uploadModalBody').innerHTML = bodyHtml;
+  document.getElementById('btnUploadConfirm').disabled = !canProceed;
+  document.getElementById('uploadModal').classList.remove('hidden');
+}
+
+function closeUploadModal() {
+  document.getElementById('uploadModal').classList.add('hidden');
+  Imp.uploadCtx = null;
+}
+
+async function confirmUpload() {
+  const ctx = Imp.uploadCtx;
+  if (!ctx) return;
+
+  const btn = document.getElementById('btnUploadConfirm');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⟳</span> Commit en cours…';
+
+  const msg = document.getElementById('commitMessageInput').value.trim() || '[admin] upload';
+
+  try {
+    // Récupérer SHA si le fichier existe déjà (pour update)
+    let sha = null;
+    try {
+      const existing = await ghReadFile(ctx.targetPath);
+      sha = existing.sha;
+    } catch(e) { /* 404 ok */ }
+
+    // Encoder en base64. Pour les CSV (texte UTF-8), passer par encodeURIComponent.
+    // Pour les binaires (xlsx), on a lu en readAsBinaryString.
+    let b64;
+    if (ctx.isCsv) {
+      b64 = btoa(unescape(encodeURIComponent(ctx.content)));
+    } else {
+      b64 = btoa(ctx.content);
+    }
+
+    const body = {
+      message: msg,
+      content: b64,
+      branch:  PILOT.ghBranch,
+    };
+    if (sha) body.sha = sha;
+
+    const r = await ghFetchRaw(
+      `/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/contents/${ctx.targetPath}`,
+      { method: 'PUT', body: JSON.stringify(body) }
+    );
+
+    if (!r.ok) {
+      const txt = await r.text().catch(()=>'');
+      throw new Error(`HTTP ${r.status} : ${txt.slice(0,200)}`);
+    }
+
+    closeUploadModal();
+    setTimeout(() => alert('✓ Fichier commité sur GitHub.\n\n' + ctx.targetPath + '\n\nIl sera traité au prochain run du pipeline.'), 100);
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '⬆ Commit sur GitHub';
+    alert('Échec : ' + e.message);
+  }
+}
+
+// Click outside upload modal
+document.addEventListener('DOMContentLoaded', () => {
+  const um = document.getElementById('uploadModal');
+  if (um) um.addEventListener('click', function(e){ if (e.target === this) closeUploadModal(); });
+});
+
+// ── Hook : quand on arrive sur Imports ──
+const _originalShowPanel4 = window.showPanel;
+window.showPanel = async function(name) {
+  if (typeof _originalShowPanel4 === 'function') await _originalShowPanel4(name);
+  if (name === 'imports') {
+    renderImports();
+    if (Imp.activeSubtab === 'manuel' && Imp.prompts === null) {
+      await loadPrompts();
+      renderImports();
+    }
+  }
 };
 
 // ═══════════════════════════════════════════════════════════
