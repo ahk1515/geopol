@@ -242,8 +242,41 @@ Pour vraiment arrêter de collecter un indicateur (ne plus le récupérer depuis
    - **Oui** → run lancé, attente 5-10 min, DB mise à jour
    - **Non** → la modif sera prise en compte au prochain run auto (lundi 3h UTC)
 
+### 5.6 Indicateurs orphelins (détectés automatiquement)
+
+Quand la DB contient des indicateurs qui ne sont pas dans `config.json`, ils sont **invisibles dans l'app**. Cela arrive notamment quand tu importes un CSV manuel contenant un nouvel indicateur (ex : `inflation`, `chomage` pour des projections FMI).
+
+**Comportement automatique :**
+
+Au chargement de Pilotage DB, admin scanne la DB et compare aux indicateurs déclarés dans `config.json`. Tout indicateur présent dans la DB mais absent de `config.json` est marqué comme **orphelin**.
+
+S'il y en a, un encart orange apparaît en haut de l'onglet :
+- Liste les orphelins avec leur nombre de lignes, leur table, leurs unités vues, leurs sources
+- Deux boutons par ligne :
+  - **Ajouter →** : ouvre un modal pour l'ajouter à `config.json`
+  - **Ignorer** : retire l'indicateur de la liste (mémorisé dans le navigateur)
+
+**Modal d'ajout (hybride) :**
+
+Pré-remplissage automatique :
+- Code indicateur (lecture seule, détecté dans la DB)
+- Table (lecture seule)
+- Unité brute (la valeur la plus fréquente dans la DB)
+- Agrégation (`mean` si l'unité contient %, ans, hab/km² ; `sum` sinon)
+- Actif (coché)
+- Projection (décoché)
+
+À toi de remplir :
+- **Label** en français (ex: "Inflation annuelle")
+- **Catégorie** (choisie dans le menu ou nouvelle)
+- **Unité d'affichage** (ce qui apparaît dans les graphiques)
+
+Au clic sur **⬆ Ajouter à config.json**, l'entrée est commitée immédiatement et l'orphelin disparaît de la liste.
+
+**Note** : "Ignorer" est local à ton navigateur (stocké dans `localStorage`). Si tu veux le récupérer, vide le `localStorage` du site dans les outils de développement (F12 → Application → Storage → Clear).
+
 > **Demande à une IA d'approfondir cette section :**
-> > Lis la section "Onglet Pilotage DB" de NOTICE_ADMIN.md de GÉOPOL. Explique-moi la différence entre changer les bornes années (etl_config.json) et activer/désactiver un indicateur (config.json). Pourquoi sont-ils dans deux fichiers différents ?
+> > Lis la section "Indicateurs orphelins" de NOTICE_ADMIN.md de GÉOPOL. Explique-moi quand un orphelin apparaît, ce qui se passe si je l'ignore, et le critère pour bien remplir le formulaire d'ajout (en particulier la différence entre 'unit' et 'unit_display', et le choix sum vs mean).
 
 ---
 
@@ -356,6 +389,13 @@ Pour les données qu'aucune API ni source CSV publique ne fournit (ex: alignemen
 - Si tu ajoutes des projections (années > 2024) sur un indicateur existant (ex: `pib_usd` 2025-2030) → **aucun risque**, les années ne se chevauchent pas
 - Si tu écris sur des années déjà couvertes (ex: `pib_usd` 2020 alors que la Banque Mondiale l'a déjà) → **collision**, le dernier exécuté gagne (ici, ton manuel écrase la BM car `manuel.py` tourne après dans `run_etl.py`)
 - En cas de doute : utiliser un nom d'indicateur dédié (ex: `pib_usd_dgtresor` au lieu de `pib_usd`)
+
+**CSV multi-indicateurs** :
+Un seul CSV peut contenir **plusieurs indicateurs différents** — chaque ligne porte sa propre valeur dans la colonne `indicator`. Exemple typique : tu trouves une publication FMI avec PIB, dette, inflation, chômage pour 50 pays sur 5 ans. Tu peux tout mettre dans un seul fichier (5 indicateurs × 50 pays × 5 années = 1250 lignes) et un seul upload couvre l'ensemble.
+
+⚠️ **Contrainte** : toutes les lignes d'un même CSV doivent être dans la **même table** (identite OU flux). Tu ne peux pas mélanger : 7 colonnes pour identite, 10 pour flux. Si tu as besoin des deux, fais deux uploads.
+
+🆕 **Nouveaux indicateurs** : si ton CSV contient un indicateur qui n'existe pas encore dans `config.json` (ex: `inflation`), les données seront bien insérées dans la DB, mais l'indicateur n'apparaîtra pas dans l'app tant qu'il n'est pas déclaré. Va sur **Pilotage DB** : la bannière "indicateurs orphelins" te permettra de l'ajouter en un clic (voir [§5.6](#56-indicateurs-orphelins-détectés-automatiquement)).
 
 > **Demande à une IA d'approfondir cette section :**
 > > Lis la section "Onglet Imports" de NOTICE_ADMIN.md de GÉOPOL. Explique-moi les trois mécanismes d'import et donne-moi un exemple concret pour chacun. Explique aussi pourquoi le manuel IA peut écraser des données et comment l'éviter.
@@ -802,7 +842,7 @@ Cette notice est un document vivant. Elle doit être mise à jour quand :
 - Une procédure change (ex: nouveau type de PAT GitHub)
 - Un bug récurrent est identifié et résolu
 
-**Dernière mise à jour** : version v1.1 — suppression des outils legacy (Import CSV local, Journal, Stats, Migrations). L'admin est désormais 100% dédié au pilotage R2 + GitHub.
+**Dernière mise à jour** : version v1.2 — ajout de la détection des indicateurs orphelins dans Pilotage DB (§5.6), précision sur les CSV multi-indicateurs (§7.3).
 
 ---
 
