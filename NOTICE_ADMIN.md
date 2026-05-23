@@ -14,11 +14,10 @@
 5. [Onglet Pilotage DB](#5-onglet-pilotage-db)
 6. [Onglet Couverture](#6-onglet-couverture)
 7. [Onglet Imports](#7-onglet-imports)
-8. [Outils legacy (Import CSV local, Journal, Stats, Migrations)](#8-outils-legacy)
-9. [Ajouter un indicateur — procédures](#9-ajouter-un-indicateur--procédures)
-10. [Dépannage](#10-dépannage)
-11. [Annexe — Anatomie du système](#11-annexe--anatomie-du-système)
-12. [Annexe — Prompts IA prêts à l'emploi](#12-annexe--prompts-ia-prêts-à-lemploi)
+8. [Ajouter un indicateur — procédures](#8-ajouter-un-indicateur--procédures)
+9. [Dépannage](#9-dépannage)
+10. [Annexe — Anatomie du système](#10-annexe--anatomie-du-système)
+11. [Annexe — Prompts IA prêts à l'emploi](#11-annexe--prompts-ia-prêts-à-lemploi)
 
 ---
 
@@ -100,9 +99,9 @@ Si quelque chose cloche → voir [§10 Dépannage](#10-dépannage).
 
 ## 3. Navigation dans l'admin
 
-L'admin a **deux groupes** d'onglets dans la barre latérale gauche :
+L'admin a **un seul groupe d'onglets** dans la barre latérale gauche : Pilotage.
 
-### Pilotage (les 4 onglets principaux)
+### Pilotage (les 4 onglets)
 | Onglet | À quoi ça sert |
 |---|---|
 | 📡 **Suivi ETL** | Voir l'état du pipeline, déclencher un run |
@@ -110,24 +109,16 @@ L'admin a **deux groupes** d'onglets dans la barre latérale gauche :
 | ⚙️ **Pilotage DB** | Bornes années, toggles indicateurs |
 | 🌐 **Couverture** | Matrice de qualité des données, drill-down |
 
-### Outils (legacy, mode debug)
-| Onglet | À quoi ça sert |
-|---|---|
-| 📄 Import CSV local | Importer un CSV dans une DB locale (test) |
-| 📋 Journal | Historique des imports locaux |
-| 📊 Statistiques | Stats sur la DB locale |
-| 🔧 Migrations | Évolutions du schéma SQL |
-
-Les outils legacy fonctionnent sur une DB chargée en local (bouton "Changer" dans le header). Ils ne servent quasi jamais dans l'usage courant — l'admin moderne (les 4 onglets du haut) suffit.
-
 ### Le header
 
 | Élément | Action |
 |---|---|
 | **Logo GÉOPOL** | Indication visuelle |
 | Badge **auth** (à droite) | Cliquer pour gérer la connexion PAT |
-| Badge **DB** (au milieu) | Cliquer pour charger un .db local (override R2) |
-| Bouton **⬇ Exporter .db** | Télécharger la DB en cours sur ton disque |
+| Badge **DB** (au milieu) | Cliquer pour charger un .db local (override R2 — utile en cas de panne R2 ou pour tester) |
+| Bouton **⬇ Exporter .db** | Télécharger la DB en cours sur ton disque (pour archivage) |
+
+⚠️ **Note historique** : la première version d'admin avait des onglets "Outils" (Import CSV local, Journal, Statistiques, Migrations). Ils ont été retirés depuis que le pilotage moderne (les 4 onglets ci-dessus) couvre tous les besoins. Si tu as besoin de manipuler une DB locale, le bouton "Changer" du header reste disponible.
 
 ---
 
@@ -239,7 +230,7 @@ Liste des 31 indicateurs groupés par catégorie (démographie, économie, milit
 
 **Effet** : l'indicateur **n'apparaît plus dans l'app** `index.html` (menu déroulant), mais **les données restent dans la DB**. C'est un toggle d'affichage, pas de stockage.
 
-Pour vraiment arrêter de collecter un indicateur (ne plus le récupérer depuis l'API), il faudrait modifier `etl/config.py` (`INDICATORS_WB`, `INDICATORS_OWID`, etc.). C'est rare et délicat — voir [§9.4](#94-désactiver-une-source-définitivement).
+Pour vraiment arrêter de collecter un indicateur (ne plus le récupérer depuis l'API), il faudrait modifier `etl/config.py` (`INDICATORS_WB`, `INDICATORS_OWID`, etc.). C'est rare et délicat — voir [§9.4](#84-désactiver-une-source-définitivement).
 
 ### 5.5 Workflow complet d'une modification
 
@@ -371,42 +362,17 @@ Pour les données qu'aucune API ni source CSV publique ne fournit (ex: alignemen
 
 ---
 
-## 8. Outils legacy
+## 8. Ajouter un indicateur — procédures
 
-Onglets historiques de la première version d'admin. Restent disponibles pour le debug local.
-
-### 8.1 Import CSV local
-
-Charger un CSV directement dans une DB SQLite chargée en local (bouton "Changer" dans le header).
-Utilité actuelle : tester un parsing avant de déposer le fichier en semi-auto.
-
-### 8.2 Journal
-
-Historique des imports faits via l'onglet Import CSV local. Vide si tu n'utilises pas l'import local.
-
-### 8.3 Statistiques
-
-Compteurs basiques sur la DB chargée. Vide en mode R2 (pas de table journal_imports).
-
-### 8.4 Migrations
-
-Évolutions du schéma SQL (création de tables, ajout de colonnes). À ne toucher que si tu sais ce que tu fais.
-
-**Tu peux ignorer ces 4 onglets dans l'usage courant.**
-
----
-
-## 9. Ajouter un indicateur — procédures
-
-### 9.1 Vue d'ensemble : trois types d'ajout
+### 8.1 Vue d'ensemble : trois types d'ajout
 
 | Type | Source | Effort | Procédure |
 |---|---|---|---|
-| **Automatique** | API publique (Banque Mondiale, OWID, etc.) | Modif Python | [§9.2](#92-ajouter-un-indicateur-automatique) |
-| **Semi-automatique** | CSV annuel téléchargeable manuellement | Modif Python + dépôt CSV | [§9.3](#93-ajouter-une-source-semi-automatique) |
-| **Manuel assisté IA** | Donnée ponctuelle ou prospective | Aucune modif Python | [§9.5](#95-ajouter-une-donnée-manuelle-assistée-ia) |
+| **Automatique** | API publique (Banque Mondiale, OWID, etc.) | Modif Python | [§9.2](#82-ajouter-un-indicateur-automatique) |
+| **Semi-automatique** | CSV annuel téléchargeable manuellement | Modif Python + dépôt CSV | [§9.3](#83-ajouter-une-source-semi-automatique) |
+| **Manuel assisté IA** | Donnée ponctuelle ou prospective | Aucune modif Python | [§9.5](#85-ajouter-une-donnée-manuelle-assistée-ia) |
 
-### 9.2 Ajouter un indicateur automatique
+### 8.2 Ajouter un indicateur automatique
 
 **Quand l'utiliser :** une API publique fournit la donnée et tu veux l'inclure dans le pipeline automatique.
 
@@ -422,7 +388,7 @@ Compteurs basiques sur la DB chargée. Vide en mode R2 (pas de table journal_imp
 
 **Le plus simple : utiliser le prompt en [§12.1](#121-prompt-pour-ajouter-un-indicateur-automatique)** qui te génère le code prêt à coller.
 
-### 9.3 Ajouter une source semi-automatique
+### 8.3 Ajouter une source semi-automatique
 
 **Quand l'utiliser :** la donnée existe sous forme de CSV/Excel téléchargeable annuellement (pas d'API).
 
@@ -439,7 +405,7 @@ Compteurs basiques sur la DB chargée. Vide en mode R2 (pas de table journal_imp
 
 **Le plus simple : utiliser le prompt en [§12.2](#122-prompt-pour-ajouter-un-parser-semi-automatique)** qui te génère le parser complet.
 
-### 9.4 Désactiver une source définitivement
+### 8.4 Désactiver une source définitivement
 
 Si tu veux qu'une source automatique **arrête d'être récupérée** (et pas juste cacher dans l'app) :
 
@@ -450,7 +416,7 @@ Si tu veux qu'une source automatique **arrête d'être récupérée** (et pas ju
 
 Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou tu modifies les bornes années pour les exclure).
 
-### 9.5 Ajouter une donnée manuelle assistée IA
+### 8.5 Ajouter une donnée manuelle assistée IA
 
 **C'est le cas le plus simple — aucune modification Python.**
 
@@ -494,9 +460,9 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 
 ---
 
-## 10. Dépannage
+## 9. Dépannage
 
-### 10.1 Le badge DB affiche "Échec chargement R2"
+### 9.1 Le badge DB affiche "Échec chargement R2"
 
 **Cause typique** : tu as ouvert admin.html en `file:///` (double-clic local).
 **Solution** : utiliser https://ahk1515.github.io/geopol/admin.html
@@ -504,7 +470,7 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 **Cause moins fréquente** : R2 indisponible (très rare).
 **Solution** : recharger la page après quelques minutes.
 
-### 10.2 Le badge auth refuse mon PAT
+### 9.2 Le badge auth refuse mon PAT
 
 **Cause** : token mal copié, permissions manquantes, ou expiration.
 **Solution** :
@@ -512,7 +478,7 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 2. Vérifier les permissions : Actions = R/W, Contents = R/W
 3. Regénérer un PAT et le recoller
 
-### 10.3 Un commit reste bloqué sur "Commit en cours…"
+### 9.3 Un commit reste bloqué sur "Commit en cours…"
 
 **Cause typique** : F12 → Console montre une erreur 401/403 → permissions insuffisantes.
 **Solution** : vérifier les permissions du PAT.
@@ -522,7 +488,7 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 
 **Si bloqué sans message d'erreur** : recharger (Ctrl+Shift+R pour vider le cache).
 
-### 10.4 Le run pipeline échoue (statut ✕)
+### 9.4 Le run pipeline échoue (statut ✕)
 
 **Cause typique** : modification récente du code Python avec un bug.
 **Solution** :
@@ -533,17 +499,17 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 **Cause fréquente après modif** : import manquant dans `run_etl.py`.
 Exemple : tu as supprimé `manuel.py` mais l'import est resté → l'orchestrateur plante.
 
-### 10.5 L'onglet Couverture montre 0% partout
+### 9.5 L'onglet Couverture montre 0% partout
 
 **Cause** : la DB n'est pas chargée en mémoire.
 **Solution** : retourner sur Suivi ETL et attendre que le badge DB passe au vert.
 
-### 10.6 Le tableau des sources est vide
+### 9.6 Le tableau des sources est vide
 
 **Cause** : `status.json` n'est pas accessible sur R2.
 **Solution** : vérifier https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/status.json directement dans le navigateur — il doit s'afficher du JSON.
 
-### 10.7 Comment révoquer un PAT en urgence
+### 9.7 Comment révoquer un PAT en urgence
 
 Si tu penses que ton PAT a fuité :
 1. https://github.com/settings/tokens
@@ -557,9 +523,9 @@ L'admin se bloquera côté actions (les lectures publiques fonctionneront toujou
 
 ---
 
-## 11. Annexe — Anatomie du système
+## 10. Annexe — Anatomie du système
 
-### 11.1 Flux des données
+### 10.1 Flux des données
 
 ```
        ┌─────────────────────┐
@@ -594,7 +560,7 @@ L'admin se bloquera côté actions (les lectures publiques fonctionneront toujou
    └─────────────────────────────────┘
 ```
 
-### 11.2 Fichiers clés du repo
+### 10.2 Fichiers clés du repo
 
 | Fichier | Rôle | Modifié par |
 |---|---|---|
@@ -610,7 +576,7 @@ L'admin se bloquera côté actions (les lectures publiques fonctionneront toujou
 | `uploads/manuel/` | Dépôt CSV manuel IA | Admin (upload) |
 | `.github/workflows/etl.yml` | Définition GitHub Actions | Manuellement |
 
-### 11.3 Sentinelles dans la table `flux`
+### 10.3 Sentinelles dans la table `flux`
 
 Pour les flux non-bilatéraux entre pays :
 
@@ -620,7 +586,7 @@ Pour les flux non-bilatéraux entre pays :
 | `__private__` | Créditeur privé |
 | `__intra__` | Flux interne à un groupe (mode groupe dans l'app) |
 
-### 11.4 Schéma SQL
+### 10.4 Schéma SQL
 
 ```sql
 identite (
@@ -643,9 +609,9 @@ zones (
 
 ---
 
-## 12. Annexe — Prompts IA prêts à l'emploi
+## 11. Annexe — Prompts IA prêts à l'emploi
 
-### 12.1 Prompt pour ajouter un indicateur automatique
+### 11.1 Prompt pour ajouter un indicateur automatique
 
 Copier-coller dans une conversation IA, en remplaçant les `[CROCHETS]` :
 
@@ -682,7 +648,7 @@ Ne propose PAS de modifier d'autres fichiers (run_etl.py, parsers existants) sau
 Sois précis sur où coller chaque bloc (numéro de ligne approximatif ou contexte).
 ```
 
-### 12.2 Prompt pour ajouter un parser semi-automatique
+### 11.2 Prompt pour ajouter un parser semi-automatique
 
 Quand tu as un nouveau fichier CSV/Excel récurrent (annuel) qui n'a pas d'API.
 
@@ -736,7 +702,7 @@ Génère-moi :
 Sois rigoureux : pas d'interpolation, pas d'estimation, pas de valeur par défaut quand la source dit vide. Toute ligne ignorée doit être affichée dans les logs.
 ```
 
-### 12.3 Prompt pour formatter un CSV manuel (variante des prompts intégrés à admin)
+### 11.3 Prompt pour formatter un CSV manuel (variante des prompts intégrés à admin)
 
 Si les prompts par défaut dans admin ne suffisent pas, utiliser cette variante adaptée :
 
@@ -782,7 +748,7 @@ Ne mets RIEN d'autre dans le CSV (pas de commentaires, pas d'en-tête additionne
 Le premier ligne du CSV doit être l'en-tête, le reste les données.
 ```
 
-### 12.4 Prompt pour comprendre une partie de cette notice
+### 11.4 Prompt pour comprendre une partie de cette notice
 
 À utiliser si une section de la notice te semble trop courte ou pas claire :
 
@@ -800,7 +766,7 @@ Si certaines parties dépendent d'autres sections, fais des renvois et explique 
 les dépendances. N'invente pas de fonctionnalités qui ne sont pas dans la notice.
 ```
 
-### 12.5 Prompt pour diagnostiquer un problème
+### 11.5 Prompt pour diagnostiquer un problème
 
 ```
 J'utilise admin.html du projet GÉOPOL. J'ai un problème :
@@ -836,7 +802,7 @@ Cette notice est un document vivant. Elle doit être mise à jour quand :
 - Une procédure change (ex: nouveau type de PAT GitHub)
 - Un bug récurrent est identifié et résolu
 
-**Dernière mise à jour** : version initiale post-Étape 4 (admin complet).
+**Dernière mise à jour** : version v1.1 — suppression des outils legacy (Import CSV local, Journal, Stats, Migrations). L'admin est désormais 100% dédié au pilotage R2 + GitHub.
 
 ---
 
