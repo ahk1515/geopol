@@ -463,6 +463,51 @@ tbody td{padding:7px 11px;vertical-align:middle}
 .dirty-banner-ico{font-size:18px}
 .dirty-banner-t{font-size:12px;color:var(--orange);flex:1}
 
+/* ── ÉTAPE 5 — Orphelins ── */
+.orphan-banner{
+  background:var(--orange-d);border:1px solid var(--orange-b);border-radius:6px;
+  padding:13px 16px;margin-bottom:14px;
+}
+.orphan-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.orphan-ico{
+  width:26px;height:26px;border-radius:50%;background:var(--orange);
+  display:flex;align-items:center;justify-content:center;color:#000;font-weight:700;flex-shrink:0;
+}
+.orphan-t{flex:1;font-size:12.5px;color:var(--orange);font-weight:500}
+.orphan-list{
+  background:var(--bg);border:1px solid var(--border);border-radius:5px;
+}
+.orphan-row{
+  display:flex;align-items:center;gap:10px;padding:8px 12px;
+  border-bottom:1px solid var(--border);
+}
+.orphan-row:last-child{border-bottom:none}
+.orphan-info{flex:1;min-width:0}
+.orphan-name{
+  font-family:var(--mono);font-size:11.5px;color:var(--text);font-weight:500;
+}
+.orphan-meta{font-family:var(--mono);font-size:9.5px;color:var(--text3);margin-top:1px}
+.orphan-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* Form modal */
+.form-row{display:flex;flex-direction:column;gap:4px;margin-bottom:11px}
+.form-label{
+  font-family:var(--mono);font-size:9.5px;color:var(--text3);
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.form-input, .form-select{
+  background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:7px 10px;border-radius:4px;font-size:11.5px;font-family:var(--sans);
+}
+.form-input.readonly{background:var(--bg);color:var(--text3);cursor:not-allowed}
+.form-input:focus, .form-select:focus{outline:none;border-color:var(--green)}
+.form-help{font-size:10.5px;color:var(--text3);margin-top:2px;line-height:1.4}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-check{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text);cursor:pointer}
+.form-check input{margin:0;cursor:pointer}
+.form-radio-grp{display:flex;gap:14px}
+.form-radio{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text);cursor:pointer}
+
 /* ── ÉTAPE 3 — Couverture ── */
 .cov-filters{
   display:flex;flex-wrap:wrap;gap:10px;align-items:center;
@@ -754,6 +799,19 @@ tbody td{padding:7px 11px;vertical-align:middle}
   </div>
 </div>
 
+<!-- ADD INDICATOR MODAL (Étape 5) -->
+<div class="modal-bg hidden" id="addIndicatorModal">
+  <div class="modal" style="width:560px;max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-t">➕ Ajouter un indicateur à config.json</div>
+    <div class="modal-s" id="addIndModalSubtitle">—</div>
+    <div id="addIndModalBody" style="flex:1;overflow-y:auto;max-height:62vh"></div>
+    <div class="frow-end" style="margin-top:14px">
+      <button class="btn btn-s btn-sm" onclick="closeAddIndModal()">Annuler</button>
+      <button class="btn btn-g btn-sm" id="btnAddIndConfirm" onclick="confirmAddIndicator()">⬆ Ajouter à config.json</button>
+    </div>
+  </div>
+</div>
+
 <!-- DRILL-DOWN MODAL (Étape 3 — Couverture) -->
 <div class="modal-bg hidden" id="drillModal">
   <div class="modal" style="width:680px;max-height:80vh;display:flex;flex-direction:column">
@@ -800,6 +858,7 @@ function loadDbFile(input) {
       setDot(true);
       // Recharger Couverture si la DB change
       if (typeof Couv !== 'undefined') Couv.loaded = false;
+      if (typeof Orphans !== 'undefined') Orphans.loaded = false;
     } catch(err) {
       alert('Impossible d\'ouvrir la base : ' + err.message);
     }
@@ -1706,7 +1765,11 @@ function renderPilotage() {
     `}
   `;
 
-  document.getElementById('pilotageContent').innerHTML = kpis + actions + sliders + indicators;
+  // ── Bannière orphelins (Étape 5) — détection à chaque rendu ──
+  if (!Orphans.loaded) detectOrphans();
+  const orphansBanner = renderOrphansBanner();
+
+  document.getElementById('pilotageContent').innerHTML = orphansBanner + kpis + actions + sliders + indicators;
 
   // Garder le focus sur les sliders après re-render
   // (pas critique mais améliore l'UX si on bouge vite)
@@ -2391,7 +2454,8 @@ const _origLoadDbFromR2 = loadDbFromR2;
 loadDbFromR2 = async function() {
   const ok = await _origLoadDbFromR2();
   if (ok) {
-    Couv.loaded = false;  // forcer recalcul à la prochaine ouverture
+    Couv.loaded = false;     // forcer recalcul Couverture
+    Orphans.loaded = false;  // forcer redetection orphelins
   }
   return ok;
 };
@@ -3030,6 +3094,312 @@ window.showPanel = async function(name) {
     }
   }
 };
+
+// ═══════════════════════════════════════════════════════════
+// ÉTAPE 5 — DÉTECTION DES INDICATEURS ORPHELINS
+// (présents dans la DB mais absents de config.json)
+// ═══════════════════════════════════════════════════════════
+
+const Orphans = {
+  list:        [],     // [{indicator, table, n_lignes, units_seen, units_freq, sources_seen}]
+  ignored:     new Set(), // localStorage : indicateurs à ne plus afficher
+  loaded:      false,
+  // Modal d'ajout
+  addingTarget: null,
+};
+
+const LS_IGNORED_ORPHANS = 'geopol_admin_ignored_orphans';
+
+// ── Chargement de la liste ignorée depuis localStorage ──
+function loadIgnoredOrphans() {
+  try {
+    const raw = localStorage.getItem(LS_IGNORED_ORPHANS);
+    if (raw) Orphans.ignored = new Set(JSON.parse(raw));
+  } catch(e) {}
+}
+function saveIgnoredOrphans() {
+  try {
+    localStorage.setItem(LS_IGNORED_ORPHANS, JSON.stringify([...Orphans.ignored]));
+  } catch(e) {}
+}
+
+// ── Détection ──
+function detectOrphans() {
+  Orphans.list = [];
+  if (!db || !Pilotage.appConfig) { Orphans.loaded = true; return; }
+  loadIgnoredOrphans();
+
+  // Indicateurs déjà dans config.json
+  const known = new Set(Pilotage.appConfig.map(x => x.indicator));
+
+  // Scanner la DB
+  const inspect = (table) => {
+    try {
+      const q = db.exec(`
+        SELECT indicator,
+               COUNT(*) as n,
+               GROUP_CONCAT(DISTINCT unit) as units,
+               GROUP_CONCAT(DISTINCT source) as sources
+        FROM ${table}
+        WHERE indicator IS NOT NULL AND indicator != ''
+        GROUP BY indicator
+      `);
+      if (!q.length) return;
+      for (const row of q[0].values) {
+        const ind = row[0];
+        if (known.has(ind))         continue;  // déjà dans config
+        if (Orphans.ignored.has(ind)) continue; // ignoré par l'utilisateur
+
+        // Tri des unités par fréquence (la plus fréquente en premier)
+        // ici on stocke juste la liste, on prendra la 1re par défaut
+        const units = (row[2] || '').split(',').map(s => s.trim()).filter(Boolean);
+        const sources = (row[3] || '').split(',').map(s => s.trim()).filter(Boolean);
+
+        Orphans.list.push({
+          indicator:    ind,
+          table,
+          n_lignes:     row[1],
+          units_seen:   units,
+          sources_seen: sources,
+        });
+      }
+    } catch(e) { /* table absente, ignorer */ }
+  };
+
+  inspect('identite');
+  inspect('flux');
+
+  // Tri : par nb lignes décroissant
+  Orphans.list.sort((a, b) => b.n_lignes - a.n_lignes);
+  Orphans.loaded = true;
+}
+
+// ── Rendu de l'encart en haut de Pilotage DB ──
+function renderOrphansBanner() {
+  if (!Orphans.loaded || Orphans.list.length === 0) return '';
+  return `
+    <div class="orphan-banner">
+      <div class="orphan-head">
+        <div class="orphan-ico">!</div>
+        <div class="orphan-t">
+          ${Orphans.list.length} indicateur${Orphans.list.length>1?'s':''} dans la DB ${Orphans.list.length>1?'sont absents':'est absent'} de <code class="mono">config.json</code>
+          <div style="font-weight:normal;font-size:10.5px;color:var(--text2);margin-top:3px">Tant qu'ils ne sont pas ajoutés, ils restent invisibles dans l'app et dans la matrice de couverture.</div>
+        </div>
+      </div>
+      <div class="orphan-list">
+        ${Orphans.list.map((o, idx) => `
+          <div class="orphan-row">
+            <div class="orphan-info">
+              <div class="orphan-name">${escapeHtml(o.indicator)}</div>
+              <div class="orphan-meta">
+                table ${escapeHtml(o.table)} ·
+                ${o.n_lignes.toLocaleString('fr-FR')} lignes ·
+                unité${o.units_seen.length>1?'s':''} : ${escapeHtml(o.units_seen.join(', ') || '—')} ·
+                source${o.sources_seen.length>1?'s':''} : ${escapeHtml(o.sources_seen.slice(0,2).join(', ') || '—')}${o.sources_seen.length>2?' …':''}
+              </div>
+            </div>
+            <div class="orphan-actions">
+              <button class="btn btn-g btn-sm" onclick="openAddIndicatorModal(${idx})">Ajouter →</button>
+              <button class="btn btn-s btn-sm" onclick="ignoreOrphan('${escapeHtml(o.indicator).replace(/'/g,'\\\'')}')" title="Ne plus afficher">Ignorer</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ── Ignorer un orphelin ──
+function ignoreOrphan(indicator) {
+  if (!confirm(`Ignorer "${indicator}" ?\n\nCet indicateur ne sera plus affiché dans la liste des orphelins sur ce navigateur.\nTu pourras le récupérer en vidant le localStorage du site.`)) return;
+  Orphans.ignored.add(indicator);
+  saveIgnoredOrphans();
+  Orphans.list = Orphans.list.filter(o => o.indicator !== indicator);
+  renderPilotage();
+}
+
+// ── Modal d'ajout d'un indicateur ──
+function openAddIndicatorModal(idx) {
+  const o = Orphans.list[idx];
+  if (!o) return;
+  Orphans.addingTarget = o;
+
+  // Pré-remplissages intelligents
+  const firstUnit = o.units_seen[0] || '';
+  // Heuristique agrégation : % ou ans → mean, sinon sum
+  const isRate = /(%|ans|enfants|hab\/km|usd\/hab)/i.test(firstUnit);
+  const defaultAgg = isRate ? 'mean' : 'sum';
+
+  // Catégories existantes dans config.json
+  const categories = [...new Set((Pilotage.appConfig || []).map(x => x.category))].sort();
+
+  const body = `
+    <div class="form-row">
+      <label class="form-label">Code indicateur (lecture seule)</label>
+      <input type="text" class="form-input readonly" value="${escapeHtml(o.indicator)}" readonly>
+      <div class="form-help">Détecté dans la DB · table <code>${escapeHtml(o.table)}</code> · ${o.n_lignes.toLocaleString('fr-FR')} lignes</div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Label (français)</label>
+      <input type="text" class="form-input" id="addInd_label" placeholder="Ex: Inflation annuelle" value="">
+      <div class="form-help">Texte affiché dans l'app à la place du code technique.</div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-row">
+        <label class="form-label">Catégorie</label>
+        <select class="form-select" id="addInd_category">
+          ${categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('')}
+          <option value="__custom__">— Nouvelle catégorie —</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Catégorie personnalisée (si nouvelle)</label>
+        <input type="text" class="form-input" id="addInd_categoryCustom" placeholder="Ex: santé" value="">
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-row">
+        <label class="form-label">Unité brute</label>
+        <input type="text" class="form-input" id="addInd_unit" value="${escapeHtml(firstUnit)}">
+        <div class="form-help">${o.units_seen.length > 1 ? 'Unités vues en DB : ' + escapeHtml(o.units_seen.join(', ')) : 'Détecté depuis la DB'}</div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Unité d'affichage</label>
+        <input type="text" class="form-input" id="addInd_unitDisplay" placeholder="Ex: % (annuel), Mrd USD…" value="${escapeHtml(firstUnit)}">
+        <div class="form-help">Visible dans les graphiques.</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label class="form-label">Agrégation (mode groupe)</label>
+      <div class="form-radio-grp">
+        <label class="form-radio"><input type="radio" name="addInd_agg" value="sum" ${defaultAgg==='sum'?'checked':''}> sum (additionne)</label>
+        <label class="form-radio"><input type="radio" name="addInd_agg" value="mean" ${defaultAgg==='mean'?'checked':''}> mean (moyenne)</label>
+      </div>
+      <div class="form-help">Pour le mode groupe : <strong>sum</strong> pour quantités absolues (population, PIB), <strong>mean</strong> pour ratios (%, indices).</div>
+    </div>
+
+    <div class="form-row" style="flex-direction:row;gap:20px;align-items:center">
+      <label class="form-check">
+        <input type="checkbox" id="addInd_actif" checked> Indicateur actif (visible dans l'app)
+      </label>
+      <label class="form-check">
+        <input type="checkbox" id="addInd_projection"> Est une projection (futur)
+      </label>
+    </div>
+
+    <div id="addIndError" class="hidden" style="margin-top:10px"></div>
+  `;
+
+  document.getElementById('addIndModalSubtitle').innerHTML = `<code class="mono">${escapeHtml(o.indicator)}</code> · table ${escapeHtml(o.table)}`;
+  document.getElementById('addIndModalBody').innerHTML = body;
+  document.getElementById('addIndicatorModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('addInd_label').focus(), 50);
+}
+
+function closeAddIndModal() {
+  document.getElementById('addIndicatorModal').classList.add('hidden');
+  Orphans.addingTarget = null;
+}
+
+async function confirmAddIndicator() {
+  const o = Orphans.addingTarget;
+  if (!o || !Pilot.pat) { openAuthModal(); return; }
+
+  const label       = document.getElementById('addInd_label').value.trim();
+  let category      = document.getElementById('addInd_category').value;
+  const categoryCustom = document.getElementById('addInd_categoryCustom').value.trim();
+  if (category === '__custom__') {
+    if (!categoryCustom) {
+      showAddIndError('Catégorie personnalisée vide.');
+      return;
+    }
+    category = categoryCustom;
+  }
+  const unit        = document.getElementById('addInd_unit').value.trim();
+  const unitDisplay = document.getElementById('addInd_unitDisplay').value.trim();
+  const agg         = document.querySelector('input[name="addInd_agg"]:checked').value;
+  const actif       = document.getElementById('addInd_actif').checked;
+  const projection  = document.getElementById('addInd_projection').checked;
+
+  if (!label) { showAddIndError('Le label est requis.'); return; }
+  if (!unit)  { showAddIndError('L\'unité brute est requise.'); return; }
+  if (!unitDisplay) { showAddIndError('L\'unité d\'affichage est requise.'); return; }
+
+  // Construction de la nouvelle entrée
+  const newEntry = {
+    indicator:     o.indicator,
+    label,
+    table:         o.table,
+    category,
+    chart_type:    'line',
+    unit,
+    unit_display:  unitDisplay,
+    aggregation:   agg,
+    actif,
+    est_projection: projection,
+  };
+
+  // Ajout au draft + commit
+  const btn = document.getElementById('btnAddIndConfirm');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin">⟳</span> Commit…';
+
+  try {
+    // Mettre à jour la copie active locale et le draft
+    const newConfig = [...Pilotage.appConfig, newEntry];
+    const lines = newConfig.map(ind => '  ' + JSON.stringify(ind));
+    const content = '[\n' + lines.join(',\n') + '\n]\n';
+    const msg = `[admin] ajout indicateur ${o.indicator} (label: ${label})`;
+
+    const result = await ghWriteFile(
+      APP_CONFIG_PATH,
+      content,
+      msg,
+      Pilotage.appConfigSha
+    );
+    Pilotage.appConfigSha   = result.content.sha;
+    Pilotage.appConfig      = newConfig;
+    Pilotage.appConfigDraft = JSON.parse(JSON.stringify(newConfig));
+
+    // Retirer l'indicateur des orphelins
+    Orphans.list = Orphans.list.filter(x => x.indicator !== o.indicator);
+
+    closeAddIndModal();
+    renderPilotage();
+
+    // Petit feedback visuel : on signale la réussite via la bannière de Pilotage
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'alert ag';
+      el.innerHTML = `<span class="alert-ico">✓</span><div>Indicateur <strong>${escapeHtml(label)}</strong> (<code>${escapeHtml(o.indicator)}</code>) ajouté à config.json.</div>`;
+      el.style.marginBottom = '14px';
+      const content = document.getElementById('pilotageContent');
+      if (content) content.insertBefore(el, content.firstChild);
+      setTimeout(() => el.remove(), 5000);
+    }, 100);
+
+  } catch(e) {
+    btn.disabled = false;
+    btn.innerHTML = '⬆ Ajouter à config.json';
+    showAddIndError('Échec : ' + e.message);
+  }
+}
+
+function showAddIndError(msg) {
+  const el = document.getElementById('addIndError');
+  el.innerHTML = `<div class="alert ar"><span class="alert-ico">✕</span><span>${escapeHtml(msg)}</span></div>`;
+  el.classList.remove('hidden');
+}
+
+// Click outside modal
+document.addEventListener('DOMContentLoaded', () => {
+  const m = document.getElementById('addIndicatorModal');
+  if (m) m.addEventListener('click', function(e){ if (e.target === this) closeAddIndModal(); });
+});
 
 // ═══════════════════════════════════════════════════════════
 // ÉTAPE 0 — BOOT
