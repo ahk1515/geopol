@@ -18,42 +18,6 @@
     "note": "Statistical Review of World Energy — parser energy_institute.py opérationnel"
   },
   {
-    "id": "undesa",
-    "label": "UNDESA — Migrants",
-    "folder": "etl/sources/uploads",
-    "filename": "undesa-migrants.csv",
-    "freq": "biennale",
-    "parser": false,
-    "note": "International Migrant Stock — parser à coder"
-  },
-  {
-    "id": "lowy",
-    "label": "Lowy Institute — Représentations diplomatiques",
-    "folder": "etl/sources/uploads",
-    "filename": "lowy-diplomacy.csv",
-    "freq": "annuelle",
-    "parser": false,
-    "note": "Global Diplomacy Index — transformer via IA puis déposer en manuel"
-  },
-  {
-    "id": "zee",
-    "label": "Flanders Marine — ZEE",
-    "folder": "etl/sources/uploads",
-    "filename": "eez.csv",
-    "freq": "statique",
-    "parser": false,
-    "note": "Données statiques — parser à coder"
-  },
-  {
-    "id": "unesco",
-    "label": "UNESCO — Étudiants internationaux",
-    "folder": "etl/sources/uploads",
-    "filename": "unesco-students.csv",
-    "freq": "annuelle",
-    "parser": false,
-    "note": "OPRI.zip à inspecter — parser à coder"
-  },
-  {
     "id": "weo",
     "label": "FMI — World Economic Outlook",
     "folder": "etl/sources/uploads",
