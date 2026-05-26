@@ -1039,7 +1039,8 @@ async function ghFetch(path, opts = {}) {
 // Lit un fichier du repo (utile pour récupérer config.json, etl_config.json)
 async function ghReadFile(path) {
   const data = await ghFetch(`/repos/${PILOT.ghOwner}/${PILOT.ghRepo}/contents/${path}?ref=${PILOT.ghBranch}`);
-  const content = atob(data.content.replace(/\n/g,''));
+  // Décodage UTF-8 correct : atob() retourne du Latin-1, il faut repasser par decodeURIComponent
+  const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
   return { content, sha: data.sha };
 }
 
