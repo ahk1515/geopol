@@ -303,7 +303,7 @@ def upsert_rows(conn, rows):
         (
             row["country_from"],
             row["country_to"],
-            "export_armement",
+            "transferts_armement",
             row["year"],
             row["value"],
             UNIT,
