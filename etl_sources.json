@@ -54,15 +54,6 @@
     "note": "OPRI.zip à inspecter — parser à coder"
   },
   {
-    "id": "opri",
-    "label": "UNESCO OPRI — Étudiants internationaux",
-    "folder": "etl/sources/uploads",
-    "filename": "OPRI_DATA_NATIONAL.csv",
-    "freq": "annuelle",
-    "parser": true,
-    "note": "Déposer aussi OPRI_LABEL.csv dans le même dossier. Parser opri.py opérationnel (175 000+ lignes)."
-  },
-  {
     "id": "weo",
     "label": "FMI — World Economic Outlook",
     "folder": "etl/sources/uploads",
