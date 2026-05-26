@@ -21,7 +21,7 @@ from etl.config import PATH_DB, PATH_STATUS, load_admin_config
 # -------------------------------------------------------------
 # IMPORT DES SCRIPTS ETL
 # -------------------------------------------------------------
-from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, opri
+from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, opri, weo
 from etl import construits, build_db
 
 # -------------------------------------------------------------
@@ -86,6 +86,14 @@ PIPELINE = [
         "type":        "semi-automatique",
         "obligatoire": False,
     },
+    {
+        "id":          "weo",
+        "label":       "FMI — World Economic Outlook",
+        "module":      weo,
+        "type":        "semi-automatique",
+        "obligatoire": False,
+    },
+
     {
         "id":          "manuel",
         "label":       "Imports manuels (IA)",
