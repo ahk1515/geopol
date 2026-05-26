@@ -18,7 +18,7 @@ import sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from etl.config import PATH_DB, PATH_STATUS
+from etl.config import PATH_DB, PATH_STATUS, ANNEE_DEBUT
 
 # -------------------------------------------------------------
 # CONSTANTES
@@ -32,6 +32,51 @@ R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID")
 R2_SECRET_KEY    = os.environ.get("R2_SECRET_KEY")
 R2_BUCKET        = os.environ.get("R2_BUCKET", "geopol-db")
 R2_PUBLIC_URL    = os.environ.get("R2_PUBLIC_URL")  # URL pub R2
+
+# -------------------------------------------------------------
+# SOURCES AUTOMATIQUES (purgeable sans risque)
+# -------------------------------------------------------------
+# Données re-téléchargeables depuis les API → éligibles à la purge
+# des années hors bornes configurées dans etl_config.json.
+# Les sources manuelles et semi-auto ne sont jamais purgées.
+# ⚠️  Si tu ajoutes une nouvelle source automatique, ajoute-la ici.
+SOURCES_AUTOMATIQUES = [
+    "Banque Mondiale",
+    "Banque Mondiale IDS",
+    "OWID",
+    "UNHCR",
+]
+
+
+# -------------------------------------------------------------
+# PURGE DONNÉES HORS BORNES
+# -------------------------------------------------------------
+
+def purge_hors_bornes():
+    """
+    Supprime les lignes des sources automatiques antérieures à ANNEE_DEBUT.
+    Les sources manuelles et semi-auto ne sont jamais touchées.
+    Pas de purge sur ANNEE_FIN : protège les projections manuelles (> 2024).
+    """
+    conn = sqlite3.connect(PATH_DB)
+
+    placeholders = ",".join("?" * len(SOURCES_AUTOMATIQUES))
+
+    res_identite = conn.execute(
+        f"DELETE FROM identite WHERE year < ? AND source IN ({placeholders})",
+        [ANNEE_DEBUT] + SOURCES_AUTOMATIQUES,
+    )
+    res_flux = conn.execute(
+        f"DELETE FROM flux WHERE year < ? AND source IN ({placeholders})",
+        [ANNEE_DEBUT] + SOURCES_AUTOMATIQUES,
+    )
+    conn.commit()
+    conn.close()
+
+    nb = res_identite.rowcount + res_flux.rowcount
+    print(f"  {nb} lignes supprimées (avant {ANNEE_DEBUT}, sources auto uniquement)")
+    return nb
+
 
 # -------------------------------------------------------------
 # VÉRIFICATION TAILLE
@@ -351,7 +396,11 @@ def run(sources_status=None):
     elif size_status == "warning":
         print(f"  ⚠️  Attention : DB approche la limite ({size_mb:.1f} Mo)")
 
-    # 2. Construction table zones
+    # 2. Purge données hors bornes (sources auto uniquement)
+    print("\n→ Purge données hors bornes")
+    purge_hors_bornes()
+
+    # 3. Construction table zones
     print("\n→ Construction table zones")
     build_zones()
 
