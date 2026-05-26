@@ -382,5 +382,101 @@
     "aggregation": "mean",
     "actif": true,
     "est_projection": false
+  },
+  {
+    "indicator": "energie_production",
+    "label": "Production énergétique",
+    "table": "identite",
+    "category": "energie",
+    "chart_type": "line",
+    "unit": "varies",
+    "unit_display": "varies",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "energie_production_share",
+    "label": "Part mondiale production énergie",
+    "table": "identite",
+    "category": "energie",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "energie_reserves",
+    "label": "Réserves énergétiques",
+    "table": "identite",
+    "category": "energie",
+    "chart_type": "line",
+    "unit": "varies",
+    "unit_display": "varies",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "energie_reserves_share",
+    "label": "Part mondiale réserves énergie",
+    "table": "identite",
+    "category": "energie",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "mineraux_production",
+    "label": "Production minéraux",
+    "table": "identite",
+    "category": "ressources",
+    "chart_type": "line",
+    "unit": "kt",
+    "unit_display": "kt",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "mineraux_production_share",
+    "label": "Part mondiale production minéraux",
+    "table": "identite",
+    "category": "ressources",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "mineraux_reserves",
+    "label": "Réserves minéraux",
+    "table": "identite",
+    "category": "ressources",
+    "chart_type": "line",
+    "unit": "kt",
+    "unit_display": "kt",
+    "aggregation": "sum",
+    "actif": false,
+    "est_projection": false
+  },
+  {
+    "indicator": "mineraux_reserves_share",
+    "label": "Part mondiale réserves minéraux",
+    "table": "identite",
+    "category": "ressources",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "sum",
+    "actif": false,
+    "est_projection": false
   }
 ]
