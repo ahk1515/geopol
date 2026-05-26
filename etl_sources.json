@@ -33,7 +33,7 @@
     "filename": "lowy-diplomacy.csv",
     "freq": "annuelle",
     "parser": false,
-    "note": "Global Diplomacy Index — parser à coder"
+    "note": "Global Diplomacy Index — transformer via IA puis déposer en manuel"
   },
   {
     "id": "zee",
@@ -61,5 +61,14 @@
     "freq": "annuelle",
     "parser": true,
     "note": "Déposer aussi OPRI_LABEL.csv dans le même dossier. Parser opri.py opérationnel (175 000+ lignes)."
+  },
+  {
+    "id": "weo",
+    "label": "FMI — World Economic Outlook",
+    "folder": "etl/sources/uploads",
+    "filename": "weoapr2025all.xls",
+    "freq": "semestrielle",
+    "parser": true,
+    "note": "Télécharger 'WEO by Countries — All' sur imf.org. Parser weo.py opérationnel (30 000+ lignes, projections 2025-2030)."
   }
 ]
