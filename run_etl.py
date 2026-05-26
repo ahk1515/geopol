@@ -21,7 +21,7 @@ from etl.config import PATH_DB, PATH_STATUS, load_admin_config
 # -------------------------------------------------------------
 # IMPORT DES SCRIPTS ETL
 # -------------------------------------------------------------
-from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, opri, weo
+from etl.sources import banque_mondiale, owid, comtrade, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, opri, weo, zee
 from etl import construits, build_db
 
 # -------------------------------------------------------------
@@ -48,6 +48,13 @@ PIPELINE = [
         "id":          "comtrade",
         "label":       "UN Comtrade",
         "module":      comtrade,
+        "type":        "automatique",
+        "obligatoire": False,
+    },
+    {
+        "id":          "zee",
+        "label":       "Marine Regions — ZEE",
+        "module":      zee,
         "type":        "automatique",
         "obligatoire": False,
     },
