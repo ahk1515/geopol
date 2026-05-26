@@ -406,5 +406,65 @@
     "aggregation": "sum",
     "actif": true,
     "est_projection": false
+  },
+  {
+    "indicator": "taux_chomage",
+    "label": "Taux de chômage",
+    "table": "identite",
+    "category": "economie",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "mean",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "inflation",
+    "label": "Inflation",
+    "table": "identite",
+    "category": "economie",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "mean",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "dette_publique_pib",
+    "label": "Dette publique / PIB",
+    "table": "identite",
+    "category": "finance",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "mean",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "balance_courante_pib",
+    "label": "Balance courante / PIB",
+    "table": "identite",
+    "category": "commerce",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "mean",
+    "actif": true,
+    "est_projection": false
+  },
+  {
+    "indicator": "croissance_pib",
+    "label": "Croissance PIB réel",
+    "table": "identite",
+    "category": "economie",
+    "chart_type": "line",
+    "unit": "%",
+    "unit_display": "%",
+    "aggregation": "mean",
+    "actif": true,
+    "est_projection": false
   }
 ]
