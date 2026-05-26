@@ -3,17 +3,20 @@
 # Source : International Debt Statistics (IDS) — source ID 6
 # Doc : https://worldbank.github.io/debt-data/api-guide/
 #
-# Indicateurs importés (subcategory_1) :
+# Indicateurs importés :
 #   DT.DOD.BLAT.CD → bilaterale
 #   DT.DOD.MLAT.CD → multilaterale
 #   DT.DOD.PBND.CD → obligations_privees
 #   DT.DOD.PROP.CD → crediteurs_prives
 #
 # Schéma flux :
-#   country_from = pays créditeur (ISO3)
-#   country_to   = pays débiteur (ISO3)
-#   indicator    = dette_exterieure
-#   subcategory_1 = type de créditeur
+#   country_from  = ISO3 du pays créditeur OU __multilateral__ OU __private__
+#   country_to    = ISO3 du pays débiteur
+#   indicator     = dette_exterieure
+#   subcategory_1 = type homogène : bilaterale | multilaterale |
+#                   obligations_privees | crediteurs_prives
+#   subcategory_2 = détail créditeur : ISO3 (bilatéral) ou nom institution
+#                   (multilatéral) ou None (privé)
 #
 # Limite : couvre uniquement les pays débiteurs
 # à revenus faibles/intermédiaires (DRS)
@@ -32,7 +35,6 @@ from etl.config import ANNEE_DEBUT, ANNEE_FIN, PATH_DB
 # CONSTANTES
 # -------------------------------------------------------------
 IDS_API_BASE = "https://api.worldbank.org/v2/sources/6"
-WB_API_BASE  = "https://api.worldbank.org/v2"
 SOURCE       = "Banque Mondiale IDS"
 PAUSE        = 0.5
 PER_PAGE     = 32000
@@ -48,19 +50,218 @@ IDS_INDICATORS = {
 # Noms des créditeurs chargés dynamiquement depuis l'API
 CREDITOR_NAMES = {}  # code_num → nom complet
 
-# Correspondance manuelle codes numériques IDS → ISO3
-# pour les principaux créditeurs (complétée dynamiquement)
+# Correspondance codes numériques IDS → ISO3
+# Construite à partir du référentiel IDS (counterpart-area) croisé avec referentiel.json
+# 3 cas non matchés résolus manuellement : Somalie (SOM), Israël (ISR), Brunei (BRN)
 CREDITOR_ISO3_MAP = {
-    "001": "AUT", "002": "BEL", "003": "DNK", "004": "FRA",
-    "005": "DEU", "006": "ITA", "007": "NLD", "008": "NOR",
-    "009": "PRT", "010": "SWE", "011": "CHE", "012": "GBR",
-    "013": "CAN", "014": "USA", "015": "JPN", "016": "FIN",
-    "017": "AUS", "018": "NZL", "019": "ESP", "020": "GRC",
-    "021": "IRL", "742": "CHN", "730": "KOR", "566": "RUS",
-    "682": "SAU", "356": "IND", "076": "BRA", "484": "MEX",
-    "710": "ZAF", "792": "TUR", "818": "EGY", "012": "DZA",
-    "504": "MAR",
+    "001": "AUT",  # Austria
+    "002": "BEL",  # Belgium
+    "003": "DNK",  # Denmark
+    "004": "FRA",  # France
+    "005": "DEU",  # Germany, Fed. Rep. of
+    "006": "ITA",  # Italy
+    "007": "NLD",  # Netherlands
+    "008": "NOR",  # Norway
+    "009": "PRT",  # Portugal
+    "010": "SWE",  # Sweden
+    "011": "CHE",  # Switzerland
+    "012": "GBR",  # United Kingdom
+    "018": "FIN",  # Finland
+    "020": "ISL",  # Iceland
+    "021": "IRL",  # Ireland
+    "022": "LUX",  # Luxembourg
+    "040": "GRC",  # Greece
+    "050": "ESP",  # Spain
+    "055": "TUR",  # Turkiye
+    "060": "SRB",  # Serbia
+    "061": "SVN",  # Slovenia
+    "062": "HRV",  # Croatia
+    "064": "BIH",  # Bosnia-Herzegovina
+    "065": "MNE",  # Montenegro
+    "066": "MKD",  # North Macedonia
+    "068": "CZE",  # Czechia
+    "069": "SVK",  # Slovak Republic
+    "071": "ALB",  # Albania
+    "072": "BGR",  # Bulgaria
+    "075": "HUN",  # Hungary
+    "076": "POL",  # Poland
+    "077": "ROU",  # Romania
+    "082": "EST",  # Estonia
+    "083": "LVA",  # Latvia
+    "084": "LTU",  # Lithuania
+    "085": "UKR",  # Ukraine
+    "086": "BLR",  # Belarus
+    "087": "RUS",  # Russian Federation
+    "091": "ARM",  # Armenia
+    "093": "MDA",  # Moldova
+    "095": "GEO",  # Georgia
+    "130": "DZA",  # Algeria
+    "133": "LBY",  # Libya
+    "136": "MAR",  # Morocco
+    "139": "TUN",  # Tunisia
+    "142": "EGY",  # Egypt
+    "216": "ZAF",  # South Africa
+    "225": "AGO",  # Angola
+    "227": "BWA",  # Botswana
+    "228": "BDI",  # Burundi
+    "229": "CMR",  # Cameroon
+    "230": "CPV",  # Cabo Verde
+    "231": "CAF",  # Central African Republic
+    "232": "TCD",  # Chad
+    "233": "COM",  # Comoros
+    "234": "COG",  # Congo, Rep.
+    "235": "COD",  # Congo, Dem. Rep.
+    "236": "BEN",  # Benin
+    "238": "ETH",  # Ethiopia
+    "239": "GAB",  # Gabon
+    "240": "GMB",  # Gambia, The
+    "241": "GHA",  # Ghana
+    "243": "GIN",  # Guinea
+    "244": "GNB",  # Guinea-Bissau
+    "245": "GNQ",  # Equatorial Guinea
+    "247": "CIV",  # Cote D'Ivoire
+    "248": "KEN",  # Kenya
+    "249": "LSO",  # Lesotho
+    "251": "LBR",  # Liberia
+    "252": "MDG",  # Madagascar
+    "253": "MWI",  # Malawi
+    "255": "MLI",  # Mali
+    "256": "MRT",  # Mauritania
+    "257": "MUS",  # Mauritius
+    "259": "MOZ",  # Mozambique
+    "260": "NER",  # Niger
+    "261": "NGA",  # Nigeria
+    "265": "ZWE",  # Zimbabwe
+    "266": "RWA",  # Rwanda
+    "268": "STP",  # Sao Tome & Principe
+    "269": "SEN",  # Senegal
+    "270": "SYC",  # Seychelles
+    "271": "ERI",  # Eritrea
+    "272": "SLE",  # Sierra Leone
+    "273": "SOM",  # Somalia (manuel)
+    "274": "DJI",  # Djibouti
+    "275": "NAM",  # Namibia
+    "278": "SDN",  # Sudan
+    "280": "SWZ",  # Eswatini
+    "282": "TZA",  # Tanzania
+    "283": "TGO",  # Togo
+    "285": "UGA",  # Uganda
+    "287": "BFA",  # Burkina Faso
+    "288": "ZMB",  # Zambia
+    "301": "CAN",  # Canada
+    "302": "USA",  # United States
+    "328": "BHS",  # Bahamas
+    "329": "BRB",  # Barbados
+    "336": "CRI",  # Costa Rica
+    "338": "CUB",  # Cuba
+    "340": "DOM",  # Dominican Republic
+    "342": "SLV",  # El Salvador
+    "347": "GTM",  # Guatemala
+    "349": "HTI",  # Haiti
+    "351": "HND",  # Honduras
+    "352": "BLZ",  # Belize
+    "354": "JAM",  # Jamaica
+    "358": "MEX",  # Mexico
+    "364": "NIC",  # Nicaragua
+    "366": "PAN",  # Panama
+    "375": "TTO",  # Trinidad & Tobago
+    "425": "ARG",  # Argentina
+    "428": "BOL",  # Bolivia
+    "431": "BRA",  # Brazil
+    "434": "CHL",  # Chile
+    "437": "COL",  # Colombia
+    "440": "ECU",  # Ecuador
+    "446": "GUY",  # Guyana
+    "451": "PRY",  # Paraguay
+    "454": "PER",  # Peru
+    "457": "SUR",  # Suriname
+    "460": "URY",  # Uruguay
+    "463": "VEN",  # Venezuela
+    "520": "AZE",  # Azerbaijan
+    "521": "KAZ",  # Kazakhstan
+    "522": "KGZ",  # Kyrgyz Republic
+    "523": "UZB",  # Uzbekistan
+    "524": "TJK",  # Tajikistan
+    "525": "TKM",  # Turkmenistan
+    "530": "BHR",  # Bahrain
+    "540": "IRN",  # Iran
+    "543": "IRQ",  # Iraq
+    "546": "ISR",  # Israel (manuel)
+    "549": "JOR",  # Jordan
+    "552": "KWT",  # Kuwait
+    "555": "LBN",  # Lebanon
+    "558": "OMN",  # Oman
+    "561": "QAT",  # Qatar
+    "566": "SAU",  # Saudi Arabia
+    "573": "SYR",  # Syrian Arab Republic
+    "576": "ARE",  # United Arab Emirates
+    "580": "YEM",  # Yemen
+    "625": "AFG",  # Afghanistan
+    "630": "BTN",  # Bhutan
+    "635": "MMR",  # Myanmar
+    "640": "LKA",  # Sri Lanka
+    "646": "IND",  # India
+    "655": "MDV",  # Maldives
+    "660": "NPL",  # Nepal
+    "665": "PAK",  # Pakistan
+    "666": "BGD",  # Bangladesh
+    "701": "JPN",  # Japan
+    "725": "BRN",  # Brunei (manuel)
+    "728": "KHM",  # Cambodia
+    "730": "CHN",  # China
+    "738": "IDN",  # Indonesia
+    "740": "PRK",  # Korea, D.P.R. of
+    "742": "KOR",  # Korea, Republic of
+    "745": "LAO",  # Lao PDR
+    "751": "MYS",  # Malaysia
+    "753": "MNG",  # Mongolia
+    "755": "PHL",  # Philippines
+    "761": "SGP",  # Singapore
+    "764": "THA",  # Thailand
+    "765": "TLS",  # Timor-Leste
+    "769": "VNM",  # Viet Nam
+    "801": "AUS",  # Australia
+    "820": "NZL",  # New Zealand
+    "832": "FJI",  # Fiji
+    "862": "PNG",  # Papua New Guinea
+    "866": "SLB",  # Solomon Islands
+    "880": "WSM",  # Samoa
 }
+
+# Institutions multilatérales connues (code IDS → nom court)
+MULTILATERAL_NAMES = {
+    "887": "NDB",
+    "899": "AIIB",
+    "901": "IBRD",
+    "905": "IDA",
+    "907": "IMF",
+    "909": "IADB",
+    "910": "BCIE",
+    "913": "AfDB",
+    "915": "ADB",
+    "917": "EEC",
+    "918": "EDF",
+    "919": "EIB",
+    "920": "CAF",
+    "921": "AFESD",
+    "926": "CoE",
+    "950": "NDF",
+    "951": "OPEC Fund",
+    "953": "BADEA",
+    "957": "BOAD",
+    "969": "NIB",
+    "975": "EU",
+    "976": "IsDB",
+    "977": "EDB",
+    "988": "IFAD",
+    "990": "EBRD",
+    "994": "Multiple Lenders",
+}
+
+# Sentinelles
+SENTINEL_MULTILATERAL = "__multilateral__"
+SENTINEL_PRIVATE      = "__private__"
+
 
 # -------------------------------------------------------------
 # CHARGEMENT TABLE DE CORRESPONDANCE CRÉDITEURS
@@ -68,13 +269,10 @@ CREDITOR_ISO3_MAP = {
 
 def load_creditor_codes():
     """
-    Charge la table complète des codes créditeurs IDS depuis l'API.
-    Complète CREDITOR_ISO3_MAP avec une correspondance nom → ISO3
-    via l'API WB standard.
+    Charge les noms des créditeurs IDS depuis l'API (pour logs et fallback).
+    La CREDITOR_ISO3_MAP statique reste la référence principale.
     """
-    print("  Chargement des codes créditeurs IDS...")
-    creditor_names = {}  # code_num → nom
-
+    print("  Chargement des noms créditeurs IDS...")
     page = 1
     while True:
         url = f"{IDS_API_BASE}/counterpart-area?per_page=300&format=json&page={page}"
@@ -84,46 +282,15 @@ def load_creditor_codes():
             data = resp.json()
             variables = data["source"][0]["concept"][0]["variable"]
             for v in variables:
-                creditor_names[v["id"]] = v["value"]
                 CREDITOR_NAMES[v["id"]] = v["value"]
-            total_pages = data["pages"]
-            if page >= total_pages:
+            if page >= data["pages"]:
                 break
             page += 1
             time.sleep(PAUSE)
         except Exception as e:
             print(f"  ⚠️  Erreur chargement créditeurs page {page} : {e}")
             break
-
-    print(f"  {len(creditor_names)} codes créditeurs chargés.")
-
-    # Enrichir avec correspondance nom → ISO3 via API WB
-    name_to_iso3 = load_name_to_iso3()
-    for code, name in creditor_names.items():
-        if code not in CREDITOR_ISO3_MAP:
-            iso3 = name_to_iso3.get(name.lower())
-            if iso3:
-                CREDITOR_ISO3_MAP[code] = iso3
-
-    return creditor_names
-
-
-def load_name_to_iso3():
-    """
-    Charge la liste des pays WB pour faire correspondance nom → ISO3.
-    """
-    url = f"{WB_API_BASE}/country?format=json&per_page=300"
-    try:
-        resp = requests.get(url, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        return {
-            c["name"].lower(): c["iso2Code"] and c.get("id", "")
-            for c in data[1]
-            if c.get("capitalCity")
-        }
-    except Exception:
-        return {}
+    print(f"  {len(CREDITOR_NAMES)} noms créditeurs chargés.")
 
 
 # -------------------------------------------------------------
@@ -140,7 +307,6 @@ def load_debtor_countries():
         resp.raise_for_status()
         data = resp.json()
         countries = data["source"][0]["concept"][0]["variable"]
-        # Retourne les codes ISO3/WB des pays débiteurs
         return [c["id"] for c in countries if len(c["id"]) == 3]
     except Exception as e:
         print(f"  ⚠️  Erreur chargement pays débiteurs : {e}")
@@ -151,12 +317,11 @@ def load_debtor_countries():
 # FETCH DONNÉES IDS
 # -------------------------------------------------------------
 
-def fetch_ids(debtor_iso3, series_code, annee_debut, annee_fin):
+def fetch_ids(debtor_iso3, series_code):
     """
-    Récupère les données IDS bilatérales pour un pays débiteur.
+    Récupère les données IDS pour un pays débiteur et un indicateur.
     Retourne une liste de dicts {creditor_code, year, value}.
     """
-    # time/all puis filtre Python (filtre temporel non supporté par cette API)
     url = (
         f"{IDS_API_BASE}/country/{debtor_iso3}"
         f"/series/{series_code}"
@@ -174,7 +339,6 @@ def fetch_ids(debtor_iso3, series_code, annee_debut, annee_fin):
             resp.raise_for_status()
             data = resp.json()
 
-            # source est un dict (pas une liste) dans cette API
             source_data = data.get("source", {})
             if isinstance(source_data, list):
                 source_data = source_data[0] if source_data else {}
@@ -198,7 +362,7 @@ def fetch_ids(debtor_iso3, series_code, annee_debut, annee_fin):
                     continue
 
                 if value <= 0:
-                    continue  # ignorer les dettes nulles
+                    continue
 
                 rows.append({
                     "creditor_code": creditor_code,
@@ -206,8 +370,7 @@ def fetch_ids(debtor_iso3, series_code, annee_debut, annee_fin):
                     "value":         value,
                 })
 
-            total_pages = data.get("pages", 1)
-            if page >= total_pages:
+            if page >= data.get("pages", 1):
                 break
             page += 1
             time.sleep(PAUSE)
@@ -217,6 +380,49 @@ def fetch_ids(debtor_iso3, series_code, annee_debut, annee_fin):
             break
 
     return rows
+
+
+# -------------------------------------------------------------
+# RÉSOLUTION CRÉDITEUR → (country_from, subcategory_1, subcategory_2)
+# -------------------------------------------------------------
+
+def resolve_creditor(creditor_code, subcategory):
+    """
+    Retourne (country_from, subcategory_1, subcategory_2).
+
+    Bilatéral (pays identifiable) :
+      country_from  = ISO3 du pays créditeur
+      subcategory_1 = type IDS (bilaterale, multilaterale, ...)
+      subcategory_2 = ISO3 du pays créditeur (pour drill-down homogène)
+
+    Multilatéral (institution connue) :
+      country_from  = __multilateral__
+      subcategory_1 = type IDS
+      subcategory_2 = nom court de l'institution (IMF, IDA, ADB...)
+
+    Privé :
+      country_from  = __private__
+      subcategory_1 = type IDS
+      subcategory_2 = None
+
+    Inconnu :
+      country_from  = __multilateral__ (par défaut, rien ne se perd)
+      subcategory_1 = type IDS
+      subcategory_2 = nom complet depuis l'API ou code brut
+    """
+    iso3 = CREDITOR_ISO3_MAP.get(creditor_code)
+    if iso3:
+        return iso3, subcategory, iso3
+
+    if creditor_code in MULTILATERAL_NAMES:
+        return SENTINEL_MULTILATERAL, subcategory, MULTILATERAL_NAMES[creditor_code]
+
+    if subcategory in ("obligations_privees", "crediteurs_prives"):
+        return SENTINEL_PRIVATE, subcategory, None
+
+    # Fallback : nom complet API ou code brut
+    name = CREDITOR_NAMES.get(creditor_code, f"creditor_{creditor_code}")
+    return SENTINEL_MULTILATERAL, subcategory, name
 
 
 # -------------------------------------------------------------
@@ -242,50 +448,12 @@ def ensure_flux_table(conn):
     conn.commit()
 
 
-# Sentinelles pour créditeurs non-ISO3
-SENTINEL_MULTILATERAL = "__multilateral__"
-SENTINEL_PRIVATE      = "__private__"
-
-# Institutions multilatérales connues (code IDS → nom court)
-MULTILATERAL_NAMES = {
-    "031": "IMF",        "044": "World Bank",   "046": "IDA",
-    "048": "IBRD",       "063": "ADB",          "064": "AfDB",
-    "066": "IDB",        "068": "IADB",         "071": "EIB",
-    "074": "IFAD",       "075": "IsDB",         "076": "EBRD",
-    "081": "EU",         "084": "NDB",          "085": "AIIB",
-}
-
-
-def resolve_creditor(creditor_code, subcategory):
-    """
-    Retourne (country_from, subcategory_1) selon le type de créditeur.
-    - Pays ISO3 identifiable → (ISO3, subcategory)
-    - Institution multilatérale → (__multilateral__, nom)
-    - Créditeur privé → (__private__, subcategory)
-    - Inconnu → (__multilateral__, code_num) pour ne rien perdre
-    """
-    iso3 = CREDITOR_ISO3_MAP.get(creditor_code)
-    if iso3:
-        return iso3, subcategory
-
-    # Institution multilatérale connue
-    if creditor_code in MULTILATERAL_NAMES:
-        return SENTINEL_MULTILATERAL, MULTILATERAL_NAMES[creditor_code]
-
-    # Créditeurs privés
-    if subcategory in ("obligations_privees", "crediteurs_prives"):
-        return SENTINEL_PRIVATE, subcategory
-
-    # Utiliser le nom complet depuis l'API si disponible
-    name = CREDITOR_NAMES.get(creditor_code, f"creditor_{creditor_code}")
-    return SENTINEL_MULTILATERAL, name
-
-
 def upsert_rows(conn, debtor_iso3, subcategory, rows):
     data = []
     for row in rows:
-        country_from, subcat1 = resolve_creditor(row["creditor_code"], subcategory)
-
+        country_from, subcat1, subcat2 = resolve_creditor(
+            row["creditor_code"], subcategory
+        )
         data.append((
             country_from,
             debtor_iso3,
@@ -295,7 +463,7 @@ def upsert_rows(conn, debtor_iso3, subcategory, rows):
             "USD",
             SOURCE,
             subcat1,
-            None,
+            subcat2,
             None,
         ))
 
@@ -322,7 +490,6 @@ def run():
     print(f"Période : {ANNEE_DEBUT} → {ANNEE_FIN}")
     print("=" * 60)
 
-    # Chargement des référentiels
     load_creditor_codes()
 
     print("\nChargement des pays débiteurs...")
@@ -332,13 +499,10 @@ def run():
     conn = sqlite3.connect(PATH_DB)
     ensure_flux_table(conn)
 
-    # Nettoyer les anciens enregistrements avec codes numériques (creditor_XXX)
-    print("  Nettoyage des anciens codes créditeurs...")
-    conn.execute("""
-        DELETE FROM flux
-        WHERE indicator = 'dette_exterieure'
-        AND subcategory_1 LIKE 'creditor_%'
-    """)
+    # Nettoyage complet des anciennes données dette
+    # (ancienne structure subcategory_1 = nom institution, codes creditor_XXX)
+    print("  Nettoyage des anciennes données dette_exterieure...")
+    conn.execute("DELETE FROM flux WHERE indicator = 'dette_exterieure'")
     conn.commit()
     print("  Nettoyage terminé.")
 
@@ -348,7 +512,7 @@ def run():
         print(f"\n→ {debtor} ({i+1}/{len(debtor_countries)})")
 
         for series_code, subcategory in IDS_INDICATORS.items():
-            rows = fetch_ids(debtor, series_code, ANNEE_DEBUT, ANNEE_FIN)
+            rows = fetch_ids(debtor, series_code)
             if not rows:
                 continue
             nb = upsert_rows(conn, debtor, subcategory, rows)
