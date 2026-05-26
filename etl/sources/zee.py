@@ -148,7 +148,7 @@ def run():
     conn.execute("DELETE FROM identite WHERE indicator = 'zee' AND source = ?", (SOURCE,))
 
     rows = [
-        (iso3, "zee", YEAR, round(area, 1), UNIT, SOURCE, None)
+        (iso3, "zee", YEAR, round(area, 1), UNIT, SOURCE, "")
         for iso3, area in sorted(zee_by_country.items())
     ]
 
