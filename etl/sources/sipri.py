@@ -44,12 +44,13 @@ SIPRI_TO_ISO3 = {
     "Chile": "CHL", "China": "CHN", "Colombia": "COL",
     "Congo, DR": "COD", "Croatia": "HRV", "Cuba": "CUB",
     "Cyprus": "CYP", "Czechia": "CZE", "Czech Republic": "CZE",
-    "Czechoslovakia": "CSK", "Denmark": "DNK", "Ecuador": "ECU",
-    "Egypt": "EGY", "El Salvador": "SLV", "Eritrea": "ERI",
-    "Estonia": "EST", "Ethiopia": "ETH", "Finland": "FIN",
-    "France": "FRA", "Georgia": "GEO", "Germany": "DEU",
-    "Germany, East": "DDR", "Ghana": "GHA", "Greece": "GRC",
-    "Guatemala": "GTM", "Honduras": "HND", "Hungary": "HUN",
+    "Czech Rep.": "CZE", "Czechoslovakia": "CSK", "Denmark": "DNK",
+    "Ecuador": "ECU", "Egypt": "EGY", "El Salvador": "SLV",
+    "Eritrea": "ERI", "Estonia": "EST", "Ethiopia": "ETH",
+    "Finland": "FIN", "France": "FRA", "Georgia": "GEO",
+    "Germany": "DEU", "Germany, East": "DDR", "East Germany (GDR)": "DDR",
+    "Ghana": "GHA", "Greece": "GRC", "Guatemala": "GTM",
+    "Guinea-Bissau": "GNB", "Honduras": "HND", "Hungary": "HUN",
     "India": "IND", "Indonesia": "IDN", "Iran": "IRN",
     "Iraq": "IRQ", "Ireland": "IRL", "Israel": "ISR",
     "Italy": "ITA", "Japan": "JPN", "Jordan": "JOR",
@@ -65,48 +66,65 @@ SIPRI_TO_ISO3 = {
     "Poland": "POL", "Portugal": "PRT", "Qatar": "QAT",
     "Romania": "ROU", "Russia": "RUS", "Rwanda": "RWA",
     "Saudi Arabia": "SAU", "Senegal": "SEN", "Serbia": "SRB",
-    "Singapore": "SGP", "Slovakia": "SVK", "Slovenia": "SVN",
-    "Somalia": "SOM", "South Africa": "ZAF", "South Korea": "KOR",
-    "Soviet Union": "SUN", "Spain": "ESP", "Sri Lanka": "LKA",
-    "Sudan": "SDN", "Sweden": "SWE", "Switzerland": "CHE",
-    "Syria": "SYR", "Taiwan": "TWN", "Tajikistan": "TJK",
+    "Seychelles": "SYC", "Singapore": "SGP", "Slovakia": "SVK",
+    "Slovenia": "SVN", "Somalia": "SOM", "South Africa": "ZAF",
+    "South Korea": "KOR", "Soviet Union": "SUN", "Spain": "ESP",
+    "Sri Lanka": "LKA", "Sudan": "SDN", "Suriname": "SUR",
+    "Sweden": "SWE", "Switzerland": "CHE", "Syria": "SYR",
+    "Taiwan": "TWN", "Taiwan (China)": "TWN", "Tajikistan": "TJK",
     "Tanzania": "TZA", "Thailand": "THA", "Tunisia": "TUN",
-    "Turkey": "TUR", "Turkmenistan": "TKM", "UAE": "ARE",
+    "Turkey": "TUR", "Turkiye": "TUR", "Turkmenistan": "TKM",
+    "UAE": "ARE", "United Arab Emirates": "ARE",
     "Uganda": "UGA", "Ukraine": "UKR", "United Kingdom": "GBR",
-    "Uruguay": "URY", "USA": "USA", "Uzbekistan": "UZB",
-    "Venezuela": "VEN", "Vietnam": "VNM", "Yemen": "YEM",
-    "Yugoslavia": "YUG", "Zambia": "ZMB", "Zimbabwe": "ZWE",
-    "Kosovo": "XKX", "Palestine": "PSE", "Taiwan (China)": "TWN",
+    "United States": "USA", "Uruguay": "URY", "USA": "USA",
+    "Uzbekistan": "UZB", "Venezuela": "VEN",
+    "Viet Nam": "VNM", "Vietnam": "VNM",
+    "Yemen": "YEM", "Yugoslavia": "YUG", "Zambia": "ZMB",
+    "Zimbabwe": "ZWE", "Kosovo": "XKX", "Palestine": "PSE",
     "Antigua and Barbuda": "ATG", "Bahamas": "BHS", "Barbados": "BRB",
     "Belize": "BLZ", "Benin": "BEN", "Bhutan": "BTN", "Botswana": "BWA",
     "Burundi": "BDI", "Cabo Verde": "CPV", "Cambodia": "KHM",
     "Central African Republic": "CAF", "Chad": "TCD", "Comoros": "COM",
     "Congo": "COG", "Costa Rica": "CRI", "Cote d'Ivoire": "CIV",
     "DR Congo": "COD", "Djibouti": "DJI", "Dominican Republic": "DOM",
-    "El Salvador": "SLV", "Equatorial Guinea": "GNQ", "Eritrea": "ERI",
-    "Estonia": "EST", "Ethiopia": "ETH", "Fiji": "FJI", "Gabon": "GAB",
-    "Gambia": "GMB", "Ghana": "GHA", "Guatemala": "GTM", "Guinea": "GIN",
-    "Guyana": "GUY", "Haiti": "HTI", "Honduras": "HND",
-    "Iceland": "ISL", "Ivory Coast": "CIV", "Jamaica": "JAM",
-    "Laos": "LAO", "Latvia": "LVA", "Lesotho": "LSO", "Liberia": "LBR",
-    "Libya": "LBY", "Lithuania": "LTU", "Luxembourg": "LUX",
-    "Madagascar": "MDG", "Malawi": "MWI", "Maldives": "MDV",
-    "Mali": "MLI", "Malta": "MLT", "Mauritania": "MRT",
-    "Mauritius": "MUS", "Moldova": "MDA", "Mongolia": "MNG",
-    "Montenegro": "MNE", "Mozambique": "MOZ", "Myanmar": "MMR",
+    "Equatorial Guinea": "GNQ", "eSwatini": "SWZ", "Fiji": "FJI",
+    "Gabon": "GAB", "Gambia": "GMB", "Guinea": "GIN", "Guyana": "GUY",
+    "Haiti": "HTI", "Iceland": "ISL", "Ivory Coast": "CIV",
+    "Jamaica": "JAM", "Laos": "LAO", "Lesotho": "LSO", "Liberia": "LBR",
+    "Luxembourg": "LUX", "Madagascar": "MDG", "Malawi": "MWI",
+    "Maldives": "MDV", "Malta": "MLT", "Mauritania": "MRT",
+    "Mauritius": "MUS", "Mongolia": "MNG", "Montenegro": "MNE",
     "Namibia": "NAM", "Nepal": "NPL", "Nicaragua": "NIC",
-    "Niger": "NER", "North Korea": "PRK", "North Macedonia": "MKD",
-    "Panama": "PAN", "Papua New Guinea": "PNG", "Paraguay": "PRY",
-    "Rwanda": "RWA", "Senegal": "SEN", "Sierra Leone": "SLE",
-    "Slovenia": "SVN", "Somalia": "SOM", "South Sudan": "SSD",
-    "Sri Lanka": "LKA", "Sudan": "SDN", "Tajikistan": "TJK",
-    "Tanzania": "TZA", "Thailand": "THA", "Timor-Leste": "TLS",
-    "Togo": "TGO", "Trinidad and Tobago": "TTO", "Tunisia": "TUN",
-    "Turkmenistan": "TKM", "Uganda": "UGA", "Uruguay": "URY",
-    "Uzbekistan": "UZB", "Venezuela": "VEN", "Zambia": "ZMB",
-    "Zimbabwe": "ZWE", "United Arab Emirates": "ARE",
-    "United Arab Emirates": "ARE", "South Sudan": "SSD",
-    "North Macedonia": "MKD", "Czech Rep.": "CZE",
+    "North Macedonia": "MKD", "Papua New Guinea": "PNG",
+    "Sierra Leone": "SLE", "Solomon Islands": "SLB", "South Sudan": "SSD",
+    "Timor-Leste": "TLS", "Togo": "TGO", "Tonga": "TON",
+    "Trinidad and Tobago": "TTO", "Western Sahara": "ESH",
+}
+
+# Acteurs non-étatiques SIPRI → (sentinelle, nom normalisé)
+# Les acteurs sans pays hôte identifiable → ("__non_etatique__", nom)
+# ⚠️ Si SIPRI ajoute de nouveaux acteurs, compléter ici
+NON_ETATIQUE_MAP = {
+    "Hezbollah (Lebanon)*":              ("__non_etatique__", "Hezbollah"),
+    "House of Representatives (Libya)*": ("__non_etatique__", "House of Representatives (Libya)"),
+    "Northern Alliance (Afghanistan)*":  ("__non_etatique__", "Northern Alliance (Afghanistan)"),
+    "Houthi rebels (Yemen)*":            ("__non_etatique__", "Houthi rebels"),
+    "Syria rebels*":                     ("__non_etatique__", "Syria rebels"),
+    "LTTE (Sri Lanka)*":                 ("__non_etatique__", "LTTE"),
+    "Southern rebels (Yemen)*":          ("__non_etatique__", "Southern rebels (Yemen)"),
+    "FMLN (El Salvador)*":               ("__non_etatique__", "FMLN"),
+    "Hamas (Palestine)*":                ("__non_etatique__", "Hamas"),
+    "Ukraine Rebels*":                   ("__non_etatique__", "Ukraine Rebels"),
+    "Darfur rebels (Sudan)*":            ("__non_etatique__", "Darfur rebels"),
+    "RSF (Sudan)*":                      ("__non_etatique__", "RSF"),
+    "NTC (Libya)*":                      ("__non_etatique__", "NTC (Libya)"),
+    "PKK (Turkiye)*":                    ("__non_etatique__", "PKK"),
+    "RUF (Sierra Leone)*":               ("__non_etatique__", "RUF"),
+    "United Wa State (Myanmar)*":        ("__non_etatique__", "United Wa State"),
+    "Khmer Rouge (Cambodia)*":           ("__non_etatique__", "Khmer Rouge"),
+    "Kurdistan Regional Government (Iraq)*": ("__non_etatique__", "Kurdistan Regional Government"),
+    "LF (Lebanon)*":                     ("__non_etatique__", "Lebanese Forces"),
+    "LRA (Uganda)*":                     ("__non_etatique__", "LRA"),
 }
 
 # -------------------------------------------------------------
@@ -119,6 +137,21 @@ def normalize_weapon_desc(desc):
     desc = re.sub(r'[^a-z0-9]+', '_', desc)
     desc = desc.strip('_')
     return desc[:60]  # limite raisonnable
+
+
+def normalize_status(status):
+    """
+    Encode le statut en suffixe court pour subcategory_2.
+    New → rien (cas par défaut)
+    Second hand → [SH]
+    Second hand but modernized → [SHM]
+    """
+    s = status.strip().lower()
+    if "modernized" in s:
+        return "[SHM]"
+    if "second hand" in s:
+        return "[SH]"
+    return ""
 
 
 def extract_last_year(years_str):
@@ -189,13 +222,27 @@ def parse_sipri(filepath, annee_debut=2000, annee_fin=2024):
         status         = row[col.get('status', 11)].strip()
         tiv_str        = row[col.get('SIPRI TIV of delivered weapons', 15)].strip()
 
-        # Résolution ISO3
-        supplier_iso3  = SIPRI_TO_ISO3.get(supplier)
-        recipient_iso3 = SIPRI_TO_ISO3.get(recipient)
-
-        if not supplier_iso3 or not recipient_iso3:
+        # Résolution ISO3 fournisseur (jamais non-étatique côté supplier)
+        supplier_iso3 = SIPRI_TO_ISO3.get(supplier)
+        if not supplier_iso3:
             skipped += 1
             continue
+
+        # Résolution destinataire : étatique ou non-étatique
+        recipient_iso3   = SIPRI_TO_ISO3.get(recipient)
+        non_etatique     = NON_ETATIQUE_MAP.get(recipient)
+
+        if not recipient_iso3 and not non_etatique:
+            # Inconnu (unknown recipient, organisations inter-étatiques, etc.)
+            skipped += 1
+            continue
+
+        if non_etatique:
+            country_to = non_etatique[0]   # "__non_etatique__"
+            subcat3    = non_etatique[1]    # nom de l'acteur
+        else:
+            country_to = recipient_iso3
+            subcat3    = recipient_iso3     # ISO3 répété pour homogénéité
 
         # Année de livraison
         year = extract_last_year(years_str)
@@ -209,14 +256,19 @@ def parse_sipri(filepath, annee_debut=2000, annee_fin=2024):
             skipped += 1
             continue
 
+        # Désignation + statut encodé en suffixe
+        status_suffix = normalize_status(status)
+        designation   = weapon_design[:58] if weapon_design else ""
+        subcat2       = (f"{designation} {status_suffix}".strip())[:60] or None
+
         rows.append({
             "country_from":  supplier_iso3,
-            "country_to":    recipient_iso3,
+            "country_to":    country_to,
             "year":          year,
             "value":         tiv,
             "subcategory_1": normalize_weapon_desc(weapon_desc),
-            "subcategory_2": weapon_design[:60] if weapon_design else None,
-            "subcategory_3": status[:50] if status else None,
+            "subcategory_2": subcat2,
+            "subcategory_3": subcat3,
         })
 
     print(f"  {len(rows)} lignes parsées, {skipped} ignorées")
