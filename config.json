@@ -478,5 +478,17 @@
     "aggregation": "sum",
     "actif": true,
     "est_projection": false
+  },
+  {
+    "indicator": "zee",
+    "label": "Zone économique exclusive",
+    "table": "identite",
+    "category": "geographie",
+    "chart_type": "line",
+    "unit": "km2",
+    "unit_display": "km²",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
   }
 ]
