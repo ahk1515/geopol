@@ -252,6 +252,56 @@ def calc_import_ressource_pct_pib(conn):
 # POINT D'ENTRÉE
 # -------------------------------------------------------------
 
+def calc_share(conn, indicator, share_indicator):
+    """
+    Calcule la part mondiale (%) pour chaque (iso3, year, subcategory).
+    part = valeur_pays / total_monde * 100
+    Règle transparence : si total mondial = 0 ou absent → pas de calcul.
+    """
+    rows_db = conn.execute("""
+        SELECT country_iso3, year, subcategory, value
+        FROM identite
+        WHERE indicator = ?
+        AND (subcategory IS NOT NULL)
+    """, (indicator,)).fetchall()
+
+    if not rows_db:
+        print(f"  ⏭️  {share_indicator} ignoré (pas de données {indicator})")
+        return 0
+
+    # Agréger le total mondial par (year, subcategory)
+    from collections import defaultdict
+    world_totals = defaultdict(float)
+    country_data = []
+
+    for iso3, year, subcat, value in rows_db:
+        if value is not None and value > 0:
+            world_totals[(year, subcat)] += value
+            country_data.append((iso3, year, subcat, value))
+
+    rows = []
+    for iso3, year, subcat, value in country_data:
+        total = world_totals.get((year, subcat), 0)
+        if total <= 0:
+            continue
+        share = round(value / total * 100, 4)
+        rows.append((iso3, year, share, subcat))
+
+    if not rows:
+        return 0
+
+    conn.executemany("""
+        INSERT OR REPLACE INTO identite
+            (country_iso3, indicator, year, value, unit, source, subcategory)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, [
+        (iso3, share_indicator, year, share, "%", SOURCE, subcat)
+        for (iso3, year, share, subcat) in rows
+    ])
+    conn.commit()
+    return len(rows)
+
+
 CALCULS = [
     ("densite",                   calc_densite),
     ("dette_pct_pib",             calc_dette_pct_pib),
@@ -260,6 +310,11 @@ CALCULS = [
     ("import_pct_pib",            calc_import_pct_pib),
     ("export_armement_pct_pib",   calc_export_armement_pct_pib),
     ("import_ressource_pct_pib",  calc_import_ressource_pct_pib),
+    # Parts mondiales EI (calculées uniquement si EI importé)
+    ("energie_production_share",  lambda c: calc_share(c, "energie_production",  "energie_production_share")),
+    ("energie_reserves_share",    lambda c: calc_share(c, "energie_reserves",    "energie_reserves_share")),
+    ("mineraux_production_share", lambda c: calc_share(c, "mineraux_production", "mineraux_production_share")),
+    ("mineraux_reserves_share",   lambda c: calc_share(c, "mineraux_reserves",   "mineraux_reserves_share")),
 ]
 
 
