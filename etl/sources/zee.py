@@ -36,17 +36,23 @@ YEAR      = 2023  # version v12 du dataset Marine Regions
 PAUSE     = 1.0
 PAGE_SIZE = 500
 
+WFS_BASE = "https://geo.vliz.be/geoserver/MarineRegions/ows"
 WFS_URL = (
-    "https://geo.vliz.be/geoserver/MarineRegions/ows"
-    "?service=WFS"
-    "&version=1.0.0"
-    "&request=GetFeature"
-    "&typeName=MarineRegions:eez"
-    "&outputFormat=application/json"
-    "&propertyName=ISO_SOV1,ISO_SOV2,ISO_SOV3,POL_TYPE,AREA_KM2"
-    "&maxFeatures={page_size}"
-    "&startIndex={start}"
+    WFS_BASE
+    + "?service=WFS"
+    + "&version=2.0.0"
+    + "&request=GetFeature"
+    + "&typeNames=MarineRegions:eez"
+    + "&outputFormat=application/json"
+    + "&propertyName=ISO_SOV1,ISO_SOV2,ISO_SOV3,POL_TYPE,AREA_KM2"
+    + "&count={page_size}"
+    + "&startIndex={start}"
 )
+
+HEADERS = {
+    "User-Agent": "GEOPOL-ETL/1.0 (github.com/ahk1515/geopol)",
+    "Accept": "application/json, text/plain, */*",
+}
 
 # Codes ISO3 non standard dans Marine Regions → ISO3 GÉOPOL
 MR_ISO3_FIX = {
@@ -63,8 +69,12 @@ IGNORE_ISO3 = {"HSP", "ATA", None, ""}
 def fetch_page(start):
     """Récupère une page de features WFS."""
     url = WFS_URL.format(page_size=PAGE_SIZE, start=start)
-    resp = requests.get(url, timeout=60)
+    resp = requests.get(url, headers=HEADERS, timeout=60)
     resp.raise_for_status()
+    if not resp.text.strip():
+        raise ValueError("Réponse vide du serveur WFS")
+    if resp.text.strip().startswith("<"):
+        raise ValueError(f"Réponse XML inattendue : {resp.text[:200]}")
     return resp.json()
 
 
