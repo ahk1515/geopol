@@ -188,14 +188,14 @@ def calc_import_pct_pib(conn):
     return len(rows)
 
 
-def calc_export_armement_pct_pib(conn):
+def calc_transferts_armement_pct_pib(conn):
     """
-    Export armement % PIB — dépend de SIPRI (manuel)
+    Transferts armement % PIB — dépend de SIPRI (manuel)
     Si SIPRI non importé → aucune ligne calculée (transparence)
     """
-    exports = get_flux_total(conn, "export_armement", direction="from")
+    exports = get_flux_total(conn, "transferts_armement", direction="from")
     if not exports:
-        print("  ⏭️  export_armement_pct_pib ignoré (SIPRI non importé)")
+        print("  ⏭️  transferts_armement_pct_pib ignoré (SIPRI non importé)")
         return 0
 
     pib = get_identite(conn, "pib_usd")
@@ -209,7 +209,7 @@ def calc_export_armement_pct_pib(conn):
             continue
         rows.append((iso3, year, round(e / p * 100, 6)))
 
-    upsert_identite(conn, "export_armement_pct_pib", "%", "%", rows)
+    upsert_identite(conn, "transferts_armement_pct_pib", "%", "%", rows)
     return len(rows)
 
 
@@ -308,7 +308,7 @@ CALCULS = [
     ("balance_commerciale",       calc_balance_commerciale),
     ("export_pct_pib",            calc_export_pct_pib),
     ("import_pct_pib",            calc_import_pct_pib),
-    ("export_armement_pct_pib",   calc_export_armement_pct_pib),
+    ("transferts_armement_pct_pib",   calc_transferts_armement_pct_pib),
     ("import_ressource_pct_pib",  calc_import_ressource_pct_pib),
     # Parts mondiales EI (calculées uniquement si EI importé)
     ("energie_production_share",  lambda c: calc_share(c, "energie_production",  "energie_production_share")),
