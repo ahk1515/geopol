@@ -394,5 +394,17 @@
     "aggregation": "mean",
     "actif": true,
     "est_projection": false
+  },
+  {
+    "indicator": "representation_diplomatique",
+    "label": "Représentation diplomatique",
+    "table": "flux",
+    "category": "diplomatie",
+    "chart_type": "line",
+    "unit": "poste",
+    "unit_display": "postes",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
   }
 ]
