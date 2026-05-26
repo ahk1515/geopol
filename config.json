@@ -466,5 +466,17 @@
     "aggregation": "mean",
     "actif": true,
     "est_projection": false
+  },
+  {
+    "indicator": "migrants",
+    "label": "Migrants internationaux",
+    "table": "flux",
+    "category": "migration",
+    "chart_type": "line",
+    "unit": "personnes",
+    "unit_display": "personnes",
+    "aggregation": "sum",
+    "actif": true,
+    "est_projection": false
   }
 ]
