@@ -347,6 +347,63 @@ main { flex: 1; padding: 16px 18px 28px; }
   border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px;
   font-weight: 600; cursor: pointer;
 }
+
+/* bouton config (engrenage) dans l'en-tête de carte */
+.card-cog {
+  font-size: 13px; color: var(--text3); cursor: pointer; background: none;
+  border: none; padding: 2px 4px; border-radius: 5px; transition: all .12s;
+}
+.card-cog:hover { color: var(--text); background: var(--bg3); }
+
+/* infobulle générique */
+.tip { position: relative; }
+#globalTip {
+  position: fixed; z-index: 300; pointer-events: none; display: none;
+  background: var(--text); color: var(--bg); font-size: 11px; line-height: 1.5;
+  padding: 7px 10px; border-radius: 7px; max-width: 240px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25); font-family: var(--sans);
+}
+#globalTip .tt { font-family: var(--mono); font-size: 9px; opacity: .65; text-transform: uppercase; letter-spacing: .06em; }
+#globalTip b { color: #fff; }
+
+/* modale de configuration des indicateurs épinglés */
+#pinModal {
+  position: fixed; inset: 0; z-index: 160; display: none;
+  background: rgba(26,28,34,.3); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center;
+}
+#pinModal.open { display: flex; }
+.pin-box {
+  width: min(560px, 92vw); max-height: 80vh; background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: 14px; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.pin-head {
+  padding: 15px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pin-head .t { font-family: var(--display); font-size: 17px; font-weight: 500; }
+.pin-head .x { cursor: pointer; font-size: 20px; color: var(--text3); }
+.pin-head .x:hover { color: var(--text); }
+.pin-body { overflow-y: auto; padding: 8px 0; }
+.pin-cat { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); padding: 10px 18px 4px; }
+.pin-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 18px; cursor: pointer;
+  font-size: 13px;
+}
+.pin-item:hover { background: var(--bg3); }
+.pin-chk {
+  width: 17px; height: 17px; border-radius: 5px; border: 1.5px solid var(--border2);
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  background: var(--bg2); font-size: 11px; flex-shrink: 0;
+}
+.pin-item.on .pin-chk { background: var(--green); border-color: var(--green); }
+.pin-item .miss { font-size: 9px; color: var(--orange); font-family: var(--mono); margin-left: auto; }
+.pin-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.pin-foot .count { font-size: 11px; color: var(--text3); }
+.pin-foot button { padding: 8px 16px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+.pin-foot .reset { background: none; color: var(--text3); margin-right: auto; }
+.pin-foot .reset:hover { color: var(--text); }
 </style>
 </head>
 <body>
@@ -432,6 +489,25 @@ main { flex: 1; padding: 16px 18px 28px; }
     </div>
   </div>
 </div>
+
+<!-- ░░ MODALE CONFIG INDICATEURS ÉPINGLÉS ░░ -->
+<div id="pinModal" onclick="if(event.target===this)closePinModal()">
+  <div class="pin-box">
+    <div class="pin-head">
+      <span class="t">Indicateurs de la synthèse</span>
+      <span class="x" onclick="closePinModal()">×</span>
+    </div>
+    <div class="pin-body" id="pinBody"></div>
+    <div class="pin-foot">
+      <button class="reset" onclick="resetPins()">Réinitialiser</button>
+      <span class="count" id="pinCount"></span>
+      <button onclick="applyPins()">Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ INFOBULLE GLOBALE ░░ -->
+<div id="globalTip"></div>
 
 <script id="appScript">
 /* ════════════════════════════════════════════════════════════════
@@ -912,6 +988,7 @@ function finishBoot(dbName, badge){
   applyUrlState();        // restaure l'état depuis l'URL si présent
   renderContextBar();
   refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
+  try { diagFlux(); } catch(e){ console.warn('diagFlux', e); }   // diagnostic temporaire
   setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
 }
 
@@ -998,6 +1075,47 @@ function scaleSuffix(v, unitDisplay){
 }
 function ordinalFr(n){ return n === 1 ? '1er' : n + 'e'; }
 
+/* ─── SOURCE & ANNÉE RÉELLE D'UNE VALEUR ──────────────────────── */
+function getIndicatorSource(indicator, year){
+  // source la plus récente connue pour cet indicateur (sur le 1er pays du sujet)
+  const isos = currentIsos(); if(!isos.length) return null;
+  const r = safeExec(`SELECT source FROM identite WHERE indicator='${escapeSql(indicator)}' AND country_iso3='${escapeSql(isos[0])}' AND source IS NOT NULL AND source!='' ORDER BY year DESC LIMIT 1`);
+  return r.length && r[0].values.length ? r[0].values[0][0] : null;
+}
+function getValueYear(indicator, year){
+  // année effective de la valeur (gère le repli sur année antérieure du cache)
+  const series = cache.identite?.[indicator]; if(!series) return null;
+  if(series[year] != null) return year;
+  const ys = Object.keys(series).map(Number).filter(y => y <= year).sort((a,b)=>b-a);
+  return ys.length ? ys[0] : null;
+}
+
+/* ─── INFOBULLE GLOBALE ───────────────────────────────────────── */
+function escAttr(s){ return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function showTip(ev, raw){
+  const tip = document.getElementById('globalTip');
+  // format : "titre::ligne1::ligne2" → titre en gras, lignes en dessous
+  const parts = String(raw).split('::');
+  let html = '';
+  parts.forEach((p,i) => {
+    if(i===0) html += `<div style="margin-bottom:3px">${p}</div>`;
+    else html += `<div class="tt">${p}</div>`;
+  });
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+  moveTip(ev);
+}
+function moveTip(ev){
+  const tip = document.getElementById('globalTip');
+  if(tip.style.display !== 'block') return;
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  const r = tip.getBoundingClientRect();
+  if(x + r.width > window.innerWidth - 10) x = ev.clientX - r.width - 14;
+  if(y + r.height > window.innerHeight - 10) y = ev.clientY - r.height - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip(){ document.getElementById('globalTip').style.display = 'none'; }
+
 // Sparkline SVG (forme de la série, sans axes).
 function sparklineSvg(series, color){
   if(!series || series.length < 2) return '';
@@ -1026,22 +1144,102 @@ function sparklineSvg(series, color){
    RENDU — ONGLET SYNTHÈSE
 ═════════════════════════════════════════════════════════════════ */
 
-// Indicateurs identité épinglés (défaut : champ radar/épinglé, sinon les premiers).
+/* ─── ÉPINGLAGE PERSONNEL (localStorage) ──────────────────────── */
+const PIN_KEY = 'geopol_pins_synthese';
+function loadPins(){
+  try { const j = localStorage.getItem(PIN_KEY); if(j) return new Set(JSON.parse(j)); } catch {}
+  return null;   // null = pas de préférence perso → on utilise les défauts
+}
+function savePins(set){
+  try { localStorage.setItem(PIN_KEY, JSON.stringify([...set])); } catch {}
+}
+
+// Indicateurs identité affichés : préférence perso (localStorage) sinon défauts (radar/config).
 function pinnedIdentiteIndicators(){
   const ident = state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
-  const pinned = ident.filter(c => c.epingle_synthese || c.radar);
-  const base = pinned.length ? pinned : ident.slice(0, 10);
-  return base.slice(0, 12);
+  const perso = loadPins();
+  if(perso && perso.size){
+    return ident.filter(c => perso.has(c.indicator)).slice(0, 14);
+  }
+  const def = ident.filter(c => c.epingle_synthese || c.radar);
+  return (def.length ? def : ident.slice(0, 10)).slice(0, 12);
 }
-// Indicateurs de flux épinglés (défaut : tous les flux présents).
 function pinnedFluxIndicators(){
-  return state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false).slice(0, 8);
+  return state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false).slice(0, 10);
+}
+
+/* ─── MODALE DE CONFIGURATION DES INDICATEURS ─────────────────── */
+let _pinDraft = null;
+function openPinModal(){
+  // état initial = sélection courante
+  const current = new Set(pinnedIdentiteIndicators().map(c => c.indicator));
+  _pinDraft = new Set(current);
+  const ident = state.indicators.filter(c => c.table === 'identite');
+  // grouper par catégorie
+  const byCat = {};
+  for(const c of ident){ (byCat[c.category || 'autre'] ??= []).push(c); }
+  let html = '';
+  for(const cat of Object.keys(byCat).sort()){
+    html += `<div class="pin-cat">${cat}</div>`;
+    for(const c of byCat[cat]){
+      const on = _pinDraft.has(c.indicator) ? 'on' : '';
+      const miss = c.presentInDb === false ? `<span class="miss">sans données</span>` : '';
+      html += `<div class="pin-item ${on}" data-ind="${c.indicator}" onclick="togglePin('${c.indicator}')">
+        <span class="pin-chk">${_pinDraft.has(c.indicator)?'✓':''}</span>
+        <span>${c.label || c.indicator}</span>${miss}
+      </div>`;
+    }
+  }
+  document.getElementById('pinBody').innerHTML = html;
+  updatePinCount();
+  document.getElementById('pinModal').classList.add('open');
+}
+function closePinModal(){ document.getElementById('pinModal').classList.remove('open'); }
+function togglePin(ind){
+  if(_pinDraft.has(ind)) _pinDraft.delete(ind); else _pinDraft.add(ind);
+  const row = document.querySelector(`.pin-item[data-ind="${ind}"]`);
+  if(row){ row.classList.toggle('on', _pinDraft.has(ind)); row.querySelector('.pin-chk').textContent = _pinDraft.has(ind)?'✓':''; }
+  updatePinCount();
+}
+function updatePinCount(){
+  document.getElementById('pinCount').textContent = `${_pinDraft.size} sélectionné(s)`;
+}
+function applyPins(){
+  savePins(_pinDraft);
+  closePinModal();
+  renderSynthese();
+}
+function resetPins(){
+  try { localStorage.removeItem(PIN_KEY); } catch {}
+  closePinModal();
+  renderSynthese();
 }
 
 function concentrationClass(pct){
   if(pct >= 50) return 'intense';
   if(pct >= 30) return 'moyen';
   return 'clair';
+}
+
+/* ─── DIAGNOSTIC FLUX (temporaire — aide au calage du schéma) ──── */
+function diagFlux(){
+  console.group('%cDIAGNOSTIC FLUX', 'color:#0a6e4a;font-weight:bold');
+  const inds = safeExec(`SELECT DISTINCT indicator FROM flux`);
+  console.log('Indicateurs présents dans flux :', inds.length ? inds[0].values.map(v=>v[0]) : '(aucun)');
+  const cols = safeExec(`PRAGMA table_info(flux)`);
+  if(cols.length) console.log('Colonnes de flux :', cols[0].values.map(v=>v[1]));
+  const yrs = safeExec(`SELECT MIN(year), MAX(year) FROM flux`);
+  if(yrs.length) console.log('Années flux :', yrs[0].values[0]);
+  const sample = safeExec(`SELECT * FROM flux LIMIT 3`);
+  if(sample.length){ console.log('Colonnes échantillon :', sample[0].columns); console.log('3 lignes :', sample[0].values); }
+  if(state.subject){
+    const inList = sqlList(currentIsos());
+    const asTo = safeExec(`SELECT COUNT(*) FROM flux WHERE country_to IN (${inList})`);
+    const asFrom = safeExec(`SELECT COUNT(*) FROM flux WHERE country_from IN (${inList})`);
+    console.log(`Lignes où le sujet est country_to :`, asTo.length?asTo[0].values[0][0]:0);
+    console.log(`Lignes où le sujet est country_from :`, asFrom.length?asFrom[0].values[0][0]:0);
+  }
+  console.groupEnd();
 }
 
 function renderSynthese(){
@@ -1063,7 +1261,9 @@ function renderSynthese(){
     const val = getIdentiteValue(c.indicator, state.year);
     if(val == null) continue;
     const series = getIdentiteSeries(c.indicator);
-    // rang : seulement pour un pays unique (un agrégat n'a pas de rang mondial simple)
+    const src = getIndicatorSource(c.indicator, state.year);
+    // année réelle de la valeur affichée (peut différer si repli sur année antérieure)
+    const realYear = getValueYear(c.indicator, state.year);
     let rankTxt = '';
     if(state.subject.isos.length === 1){
       const rp = rankPercentile(c.indicator, val, state.year);
@@ -1072,7 +1272,10 @@ function renderSynthese(){
       rankTxt = `<span style="opacity:.5">agrégat</span>`;
     }
     const suffix = scaleSuffix(val, c.unit_display);
-    kvRows += `<div class="kv-row" onclick="goToPuissance('${c.indicator}')">
+    const tip = `<b>${c.label||c.indicator}</b>::Année : ${realYear||'—'}::Source : ${src||'n/d'}` +
+                (state.subject.isos.length>1 ? `::Agrégat ${aggMethodFor(c.indicator)==='sum'?'(somme)':'(moyenne)'} de ${state.subject.isos.length} pays` : '');
+    kvRows += `<div class="kv-row" onclick="goToPuissance('${c.indicator}')"
+                    onmouseenter="showTip(event,'${escAttr(tip)}')" onmousemove="moveTip(event)" onmouseleave="hideTip()">
       <div class="kv-name">${c.label || c.indicator}<span class="cat">${c.category||''}</span></div>
       <div class="kv-val">${fmtNumber(val, c.unit_display)}<span class="u">${suffix}</span></div>
       <div class="kv-rank">${rankTxt}</div>
@@ -1091,7 +1294,10 @@ function renderSynthese(){
       <div class="card">
         <div class="card-head">
           <span class="card-title">Valeurs clés</span>
-          <span class="card-sub">${inds.length} indicateurs · clic → Puissance</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="card-sub">${inds.length} indicateurs · ${state.year}</span>
+            <button class="card-cog" onclick="openPinModal()" title="Choisir les indicateurs">⚙</button>
+          </span>
         </div>
         <div class="card-body">${kvRows}</div>
       </div>
