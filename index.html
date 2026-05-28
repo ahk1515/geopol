@@ -448,10 +448,7 @@ main { flex: 1; padding: 16px 18px 28px; }
     <div id="subjectSlot"></div>
     <span class="ctx-sep"></span>
     <span class="ctx-label">Année</span>
-    <div class="year-control">
-      <input type="range" id="yearSlider" min="2000" max="2024" value="2022" step="1" oninput="onYearChange(this.value)">
-      <span class="year-out" id="yearOut">2022</span>
-    </div>
+    <div id="yearSlot"></div>
   </div>
 
   <!-- ░░ ZONE PRINCIPALE — 3 ONGLETS ░░ -->
@@ -975,10 +972,13 @@ function buildIndicatorRegistry(){
     const r = safeExec(`SELECT DISTINCT indicator FROM ${tbl}`);
     if(r.length) for(const [ind] of r[0].values) present.add(ind);
   }
+  // Déduplication : un même indicateur (même clé indicator+table) ne doit
+  // apparaître qu'une fois, même s'il est déclaré plusieurs fois dans config.json.
+  const seen = new Set();
   state.indicators = (state.config || [])
     .filter(c => c.actif !== false)
+    .filter(c => { const k = (c.table||'')+'|'+c.indicator; if(seen.has(k)) return false; seen.add(k); return true; })
     .map(c => ({ ...c, presentInDb: present.has(c.indicator) }));
-  // Diagnostic : indicateurs déclarés actifs mais absents de la DB
   const missing = state.indicators.filter(c => !c.presentInDb).map(c => c.indicator);
   if(missing.length) console.info('Indicateurs config sans données DB :', missing);
 }
@@ -1004,9 +1004,6 @@ function finishBoot(dbName, badge){
     if(mn && mx){
       state.yearBounds = { min: mn, max: mx };
       state.year = mx;
-      const sl = document.getElementById('yearSlider');
-      sl.min = mn; sl.max = mx; sl.value = mx;
-      document.getElementById('yearOut').textContent = mx;
     }
   }
   setDbBadge(dbName, badge);
@@ -1015,6 +1012,19 @@ function finishBoot(dbName, badge){
   renderContextBar();
   refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
   setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
+}
+
+// Dernière année où le sujet a des données identité (pour caler la Synthèse).
+function latestYearWithData(){
+  ensureIdentiteCache();
+  let best = null;
+  for(const ind in (cache.identite || {})){
+    for(const y in cache.identite[ind]){
+      const v = cache.identite[ind][y];
+      if(v != null && v !== 0){ const yy = +y; if(best == null || yy > best) best = yy; }
+    }
+  }
+  return best || state.yearBounds.max;
 }
 
 /* ─── ONGLETS ─────────────────────────────────────────────────── */
@@ -1029,6 +1039,10 @@ function switchView(v){
 
 /* ─── CONTEXTE (barre sujet + année) ──────────────────────────── */
 function renderContextBar(){
+  renderSubjectSlot();
+  renderYearSlot();
+}
+function renderSubjectSlot(){
   const slot = document.getElementById('subjectSlot');
   if(!state.subject || !state.subject.isos.length){
     slot.innerHTML = `<span class="subject-chip empty" onclick="openSearch()">aucun sujet — cliquer pour choisir</span>`;
@@ -1042,6 +1056,22 @@ function renderContextBar(){
        ${s.isos.length>1 ? `<span style="font-family:var(--mono);font-size:10px;opacity:.6">${s.isos.length} pays</span>` : ''}
        <span class="x" onclick="event.stopPropagation();clearSubject()">×</span>
      </span>`;
+}
+// Année : en Synthèse on affiche juste la dernière année dispo (pas de curseur) ;
+// en Puissance/Relations on garde le curseur pour explorer le détail temporel.
+function renderYearSlot(){
+  const slot = document.getElementById('yearSlot');
+  if(state.view === 'synthese'){
+    if(state.subject) state.year = latestYearWithData();
+    slot.innerHTML = `<span class="year-out" style="font-family:var(--mono);font-size:13px;font-weight:600">${state.subject ? state.year : '—'}</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:6px">dernière donnée</span>`;
+  } else {
+    const mn = state.yearBounds.min, mx = state.yearBounds.max;
+    slot.innerHTML = `<div class="year-control">
+      <input type="range" id="yearSlider" min="${mn}" max="${mx}" value="${state.year}" step="1" oninput="onYearChange(this.value)">
+      <span class="year-out" id="yearOut">${state.year}</span>
+    </div>`;
+  }
 }
 
 function setSubject(isos, label){
@@ -1058,7 +1088,8 @@ function clearSubject(){
 }
 function onYearChange(v){
   state.year = parseInt(v);
-  document.getElementById('yearOut').textContent = v;
+  const out = document.getElementById('yearOut');
+  if(out) out.textContent = v;
   invalidateYearScoped();
   syncUrl();
   refreshActiveView();
@@ -1380,11 +1411,18 @@ function buildPanorama(fluxInds, dir){
   let html = '';
   let any = false;
   for(const c of fluxInds){
-    const rows = getFluxRows(c.indicator, dir);
+    let rows = getFluxRows(c.indicator, dir);
     if(!rows.length) continue;
+    // Pour la dette : ne garder que le bilatéral (exclut multilatéral/privé,
+    // plus parlant en synthèse). Robuste aux variantes d'orthographe.
+    if(isDebtIndicator(c.indicator)){
+      const bil = rows.filter(r => isBilateral(r));
+      if(bil.length) rows = bil;
+    }
     const byPartner = new Map();
     let total = 0;
     for(const r of rows){
+      if(r.partner && r.partner.startsWith('__')) continue;  // ignore agrégats non-pays dans le panorama dette bilatérale
       const v = r.value || 0;
       byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
       total += v;
@@ -1396,13 +1434,15 @@ function buildPanorama(fluxInds, dir){
     const pct = (top[1] / total) * 100;
     const cls = concentrationClass(pct);
     const rowId = `pano_${dir}_${c.indicator}`.replace(/[^a-zA-Z0-9_]/g,'');
-    // top 5 (déplié au clic)
+    // top 5 (déplié au clic) — jauge normalisée sur le 1er du classement
+    const maxPct = (ranked[0][1] / total) * 100 || 1;
     const top5 = ranked.slice(0, 5).map(([code, v]) => {
       const p = (v/total)*100;
+      const w = Math.max(2, (p / maxPct) * 100);
       return `<div class="pano-sub">
         <span class="flag">${partnerFlag(code)}</span>
         <span class="nm">${partnerLabel(code)}</span>
-        <span class="bar"><span class="fill ${dir}" style="width:${(p/( (ranked[0][1]/total*100) )*100).toFixed(0)}%"></span></span>
+        <span class="bar"><span class="fill ${dir}" style="width:${w.toFixed(0)}%"></span></span>
         <span class="v">${p.toFixed(0)}%</span>
       </div>`;
     }).join('');
@@ -1429,6 +1469,13 @@ function togglePano(id){
   if(!el) return;
   const open = el.classList.toggle('open');
   if(caret) caret.textContent = open ? '▾' : '▸';
+}
+// Détecte un indicateur de dette (pour appliquer le filtre bilatéral en synthèse).
+function isDebtIndicator(ind){ return /dette|debt/i.test(ind); }
+// Détecte une ligne de dette bilatérale (robuste aux variantes d'orthographe/casse).
+function isBilateral(r){
+  const s = (r.sub1 || '') + ' ' + (r.sub2 || '') + ' ' + (r.sub3 || '');
+  return /bilat/i.test(s);
 }
 function partnerLabel(code){
   if(code === '__multilateral__') return 'Multilatéral';
