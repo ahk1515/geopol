@@ -334,6 +334,25 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pano-fill.influence{ background: var(--green); }
 .pano-val { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; }
 .pano-empty { padding: 16px 6px; color: var(--text3); font-size: 11.5px; font-style: italic; }
+/* dépliage top 5 */
+.pano-wrap { border-bottom: 1px solid var(--bg3); }
+.pano-wrap:last-child { border-bottom: none; }
+.pano-row { border-bottom: none; }
+.pano-row { grid-template-columns: 86px 1fr 60px 40px 14px; }
+.pano-caret { font-size: 9px; color: var(--text3); text-align: center; }
+.pano-detail { display: none; padding: 4px 6px 10px 6px; }
+.pano-detail.open { display: block; animation: fadeIn .2s ease; }
+.pano-detail-title { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin: 4px 0 6px; }
+.pano-sub { display: grid; grid-template-columns: 16px 1fr 70px 36px; gap: 8px; align-items: center; padding: 3px 0; font-size: 11.5px; }
+.pano-sub .flag { font-size: 13px; }
+.pano-sub .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text2); }
+.pano-sub .bar { height: 5px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.pano-sub .fill { height: 100%; border-radius: 2px; }
+.pano-sub .fill.partner { background: var(--blue); opacity: .7; }
+.pano-sub .fill.influence { background: var(--green); opacity: .7; }
+.pano-sub .v { font-family: var(--mono); font-size: 10px; text-align: right; color: var(--text2); }
+.pano-detail-link { font-size: 10.5px; color: var(--green); cursor: pointer; margin-top: 8px; display: inline-block; font-weight: 500; }
+.pano-detail-link:hover { text-decoration: underline; }
 
 /* hint sujet absent */
 .need-subject {
@@ -792,24 +811,31 @@ function ensureIdentiteCache(){
   return true;
 }
 
-// Valeur agrégée d'un indicateur identité pour une année (depuis le cache).
+// Valeur agrégée d'un indicateur pour une année, avec repli sur la dernière
+// année réellement renseignée (≠ null ET ≠ 0). Corrige les valeurs « 0 » des
+// années futures non encore peuplées (ex. projection 2030).
 function getIdentiteValue(indicator, year){
   ensureIdentiteCache();
   const y = year ?? state.year;
   const series = cache.identite?.[indicator];
   if(!series) return null;
-  if(series[y] != null) return series[y];
-  // repli : dernière année disponible <= y
-  const years = Object.keys(series).map(Number).filter(yy => yy <= y).sort((a,b)=>b-a);
-  return years.length ? series[years[0]] : null;
+  if(series[y] != null && series[y] !== 0) return series[y];
+  // repli : dernière année <= y avec valeur non nulle et non zéro
+  const years = Object.keys(series).map(Number).filter(yy => yy <= y && series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  if(years.length) return series[years[0]];
+  // sinon, dernière valeur renseignée toutes années confondues
+  const any = Object.keys(series).map(Number).filter(yy => series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  return any.length ? series[any[0]] : null;
 }
 
-// Série temporelle complète d'un indicateur (pour les courbes/sparklines).
+// Série temporelle (valeurs non nulles/non zéro) pour courbes/sparklines.
 function getIdentiteSeries(indicator){
   ensureIdentiteCache();
   const series = cache.identite?.[indicator];
   if(!series) return [];
-  return Object.keys(series).map(Number).sort((a,b)=>a-b).map(y => ({ year: y, value: series[y] }));
+  return Object.keys(series).map(Number).sort((a,b)=>a-b)
+    .filter(y => series[y] != null && series[y] !== 0)
+    .map(y => ({ year: y, value: series[y] }));
 }
 
 // Stats mondiales pour un indicateur/année (percentiles, rangs) — paresseux.
@@ -988,7 +1014,6 @@ function finishBoot(dbName, badge){
   applyUrlState();        // restaure l'état depuis l'URL si présent
   renderContextBar();
   refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
-  try { diagFlux(); } catch(e){ console.warn('diagFlux', e); }   // diagnostic temporaire
   setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
 }
 
@@ -1083,11 +1108,12 @@ function getIndicatorSource(indicator, year){
   return r.length && r[0].values.length ? r[0].values[0][0] : null;
 }
 function getValueYear(indicator, year){
-  // année effective de la valeur (gère le repli sur année antérieure du cache)
   const series = cache.identite?.[indicator]; if(!series) return null;
-  if(series[year] != null) return year;
-  const ys = Object.keys(series).map(Number).filter(y => y <= year).sort((a,b)=>b-a);
-  return ys.length ? ys[0] : null;
+  if(series[year] != null && series[year] !== 0) return year;
+  const ys = Object.keys(series).map(Number).filter(y => y <= year && series[y] != null && series[y] !== 0).sort((a,b)=>b-a);
+  if(ys.length) return ys[0];
+  const any = Object.keys(series).map(Number).filter(y => series[y] != null && series[y] !== 0).sort((a,b)=>b-a);
+  return any.length ? any[0] : null;
 }
 
 /* ─── INFOBULLE GLOBALE ───────────────────────────────────────── */
@@ -1115,6 +1141,13 @@ function moveTip(ev){
   tip.style.left = x + 'px'; tip.style.top = y + 'px';
 }
 function hideTip(){ document.getElementById('globalTip').style.display = 'none'; }
+// Variante à deux arguments (titre, corps) — passés en data-attributes, sûrs.
+function showTip2(ev, title, body){
+  const tip = document.getElementById('globalTip');
+  tip.innerHTML = `<div style="margin-bottom:3px"><b>${title||''}</b></div><div class="tt">${body||''}</div>`;
+  tip.style.display = 'block';
+  moveTip(ev);
+}
 
 // Sparkline SVG (forme de la série, sans axes).
 function sparklineSvg(series, color){
@@ -1146,18 +1179,18 @@ function sparklineSvg(series, color){
 
 /* ─── ÉPINGLAGE PERSONNEL (localStorage) ──────────────────────── */
 const PIN_KEY = 'geopol_pins_synthese';
-function loadPins(){
-  try { const j = localStorage.getItem(PIN_KEY); if(j) return new Set(JSON.parse(j)); } catch {}
-  return null;   // null = pas de préférence perso → on utilise les défauts
+const PIN_FLUX_KEY = 'geopol_pins_flux';
+function loadPins(key){
+  try { const j = localStorage.getItem(key); if(j) return new Set(JSON.parse(j)); } catch {}
+  return null;
 }
-function savePins(set){
-  try { localStorage.setItem(PIN_KEY, JSON.stringify([...set])); } catch {}
+function savePins(key, set){
+  try { localStorage.setItem(key, JSON.stringify([...set])); } catch {}
 }
 
-// Indicateurs identité affichés : préférence perso (localStorage) sinon défauts (radar/config).
 function pinnedIdentiteIndicators(){
   const ident = state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
-  const perso = loadPins();
+  const perso = loadPins(PIN_KEY);
   if(perso && perso.size){
     return ident.filter(c => perso.has(c.indicator)).slice(0, 14);
   }
@@ -1165,19 +1198,24 @@ function pinnedIdentiteIndicators(){
   return (def.length ? def : ident.slice(0, 10)).slice(0, 12);
 }
 function pinnedFluxIndicators(){
-  return state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false).slice(0, 10);
+  const flux = state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false);
+  const perso = loadPins(PIN_FLUX_KEY);
+  if(perso && perso.size){
+    return flux.filter(c => perso.has(c.indicator)).slice(0, 12);
+  }
+  return flux.slice(0, 10);
 }
 
-/* ─── MODALE DE CONFIGURATION DES INDICATEURS ─────────────────── */
-let _pinDraft = null;
-function openPinModal(){
-  // état initial = sélection courante
-  const current = new Set(pinnedIdentiteIndicators().map(c => c.indicator));
+/* ─── MODALE DE CONFIGURATION (identite OU flux) ──────────────── */
+let _pinDraft = null, _pinMode = 'identite';
+function openPinModal(mode){
+  _pinMode = mode || 'identite';
+  const isFlux = _pinMode === 'flux';
+  const current = new Set((isFlux ? pinnedFluxIndicators() : pinnedIdentiteIndicators()).map(c => c.indicator));
   _pinDraft = new Set(current);
-  const ident = state.indicators.filter(c => c.table === 'identite');
-  // grouper par catégorie
+  const pool = state.indicators.filter(c => c.table === (isFlux ? 'flux' : 'identite'));
   const byCat = {};
-  for(const c of ident){ (byCat[c.category || 'autre'] ??= []).push(c); }
+  for(const c of pool){ (byCat[c.category || 'autre'] ??= []).push(c); }
   let html = '';
   for(const cat of Object.keys(byCat).sort()){
     html += `<div class="pin-cat">${cat}</div>`;
@@ -1190,6 +1228,7 @@ function openPinModal(){
       </div>`;
     }
   }
+  document.querySelector('#pinModal .pin-head .t').textContent = isFlux ? 'Flux affichés dans la synthèse' : 'Indicateurs de la synthèse';
   document.getElementById('pinBody').innerHTML = html;
   updatePinCount();
   document.getElementById('pinModal').classList.add('open');
@@ -1205,12 +1244,12 @@ function updatePinCount(){
   document.getElementById('pinCount').textContent = `${_pinDraft.size} sélectionné(s)`;
 }
 function applyPins(){
-  savePins(_pinDraft);
+  savePins(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY, _pinDraft);
   closePinModal();
   renderSynthese();
 }
 function resetPins(){
-  try { localStorage.removeItem(PIN_KEY); } catch {}
+  try { localStorage.removeItem(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY); } catch {}
   closePinModal();
   renderSynthese();
 }
@@ -1261,22 +1300,22 @@ function renderSynthese(){
     const val = getIdentiteValue(c.indicator, state.year);
     if(val == null) continue;
     const series = getIdentiteSeries(c.indicator);
-    const src = getIndicatorSource(c.indicator, state.year);
-    // année réelle de la valeur affichée (peut différer si repli sur année antérieure)
     const realYear = getValueYear(c.indicator, state.year);
+    const src = getIndicatorSource(c.indicator);
     let rankTxt = '';
     if(state.subject.isos.length === 1){
-      const rp = rankPercentile(c.indicator, val, state.year);
-      if(rp) rankTxt = `${ordinalFr(rp.rank)} / ${rp.total}`;
+      const rp = rankPercentile(c.indicator, val, realYear || state.year);
+      if(rp) rankTxt = `${ordinalFr(rp.rank)} <span style="opacity:.5">/ ${rp.total}</span>`;
     } else {
       rankTxt = `<span style="opacity:.5">agrégat</span>`;
     }
     const suffix = scaleSuffix(val, c.unit_display);
-    const tip = `<b>${c.label||c.indicator}</b>::Année : ${realYear||'—'}::Source : ${src||'n/d'}` +
-                (state.subject.isos.length>1 ? `::Agrégat ${aggMethodFor(c.indicator)==='sum'?'(somme)':'(moyenne)'} de ${state.subject.isos.length} pays` : '');
-    kvRows += `<div class="kv-row" onclick="goToPuissance('${c.indicator}')"
-                    onmouseenter="showTip(event,'${escAttr(tip)}')" onmousemove="moveTip(event)" onmouseleave="hideTip()">
-      <div class="kv-name">${c.label || c.indicator}<span class="cat">${c.category||''}</span></div>
+    const aggTxt = state.subject.isos.length>1 ? ` · agrégat ${aggMethodFor(c.indicator)==='sum'?'somme':'moyenne'}` : '';
+    // infobulle via data-attributes (pas d'injection dans les handlers → plus de crash)
+    const tipTitle = (c.label||c.indicator);
+    const tipBody = `Année : ${realYear||'—'} · Source : ${src||'n/d'}${aggTxt}`;
+    kvRows += `<div class="kv-row" data-tt="${escAttr(tipTitle)}" data-tb="${escAttr(tipBody)}" data-ind="${c.indicator}">
+      <div class="kv-name">${c.label || c.indicator}<span class="cat">${c.category||''} · ${realYear||'—'}</span></div>
       <div class="kv-val">${fmtNumber(val, c.unit_display)}<span class="u">${suffix}</span></div>
       <div class="kv-rank">${rankTxt}</div>
       <div class="kv-spark">${sparklineSvg(series)}</div>
@@ -1295,8 +1334,8 @@ function renderSynthese(){
         <div class="card-head">
           <span class="card-title">Valeurs clés</span>
           <span style="display:flex;align-items:center;gap:8px">
-            <span class="card-sub">${inds.length} indicateurs · ${state.year}</span>
-            <button class="card-cog" onclick="openPinModal()" title="Choisir les indicateurs">⚙</button>
+            <span class="card-sub">${inds.length} indicateurs</span>
+            <button class="card-cog" onclick="openPinModal('identite')" title="Choisir les indicateurs">⚙</button>
           </span>
         </div>
         <div class="card-body">${kvRows}</div>
@@ -1304,7 +1343,10 @@ function renderSynthese(){
       <div class="card">
         <div class="card-head">
           <span class="card-title">Profil relationnel</span>
-          <span class="card-sub">premier partenaire par flux · ${state.year}</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="card-sub">premier partenaire par flux</span>
+            <button class="card-cog" onclick="openPinModal('flux')" title="Choisir les flux">⚙</button>
+          </span>
         </div>
         <div class="card-body">
           <div class="flux-block">
@@ -1318,16 +1360,28 @@ function renderSynthese(){
         </div>
       </div>
     </div>`;
+
+  bindKvTips();
 }
 
-// Construit le panorama (un flux par ligne, top-1 partenaire, barre de concentration).
+// Branche les infobulles sur les lignes de valeurs (via data-attributes, sûr).
+function bindKvTips(){
+  document.querySelectorAll('.kv-row').forEach(row => {
+    row.addEventListener('mouseenter', e => showTip2(e, row.dataset.tt, row.dataset.tb));
+    row.addEventListener('mousemove', moveTip);
+    row.addEventListener('mouseleave', hideTip);
+    row.addEventListener('click', () => goToPuissance(row.dataset.ind));
+  });
+}
+
+// Construit le panorama (un flux par ligne, top-1 + dépliage top-5).
 function buildPanorama(fluxInds, dir){
-  if(!fluxInds.length) return `<div class="pano-empty">Aucun indicateur de flux disponible.</div>`;
+  if(!fluxInds.length) return `<div class="pano-empty">Aucun indicateur de flux sélectionné.</div>`;
   let html = '';
+  let any = false;
   for(const c of fluxInds){
     const rows = getFluxRows(c.indicator, dir);
-    if(!rows.length){ continue; }
-    // agréger par partenaire (somme sur subcategories)
+    if(!rows.length) continue;
     const byPartner = new Map();
     let total = 0;
     for(const r of rows){
@@ -1336,24 +1390,51 @@ function buildPanorama(fluxInds, dir){
       total += v;
     }
     if(total <= 0) continue;
-    const top = [...byPartner.entries()].sort((a,b) => b[1]-a[1])[0];
+    any = true;
+    const ranked = [...byPartner.entries()].sort((a,b) => b[1]-a[1]);
+    const top = ranked[0];
     const pct = (top[1] / total) * 100;
-    const pname = partnerLabel(top[0]);
-    const pflag = partnerFlag(top[0]);
     const cls = concentrationClass(pct);
-    html += `<div class="pano-row" onclick="goToRelations('${c.indicator}','${dir}')">
-      <div class="pano-flux">${c.label || c.indicator}</div>
-      <div class="pano-partner"><span class="flag">${pflag}</span><span class="nm">${pname}</span></div>
-      <div class="pano-bar"><div class="pano-fill ${dir} ${cls}" style="width:${Math.min(100,pct).toFixed(0)}%"></div></div>
-      <div class="pano-val">${pct.toFixed(0)}%</div>
+    const rowId = `pano_${dir}_${c.indicator}`.replace(/[^a-zA-Z0-9_]/g,'');
+    // top 5 (déplié au clic)
+    const top5 = ranked.slice(0, 5).map(([code, v]) => {
+      const p = (v/total)*100;
+      return `<div class="pano-sub">
+        <span class="flag">${partnerFlag(code)}</span>
+        <span class="nm">${partnerLabel(code)}</span>
+        <span class="bar"><span class="fill ${dir}" style="width:${(p/( (ranked[0][1]/total*100) )*100).toFixed(0)}%"></span></span>
+        <span class="v">${p.toFixed(0)}%</span>
+      </div>`;
+    }).join('');
+    html += `<div class="pano-wrap">
+      <div class="pano-row" onclick="togglePano('${rowId}')">
+        <div class="pano-flux">${c.label || c.indicator}</div>
+        <div class="pano-partner"><span class="flag">${partnerFlag(top[0])}</span><span class="nm">${partnerLabel(top[0])}</span></div>
+        <div class="pano-bar"><div class="pano-fill ${dir} ${cls}" style="width:${Math.min(100,pct).toFixed(0)}%"></div></div>
+        <div class="pano-val">${pct.toFixed(0)}%</div>
+        <div class="pano-caret" id="caret_${rowId}">▸</div>
+      </div>
+      <div class="pano-detail" id="${rowId}">
+        <div class="pano-detail-title">Top 5 · ${c.label||c.indicator}</div>
+        ${top5}
+        <div class="pano-detail-link" onclick="event.stopPropagation();goToRelations('${c.indicator}','${dir}')">→ explorer dans Relations</div>
+      </div>
     </div>`;
   }
-  return html || `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
+  return any ? html : `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
+}
+function togglePano(id){
+  const el = document.getElementById(id);
+  const caret = document.getElementById('caret_' + id);
+  if(!el) return;
+  const open = el.classList.toggle('open');
+  if(caret) caret.textContent = open ? '▾' : '▸';
 }
 function partnerLabel(code){
   if(code === '__multilateral__') return 'Multilatéral';
   if(code === '__private__') return 'Privé';
   if(code === '__intra__') return 'Intra-groupe';
+  if(code === '__world__' || code === 'WLD') return 'Monde';
   return isoToName(code);
 }
 function partnerFlag(code){
@@ -1361,7 +1442,7 @@ function partnerFlag(code){
   return isoToFlag(code);
 }
 
-// Portes vers les autres onglets (l'état est mémorisé ; le rendu cible viendra aux étapes 5/6).
+// Portes vers les autres onglets (état mémorisé ; rendu cible aux étapes 5/6).
 let _pendingFocus = { indicator: null, fluxDir: null };
 function goToPuissance(indicator){ _pendingFocus.indicator = indicator; switchView('puissance'); }
 function goToRelations(indicator, dir){ _pendingFocus.indicator = indicator; _pendingFocus.fluxDir = dir; switchView('relations'); }
