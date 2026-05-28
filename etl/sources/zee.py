@@ -44,7 +44,6 @@ WFS_URL = (
     + "&request=GetFeature"
     + "&typeNames=MarineRegions:eez"
     + "&outputFormat=application/json"
-    + "&propertyName=ISO_SOV1,ISO_SOV2,ISO_SOV3,POL_TYPE,AREA_KM2"
     + "&count={page_size}"
     + "&startIndex={start}"
 )
