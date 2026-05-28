@@ -588,6 +588,153 @@ function detectZoneLabel(isos){
   return 'Sélection libre';
 }
 
+/* ════════════════════════════════════════════════════════════════
+   CACHE DE DONNÉES PAR SUJET (parade performance)
+   Chargement paresseux : identite chargé au choix du sujet ;
+   flux et stats mondiales calculés à la demande puis mémoïsés.
+   Invalidation par clé = liste d'isos triée.
+═════════════════════════════════════════════════════════════════ */
+const cache = {
+  key: null,          // signature du sujet courant ("FRA" / "DEU,FRA,ITA")
+  identite: null,     // { indicator: { year: value_agrégée } }
+  flux: new Map(),    // indicator -> { partner:{rows}, influence:{rows} } (à la demande)
+  world: new Map(),   // "indicator|year" -> { sorted:[...], n } (stats mondiales, à la demande)
+};
+
+function subjectKey(isos){ return isos.slice().sort().join(','); }
+
+function aggMethodFor(indicator){
+  const c = (state.config || []).find(x => x.indicator === indicator);
+  return (c && c.aggregation === 'sum') ? 'sum' : 'mean';
+}
+
+// (Re)charge le cache identite pour le sujet courant si nécessaire.
+function ensureIdentiteCache(){
+  const isos = currentIsos();
+  if(!isos.length) return false;
+  const key = subjectKey(isos);
+  if(cache.key === key && cache.identite) return true;   // déjà en cache
+
+  // reset cache pour ce nouveau sujet
+  cache.key = key;
+  cache.identite = {};
+  cache.flux.clear();
+  cache.world.clear();
+
+  const inList = sqlList(isos);
+  // une seule requête : toutes les valeurs identite du sujet
+  const r = safeExec(`SELECT indicator, year, country_iso3, value FROM identite WHERE country_iso3 IN (${inList})`);
+  if(!r.length) return true;
+
+  // regroupement indicator -> year -> [valeurs par pays]
+  const tmp = {};
+  for(const [ind, year, iso, val] of r[0].values){
+    if(val == null) continue;
+    (tmp[ind] ??= {});
+    (tmp[ind][year] ??= []).push(val);
+  }
+  // agrégation selon la méthode déclarée dans config
+  for(const ind in tmp){
+    const method = aggMethodFor(ind);
+    const byYear = {};
+    for(const y in tmp[ind]){
+      const arr = tmp[ind][y];
+      if(method === 'sum') byYear[y] = arr.reduce((a,b)=>a+b, 0);
+      else byYear[y] = arr.reduce((a,b)=>a+b, 0) / arr.length;  // mean (simple ; pondération pop. à l'étape 5 si besoin)
+    }
+    cache.identite[ind] = byYear;
+  }
+  return true;
+}
+
+// Valeur agrégée d'un indicateur identité pour une année (depuis le cache).
+function getIdentiteValue(indicator, year){
+  ensureIdentiteCache();
+  const y = year ?? state.year;
+  const series = cache.identite?.[indicator];
+  if(!series) return null;
+  if(series[y] != null) return series[y];
+  // repli : dernière année disponible <= y
+  const years = Object.keys(series).map(Number).filter(yy => yy <= y).sort((a,b)=>b-a);
+  return years.length ? series[years[0]] : null;
+}
+
+// Série temporelle complète d'un indicateur (pour les courbes/sparklines).
+function getIdentiteSeries(indicator){
+  ensureIdentiteCache();
+  const series = cache.identite?.[indicator];
+  if(!series) return [];
+  return Object.keys(series).map(Number).sort((a,b)=>a-b).map(y => ({ year: y, value: series[y] }));
+}
+
+// Stats mondiales pour un indicateur/année (percentiles, rangs) — paresseux.
+function getWorldStats(indicator, year){
+  const y = year ?? state.year;
+  const k = indicator + '|' + y;
+  if(cache.world.has(k)) return cache.world.get(k);
+  const r = safeExec(`SELECT country_iso3, value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND value IS NOT NULL`);
+  let pairs = [];
+  if(r.length) pairs = r[0].values
+    .filter(([iso]) => !REGIONAL_CODES.has(iso))
+    .map(([iso, v]) => ({ iso, v }));
+  const sorted = pairs.slice().sort((a,b) => a.v - b.v);
+  const stats = { sorted, n: sorted.length };
+  cache.world.set(k, stats);
+  return stats;
+}
+
+// Rang + percentile d'une valeur dans la distribution mondiale.
+// inverted=true => "beaucoup = défavorable" (le percentile est inversé).
+function rankPercentile(indicator, value, year){
+  if(value == null) return null;
+  const { sorted, n } = getWorldStats(indicator, year);
+  if(!n) return null;
+  let below = 0;
+  for(const d of sorted){ if(d.v < value) below++; else break; }
+  let pct = below / n;                       // 0..1 (position basse->haute)
+  const cfg = (state.config || []).find(c => c.indicator === indicator);
+  if(cfg && cfg.rank_inverted) pct = 1 - pct;
+  const rankFromTop = n - below;             // 1 = meilleur (valeur la plus haute)
+  return { percentile: pct, rank: rankFromTop, total: n };
+}
+
+// Flux d'un indicateur pour le sujet, dans un sens donné — paresseux.
+// dir: 'partner' (le sujet reçoit/émet, on regarde ses partenaires)
+//      'influence' (pour qui le sujet pèse).
+function getFluxRows(indicator, dir){
+  ensureIdentiteCache();
+  const isos = currentIsos();
+  if(!isos.length) return [];
+  const entry = cache.flux.get(indicator) || {};
+  if(entry[dir]) return entry[dir];
+
+  const inList = sqlList(isos);
+  // Convention de schéma : country_from = origine, country_to = destination.
+  // 'partner' : on agrège par l'autre extrémité, sujet côté country_to.
+  // 'influence' : sujet côté country_from.
+  let rows = [];
+  const y = state.year;
+  if(dir === 'partner'){
+    const r = safeExec(`SELECT country_from AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                        FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                        AND country_to IN (${inList}) AND country_from NOT IN (${inList})
+                        GROUP BY country_from, subcategory_1, subcategory_2, subcategory_3`);
+    if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v }));
+  } else {
+    const r = safeExec(`SELECT country_to AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                        FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                        AND country_from IN (${inList}) AND country_to NOT IN (${inList})
+                        GROUP BY country_to, subcategory_1, subcategory_2, subcategory_3`);
+    if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v }));
+  }
+  entry[dir] = rows;
+  cache.flux.set(indicator, entry);
+  return rows;
+}
+
+// Invalide le cache quand l'année change (les valeurs annuelles dépendent de l'année).
+function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); }
+
 /* ─── UI : helpers chargement ─────────────────────────────────── */
 function setLoadingMsg(msg, pct){
   const e = document.getElementById('loadingMsg'); if(e) e.textContent = msg;
@@ -740,6 +887,7 @@ function clearSubject(){
 function onYearChange(v){
   state.year = parseInt(v);
   document.getElementById('yearOut').textContent = v;
+  invalidateYearScoped();
   syncUrl();
   refreshActiveView();
 }
