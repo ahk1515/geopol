@@ -1650,8 +1650,7 @@ function applyUrlState(){
     const y = parseInt(p.get('y'));
     if(y >= state.yearBounds.min && y <= state.yearBounds.max){
       state.year = y;
-      document.getElementById('yearSlider').value = y;
-      document.getElementById('yearOut').textContent = y;
+      // le slider est rendu dynamiquement par renderYearSlot() ; ne pas y toucher ici
     }
   }
   if(p.get('s')){
