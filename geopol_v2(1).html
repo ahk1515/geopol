@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GÉOPOL — Atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   GÉOPOL v2 — THÈME
+   Palette papier / éditoriale reprise de l'app actuelle (identité forte
+   à conserver) + ajout d'une famille d'affichage (Fraunces) pour les titres.
+═════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:       #f7f5f0;
+  --bg2:      #ffffff;
+  --bg3:      #f0ede6;
+  --bg4:      #e8e4db;
+  --bg5:      #ddd9cf;
+  --border:   #d8d3c8;
+  --border2:  #b8b2a4;
+  --text:     #1a1c22;
+  --text2:    #4a4e5c;
+  --text3:    #888070;
+  --green:    #0a6e4a;
+  --green-d:  rgba(10,110,74,.07);
+  --green-b:  rgba(10,110,74,.2);
+  --orange:   #b45309;
+  --orange-d: rgba(180,83,9,.07);
+  --orange-b: rgba(180,83,9,.2);
+  --red:      #b91c1c;
+  --red-d:    rgba(185,28,28,.07);
+  --red-b:    rgba(185,28,28,.2);
+  --blue:     #1d4ed8;
+  --blue-d:   rgba(29,78,216,.07);
+  --blue-b:   rgba(29,78,216,.2);
+  --terra:    #c2410c;
+  --terra-d:  rgba(194,65,12,.08);
+  --terra-b:  rgba(194,65,12,.25);
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+  --display:  'Fraunces', Georgia, serif;
+  --shadow:   0 1px 2px rgba(26,28,34,.04), 0 4px 16px rgba(26,28,34,.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  /* texture grain très subtile pour l'atmosphère papier */
+  background-image: radial-gradient(var(--bg4) 0.5px, transparent 0.5px);
+  background-size: 22px 22px;
+}
+
+/* ── App shell ───────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── Header ──────────────────────────────────────────────────── */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 18px;
+  display: flex; align-items: center; gap: 16px;
+  height: 50px; flex-shrink: 0;
+  position: sticky; top: 0; z-index: 50;
+}
+.logo {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: .22em; color: var(--green);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-mark {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--green), #064e34);
+  box-shadow: inset -2px -2px 4px rgba(0,0,0,.2);
+}
+.logo-sub {
+  font-size: 9px; font-weight: 400; letter-spacing: .15em;
+  color: var(--text3); text-transform: uppercase; font-family: var(--mono);
+}
+
+/* ── Onglets (Synthèse / Puissance / Relations) ──────────────── */
+.tabs { display: flex; gap: 2px; margin-left: 8px; height: 100%; }
+.tab {
+  display: flex; align-items: center; padding: 0 16px;
+  font-size: 12px; font-weight: 500; color: var(--text3);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  letter-spacing: .02em; transition: color .15s, border-color .15s;
+  background: none; border-top: none; border-left: none; border-right: none;
+  font-family: var(--sans);
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
+
+.header-spacer { flex: 1; }
+
+/* ── Bouton générique header ─────────────────────────────────── */
+.hbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; font-size: 11px; font-family: var(--mono);
+  color: var(--text2); background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; transition: all .15s;
+}
+.hbtn:hover { border-color: var(--border2); color: var(--text); }
+.hbtn .kbd {
+  font-size: 9px; padding: 1px 4px; border-radius: 3px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-bottom-width: 2px;
+}
+
+/* ── Badge DB ────────────────────────────────────────────────── */
+.db-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
+.dot.ok { background: var(--green); box-shadow: 0 0 0 3px var(--green-d); }
+.dot.loading { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
+.dot.error { background: var(--red); }
+.dot.demo { background: var(--blue); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Barre de contexte (sujet + année) ───────────────────────── */
+#contextBar {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 9px 18px; display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; flex-shrink: 0;
+}
+.ctx-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+  color: var(--text3); text-transform: uppercase;
+}
+.subject-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px; border-radius: 20px;
+  background: var(--green-d); border: 1px solid var(--green-b);
+  color: var(--green); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.subject-chip:hover { background: var(--green-b); }
+.subject-chip .flag { font-size: 15px; }
+.subject-chip.empty { background: var(--bg3); border-color: var(--border); color: var(--text3); font-style: italic; }
+.subject-chip .x { opacity: .5; font-size: 13px; line-height: 1; }
+.subject-chip .x:hover { opacity: 1; }
+
+.ctx-sep { width: 1px; height: 18px; background: var(--border); }
+
+/* slider année */
+.year-control { display: inline-flex; align-items: center; gap: 9px; }
+.year-control input[type=range] { width: 150px; accent-color: var(--green); }
+.year-out {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  color: var(--text); min-width: 36px; text-align: right;
+}
+
+/* ── Zone principale ─────────────────────────────────────────── */
+main { flex: 1; padding: 16px 18px 28px; }
+.view { display: none; animation: fadeIn .25s ease; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* placeholder d'onglet (étape 0) */
+.placeholder {
+  border: 1.5px dashed var(--border2); border-radius: 12px;
+  padding: 60px 30px; text-align: center; color: var(--text3);
+  background: var(--bg2); max-width: 760px; margin: 30px auto;
+}
+.placeholder h2 {
+  font-family: var(--display); font-size: 26px; font-weight: 500;
+  color: var(--text); margin-bottom: 10px; letter-spacing: -.01em;
+}
+.placeholder .tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--green);
+  background: var(--green-d); padding: 4px 10px; border-radius: 20px;
+  display: inline-block; margin-bottom: 18px;
+}
+.placeholder p { font-size: 13px; line-height: 1.7; max-width: 520px; margin: 0 auto 8px; }
+.placeholder ul { text-align: left; max-width: 460px; margin: 16px auto 0; font-size: 12.5px; line-height: 1.9; }
+
+/* ── Overlay de chargement ───────────────────────────────────── */
+#loadingScreen {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--bg); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 22px;
+  transition: opacity .4s; 
+}
+#loadingScreen.hidden { opacity: 0; pointer-events: none; }
+.load-logo {
+  font-family: var(--mono); font-size: 14px; font-weight: 600;
+  letter-spacing: .3em; color: var(--green);
+}
+.load-bar-wrap { width: 240px; height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.load-bar { height: 100%; width: 0%; background: var(--green); transition: width .4s ease; border-radius: 2px; }
+#loadingMsg { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+/* ── Popover de recherche sujet (⌘K minimal pour l'étape 0) ──── */
+#searchOverlay {
+  position: fixed; inset: 0; z-index: 150; display: none;
+  background: rgba(26,28,34,.25); backdrop-filter: blur(2px);
+  align-items: flex-start; justify-content: center; padding-top: 12vh;
+}
+#searchOverlay.open { display: flex; }
+.search-box {
+  width: min(540px, 92vw); background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(26,28,34,.22); overflow: hidden;
+}
+.search-box input {
+  width: 100%; padding: 16px 18px; border: none; outline: none;
+  font-family: var(--sans); font-size: 16px; background: none; color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.search-results { max-height: 320px; overflow-y: auto; }
+.search-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+  cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--bg3);
+}
+.search-item:hover, .search-item.sel { background: var(--green-d); }
+.search-item .flag { font-size: 17px; }
+.search-item .iso { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: auto; }
+.search-item .kind { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; }
+.search-empty { padding: 22px; text-align: center; color: var(--text3); font-size: 12px; }
+/* case à cocher (pays seulement ; les zones se choisissent en 1 clic) */
+.search-item .chk {
+  width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
+  border: 1.5px solid var(--border2); display: inline-flex;
+  align-items: center; justify-content: center; font-size: 11px;
+  color: #fff; background: var(--bg2); transition: all .12s;
+}
+.search-item.checked .chk { background: var(--green); border-color: var(--green); }
+.search-item .chk-spacer { width: 16px; flex-shrink: 0; } /* alignement pour les zones */
+.search-hint {
+  padding: 8px 18px; font-family: var(--mono); font-size: 9px;
+  letter-spacing: .06em; color: var(--text3); text-transform: uppercase;
+  background: var(--bg3); border-bottom: 1px solid var(--border);
+}
+/* bandeau de validation de la sélection multiple */
+.search-tray {
+  display: none; align-items: center; gap: 10px; padding: 11px 16px;
+  border-top: 1px solid var(--border); background: var(--bg3);
+}
+.search-tray.show { display: flex; }
+.search-tray .tray-chips { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; }
+.tray-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
+  background: var(--bg2); border: 1px solid var(--green-b); border-radius: 14px;
+  font-size: 11px; color: var(--green);
+}
+.tray-chip .flag { font-size: 13px; }
+.tray-chip .rm { cursor: pointer; opacity: .5; font-size: 12px; }
+.tray-chip .rm:hover { opacity: 1; }
+.tray-validate {
+  padding: 7px 14px; background: var(--green); color: #fff; border: none;
+  border-radius: 7px; font-family: var(--sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.tray-validate:hover { background: #064e34; }
+/* ════════════════════════════════════════════════════════════════
+   ONGLET SYNTHÈSE
+═════════════════════════════════════════════════════════════════ */
+.syn-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; align-items: start; }
+@media (max-width: 920px){ .syn-grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+}
+.card-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text2); font-weight: 600;
+}
+.card-sub { font-size: 11px; color: var(--text3); }
+.card-body { padding: 6px 16px 14px; }
+
+/* tableau valeurs clés */
+.kv-row {
+  display: grid; grid-template-columns: 1.4fr auto auto 88px; gap: 12px;
+  align-items: center; padding: 9px 0; border-bottom: 1px solid var(--bg3);
+  cursor: pointer; transition: background .12s; margin: 0 -8px; padding-left: 8px; padding-right: 8px;
+  border-radius: 6px;
+}
+.kv-row:last-child { border-bottom: none; }
+.kv-row:hover { background: var(--green-d); }
+.kv-name { font-size: 12.5px; color: var(--text); }
+.kv-name .cat { font-family: var(--mono); font-size: 8.5px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; display: block; margin-top: 1px; }
+.kv-val { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--green); text-align: right; }
+.kv-val .u { font-size: 9px; color: var(--text3); font-weight: 400; margin-left: 3px; }
+.kv-rank { font-family: var(--mono); font-size: 10.5px; color: var(--text3); text-align: right; white-space: nowrap; }
+.kv-spark { height: 26px; }
+.kv-spark svg { display: block; width: 100%; height: 100%; }
+.kv-empty { padding: 30px; text-align: center; color: var(--text3); font-size: 12px; }
+
+/* panorama des flux */
+.flux-block { margin-bottom: 6px; }
+.flux-block-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 9px 0 6px; 
+}
+.flux-block-head .t { font-size: 13px; font-weight: 600; color: var(--text); }
+.flux-block-head .h { font-size: 10px; color: var(--text3); }
+.pano-row {
+  display: grid; grid-template-columns: 92px 1fr 64px 46px; gap: 9px;
+  align-items: center; padding: 7px 6px; cursor: pointer; border-radius: 6px;
+  border-bottom: 1px solid var(--bg3);
+}
+.pano-row:last-child { border-bottom: none; }
+.pano-row:hover { background: var(--bg3); }
+.pano-flux { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pano-partner { display: flex; align-items: center; gap: 6px; font-size: 12px; min-width: 0; }
+.pano-partner .flag { font-size: 14px; flex-shrink: 0; }
+.pano-partner .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pano-bar { height: 8px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.pano-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+.pano-fill.clair    { opacity: .55; }
+.pano-fill.moyen    { opacity: .8; }
+.pano-fill.intense  { opacity: 1; }
+.pano-fill.partner  { background: var(--blue); }
+.pano-fill.influence{ background: var(--green); }
+.pano-val { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; }
+.pano-empty { padding: 16px 6px; color: var(--text3); font-size: 11.5px; font-style: italic; }
+/* dépliage top 5 */
+.pano-wrap { border-bottom: 1px solid var(--bg3); }
+.pano-wrap:last-child { border-bottom: none; }
+.pano-row { border-bottom: none; }
+.pano-row { grid-template-columns: 86px 1fr 60px 40px 14px; }
+.pano-caret { font-size: 9px; color: var(--text3); text-align: center; }
+.pano-detail { display: none; padding: 4px 6px 10px 6px; }
+.pano-detail.open { display: block; animation: fadeIn .2s ease; }
+.pano-detail-title { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin: 4px 0 6px; }
+.pano-sub { display: grid; grid-template-columns: 16px 1fr 70px 36px; gap: 8px; align-items: center; padding: 3px 0; font-size: 11.5px; }
+.pano-sub .flag { font-size: 13px; }
+.pano-sub .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text2); }
+.pano-sub .bar { height: 5px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.pano-sub .fill { height: 100%; border-radius: 2px; }
+.pano-sub .fill.partner { background: var(--blue); opacity: .7; }
+.pano-sub .fill.influence { background: var(--green); opacity: .7; }
+.pano-sub .v { font-family: var(--mono); font-size: 10px; text-align: right; color: var(--text2); }
+.pano-detail-link { font-size: 10.5px; color: var(--green); cursor: pointer; margin-top: 8px; display: inline-block; font-weight: 500; }
+.pano-detail-link:hover { text-decoration: underline; }
+
+/* hint sujet absent */
+.need-subject {
+  border: 1.5px dashed var(--border2); border-radius: 12px;
+  padding: 48px 30px; text-align: center; color: var(--text3);
+  background: var(--bg2); max-width: 620px; margin: 40px auto;
+}
+.need-subject .big { font-family: var(--display); font-size: 22px; color: var(--text); margin-bottom: 8px; }
+.need-subject button {
+  margin-top: 16px; padding: 9px 18px; background: var(--green); color: #fff;
+  border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px;
+  font-weight: 600; cursor: pointer;
+}
+
+/* bouton config (engrenage) dans l'en-tête de carte */
+.card-cog {
+  font-size: 13px; color: var(--text3); cursor: pointer; background: none;
+  border: none; padding: 2px 4px; border-radius: 5px; transition: all .12s;
+}
+.card-cog:hover { color: var(--text); background: var(--bg3); }
+
+/* infobulle générique */
+.tip { position: relative; }
+#globalTip {
+  position: fixed; z-index: 300; pointer-events: none; display: none;
+  background: var(--text); color: var(--bg); font-size: 11px; line-height: 1.5;
+  padding: 7px 10px; border-radius: 7px; max-width: 240px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25); font-family: var(--sans);
+}
+#globalTip .tt { font-family: var(--mono); font-size: 9px; opacity: .65; text-transform: uppercase; letter-spacing: .06em; }
+#globalTip b { color: #fff; }
+
+/* modale de configuration des indicateurs épinglés */
+#pinModal {
+  position: fixed; inset: 0; z-index: 160; display: none;
+  background: rgba(26,28,34,.3); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center;
+}
+#pinModal.open { display: flex; }
+.pin-box {
+  width: min(560px, 92vw); max-height: 80vh; background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: 14px; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.pin-head {
+  padding: 15px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pin-head .t { font-family: var(--display); font-size: 17px; font-weight: 500; }
+.pin-head .x { cursor: pointer; font-size: 20px; color: var(--text3); }
+.pin-head .x:hover { color: var(--text); }
+.pin-body { overflow-y: auto; padding: 8px 0; }
+.pin-cat { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); padding: 10px 18px 4px; }
+.pin-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 18px; cursor: pointer;
+  font-size: 13px;
+}
+.pin-item:hover { background: var(--bg3); }
+.pin-chk {
+  width: 17px; height: 17px; border-radius: 5px; border: 1.5px solid var(--border2);
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  background: var(--bg2); font-size: 11px; flex-shrink: 0;
+}
+.pin-item.on .pin-chk { background: var(--green); border-color: var(--green); }
+.pin-item .miss { font-size: 9px; color: var(--orange); font-family: var(--mono); margin-left: auto; }
+.pin-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.pin-foot .count { font-size: 11px; color: var(--text3); }
+.pin-foot button { padding: 8px 16px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+.pin-foot .reset { background: none; color: var(--text3); margin-right: auto; }
+.pin-foot .reset:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ░░ HEADER ░░ -->
+  <header>
+    <div class="logo"><span class="logo-mark"></span>GÉOPOL <span class="logo-sub">atelier</span></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-view="synthese">Synthèse</button>
+      <button class="tab" data-view="puissance">Puissance</button>
+      <button class="tab" data-view="relations">Relations</button>
+    </nav>
+    <div class="header-spacer"></div>
+    <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
+    <button class="hbtn" id="exportBtn" onclick="exportCurrentView()"><span>⬇</span> Exporter</button>
+    <div class="db-badge"><span class="dot" id="dbDot"></span><span id="dbName">—</span></div>
+  </header>
+
+  <!-- ░░ BARRE DE CONTEXTE ░░ -->
+  <div id="contextBar">
+    <span class="ctx-label">Sujet</span>
+    <div id="subjectSlot"></div>
+    <span class="ctx-sep"></span>
+    <span class="ctx-label">Année</span>
+    <div id="yearSlot"></div>
+  </div>
+
+  <!-- ░░ ZONE PRINCIPALE — 3 ONGLETS ░░ -->
+  <main>
+    <section class="view active" id="view-synthese">
+      <div id="syntheseContent"></div>
+    </section>
+
+    <section class="view" id="view-puissance">
+      <div class="placeholder">
+        <span class="tag">Onglet 2</span>
+        <h2>Puissance</h2>
+        <p>Un indicateur à la fois, vu sous trois angles, avec comparaison A vs B optionnelle.</p>
+        <ul>
+          <li>Navigateur d'indicateurs pliable (catégories)</li>
+          <li>Radar percentilé (axes épinglés, A vs B)</li>
+          <li>Courbe d'évolution + carte mondiale</li>
+          <li>« B sans A » automatique</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="view" id="view-relations">
+      <div class="placeholder">
+        <span class="tag">Onglet 3</span>
+        <h2>Relations</h2>
+        <p>Exploration d'un flux : qui pèse pour le sujet, et pour qui le sujet pèse.</p>
+        <ul>
+          <li>Heatmap d'accueil (boussole : où creuser)</li>
+          <li>Composition : sunburst ⇄ treemap drill-down</li>
+          <li>Évolution (aires empilées) &amp; carte</li>
+          <li>Bascule Partenaire / Influence, filtre partagé</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ░░ OVERLAY DE CHARGEMENT ░░ -->
+<div id="loadingScreen">
+  <div class="load-logo">GÉOPOL</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="loadPbar"></div></div>
+  <div id="loadingMsg">Initialisation…</div>
+</div>
+
+<!-- ░░ OVERLAY RECHERCHE (sujet) ░░ -->
+<div id="searchOverlay" onclick="if(event.target===this)closeSearch()">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Rechercher un pays ou une zone…" oninput="onSearchInput(this.value)" onkeydown="onSearchKey(event)">
+    <div class="search-results" id="searchResults"></div>
+    <div class="search-tray" id="searchTray">
+      <div class="tray-chips" id="trayChips"></div>
+      <button class="tray-validate" id="trayValidate" onclick="validateMultiSelection()">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODALE CONFIG INDICATEURS ÉPINGLÉS ░░ -->
+<div id="pinModal" onclick="if(event.target===this)closePinModal()">
+  <div class="pin-box">
+    <div class="pin-head">
+      <span class="t">Indicateurs de la synthèse</span>
+      <span class="x" onclick="closePinModal()">×</span>
+    </div>
+    <div class="pin-body" id="pinBody"></div>
+    <div class="pin-foot">
+      <button class="reset" onclick="resetPins()">Réinitialiser</button>
+      <span class="count" id="pinCount"></span>
+      <button onclick="applyPins()">Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ INFOBULLE GLOBALE ░░ -->
+<div id="globalTip"></div>
+
+<script id="appScript">
+/* ════════════════════════════════════════════════════════════════
+   GÉOPOL v2 — SOCLE JS
+   Étape 0/1 : état unifié, boot DB (+ démo), onglets, contexte,
+   registre d'indicateurs dynamique, recherche sujet minimale.
+   Les briques de visualisation seront greffées aux étapes suivantes.
+═════════════════════════════════════════════════════════════════ */
+
+/* ─── RÉFÉRENTIEL PAYS (repris de l'app actuelle) ─────────────── */
+const COUNTRY_REF = {
+  AFG:{name:'Afghanistan',flag:'🇦🇫',continent:'Asie'},
+  ALB:{name:'Albanie',flag:'🇦🇱',continent:'Europe'},
+  DZA:{name:'Algérie',flag:'🇩🇿',continent:'Afrique'},
+  AGO:{name:'Angola',flag:'🇦🇴',continent:'Afrique'},
+  ARG:{name:'Argentine',flag:'🇦🇷',continent:'Amériques'},
+  AUS:{name:'Australie',flag:'🇦🇺',continent:'Océanie'},
+  AUT:{name:'Autriche',flag:'🇦🇹',continent:'Europe'},
+  AZE:{name:'Azerbaïdjan',flag:'🇦🇿',continent:'Asie'},
+  BGD:{name:'Bangladesh',flag:'🇧🇩',continent:'Asie'},
+  BLR:{name:'Biélorussie',flag:'🇧🇾',continent:'Europe'},
+  BEL:{name:'Belgique',flag:'🇧🇪',continent:'Europe'},
+  BEN:{name:'Bénin',flag:'🇧🇯',continent:'Afrique'},
+  BOL:{name:'Bolivie',flag:'🇧🇴',continent:'Amériques'},
+  BIH:{name:'Bosnie-Herzégovine',flag:'🇧🇦',continent:'Europe'},
+  BWA:{name:'Botswana',flag:'🇧🇼',continent:'Afrique'},
+  BRA:{name:'Brésil',flag:'🇧🇷',continent:'Amériques'},
+  BFA:{name:'Burkina Faso',flag:'🇧🇫',continent:'Afrique'},
+  BDI:{name:'Burundi',flag:'🇧🇮',continent:'Afrique'},
+  KHM:{name:'Cambodge',flag:'🇰🇭',continent:'Asie'},
+  CMR:{name:'Cameroun',flag:'🇨🇲',continent:'Afrique'},
+  CAN:{name:'Canada',flag:'🇨🇦',continent:'Amériques'},
+  CAF:{name:'République centrafricaine',flag:'🇨🇫',continent:'Afrique'},
+  TCD:{name:'Tchad',flag:'🇹🇩',continent:'Afrique'},
+  CHL:{name:'Chili',flag:'🇨🇱',continent:'Amériques'},
+  CHN:{name:'Chine',flag:'🇨🇳',continent:'Asie'},
+  COL:{name:'Colombie',flag:'🇨🇴',continent:'Amériques'},
+  COD:{name:'RD Congo',flag:'🇨🇩',continent:'Afrique'},
+  COG:{name:'Congo',flag:'🇨🇬',continent:'Afrique'},
+  CRI:{name:'Costa Rica',flag:'🇨🇷',continent:'Amériques'},
+  HRV:{name:'Croatie',flag:'🇭🇷',continent:'Europe'},
+  CUB:{name:'Cuba',flag:'🇨🇺',continent:'Amériques'},
+  CZE:{name:'Tchéquie',flag:'🇨🇿',continent:'Europe'},
+  DNK:{name:'Danemark',flag:'🇩🇰',continent:'Europe'},
+  DJI:{name:'Djibouti',flag:'🇩🇯',continent:'Afrique'},
+  DOM:{name:'Rép. dominicaine',flag:'🇩🇴',continent:'Amériques'},
+  ECU:{name:'Équateur',flag:'🇪🇨',continent:'Amériques'},
+  EGY:{name:'Égypte',flag:'🇪🇬',continent:'Afrique'},
+  SLV:{name:'Salvador',flag:'🇸🇻',continent:'Amériques'},
+  ERI:{name:'Érythrée',flag:'🇪🇷',continent:'Afrique'},
+  EST:{name:'Estonie',flag:'🇪🇪',continent:'Europe'},
+  ETH:{name:'Éthiopie',flag:'🇪🇹',continent:'Afrique'},
+  FIN:{name:'Finlande',flag:'🇫🇮',continent:'Europe'},
+  FRA:{name:'France',flag:'🇫🇷',continent:'Europe'},
+  GAB:{name:'Gabon',flag:'🇬🇦',continent:'Afrique'},
+  GEO:{name:'Géorgie',flag:'🇬🇪',continent:'Asie'},
+  DEU:{name:'Allemagne',flag:'🇩🇪',continent:'Europe'},
+  GHA:{name:'Ghana',flag:'🇬🇭',continent:'Afrique'},
+  GRC:{name:'Grèce',flag:'🇬🇷',continent:'Europe'},
+  GTM:{name:'Guatemala',flag:'🇬🇹',continent:'Amériques'},
+  GIN:{name:'Guinée',flag:'🇬🇳',continent:'Afrique'},
+  GNQ:{name:'Guinée équatoriale',flag:'🇬🇶',continent:'Afrique'},
+  HTI:{name:'Haïti',flag:'🇭🇹',continent:'Amériques'},
+  HND:{name:'Honduras',flag:'🇭🇳',continent:'Amériques'},
+  HUN:{name:'Hongrie',flag:'🇭🇺',continent:'Europe'},
+  IND:{name:'Inde',flag:'🇮🇳',continent:'Asie'},
+  IDN:{name:'Indonésie',flag:'🇮🇩',continent:'Asie'},
+  IRN:{name:'Iran',flag:'🇮🇷',continent:'Asie'},
+  IRQ:{name:'Irak',flag:'🇮🇶',continent:'Asie'},
+  IRL:{name:'Irlande',flag:'🇮🇪',continent:'Europe'},
+  ISR:{name:'Israël',flag:'🇮🇱',continent:'Asie'},
+  ITA:{name:'Italie',flag:'🇮🇹',continent:'Europe'},
+  JAM:{name:'Jamaïque',flag:'🇯🇲',continent:'Amériques'},
+  JPN:{name:'Japon',flag:'🇯🇵',continent:'Asie'},
+  JOR:{name:'Jordanie',flag:'🇯🇴',continent:'Asie'},
+  KAZ:{name:'Kazakhstan',flag:'🇰🇿',continent:'Asie'},
+  KEN:{name:'Kenya',flag:'🇰🇪',continent:'Afrique'},
+  PRK:{name:'Corée du Nord',flag:'🇰🇵',continent:'Asie'},
+  KOR:{name:'Corée du Sud',flag:'🇰🇷',continent:'Asie'},
+  KWT:{name:'Koweït',flag:'🇰🇼',continent:'Asie'},
+  KGZ:{name:'Kirghizistan',flag:'🇰🇬',continent:'Asie'},
+  LAO:{name:'Laos',flag:'🇱🇦',continent:'Asie'},
+  LVA:{name:'Lettonie',flag:'🇱🇻',continent:'Europe'},
+  LBN:{name:'Liban',flag:'🇱🇧',continent:'Asie'},
+  LBY:{name:'Libye',flag:'🇱🇾',continent:'Afrique'},
+  LTU:{name:'Lituanie',flag:'🇱🇹',continent:'Europe'},
+  LSO:{name:'Lesotho',flag:'🇱🇸',continent:'Afrique'},
+  LBR:{name:'Libéria',flag:'🇱🇷',continent:'Afrique'},
+  MKD:{name:'Macédoine du Nord',flag:'🇲🇰',continent:'Europe'},
+  MWI:{name:'Malawi',flag:'🇲🇼',continent:'Afrique'},
+  MYS:{name:'Malaisie',flag:'🇲🇾',continent:'Asie'},
+  MLI:{name:'Mali',flag:'🇲🇱',continent:'Afrique'},
+  MAR:{name:'Maroc',flag:'🇲🇦',continent:'Afrique'},
+  MEX:{name:'Mexique',flag:'🇲🇽',continent:'Amériques'},
+  MDA:{name:'Moldavie',flag:'🇲🇩',continent:'Europe'},
+  MNG:{name:'Mongolie',flag:'🇲🇳',continent:'Asie'},
+  MNE:{name:'Monténégro',flag:'🇲🇪',continent:'Europe'},
+  MOZ:{name:'Mozambique',flag:'🇲🇿',continent:'Afrique'},
+  MMR:{name:'Myanmar',flag:'🇲🇲',continent:'Asie'},
+  NAM:{name:'Namibie',flag:'🇳🇦',continent:'Afrique'},
+  NPL:{name:'Népal',flag:'🇳🇵',continent:'Asie'},
+  NLD:{name:'Pays-Bas',flag:'🇳🇱',continent:'Europe'},
+  NZL:{name:'Nouvelle-Zélande',flag:'🇳🇿',continent:'Océanie'},
+  NIC:{name:'Nicaragua',flag:'🇳🇮',continent:'Amériques'},
+  NER:{name:'Niger',flag:'🇳🇪',continent:'Afrique'},
+  NGA:{name:'Nigéria',flag:'🇳🇬',continent:'Afrique'},
+  NOR:{name:'Norvège',flag:'🇳🇴',continent:'Europe'},
+  OMN:{name:'Oman',flag:'🇴🇲',continent:'Asie'},
+  PAK:{name:'Pakistan',flag:'🇵🇰',continent:'Asie'},
+  PAN:{name:'Panama',flag:'🇵🇦',continent:'Amériques'},
+  PRY:{name:'Paraguay',flag:'🇵🇾',continent:'Amériques'},
+  PER:{name:'Pérou',flag:'🇵🇪',continent:'Amériques'},
+  PHL:{name:'Philippines',flag:'🇵🇭',continent:'Asie'},
+  POL:{name:'Pologne',flag:'🇵🇱',continent:'Europe'},
+  PRT:{name:'Portugal',flag:'🇵🇹',continent:'Europe'},
+  QAT:{name:'Qatar',flag:'🇶🇦',continent:'Asie'},
+  ROU:{name:'Roumanie',flag:'🇷🇴',continent:'Europe'},
+  RUS:{name:'Russie',flag:'🇷🇺',continent:'Europe'},
+  RWA:{name:'Rwanda',flag:'🇷🇼',continent:'Afrique'},
+  SAU:{name:'Arabie Saoudite',flag:'🇸🇦',continent:'Asie'},
+  SEN:{name:'Sénégal',flag:'🇸🇳',continent:'Afrique'},
+  SRB:{name:'Serbie',flag:'🇷🇸',continent:'Europe'},
+  SLE:{name:'Sierra Leone',flag:'🇸🇱',continent:'Afrique'},
+  SGP:{name:'Singapour',flag:'🇸🇬',continent:'Asie'},
+  SVK:{name:'Slovaquie',flag:'🇸🇰',continent:'Europe'},
+  SVN:{name:'Slovénie',flag:'🇸🇮',continent:'Europe'},
+  SOM:{name:'Somalie',flag:'🇸🇴',continent:'Afrique'},
+  ZAF:{name:'Afrique du Sud',flag:'🇿🇦',continent:'Afrique'},
+  SSD:{name:'Soudan du Sud',flag:'🇸🇸',continent:'Afrique'},
+  ESP:{name:'Espagne',flag:'🇪🇸',continent:'Europe'},
+  LKA:{name:'Sri Lanka',flag:'🇱🇰',continent:'Asie'},
+  SDN:{name:'Soudan',flag:'🇸🇩',continent:'Afrique'},
+  SUR:{name:'Suriname',flag:'🇸🇷',continent:'Amériques'},
+  SWZ:{name:'Eswatini',flag:'🇸🇿',continent:'Afrique'},
+  SWE:{name:'Suède',flag:'🇸🇪',continent:'Europe'},
+  CHE:{name:'Suisse',flag:'🇨🇭',continent:'Europe'},
+  SYR:{name:'Syrie',flag:'🇸🇾',continent:'Asie'},
+  TWN:{name:'Taïwan',flag:'🇹🇼',continent:'Asie'},
+  TJK:{name:'Tadjikistan',flag:'🇹🇯',continent:'Asie'},
+  TZA:{name:'Tanzanie',flag:'🇹🇿',continent:'Afrique'},
+  THA:{name:'Thaïlande',flag:'🇹🇭',continent:'Asie'},
+  TGO:{name:'Togo',flag:'🇹🇬',continent:'Afrique'},
+  TTO:{name:'Trinité-et-Tobago',flag:'🇹🇹',continent:'Amériques'},
+  TUN:{name:'Tunisie',flag:'🇹🇳',continent:'Afrique'},
+  TUR:{name:'Türkiye',flag:'🇹🇷',continent:'Asie'},
+  TKM:{name:'Turkménistan',flag:'🇹🇲',continent:'Asie'},
+  UGA:{name:'Ouganda',flag:'🇺🇬',continent:'Afrique'},
+  UKR:{name:'Ukraine',flag:'🇺🇦',continent:'Europe'},
+  ARE:{name:'Émirats arabes unis',flag:'🇦🇪',continent:'Asie'},
+  GBR:{name:'Royaume-Uni',flag:'🇬🇧',continent:'Europe'},
+  USA:{name:'États-Unis',flag:'🇺🇸',continent:'Amériques'},
+  URY:{name:'Uruguay',flag:'🇺🇾',continent:'Amériques'},
+  UZB:{name:'Ouzbékistan',flag:'🇺🇿',continent:'Asie'},
+  VEN:{name:'Venezuela',flag:'🇻🇪',continent:'Amériques'},
+  VNM:{name:'Viêt Nam',flag:'🇻🇳',continent:'Asie'},
+  YEM:{name:'Yémen',flag:'🇾🇪',continent:'Asie'},
+  ZMB:{name:'Zambie',flag:'🇿🇲',continent:'Afrique'},
+  ZWE:{name:'Zimbabwe',flag:'🇿🇼',continent:'Afrique'},
+};
+
+function isoToFlag(iso3){ return COUNTRY_REF[iso3]?.flag || '🏳️'; }
+function isoToName(iso3){ return COUNTRY_REF[iso3]?.name || iso3; }
+function isoToContinent(iso3){ return COUNTRY_REF[iso3]?.continent || ''; }
+
+/* ─── ÉTAT GLOBAL UNIFIÉ ──────────────────────────────────────
+   Refonte : remplace selectedCountry/compareCountries/groupMode/
+   groupCountries par UN sujet unifié + (Puissance) un comparé B.
+   subject = { isos:[...], label } — un pays = 1 iso, une zone/multi = n isos.
+─────────────────────────────────────────────────────────────── */
+const state = {
+  db: null,
+  config: null,            // config.json brut (registre d'indicateurs)
+  indicators: [],          // registre dérivé dynamiquement (config ∩ DB)
+  allCountries: [],        // pays présents en DB (enrichis du référentiel)
+  year: 2022,
+  yearBounds: { min: 2000, max: 2024 },
+  view: 'synthese',        // onglet actif
+  subject: null,           // { isos:[iso3,...], label }  — null si vide
+  compareB: null,          // { isos:[...], label } — exclusif à Puissance
+  isDemo: false,
+  // caches perf (récupérés/étendus depuis l'ancien code aux étapes suivantes)
+  _rankCache: new Map(),
+  _boundsCache: new Map(),
+};
+
+/* ─── HELPERS SUJET ───────────────────────────────────────────── */
+function subjectIsGroup(s){ return s && s.isos && s.isos.length > 1; }
+function currentIsos(){ return state.subject?.isos || []; }
+// Fonction-pont : équivalent de l'ancien currentTarget() pour réutiliser
+// les briques héritées (iso3 string si pays unique, sinon tableau).
+function currentTarget(){
+  const s = state.subject;
+  if(!s || !s.isos.length) return null;
+  return s.isos.length === 1 ? s.isos[0] : s.isos.slice();
+}
+
+/* ─── SQL SÛRS (repris de l'ancien) ───────────────────────────── */
+function safeExec(sql){
+  try { const r = state.db.exec(sql); return (r && r.length) ? r : []; }
+  catch(e){ console.warn('SQL', e, sql); return []; }
+}
+function escapeSql(s){ return String(s).replace(/'/g,"''"); }
+function sqlList(arr){ return arr.map(x => `'${escapeSql(x)}'`).join(','); }
+
+/* ─── DÉTECTION DE ZONE (repris de l'ancien detectGroupLabel) ──── */
+function detectZoneLabel(isos){
+  if(!state.db || !isos.length) return isos.length===1 ? isoToName(isos[0]) : 'Sélection libre';
+  if(isos.length === 1) return isoToName(isos[0]);
+  try {
+    const r = state.db.exec(`SELECT zone_id, zone_nom, country_iso3 FROM zones ORDER BY zone_id`);
+    if(r.length && r[0].values.length){
+      const byZone = new Map();
+      for(const [zid, znom, ciso] of r[0].values){
+        if(!byZone.has(zid)) byZone.set(zid, { nom: znom, iso: new Set() });
+        byZone.get(zid).iso.add(ciso);
+      }
+      const wanted = new Set(isos);
+      for(const { nom, iso } of byZone.values()){
+        if(iso.size === wanted.size && [...wanted].every(c => iso.has(c))) return nom;
+      }
+    }
+  } catch {}
+  return 'Sélection libre';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CACHE DE DONNÉES PAR SUJET (parade performance)
+   Chargement paresseux : identite chargé au choix du sujet ;
+   flux et stats mondiales calculés à la demande puis mémoïsés.
+   Invalidation par clé = liste d'isos triée.
+═════════════════════════════════════════════════════════════════ */
+const cache = {
+  key: null,          // signature du sujet courant ("FRA" / "DEU,FRA,ITA")
+  identite: null,     // { indicator: { year: value_agrégée } }
+  flux: new Map(),    // indicator -> { partner:{rows}, influence:{rows} } (à la demande)
+  world: new Map(),   // "indicator|year" -> { sorted:[...], n } (stats mondiales, à la demande)
+};
+
+function subjectKey(isos){ return isos.slice().sort().join(','); }
+
+function aggMethodFor(indicator){
+  const c = (state.config || []).find(x => x.indicator === indicator);
+  return (c && c.aggregation === 'sum') ? 'sum' : 'mean';
+}
+
+// (Re)charge le cache identite pour le sujet courant si nécessaire.
+function ensureIdentiteCache(){
+  const isos = currentIsos();
+  if(!isos.length) return false;
+  const key = subjectKey(isos);
+  if(cache.key === key && cache.identite) return true;   // déjà en cache
+
+  // reset cache pour ce nouveau sujet
+  cache.key = key;
+  cache.identite = {};
+  cache.flux.clear();
+  cache.world.clear();
+
+  const inList = sqlList(isos);
+  // une seule requête : toutes les valeurs identite du sujet
+  const r = safeExec(`SELECT indicator, year, country_iso3, value FROM identite WHERE country_iso3 IN (${inList})`);
+  if(!r.length) return true;
+
+  // regroupement indicator -> year -> [valeurs par pays]
+  const tmp = {};
+  for(const [ind, year, iso, val] of r[0].values){
+    if(val == null) continue;
+    (tmp[ind] ??= {});
+    (tmp[ind][year] ??= []).push(val);
+  }
+  // agrégation selon la méthode déclarée dans config
+  for(const ind in tmp){
+    const method = aggMethodFor(ind);
+    const byYear = {};
+    for(const y in tmp[ind]){
+      const arr = tmp[ind][y];
+      if(method === 'sum') byYear[y] = arr.reduce((a,b)=>a+b, 0);
+      else byYear[y] = arr.reduce((a,b)=>a+b, 0) / arr.length;  // mean (simple ; pondération pop. à l'étape 5 si besoin)
+    }
+    cache.identite[ind] = byYear;
+  }
+  return true;
+}
+
+// Valeur agrégée d'un indicateur pour une année, avec repli sur la dernière
+// année réellement renseignée (≠ null ET ≠ 0). Corrige les valeurs « 0 » des
+// années futures non encore peuplées (ex. projection 2030).
+function getIdentiteValue(indicator, year){
+  ensureIdentiteCache();
+  const y = year ?? state.year;
+  const series = cache.identite?.[indicator];
+  if(!series) return null;
+  if(series[y] != null && series[y] !== 0) return series[y];
+  // repli : dernière année <= y avec valeur non nulle et non zéro
+  const years = Object.keys(series).map(Number).filter(yy => yy <= y && series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  if(years.length) return series[years[0]];
+  // sinon, dernière valeur renseignée toutes années confondues
+  const any = Object.keys(series).map(Number).filter(yy => series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  return any.length ? series[any[0]] : null;
+}
+
+// Série temporelle (valeurs non nulles/non zéro) pour courbes/sparklines.
+function getIdentiteSeries(indicator){
+  ensureIdentiteCache();
+  const series = cache.identite?.[indicator];
+  if(!series) return [];
+  return Object.keys(series).map(Number).sort((a,b)=>a-b)
+    .filter(y => series[y] != null && series[y] !== 0)
+    .map(y => ({ year: y, value: series[y] }));
+}
+
+// Stats mondiales pour un indicateur/année (percentiles, rangs) — paresseux.
+function getWorldStats(indicator, year){
+  const y = year ?? state.year;
+  const k = indicator + '|' + y;
+  if(cache.world.has(k)) return cache.world.get(k);
+  const r = safeExec(`SELECT country_iso3, value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND value IS NOT NULL`);
+  let pairs = [];
+  if(r.length) pairs = r[0].values
+    .filter(([iso]) => !REGIONAL_CODES.has(iso))
+    .map(([iso, v]) => ({ iso, v }));
+  const sorted = pairs.slice().sort((a,b) => a.v - b.v);
+  const stats = { sorted, n: sorted.length };
+  cache.world.set(k, stats);
+  return stats;
+}
+
+// Rang + percentile d'une valeur dans la distribution mondiale.
+// inverted=true => "beaucoup = défavorable" (le percentile est inversé).
+function rankPercentile(indicator, value, year){
+  if(value == null) return null;
+  const { sorted, n } = getWorldStats(indicator, year);
+  if(!n) return null;
+  let below = 0;
+  for(const d of sorted){ if(d.v < value) below++; else break; }
+  let pct = below / n;                       // 0..1 (position basse->haute)
+  const cfg = (state.config || []).find(c => c.indicator === indicator);
+  if(cfg && cfg.rank_inverted) pct = 1 - pct;
+  const rankFromTop = n - below;             // 1 = meilleur (valeur la plus haute)
+  return { percentile: pct, rank: rankFromTop, total: n };
+}
+
+// Flux d'un indicateur pour le sujet, dans un sens donné — paresseux.
+// dir: 'partner' (le sujet reçoit/émet, on regarde ses partenaires)
+//      'influence' (pour qui le sujet pèse).
+function getFluxRows(indicator, dir){
+  ensureIdentiteCache();
+  const isos = currentIsos();
+  if(!isos.length) return [];
+  const entry = cache.flux.get(indicator) || {};
+  if(entry[dir]) return entry[dir];
+
+  const inList = sqlList(isos);
+  // Convention de schéma : country_from = origine, country_to = destination.
+  // 'partner' : on agrège par l'autre extrémité, sujet côté country_to.
+  // 'influence' : sujet côté country_from.
+  let rows = [];
+  const y = state.year;
+  if(dir === 'partner'){
+    const r = safeExec(`SELECT country_from AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                        FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                        AND country_to IN (${inList}) AND country_from NOT IN (${inList})
+                        GROUP BY country_from, subcategory_1, subcategory_2, subcategory_3`);
+    if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v }));
+  } else {
+    const r = safeExec(`SELECT country_to AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                        FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                        AND country_from IN (${inList}) AND country_to NOT IN (${inList})
+                        GROUP BY country_to, subcategory_1, subcategory_2, subcategory_3`);
+    if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v }));
+  }
+  entry[dir] = rows;
+  cache.flux.set(indicator, entry);
+  return rows;
+}
+
+// Invalide le cache quand l'année change (les valeurs annuelles dépendent de l'année).
+function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); }
+
+/* ─── UI : helpers chargement ─────────────────────────────────── */
+function setLoadingMsg(msg, pct){
+  const e = document.getElementById('loadingMsg'); if(e) e.textContent = msg;
+  const p = document.getElementById('loadPbar'); if(p && pct!=null) p.style.width = pct + '%';
+}
+function setDbBadge(name, st){
+  document.getElementById('dbDot').className = 'dot ' + st;
+  document.getElementById('dbName').textContent = name;
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ─── BOOT (repris/adapté de l'ancien) ────────────────────────── */
+async function boot(){
+  setLoadingMsg('Initialisation WebAssembly…', 15);
+  let SQL;
+  try {
+    SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` });
+  } catch(e){ setLoadingMsg('Erreur WebAssembly : ' + e.message, 0); return; }
+
+  setLoadingMsg('Chargement de la base…', 35);
+  let buf;
+  try {
+    const res = await fetch('https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/geopolitique.db?v=' + Date.now());
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    buf = await res.arrayBuffer();
+  } catch(e){
+    setLoadingMsg('Base distante indisponible — mode démo', 60);
+    await sleep(350);
+    initDemo(SQL);
+    return;
+  }
+  setLoadingMsg('Ouverture de la base…', 70);
+  state.db = new SQL.Database(new Uint8Array(buf));
+  setLoadingMsg('Chargement de la configuration…', 85);
+  await loadConfig();
+  finishBoot('Base distante', 'ok');
+}
+
+/* ─── CONFIG + REGISTRE D'INDICATEURS DYNAMIQUE ────────────────
+   Principe « UI pilotée par les données » : la liste d'indicateurs
+   n'est jamais câblée en dur. On lit config.json (actif:true), on
+   croise avec les indicateurs réellement présents en DB, et on
+   enrichit des champs radar / rank_inverted (backfill si absents).
+─────────────────────────────────────────────────────────────── */
+async function loadConfig(){
+  try {
+    const r = await fetch('./config.json?v=' + Date.now());
+    if(!r.ok) throw new Error();
+    state.config = await r.json();
+  } catch { state.config = DEMO_CONFIG.slice(); }
+
+  // Backfill des champs de présentation s'ils manquent dans config.json
+  const RADAR_DEFAULTS = new Set(['population','pib_usd','pib_par_hab','fecondite','age_median','budget_defense_pib']);
+  const INVERTED_DEFAULTS = new Set(['violent_death','idps_securitaire','idps_climatique','taux_chomage','inflation','dette_pct_pib','dette_publique_pib']);
+  for(const c of (state.config || [])){
+    if(c.radar === undefined) c.radar = RADAR_DEFAULTS.has(c.indicator);
+    if(c.rank_inverted === undefined) c.rank_inverted = INVERTED_DEFAULTS.has(c.indicator);
+  }
+  buildIndicatorRegistry();
+  buildCountryList();
+}
+
+// Croise config.json (actif) avec les indicateurs présents en DB.
+function buildIndicatorRegistry(){
+  const present = new Set();
+  for(const tbl of ['identite','flux']){
+    const r = safeExec(`SELECT DISTINCT indicator FROM ${tbl}`);
+    if(r.length) for(const [ind] of r[0].values) present.add(ind);
+  }
+  // Déduplication : un même indicateur (même clé indicator+table) ne doit
+  // apparaître qu'une fois, même s'il est déclaré plusieurs fois dans config.json.
+  const seen = new Set();
+  state.indicators = (state.config || [])
+    .filter(c => c.actif !== false)
+    .filter(c => { const k = (c.table||'')+'|'+c.indicator; if(seen.has(k)) return false; seen.add(k); return true; })
+    .map(c => ({ ...c, presentInDb: present.has(c.indicator) }));
+  const missing = state.indicators.filter(c => !c.presentInDb).map(c => c.indicator);
+  if(missing.length) console.info('Indicateurs config sans données DB :', missing);
+}
+
+function buildCountryList(){
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM identite`);
+  if(r.length){
+    state.allCountries = r[0].values.map(([iso3]) => {
+      const ref = COUNTRY_REF[iso3];
+      return { iso3, name: ref?.name || iso3, continent: ref?.continent || '', flag: ref?.flag || isoToFlag(iso3) };
+    }).filter(c => !REGIONAL_CODES.has(c.iso3));
+  }
+}
+
+// Codes d'agrégats Banque Mondiale à exclure (repris de l'ancien set REGIONAL).
+const REGIONAL_CODES = new Set(['AFE','AFW','ARB','CEB','CSS','EAP','EAR','EAS','ECA','ECS','EMU','EUU','FCS','HIC','HPC','IBD','IBT','IDA','IDB','IDX','LAC','LCN','LDC','LIC','LMC','LMY','LTE','MEA','MIC','MNA','NAC','OED','OSS','PRE','PSS','PST','SAS','SSA','SSF','SST','TEA','TEC','TLA','TMN','TSA','TSS','UMC','WLD','INX','OEC']);
+
+function finishBoot(dbName, badge){
+  // Bornes d'années réelles depuis la DB
+  const r = safeExec(`SELECT MIN(year), MAX(year) FROM identite`);
+  if(r.length && r[0].values.length){
+    const [mn, mx] = r[0].values[0];
+    if(mn && mx){
+      state.yearBounds = { min: mn, max: mx };
+      state.year = mx;
+    }
+  }
+  setDbBadge(dbName, badge);
+  setLoadingMsg('Prêt', 100);
+  applyUrlState();        // restaure l'état depuis l'URL si présent
+  renderContextBar();
+  refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
+  setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
+}
+
+// Dernière année où le sujet a des données identité (pour caler la Synthèse).
+function latestYearWithData(){
+  ensureIdentiteCache();
+  let best = null;
+  for(const ind in (cache.identite || {})){
+    for(const y in cache.identite[ind]){
+      const v = cache.identite[ind][y];
+      if(v != null && v !== 0){ const yy = +y; if(best == null || yy > best) best = yy; }
+    }
+  }
+  return best || state.yearBounds.max;
+}
+
+/* ─── ONGLETS ─────────────────────────────────────────────────── */
+function switchView(v){
+  state.view = v;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+  renderContextBar();
+  refreshActiveView();
+  syncUrl();
+}
+
+/* ─── CONTEXTE (barre sujet + année) ──────────────────────────── */
+function renderContextBar(){
+  renderSubjectSlot();
+  renderYearSlot();
+}
+function renderSubjectSlot(){
+  const slot = document.getElementById('subjectSlot');
+  if(!state.subject || !state.subject.isos.length){
+    slot.innerHTML = `<span class="subject-chip empty" onclick="openSearch()">aucun sujet — cliquer pour choisir</span>`;
+    return;
+  }
+  const s = state.subject;
+  const flag = s.isos.length === 1 ? isoToFlag(s.isos[0]) : '⊞';
+  slot.innerHTML =
+    `<span class="subject-chip" onclick="openSearch()">
+       <span class="flag">${flag}</span>${s.label}
+       ${s.isos.length>1 ? `<span style="font-family:var(--mono);font-size:10px;opacity:.6">${s.isos.length} pays</span>` : ''}
+       <span class="x" onclick="event.stopPropagation();clearSubject()">×</span>
+     </span>`;
+}
+// Année : en Synthèse on affiche juste la dernière année dispo (pas de curseur) ;
+// en Puissance/Relations on garde le curseur pour explorer le détail temporel.
+function renderYearSlot(){
+  const slot = document.getElementById('yearSlot');
+  if(state.view === 'synthese'){
+    if(state.subject) state.year = latestYearWithData();
+    slot.innerHTML = `<span class="year-out" style="font-family:var(--mono);font-size:13px;font-weight:600">${state.subject ? state.year : '—'}</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:6px">dernière donnée</span>`;
+  } else {
+    const mn = state.yearBounds.min, mx = state.yearBounds.max;
+    slot.innerHTML = `<div class="year-control">
+      <input type="range" id="yearSlider" min="${mn}" max="${mx}" value="${state.year}" step="1" oninput="onYearChange(this.value)">
+      <span class="year-out" id="yearOut">${state.year}</span>
+    </div>`;
+  }
+}
+
+function setSubject(isos, label){
+  state.subject = { isos: isos.slice(), label: label || detectZoneLabel(isos) };
+  renderContextBar();
+  syncUrl();
+  refreshActiveView();
+}
+function clearSubject(){
+  state.subject = null;
+  renderContextBar();
+  syncUrl();
+  refreshActiveView();
+}
+function onYearChange(v){
+  state.year = parseInt(v);
+  const out = document.getElementById('yearOut');
+  if(out) out.textContent = v;
+  invalidateYearScoped();
+  syncUrl();
+  refreshActiveView();
+}
+
+// Étape 0 : les vues sont des placeholders. Les étapes suivantes
+// brancheront ici le vrai rendu de l'onglet actif.
+// Dispatcher : rend l'onglet actif. Branché aux étapes 3/5/6.
+function refreshActiveView(){
+  if(state.view === 'synthese') renderSynthese();
+  // puissance / relations : étapes 5 / 6
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FORMATAGE & SPARKLINES (utilitaires partagés)
+═════════════════════════════════════════════════════════════════ */
+function fmtNumber(v, unit){
+  if(v == null || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  let s;
+  // mise à l'échelle lisible
+  if(unit === 'M hab' || (unit === 'hab')){ return Math.round(v/1e6).toLocaleString('fr-FR') ; }
+  if(abs >= 1e12) s = (v/1e12).toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else if(abs >= 1e9) s = (v/1e9).toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else if(abs >= 1e6) s = (v/1e6).toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else if(abs >= 1000) s = Math.round(v).toLocaleString('fr-FR');
+  else if(abs >= 1) s = v.toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else s = v.toLocaleString('fr-FR',{maximumFractionDigits:2});
+  return s;
+}
+function scaleSuffix(v, unitDisplay){
+  // ajuste le suffixe selon l'échelle appliquée par fmtNumber
+  const abs = Math.abs(v||0);
+  if(unitDisplay && (unitDisplay.includes('Mrd') || unitDisplay.includes('M hab'))) return unitDisplay;
+  if(abs >= 1e12) return 'T ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
+  if(abs >= 1e9)  return 'Mrd ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
+  if(abs >= 1e6)  return 'M ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
+  return unitDisplay || '';
+}
+function ordinalFr(n){ return n === 1 ? '1er' : n + 'e'; }
+
+/* ─── SOURCE & ANNÉE RÉELLE D'UNE VALEUR ──────────────────────── */
+function getIndicatorSource(indicator, year){
+  // source la plus récente connue pour cet indicateur (sur le 1er pays du sujet)
+  const isos = currentIsos(); if(!isos.length) return null;
+  const r = safeExec(`SELECT source FROM identite WHERE indicator='${escapeSql(indicator)}' AND country_iso3='${escapeSql(isos[0])}' AND source IS NOT NULL AND source!='' ORDER BY year DESC LIMIT 1`);
+  return r.length && r[0].values.length ? r[0].values[0][0] : null;
+}
+function getValueYear(indicator, year){
+  const series = cache.identite?.[indicator]; if(!series) return null;
+  if(series[year] != null && series[year] !== 0) return year;
+  const ys = Object.keys(series).map(Number).filter(y => y <= year && series[y] != null && series[y] !== 0).sort((a,b)=>b-a);
+  if(ys.length) return ys[0];
+  const any = Object.keys(series).map(Number).filter(y => series[y] != null && series[y] !== 0).sort((a,b)=>b-a);
+  return any.length ? any[0] : null;
+}
+
+/* ─── INFOBULLE GLOBALE ───────────────────────────────────────── */
+function escAttr(s){ return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function showTip(ev, raw){
+  const tip = document.getElementById('globalTip');
+  // format : "titre::ligne1::ligne2" → titre en gras, lignes en dessous
+  const parts = String(raw).split('::');
+  let html = '';
+  parts.forEach((p,i) => {
+    if(i===0) html += `<div style="margin-bottom:3px">${p}</div>`;
+    else html += `<div class="tt">${p}</div>`;
+  });
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+  moveTip(ev);
+}
+function moveTip(ev){
+  const tip = document.getElementById('globalTip');
+  if(tip.style.display !== 'block') return;
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  const r = tip.getBoundingClientRect();
+  if(x + r.width > window.innerWidth - 10) x = ev.clientX - r.width - 14;
+  if(y + r.height > window.innerHeight - 10) y = ev.clientY - r.height - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip(){ document.getElementById('globalTip').style.display = 'none'; }
+// Variante à deux arguments (titre, corps) — passés en data-attributes, sûrs.
+function showTip2(ev, title, body){
+  const tip = document.getElementById('globalTip');
+  tip.innerHTML = `<div style="margin-bottom:3px"><b>${title||''}</b></div><div class="tt">${body||''}</div>`;
+  tip.style.display = 'block';
+  moveTip(ev);
+}
+
+// Sparkline SVG (forme de la série, sans axes).
+function sparklineSvg(series, color){
+  if(!series || series.length < 2) return '';
+  const W = 88, H = 26, pad = 2;
+  const vals = series.map(d => d.value);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = (max - min) || 1;
+  const n = series.length;
+  const pts = series.map((d,i) => {
+    const x = pad + (i/(n-1)) * (W - 2*pad);
+    const y = H - pad - ((d.value - min)/range) * (H - 2*pad);
+    return [x, y];
+  });
+  const path = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const area = path + ` L${W-pad},${H} L${pad},${H} Z`;
+  const last = pts[pts.length-1];
+  const c = color || 'var(--green)';
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <path d="${area}" fill="${c}" opacity="0.1"/>
+    <path d="${path}" fill="none" stroke="${c}" stroke-width="1.3"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="1.8" fill="${c}"/>
+  </svg>`;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RENDU — ONGLET SYNTHÈSE
+═════════════════════════════════════════════════════════════════ */
+
+/* ─── ÉPINGLAGE PERSONNEL (localStorage) ──────────────────────── */
+const PIN_KEY = 'geopol_pins_synthese';
+const PIN_FLUX_KEY = 'geopol_pins_flux';
+function loadPins(key){
+  try { const j = localStorage.getItem(key); if(j) return new Set(JSON.parse(j)); } catch {}
+  return null;
+}
+function savePins(key, set){
+  try { localStorage.setItem(key, JSON.stringify([...set])); } catch {}
+}
+
+function pinnedIdentiteIndicators(){
+  const ident = state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
+  const perso = loadPins(PIN_KEY);
+  if(perso && perso.size){
+    return ident.filter(c => perso.has(c.indicator)).slice(0, 14);
+  }
+  const def = ident.filter(c => c.epingle_synthese || c.radar);
+  return (def.length ? def : ident.slice(0, 10)).slice(0, 12);
+}
+function pinnedFluxIndicators(){
+  const flux = state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false);
+  const perso = loadPins(PIN_FLUX_KEY);
+  if(perso && perso.size){
+    return flux.filter(c => perso.has(c.indicator)).slice(0, 12);
+  }
+  return flux.slice(0, 10);
+}
+
+/* ─── MODALE DE CONFIGURATION (identite OU flux) ──────────────── */
+let _pinDraft = null, _pinMode = 'identite';
+function openPinModal(mode){
+  _pinMode = mode || 'identite';
+  const isFlux = _pinMode === 'flux';
+  const current = new Set((isFlux ? pinnedFluxIndicators() : pinnedIdentiteIndicators()).map(c => c.indicator));
+  _pinDraft = new Set(current);
+  const pool = state.indicators.filter(c => c.table === (isFlux ? 'flux' : 'identite'));
+  const byCat = {};
+  for(const c of pool){ (byCat[c.category || 'autre'] ??= []).push(c); }
+  let html = '';
+  for(const cat of Object.keys(byCat).sort()){
+    html += `<div class="pin-cat">${cat}</div>`;
+    for(const c of byCat[cat]){
+      const on = _pinDraft.has(c.indicator) ? 'on' : '';
+      const miss = c.presentInDb === false ? `<span class="miss">sans données</span>` : '';
+      html += `<div class="pin-item ${on}" data-ind="${c.indicator}" onclick="togglePin('${c.indicator}')">
+        <span class="pin-chk">${_pinDraft.has(c.indicator)?'✓':''}</span>
+        <span>${c.label || c.indicator}</span>${miss}
+      </div>`;
+    }
+  }
+  document.querySelector('#pinModal .pin-head .t').textContent = isFlux ? 'Flux affichés dans la synthèse' : 'Indicateurs de la synthèse';
+  document.getElementById('pinBody').innerHTML = html;
+  updatePinCount();
+  document.getElementById('pinModal').classList.add('open');
+}
+function closePinModal(){ document.getElementById('pinModal').classList.remove('open'); }
+function togglePin(ind){
+  if(_pinDraft.has(ind)) _pinDraft.delete(ind); else _pinDraft.add(ind);
+  const row = document.querySelector(`.pin-item[data-ind="${ind}"]`);
+  if(row){ row.classList.toggle('on', _pinDraft.has(ind)); row.querySelector('.pin-chk').textContent = _pinDraft.has(ind)?'✓':''; }
+  updatePinCount();
+}
+function updatePinCount(){
+  document.getElementById('pinCount').textContent = `${_pinDraft.size} sélectionné(s)`;
+}
+function applyPins(){
+  savePins(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY, _pinDraft);
+  closePinModal();
+  renderSynthese();
+}
+function resetPins(){
+  try { localStorage.removeItem(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY); } catch {}
+  closePinModal();
+  renderSynthese();
+}
+
+function concentrationClass(pct){
+  if(pct >= 50) return 'intense';
+  if(pct >= 30) return 'moyen';
+  return 'clair';
+}
+
+/* ─── DIAGNOSTIC FLUX (temporaire — aide au calage du schéma) ──── */
+function diagFlux(){
+  console.group('%cDIAGNOSTIC FLUX', 'color:#0a6e4a;font-weight:bold');
+  const inds = safeExec(`SELECT DISTINCT indicator FROM flux`);
+  console.log('Indicateurs présents dans flux :', inds.length ? inds[0].values.map(v=>v[0]) : '(aucun)');
+  const cols = safeExec(`PRAGMA table_info(flux)`);
+  if(cols.length) console.log('Colonnes de flux :', cols[0].values.map(v=>v[1]));
+  const yrs = safeExec(`SELECT MIN(year), MAX(year) FROM flux`);
+  if(yrs.length) console.log('Années flux :', yrs[0].values[0]);
+  const sample = safeExec(`SELECT * FROM flux LIMIT 3`);
+  if(sample.length){ console.log('Colonnes échantillon :', sample[0].columns); console.log('3 lignes :', sample[0].values); }
+  if(state.subject){
+    const inList = sqlList(currentIsos());
+    const asTo = safeExec(`SELECT COUNT(*) FROM flux WHERE country_to IN (${inList})`);
+    const asFrom = safeExec(`SELECT COUNT(*) FROM flux WHERE country_from IN (${inList})`);
+    console.log(`Lignes où le sujet est country_to :`, asTo.length?asTo[0].values[0][0]:0);
+    console.log(`Lignes où le sujet est country_from :`, asFrom.length?asFrom[0].values[0][0]:0);
+  }
+  console.groupEnd();
+}
+
+function renderSynthese(){
+  const root = document.getElementById('syntheseContent');
+  if(!state.subject || !state.subject.isos.length){
+    root.innerHTML = `<div class="need-subject">
+      <div class="big">Choisir un sujet</div>
+      <p>Sélectionnez un pays ou une zone pour afficher sa synthèse.</p>
+      <button onclick="openSearch()">⌕ Rechercher un sujet</button>
+    </div>`;
+    return;
+  }
+  ensureIdentiteCache();
+
+  // ── Colonne gauche : valeurs clés + sparklines ──
+  const inds = pinnedIdentiteIndicators();
+  let kvRows = '';
+  for(const c of inds){
+    const val = getIdentiteValue(c.indicator, state.year);
+    if(val == null) continue;
+    const series = getIdentiteSeries(c.indicator);
+    const realYear = getValueYear(c.indicator, state.year);
+    const src = getIndicatorSource(c.indicator);
+    let rankTxt = '';
+    if(state.subject.isos.length === 1){
+      const rp = rankPercentile(c.indicator, val, realYear || state.year);
+      if(rp) rankTxt = `${ordinalFr(rp.rank)} <span style="opacity:.5">/ ${rp.total}</span>`;
+    } else {
+      rankTxt = `<span style="opacity:.5">agrégat</span>`;
+    }
+    const suffix = scaleSuffix(val, c.unit_display);
+    const aggTxt = state.subject.isos.length>1 ? ` · agrégat ${aggMethodFor(c.indicator)==='sum'?'somme':'moyenne'}` : '';
+    // infobulle via data-attributes (pas d'injection dans les handlers → plus de crash)
+    const tipTitle = (c.label||c.indicator);
+    const tipBody = `Année : ${realYear||'—'} · Source : ${src||'n/d'}${aggTxt}`;
+    kvRows += `<div class="kv-row" data-tt="${escAttr(tipTitle)}" data-tb="${escAttr(tipBody)}" data-ind="${c.indicator}">
+      <div class="kv-name">${c.label || c.indicator}<span class="cat">${c.category||''} · ${realYear||'—'}</span></div>
+      <div class="kv-val">${fmtNumber(val, c.unit_display)}<span class="u">${suffix}</span></div>
+      <div class="kv-rank">${rankTxt}</div>
+      <div class="kv-spark">${sparklineSvg(series)}</div>
+    </div>`;
+  }
+  if(!kvRows) kvRows = `<div class="kv-empty">Aucune donnée identité pour ce sujet.</div>`;
+
+  // ── Colonne droite : panorama des flux ──
+  const fluxInds = pinnedFluxIndicators();
+  const partnersHtml = buildPanorama(fluxInds, 'partner');
+  const influenceHtml = buildPanorama(fluxInds, 'influence');
+
+  root.innerHTML = `
+    <div class="syn-grid">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Valeurs clés</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="card-sub">${inds.length} indicateurs</span>
+            <button class="card-cog" onclick="openPinModal('identite')" title="Choisir les indicateurs">⚙</button>
+          </span>
+        </div>
+        <div class="card-body">${kvRows}</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Profil relationnel</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="card-sub">premier partenaire par flux</span>
+            <button class="card-cog" onclick="openPinModal('flux')" title="Choisir les flux">⚙</button>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="flux-block">
+            <div class="flux-block-head"><span class="t">Grands partenaires</span><span class="h">qui pèse pour le sujet</span></div>
+            ${partnersHtml}
+          </div>
+          <div class="flux-block">
+            <div class="flux-block-head"><span class="t">Zone d'influence</span><span class="h">pour qui le sujet pèse</span></div>
+            ${influenceHtml}
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  bindKvTips();
+}
+
+// Branche les infobulles sur les lignes de valeurs (via data-attributes, sûr).
+function bindKvTips(){
+  document.querySelectorAll('.kv-row').forEach(row => {
+    row.addEventListener('mouseenter', e => showTip2(e, row.dataset.tt, row.dataset.tb));
+    row.addEventListener('mousemove', moveTip);
+    row.addEventListener('mouseleave', hideTip);
+    row.addEventListener('click', () => goToPuissance(row.dataset.ind));
+  });
+}
+
+// Construit le panorama (un flux par ligne, top-1 + dépliage top-5).
+function buildPanorama(fluxInds, dir){
+  if(!fluxInds.length) return `<div class="pano-empty">Aucun indicateur de flux sélectionné.</div>`;
+  let html = '';
+  let any = false;
+  for(const c of fluxInds){
+    let rows = getFluxRows(c.indicator, dir);
+    if(!rows.length) continue;
+    // Pour la dette : ne garder que le bilatéral (exclut multilatéral/privé,
+    // plus parlant en synthèse). Robuste aux variantes d'orthographe.
+    if(isDebtIndicator(c.indicator)){
+      const bil = rows.filter(r => isBilateral(r));
+      if(bil.length) rows = bil;
+    }
+    const byPartner = new Map();
+    let total = 0;
+    for(const r of rows){
+      if(r.partner && r.partner.startsWith('__')) continue;  // ignore agrégats non-pays dans le panorama dette bilatérale
+      const v = r.value || 0;
+      byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
+      total += v;
+    }
+    if(total <= 0) continue;
+    any = true;
+    const ranked = [...byPartner.entries()].sort((a,b) => b[1]-a[1]);
+    const top = ranked[0];
+    const pct = (top[1] / total) * 100;
+    const cls = concentrationClass(pct);
+    const rowId = `pano_${dir}_${c.indicator}`.replace(/[^a-zA-Z0-9_]/g,'');
+    // top 5 (déplié au clic) — jauge normalisée sur le 1er du classement
+    const maxPct = (ranked[0][1] / total) * 100 || 1;
+    const top5 = ranked.slice(0, 5).map(([code, v]) => {
+      const p = (v/total)*100;
+      const w = Math.max(2, (p / maxPct) * 100);
+      return `<div class="pano-sub">
+        <span class="flag">${partnerFlag(code)}</span>
+        <span class="nm">${partnerLabel(code)}</span>
+        <span class="bar"><span class="fill ${dir}" style="width:${w.toFixed(0)}%"></span></span>
+        <span class="v">${p.toFixed(0)}%</span>
+      </div>`;
+    }).join('');
+    html += `<div class="pano-wrap">
+      <div class="pano-row" onclick="togglePano('${rowId}')">
+        <div class="pano-flux">${c.label || c.indicator}</div>
+        <div class="pano-partner"><span class="flag">${partnerFlag(top[0])}</span><span class="nm">${partnerLabel(top[0])}</span></div>
+        <div class="pano-bar"><div class="pano-fill ${dir} ${cls}" style="width:${Math.min(100,pct).toFixed(0)}%"></div></div>
+        <div class="pano-val">${pct.toFixed(0)}%</div>
+        <div class="pano-caret" id="caret_${rowId}">▸</div>
+      </div>
+      <div class="pano-detail" id="${rowId}">
+        <div class="pano-detail-title">Top 5 · ${c.label||c.indicator}</div>
+        ${top5}
+        <div class="pano-detail-link" onclick="event.stopPropagation();goToRelations('${c.indicator}','${dir}')">→ explorer dans Relations</div>
+      </div>
+    </div>`;
+  }
+  return any ? html : `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
+}
+function togglePano(id){
+  const el = document.getElementById(id);
+  const caret = document.getElementById('caret_' + id);
+  if(!el) return;
+  const open = el.classList.toggle('open');
+  if(caret) caret.textContent = open ? '▾' : '▸';
+}
+// Détecte un indicateur de dette (pour appliquer le filtre bilatéral en synthèse).
+function isDebtIndicator(ind){ return /dette|debt/i.test(ind); }
+// Détecte une ligne de dette bilatérale (robuste aux variantes d'orthographe/casse).
+function isBilateral(r){
+  const s = (r.sub1 || '') + ' ' + (r.sub2 || '') + ' ' + (r.sub3 || '');
+  return /bilat/i.test(s);
+}
+function partnerLabel(code){
+  if(code === '__multilateral__') return 'Multilatéral';
+  if(code === '__private__') return 'Privé';
+  if(code === '__intra__') return 'Intra-groupe';
+  if(code === '__world__' || code === 'WLD') return 'Monde';
+  return isoToName(code);
+}
+function partnerFlag(code){
+  if(code && code.startsWith('__')) return '⊟';
+  return isoToFlag(code);
+}
+
+// Portes vers les autres onglets (état mémorisé ; rendu cible aux étapes 5/6).
+let _pendingFocus = { indicator: null, fluxDir: null };
+function goToPuissance(indicator){ _pendingFocus.indicator = indicator; switchView('puissance'); }
+function goToRelations(indicator, dir){ _pendingFocus.indicator = indicator; _pendingFocus.fluxDir = dir; switchView('relations'); }
+
+/* ─── RECHERCHE SUJET (⌘K) — pays multi-cochables, zones en 1 clic ─── */
+let _searchSel = 0, _searchItems = [];
+let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
+
+function openSearch(){
+  document.getElementById('searchOverlay').classList.add('open');
+  _multiPick = [];
+  // pré-remplir avec le sujet courant s'il s'agit d'une sélection libre de pays
+  if(state.subject && state.subject.isos.length > 1){
+    _multiPick = state.subject.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
+  }
+  const inp = document.getElementById('searchInput');
+  inp.value = ''; inp.focus();
+  onSearchInput('');
+  renderTray();
+}
+function closeSearch(){ document.getElementById('searchOverlay').classList.remove('open'); }
+
+function isPicked(iso3){ return _multiPick.some(p => p.iso3 === iso3); }
+
+function onSearchInput(q){
+  const ql = q.trim().toLowerCase();
+  const res = document.getElementById('searchResults');
+  _searchSel = 0;
+  let items = [];
+
+  // pays (cochables pour la multi-sélection)
+  const countries = state.allCountries
+    .filter(c => !ql || c.name.toLowerCase().includes(ql) || c.iso3.toLowerCase().includes(ql))
+    .slice(0, 8)
+    .map(c => ({ kind: 'pays', isos: [c.iso3], label: c.name, flag: c.flag, iso: c.iso3 }));
+  items = items.concat(countries);
+
+  // zones (sélection directe en un clic, non cochables)
+  if(state.db){
+    const r = safeExec(`SELECT DISTINCT zone_id, zone_nom FROM zones${ql ? ` WHERE LOWER(zone_nom) LIKE '%${escapeSql(ql)}%' OR LOWER(zone_id) LIKE '%${escapeSql(ql)}%'` : ''} ORDER BY zone_nom LIMIT 5`);
+    if(r.length){
+      for(const [zid, znom] of r[0].values){
+        const zr = safeExec(`SELECT country_iso3 FROM zones WHERE zone_id='${escapeSql(zid)}'`);
+        const isos = zr.length ? zr[0].values.map(v => v[0]).filter(Boolean) : [];
+        if(isos.length) items.push({ kind: 'zone', isos, label: znom, flag: '⊞', iso: zid });
+      }
+    }
+  }
+
+  _searchItems = items;
+  if(!items.length){ res.innerHTML = `<div class="search-empty">Aucun résultat</div>`; return; }
+
+  const hasCountries = items.some(it => it.kind === 'pays');
+  const hint = hasCountries
+    ? `<div class="search-hint">Cocher plusieurs pays pour un bloc · cliquer une zone pour la choisir directement</div>` : '';
+
+  res.innerHTML = hint + items.map((it, i) => {
+    if(it.kind === 'pays'){
+      const checked = isPicked(it.iso) ? 'checked' : '';
+      return `<div class="search-item ${i===0?'sel':''} ${checked}" data-i="${i}" onclick="toggleCountry(${i})">
+                <span class="chk">${isPicked(it.iso)?'✓':''}</span>
+                <span class="flag">${it.flag}</span>
+                <span>${it.label}</span>
+                <span class="kind">${it.kind}</span>
+                <span class="iso">${it.iso}</span>
+              </div>`;
+    }
+    return `<div class="search-item ${i===0?'sel':''}" data-i="${i}" onclick="pickZone(${i})">
+              <span class="chk-spacer"></span>
+              <span class="flag">${it.flag}</span>
+              <span>${it.label}</span>
+              <span class="kind">${it.kind}</span>
+              <span class="iso">${it.iso}</span>
+            </div>`;
+  }).join('');
+}
+
+function toggleCountry(i){
+  const it = _searchItems[i]; if(!it || it.kind !== 'pays') return;
+  const iso = it.iso;
+  if(isPicked(iso)) _multiPick = _multiPick.filter(p => p.iso3 !== iso);
+  else _multiPick.push({ iso3: iso, name: it.label, flag: it.flag });
+  // rafraîchir l'état visuel de la ligne + le bandeau
+  const row = document.querySelector(`.search-item[data-i="${i}"]`);
+  if(row){ row.classList.toggle('checked', isPicked(iso)); row.querySelector('.chk').textContent = isPicked(iso) ? '✓' : ''; }
+  renderTray();
+}
+
+function pickZone(i){
+  const it = _searchItems[i]; if(!it || it.kind !== 'zone') return;
+  setSubject(it.isos, it.label);   // zone = sélection directe immédiate
+  closeSearch();
+}
+
+function renderTray(){
+  const tray = document.getElementById('searchTray');
+  const chips = document.getElementById('trayChips');
+  const btn = document.getElementById('trayValidate');
+  if(!_multiPick.length){ tray.classList.remove('show'); return; }
+  tray.classList.add('show');
+  chips.innerHTML = _multiPick.map(p =>
+    `<span class="tray-chip"><span class="flag">${p.flag}</span>${p.name}<span class="rm" onclick="removePick('${p.iso3}')">×</span></span>`
+  ).join('');
+  btn.textContent = _multiPick.length === 1
+    ? `Valider (1 pays)` : `Valider le bloc (${_multiPick.length} pays)`;
+}
+function removePick(iso){
+  _multiPick = _multiPick.filter(p => p.iso3 !== iso);
+  renderTray();
+  // resynchroniser les coches visibles
+  onSearchInput(document.getElementById('searchInput').value);
+}
+function validateMultiSelection(){
+  if(!_multiPick.length) return;
+  const isos = _multiPick.map(p => p.iso3);
+  setSubject(isos, detectZoneLabel(isos));   // label auto si ça correspond à une zone connue
+  closeSearch();
+}
+
+function onSearchKey(e){
+  if(e.key === 'Escape'){ closeSearch(); return; }
+  const rows = _searchItems.length;
+  if(e.key === 'ArrowDown'){ e.preventDefault(); _searchSel = Math.min(_searchSel+1, rows-1); updateSearchSel(); }
+  if(e.key === 'ArrowUp'){ e.preventDefault(); _searchSel = Math.max(_searchSel-1, 0); updateSearchSel(); }
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    if(_multiPick.length){ validateMultiSelection(); return; }   // Entrée valide le bloc si en cours
+    const it = _searchItems[_searchSel];
+    if(it){ it.kind === 'zone' ? pickZone(_searchSel) : toggleCountry(_searchSel); }
+  }
+}
+function updateSearchSel(){
+  document.querySelectorAll('.search-item').forEach(el => {
+    el.classList.toggle('sel', parseInt(el.dataset.i) === _searchSel);
+  });
+}
+
+/* ─── EXPORT (placeholder étape 4) ────────────────────────────── */
+function exportCurrentView(){
+  alert('Export — sera implémenté à l\'étape 4 (PDF par onglet).');
+}
+
+/* ─── ÉTAT DANS L'URL (sérialisation) ─────────────────────────── */
+function syncUrl(){
+  const p = new URLSearchParams();
+  if(state.subject) p.set('s', state.subject.isos.join(','));
+  if(state.compareB) p.set('b', state.compareB.isos.join(','));
+  p.set('y', state.year);
+  p.set('tab', state.view);
+  history.replaceState(null, '', '#' + p.toString());
+}
+function applyUrlState(){
+  const h = location.hash.replace(/^#/, '');
+  if(!h) return;
+  const p = new URLSearchParams(h);
+  if(p.get('tab')) switchViewSilent(p.get('tab'));
+  if(p.get('y')){
+    const y = parseInt(p.get('y'));
+    if(y >= state.yearBounds.min && y <= state.yearBounds.max){
+      state.year = y;
+      document.getElementById('yearSlider').value = y;
+      document.getElementById('yearOut').textContent = y;
+    }
+  }
+  if(p.get('s')){
+    const isos = p.get('s').split(',').filter(Boolean);
+    if(isos.length) state.subject = { isos, label: detectZoneLabel(isos) };
+  }
+  if(p.get('b')){
+    const isos = p.get('b').split(',').filter(Boolean);
+    if(isos.length) state.compareB = { isos, label: detectZoneLabel(isos) };
+  }
+}
+function switchViewSilent(v){
+  if(!['synthese','puissance','relations'].includes(v)) return;
+  state.view = v;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+}
+
+/* ─── RACCOURCIS CLAVIER ──────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); openSearch(); }
+});
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab'); if(btn) switchView(btn.dataset.view);
+});
+
+/* ─── DÉMARRAGE ───────────────────────────────────────────────── */
+boot();
+
+/* ─── MODE DÉMO ───────────────────────────────────────────────
+   Données synthétiques minimales pour développer/démontrer le
+   squelette sans dépendre de la base R2. Inspiré de initWithDemoData
+   de l'ancien code, réduit à l'essentiel pour l'étape 0.
+─────────────────────────────────────────────────────────────── */
+const DEMO_CONFIG = [
+  {indicator:'population',label:'Population',table:'identite',category:'demographie',unit:'hab',unit_display:'M hab',aggregation:'sum',actif:true},
+  {indicator:'pib_par_hab',label:'PIB par habitant',table:'identite',category:'economie',unit:'USD',unit_display:'USD',aggregation:'mean',actif:true},
+  {indicator:'pib_usd',label:'PIB (USD courant)',table:'identite',category:'economie',unit:'USD',unit_display:'Mrd USD',aggregation:'sum',actif:true},
+  {indicator:'age_median',label:'Âge médian',table:'identite',category:'demographie',unit:'ans',unit_display:'ans',aggregation:'mean',actif:true},
+  {indicator:'budget_defense_pib',label:'Budget défense / PIB',table:'identite',category:'militaire',unit:'%',unit_display:'%',aggregation:'mean',actif:true},
+  {indicator:'fecondite',label:'Taux de fécondité',table:'identite',category:'demographie',unit:'enf/femme',unit_display:'enf/femme',aggregation:'mean',actif:true},
+  {indicator:'dette_exterieure',label:'Dette extérieure',table:'flux',category:'finance',unit:'USD',unit_display:'Mrd USD',aggregation:'sum',actif:true},
+  {indicator:'import_commercial',label:'Commerce bilatéral',table:'flux',category:'commerce',unit:'USD',unit_display:'Mrd USD',aggregation:'sum',actif:true},
+];
+
+function initDemo(SQL){
+  state.db = new SQL.Database();
+  state.isDemo = true;
+  const db = state.db;
+  db.run(`CREATE TABLE identite(country_iso3 TEXT,indicator TEXT,year INTEGER,value REAL,unit TEXT,source TEXT,subcategory TEXT);
+          CREATE TABLE flux(country_from TEXT,country_to TEXT,indicator TEXT,year INTEGER,value REAL,unit TEXT,source TEXT,subcategory_1 TEXT,subcategory_2 TEXT,subcategory_3 TEXT);
+          CREATE TABLE zones(zone_id TEXT,zone_nom TEXT,country_iso3 TEXT,zone_type TEXT);`);
+
+  const PAYS = ['FRA','DEU','USA','CHN','BRA','IND','RUS','GBR','ITA','ESP','JPN','CAN','AUS','ZAF','NGA'];
+  const BASE = {FRA:[67.8,42330,2780],DEU:[83.2,48720,4080],USA:[333,70250,25000],CHN:[1412,12720,17900],BRA:[215,8920,1920],IND:[1420,2410,3420],RUS:[144,15270,2240],GBR:[67,45850,3100],ITA:[59,35550,2100],ESP:[47,29350,1390],JPN:[125,39280,4230],CAN:[39,54970,2140],AUS:[26,60440,1550],ZAF:[60,7050,420],NGA:[218,2080,440]};
+  const stmt = db.prepare(`INSERT INTO identite VALUES (?,?,?,?,?,?,?)`);
+  for(const iso of PAYS){
+    const [pop,pibh,pib] = BASE[iso];
+    for(let y=2000;y<=2024;y++){
+      const t=y-2000, g=1+t*0.012;
+      stmt.run([iso,'population',y,Math.round(pop*1e6*(1+t*0.006)),'hab','demo',null]);
+      stmt.run([iso,'pib_par_hab',y,Math.round(pibh*g),'USD','demo',null]);
+      stmt.run([iso,'pib_usd',y,Math.round(pib*g),'USD','demo',null]);
+      stmt.run([iso,'age_median',y,30+t*0.2,'ans','demo',null]);
+      stmt.run([iso,'budget_defense_pib',y,1.5+(iso==='USA'?2:0)+(iso==='RUS'?2.5:0),'%','demo',null]);
+      stmt.run([iso,'fecondite',y,1.8-t*0.005,'enf/femme','demo',null]);
+    }
+  }
+  stmt.free();
+
+  // quelques flux de dette (avec subcategory pour préfigurer le drill-down)
+  const fstmt = db.prepare(`INSERT INTO flux VALUES (?,?,?,?,?,?,?,?,?,?)`);
+  const DETTE = {BRA:[['CHN',112,'Bilatéral'],['JPN',58,'Bilatéral'],['USA',42,'Bilatéral'],['__multilateral__',206,'Multilatéral'],['__private__',167,'Privé']],
+                 FRA:[['USA',45,'Bilatéral'],['DEU',38,'Bilatéral'],['__private__',120,'Privé'],['__multilateral__',60,'Multilatéral']]};
+  for(const [from,rows] of Object.entries(DETTE))
+    for(const [to,val,sub] of rows)
+      for(let y=2018;y<=2024;y++) fstmt.run([from,to,'dette_exterieure',y,val*(1+(y-2018)*0.03),'USD','demo',sub,null,null]);
+  fstmt.free();
+
+  db.run(`INSERT INTO zones VALUES ('G7','G7','USA','organisationnel'),('G7','G7','DEU','organisationnel'),('G7','G7','FRA','organisationnel'),('G7','G7','GBR','organisationnel'),('G7','G7','ITA','organisationnel'),('G7','G7','JPN','organisationnel'),('G7','G7','CAN','organisationnel'),('BRICS','BRICS','BRA','organisationnel'),('BRICS','BRICS','RUS','organisationnel'),('BRICS','BRICS','IND','organisationnel'),('BRICS','BRICS','CHN','organisationnel'),('BRICS','BRICS','ZAF','organisationnel');`);
+
+  state.config = DEMO_CONFIG.slice();
+  for(const c of state.config){ if(c.radar===undefined) c.radar=['population','pib_usd','pib_par_hab','fecondite','age_median','budget_defense_pib'].includes(c.indicator); if(c.rank_inverted===undefined) c.rank_inverted=false; }
+  buildIndicatorRegistry();
+  buildCountryList();
+  finishBoot('Mode démo', 'demo');
+}
+</script>
+</body>
+</html>
