@@ -343,11 +343,11 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pano-detail { display: none; padding: 4px 6px 10px 6px; }
 .pano-detail.open { display: block; animation: fadeIn .2s ease; }
 .pano-detail-title { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin: 4px 0 6px; }
-.pano-sub { display: grid; grid-template-columns: 16px 1fr 70px 36px; gap: 8px; align-items: center; padding: 3px 0; font-size: 11.5px; }
+.pano-sub { display: grid; grid-template-columns: 16px 1fr 80px 36px; gap: 8px; align-items: center; padding: 3px 0; font-size: 11.5px; }
 .pano-sub .flag { font-size: 13px; }
 .pano-sub .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text2); }
-.pano-sub .bar { height: 5px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
-.pano-sub .fill { height: 100%; border-radius: 2px; }
+.pano-sub .bar { width: 80px; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; display: block; }
+.pano-sub .fill { display: block; height: 100%; border-radius: 3px; min-width: 2px; }
 .pano-sub .fill.partner { background: var(--blue); opacity: .7; }
 .pano-sub .fill.influence { background: var(--green); opacity: .7; }
 .pano-sub .v { font-family: var(--mono); font-size: 10px; text-align: right; color: var(--text2); }
@@ -1018,6 +1018,7 @@ function finishBoot(dbName, badge){
   applyUrlState();        // restaure l'état depuis l'URL si présent
   renderContextBar();
   refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
+  try { diagFlux(); } catch(e){ console.warn('diag', e); }   // TEMP : diagnostic dette
   setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
 }
 
@@ -1088,6 +1089,7 @@ function setSubject(isos, label){
   renderContextBar();
   syncUrl();
   refreshActiveView();
+  try { diagFlux(); } catch(e){}   // TEMP : diagnostic dette
 }
 function clearSubject(){
   state.subject = null;
@@ -1304,19 +1306,23 @@ function concentrationClass(pct){
 function diagFlux(){
   console.group('%cDIAGNOSTIC FLUX', 'color:#0a6e4a;font-weight:bold');
   const inds = safeExec(`SELECT DISTINCT indicator FROM flux`);
-  console.log('Indicateurs présents dans flux :', inds.length ? inds[0].values.map(v=>v[0]) : '(aucun)');
-  const cols = safeExec(`PRAGMA table_info(flux)`);
-  if(cols.length) console.log('Colonnes de flux :', cols[0].values.map(v=>v[1]));
-  const yrs = safeExec(`SELECT MIN(year), MAX(year) FROM flux`);
-  if(yrs.length) console.log('Années flux :', yrs[0].values[0]);
-  const sample = safeExec(`SELECT * FROM flux LIMIT 3`);
-  if(sample.length){ console.log('Colonnes échantillon :', sample[0].columns); console.log('3 lignes :', sample[0].values); }
-  if(state.subject){
-    const inList = sqlList(currentIsos());
-    const asTo = safeExec(`SELECT COUNT(*) FROM flux WHERE country_to IN (${inList})`);
-    const asFrom = safeExec(`SELECT COUNT(*) FROM flux WHERE country_from IN (${inList})`);
-    console.log(`Lignes où le sujet est country_to :`, asTo.length?asTo[0].values[0][0]:0);
-    console.log(`Lignes où le sujet est country_from :`, asFrom.length?asFrom[0].values[0][0]:0);
+  const indList = inds.length ? inds[0].values.map(v=>v[0]) : [];
+  console.log('Indicateurs flux :', indList);
+  // repérer l'indicateur dette
+  const debtInds = indList.filter(i => /dette|debt/i.test(i));
+  console.log('Indicateur(s) dette détecté(s) :', debtInds);
+  for(const di of debtInds){
+    const s1 = safeExec(`SELECT DISTINCT subcategory_1 FROM flux WHERE indicator='${escapeSql(di)}'`);
+    const s2 = safeExec(`SELECT DISTINCT subcategory_2 FROM flux WHERE indicator='${escapeSql(di)}'`);
+    const s3 = safeExec(`SELECT DISTINCT subcategory_3 FROM flux WHERE indicator='${escapeSql(di)}'`);
+    console.log(`  [${di}] subcategory_1 :`, s1.length?s1[0].values.map(v=>v[0]):[]);
+    console.log(`  [${di}] subcategory_2 :`, s2.length?s2[0].values.map(v=>v[0]):[]);
+    console.log(`  [${di}] subcategory_3 :`, s3.length?s3[0].values.map(v=>v[0]):[]);
+    if(state.subject){
+      const inList = sqlList(currentIsos());
+      const ex = safeExec(`SELECT country_from, country_to, subcategory_1, subcategory_2, subcategory_3, value, year FROM flux WHERE indicator='${escapeSql(di)}' AND country_to IN (${inList}) ORDER BY year DESC LIMIT 8`);
+      if(ex.length){ console.log(`  [${di}] exemples (sujet=country_to) :`); console.table(ex[0].values.map(r=>({from:r[0],to:r[1],s1:r[2],s2:r[3],s3:r[4],val:r[5],an:r[6]}))); }
+    }
   }
   console.groupEnd();
 }
