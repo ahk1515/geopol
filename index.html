@@ -893,9 +893,11 @@ function getFluxRows(indicator, dir){
   }
 
   let rows = [];
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
   const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
                       FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
                       AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
+                      AND ${partnerCol} NOT IN (${exclAgg})
                       GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
   if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v, fluxYear:y }));
   entry[dir] = rows;
@@ -1018,7 +1020,6 @@ function finishBoot(dbName, badge){
   applyUrlState();        // restaure l'état depuis l'URL si présent
   renderContextBar();
   refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
-  try { diagFlux(); } catch(e){ console.warn('diag', e); }   // TEMP : diagnostic dette
   setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
 }
 
@@ -1089,7 +1090,6 @@ function setSubject(isos, label){
   renderContextBar();
   syncUrl();
   refreshActiveView();
-  try { diagFlux(); } catch(e){}   // TEMP : diagnostic dette
 }
 function clearSubject(){
   state.subject = null;
@@ -1487,10 +1487,9 @@ function togglePano(id){
 }
 // Détecte un indicateur de dette (pour appliquer le filtre bilatéral en synthèse).
 function isDebtIndicator(ind){ return /dette|debt/i.test(ind); }
-// Détecte une ligne de dette bilatérale (robuste aux variantes d'orthographe/casse).
+// Ligne de dette bilatérale : subcategory_1 = 'bilaterale' (valeur réelle ETL IDS).
 function isBilateral(r){
-  const s = (r.sub1 || '') + ' ' + (r.sub2 || '') + ' ' + (r.sub3 || '');
-  return /bilat/i.test(s);
+  return /bilat/i.test(String(r.sub1 || ''));
 }
 function partnerLabel(code){
   if(code === '__multilateral__') return 'Multilatéral';
