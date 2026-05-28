@@ -878,23 +878,26 @@ function getFluxRows(indicator, dir){
 
   const inList = sqlList(isos);
   // Convention de schéma : country_from = origine, country_to = destination.
-  // 'partner' : on agrège par l'autre extrémité, sujet côté country_to.
-  // 'influence' : sujet côté country_from.
-  let rows = [];
-  const y = state.year;
-  if(dir === 'partner'){
-    const r = safeExec(`SELECT country_from AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
-                        FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
-                        AND country_to IN (${inList}) AND country_from NOT IN (${inList})
-                        GROUP BY country_from, subcategory_1, subcategory_2, subcategory_3`);
-    if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v }));
-  } else {
-    const r = safeExec(`SELECT country_to AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
-                        FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
-                        AND country_from IN (${inList}) AND country_to NOT IN (${inList})
-                        GROUP BY country_to, subcategory_1, subcategory_2, subcategory_3`);
-    if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v }));
+  // 'partner' : sujet côté country_to ; 'influence' : sujet côté country_from.
+  const subjectCol = (dir === 'partner') ? 'country_to' : 'country_from';
+  const partnerCol = (dir === 'partner') ? 'country_from' : 'country_to';
+
+  // Année des flux : l'année courante si elle a des données, sinon la dernière
+  // année de flux disponible pour ce sujet (les flux ne couvrent pas forcément
+  // les mêmes années que l'identité, ni les projections futures).
+  let y = state.year;
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND ${subjectCol} IN (${inList}) LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(indicator)}' AND ${subjectCol} IN (${inList})`);
+    if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
   }
+
+  let rows = [];
+  const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                      FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                      AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
+                      GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
+  if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v, fluxYear:y }));
   entry[dir] = rows;
   cache.flux.set(indicator, entry);
   return rows;
@@ -996,14 +999,18 @@ function buildCountryList(){
 // Codes d'agrégats Banque Mondiale à exclure (repris de l'ancien set REGIONAL).
 const REGIONAL_CODES = new Set(['AFE','AFW','ARB','CEB','CSS','EAP','EAR','EAS','ECA','ECS','EMU','EUU','FCS','HIC','HPC','IBD','IBT','IDA','IDB','IDX','LAC','LCN','LDC','LIC','LMC','LMY','LTE','MEA','MIC','MNA','NAC','OED','OSS','PRE','PSS','PST','SAS','SSA','SSF','SST','TEA','TEC','TLA','TMN','TSA','TSS','UMC','WLD','INX','OEC']);
 
+// Année « présent » max : on ne démarre jamais sur une projection future.
+const CURRENT_YEAR = new Date().getFullYear();
+
 function finishBoot(dbName, badge){
   // Bornes d'années réelles depuis la DB
   const r = safeExec(`SELECT MIN(year), MAX(year) FROM identite`);
   if(r.length && r[0].values.length){
     const [mn, mx] = r[0].values[0];
     if(mn && mx){
-      state.yearBounds = { min: mn, max: mx };
-      state.year = mx;
+      state.yearBounds = { min: mn, max: mx };   // bornes complètes (projections incluses) pour le curseur
+      // année par défaut = dernière année réelle, jamais une projection future
+      state.year = Math.min(mx, CURRENT_YEAR);
     }
   }
   setDbBadge(dbName, badge);
@@ -1014,17 +1021,19 @@ function finishBoot(dbName, badge){
   setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
 }
 
-// Dernière année où le sujet a des données identité (pour caler la Synthèse).
+// Dernière année où le sujet a des données identité, hors projections futures.
 function latestYearWithData(){
   ensureIdentiteCache();
   let best = null;
   for(const ind in (cache.identite || {})){
     for(const y in cache.identite[ind]){
+      const yy = +y;
+      if(yy > CURRENT_YEAR) continue;            // ignore les projections futures
       const v = cache.identite[ind][y];
-      if(v != null && v !== 0){ const yy = +y; if(best == null || yy > best) best = yy; }
+      if(v != null && v !== 0){ if(best == null || yy > best) best = yy; }
     }
   }
-  return best || state.yearBounds.max;
+  return best || Math.min(state.yearBounds.max, CURRENT_YEAR);
 }
 
 /* ─── ONGLETS ─────────────────────────────────────────────────── */
