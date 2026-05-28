@@ -233,6 +233,41 @@ main { flex: 1; padding: 16px 18px 28px; }
 .search-item .iso { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: auto; }
 .search-item .kind { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; }
 .search-empty { padding: 22px; text-align: center; color: var(--text3); font-size: 12px; }
+/* case à cocher (pays seulement ; les zones se choisissent en 1 clic) */
+.search-item .chk {
+  width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
+  border: 1.5px solid var(--border2); display: inline-flex;
+  align-items: center; justify-content: center; font-size: 11px;
+  color: #fff; background: var(--bg2); transition: all .12s;
+}
+.search-item.checked .chk { background: var(--green); border-color: var(--green); }
+.search-item .chk-spacer { width: 16px; flex-shrink: 0; } /* alignement pour les zones */
+.search-hint {
+  padding: 8px 18px; font-family: var(--mono); font-size: 9px;
+  letter-spacing: .06em; color: var(--text3); text-transform: uppercase;
+  background: var(--bg3); border-bottom: 1px solid var(--border);
+}
+/* bandeau de validation de la sélection multiple */
+.search-tray {
+  display: none; align-items: center; gap: 10px; padding: 11px 16px;
+  border-top: 1px solid var(--border); background: var(--bg3);
+}
+.search-tray.show { display: flex; }
+.search-tray .tray-chips { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; }
+.tray-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
+  background: var(--bg2); border: 1px solid var(--green-b); border-radius: 14px;
+  font-size: 11px; color: var(--green);
+}
+.tray-chip .flag { font-size: 13px; }
+.tray-chip .rm { cursor: pointer; opacity: .5; font-size: 12px; }
+.tray-chip .rm:hover { opacity: 1; }
+.tray-validate {
+  padding: 7px 14px; background: var(--green); color: #fff; border: none;
+  border-radius: 7px; font-family: var(--sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.tray-validate:hover { background: #064e34; }
 </style>
 </head>
 <body>
@@ -322,6 +357,10 @@ main { flex: 1; padding: 16px 18px 28px; }
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="Rechercher un pays ou une zone…" oninput="onSearchInput(this.value)" onkeydown="onSearchKey(event)">
     <div class="search-results" id="searchResults"></div>
+    <div class="search-tray" id="searchTray">
+      <div class="tray-chips" id="trayChips"></div>
+      <button class="tray-validate" id="trayValidate" onclick="validateMultiSelection()">Valider</button>
+    </div>
   </div>
 </div>
 
@@ -709,29 +748,40 @@ function onYearChange(v){
 // brancheront ici le vrai rendu de l'onglet actif.
 function refreshActiveView(){ /* à implémenter aux étapes 3/5/6 */ }
 
-/* ─── RECHERCHE SUJET (minimale, ⌘K) ──────────────────────────── */
+/* ─── RECHERCHE SUJET (⌘K) — pays multi-cochables, zones en 1 clic ─── */
 let _searchSel = 0, _searchItems = [];
+let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
+
 function openSearch(){
   document.getElementById('searchOverlay').classList.add('open');
+  _multiPick = [];
+  // pré-remplir avec le sujet courant s'il s'agit d'une sélection libre de pays
+  if(state.subject && state.subject.isos.length > 1){
+    _multiPick = state.subject.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
+  }
   const inp = document.getElementById('searchInput');
   inp.value = ''; inp.focus();
   onSearchInput('');
+  renderTray();
 }
 function closeSearch(){ document.getElementById('searchOverlay').classList.remove('open'); }
+
+function isPicked(iso3){ return _multiPick.some(p => p.iso3 === iso3); }
+
 function onSearchInput(q){
   const ql = q.trim().toLowerCase();
   const res = document.getElementById('searchResults');
   _searchSel = 0;
   let items = [];
 
-  // pays
+  // pays (cochables pour la multi-sélection)
   const countries = state.allCountries
     .filter(c => !ql || c.name.toLowerCase().includes(ql) || c.iso3.toLowerCase().includes(ql))
-    .slice(0, 6)
+    .slice(0, 8)
     .map(c => ({ kind: 'pays', isos: [c.iso3], label: c.name, flag: c.flag, iso: c.iso3 }));
   items = items.concat(countries);
 
-  // zones
+  // zones (sélection directe en un clic, non cochables)
   if(state.db){
     const r = safeExec(`SELECT DISTINCT zone_id, zone_nom FROM zones${ql ? ` WHERE LOWER(zone_nom) LIKE '%${escapeSql(ql)}%' OR LOWER(zone_id) LIKE '%${escapeSql(ql)}%'` : ''} ORDER BY zone_nom LIMIT 5`);
     if(r.length){
@@ -745,27 +795,90 @@ function onSearchInput(q){
 
   _searchItems = items;
   if(!items.length){ res.innerHTML = `<div class="search-empty">Aucun résultat</div>`; return; }
-  res.innerHTML = items.map((it, i) =>
-    `<div class="search-item ${i===0?'sel':''}" data-i="${i}" onclick="pickSearch(${i})">
-       <span class="flag">${it.flag}</span>
-       <span>${it.label}</span>
-       <span class="kind">${it.kind}</span>
-       <span class="iso">${it.iso}</span>
-     </div>`).join('');
+
+  const hasCountries = items.some(it => it.kind === 'pays');
+  const hint = hasCountries
+    ? `<div class="search-hint">Cocher plusieurs pays pour un bloc · cliquer une zone pour la choisir directement</div>` : '';
+
+  res.innerHTML = hint + items.map((it, i) => {
+    if(it.kind === 'pays'){
+      const checked = isPicked(it.iso) ? 'checked' : '';
+      return `<div class="search-item ${i===0?'sel':''} ${checked}" data-i="${i}" onclick="toggleCountry(${i})">
+                <span class="chk">${isPicked(it.iso)?'✓':''}</span>
+                <span class="flag">${it.flag}</span>
+                <span>${it.label}</span>
+                <span class="kind">${it.kind}</span>
+                <span class="iso">${it.iso}</span>
+              </div>`;
+    }
+    return `<div class="search-item ${i===0?'sel':''}" data-i="${i}" onclick="pickZone(${i})">
+              <span class="chk-spacer"></span>
+              <span class="flag">${it.flag}</span>
+              <span>${it.label}</span>
+              <span class="kind">${it.kind}</span>
+              <span class="iso">${it.iso}</span>
+            </div>`;
+  }).join('');
 }
+
+function toggleCountry(i){
+  const it = _searchItems[i]; if(!it || it.kind !== 'pays') return;
+  const iso = it.iso;
+  if(isPicked(iso)) _multiPick = _multiPick.filter(p => p.iso3 !== iso);
+  else _multiPick.push({ iso3: iso, name: it.label, flag: it.flag });
+  // rafraîchir l'état visuel de la ligne + le bandeau
+  const row = document.querySelector(`.search-item[data-i="${i}"]`);
+  if(row){ row.classList.toggle('checked', isPicked(iso)); row.querySelector('.chk').textContent = isPicked(iso) ? '✓' : ''; }
+  renderTray();
+}
+
+function pickZone(i){
+  const it = _searchItems[i]; if(!it || it.kind !== 'zone') return;
+  setSubject(it.isos, it.label);   // zone = sélection directe immédiate
+  closeSearch();
+}
+
+function renderTray(){
+  const tray = document.getElementById('searchTray');
+  const chips = document.getElementById('trayChips');
+  const btn = document.getElementById('trayValidate');
+  if(!_multiPick.length){ tray.classList.remove('show'); return; }
+  tray.classList.add('show');
+  chips.innerHTML = _multiPick.map(p =>
+    `<span class="tray-chip"><span class="flag">${p.flag}</span>${p.name}<span class="rm" onclick="removePick('${p.iso3}')">×</span></span>`
+  ).join('');
+  btn.textContent = _multiPick.length === 1
+    ? `Valider (1 pays)` : `Valider le bloc (${_multiPick.length} pays)`;
+}
+function removePick(iso){
+  _multiPick = _multiPick.filter(p => p.iso3 !== iso);
+  renderTray();
+  // resynchroniser les coches visibles
+  onSearchInput(document.getElementById('searchInput').value);
+}
+function validateMultiSelection(){
+  if(!_multiPick.length) return;
+  const isos = _multiPick.map(p => p.iso3);
+  setSubject(isos, detectZoneLabel(isos));   // label auto si ça correspond à une zone connue
+  closeSearch();
+}
+
 function onSearchKey(e){
   if(e.key === 'Escape'){ closeSearch(); return; }
-  if(e.key === 'ArrowDown'){ e.preventDefault(); _searchSel = Math.min(_searchSel+1, _searchItems.length-1); updateSearchSel(); }
+  const rows = _searchItems.length;
+  if(e.key === 'ArrowDown'){ e.preventDefault(); _searchSel = Math.min(_searchSel+1, rows-1); updateSearchSel(); }
   if(e.key === 'ArrowUp'){ e.preventDefault(); _searchSel = Math.max(_searchSel-1, 0); updateSearchSel(); }
-  if(e.key === 'Enter'){ e.preventDefault(); if(_searchItems[_searchSel]) pickSearch(_searchSel); }
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    if(_multiPick.length){ validateMultiSelection(); return; }   // Entrée valide le bloc si en cours
+    const it = _searchItems[_searchSel];
+    if(it){ it.kind === 'zone' ? pickZone(_searchSel) : toggleCountry(_searchSel); }
+  }
 }
 function updateSearchSel(){
-  document.querySelectorAll('.search-item').forEach((el, i) => el.classList.toggle('sel', i === _searchSel));
-}
-function pickSearch(i){
-  const it = _searchItems[i]; if(!it) return;
-  setSubject(it.isos, it.label);
-  closeSearch();
+  document.querySelectorAll('.search-item').forEach(el => {
+    el.classList.toggle('sel', parseInt(el.dataset.i) === _searchSel);
+  });
 }
 
 /* ─── EXPORT (placeholder étape 4) ────────────────────────────── */
