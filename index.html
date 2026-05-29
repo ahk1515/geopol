@@ -477,6 +477,21 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-head .name { font-family: var(--display); font-size: 22px; font-weight: 500; letter-spacing: -.01em; }
 .pu-head .meta { font-size: 11px; color: var(--text3); }
 .pu-cells { display: grid; gap: 14px; grid-template-columns: 1fr; }
+.pu-cells .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 920px){ .pu-cells .top-row { grid-template-columns: 1fr; } }
+
+/* radar */
+.pu-radar-wrap { display: flex; align-items: center; justify-content: center; min-height: 280px; }
+.pu-radar-wrap svg { display: block; max-width: 100%; height: auto; }
+.radar-axis { stroke: var(--border); stroke-width: .6; }
+.radar-grid { stroke: var(--border); stroke-width: .4; fill: none; opacity: .5; }
+.radar-median { stroke: var(--text3); stroke-width: 1; stroke-dasharray: 3 3; fill: none; opacity: .55; }
+.radar-poly { fill: var(--green); fill-opacity: .15; stroke: var(--green); stroke-width: 1.8; }
+.radar-pt { fill: var(--green); }
+.radar-pt.active { fill: var(--orange); r: 4.5; stroke: #fff; stroke-width: 1.5; }
+.radar-lbl { font-family: var(--sans); font-size: 10px; fill: var(--text2); }
+.radar-lbl.active { fill: var(--orange); font-weight: 600; }
+.radar-empty { padding: 30px; text-align: center; color: var(--text3); font-size: 12px; }
 .pu-cell { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
 .pu-cell-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid var(--border); }
 .pu-cell-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text2); font-weight: 600; }
@@ -1404,6 +1419,31 @@ function diagProjections(){
   console.groupEnd();
 }
 
+// Diagnostic carte : distribution d'un indicateur dans le monde pour une année.
+// Usage console : diagMap('violent_death', 2023)
+function diagMap(indicator, year){
+  indicator = indicator || _puIndicator;
+  year = year || state.year;
+  console.group('%cDIAGNOSTIC CARTE — '+indicator+' @ '+year, 'color:#b91c1c;font-weight:bold');
+  const r = safeExec(`SELECT country_iso3, value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${year} AND value IS NOT NULL AND value!=0`);
+  if(!r.length){ console.log('Aucune donnée'); console.groupEnd(); return; }
+  const rows = r[0].values.filter(([iso])=>!REGIONAL_CODES.has(iso)).map(([iso,v])=>({iso,v}));
+  rows.sort((a,b)=>b.v-a.v);
+  console.log('Pays avec valeur :', rows.length);
+  console.log('Min/Max :', rows[rows.length-1].v, '/', rows[0].v);
+  console.log('Ratio max/min :', (rows[0].v / (rows[rows.length-1].v||1)).toFixed(1));
+  const median = rows[Math.floor(rows.length/2)].v;
+  console.log('Médiane :', median);
+  console.log('Top 10 :'); console.table(rows.slice(0,10).map(r=>({iso:r.iso, pays:isoToName(r.iso), valeur:r.v})));
+  console.log('Bottom 10 (non nuls) :'); console.table(rows.slice(-10).map(r=>({iso:r.iso, pays:isoToName(r.iso), valeur:r.v})));
+  const ramp = ['#e8f0e8','#bfe0c8','#9ec9a8','#6fb486','#4f9e6a','#2d8556','#0a6e4a','#064e34'];
+  const lo = rows[rows.length-1].v, hi = rows[0].v;
+  const buckets = ramp.map(()=>0);
+  for(const d of rows){ const t = (hi>lo)?(d.v-lo)/(hi-lo):0.5; const i = Math.min(ramp.length-1, Math.max(0, Math.round(t*(ramp.length-1)))); buckets[i]++; }
+  console.log('Pays par bucket couleur (linéaire) :', buckets.map((c,i)=>`#${i}:${c}`).join(' '));
+  console.groupEnd();
+}
+
 function diagFlux(){
   console.group('%cDIAGNOSTIC FLUX', 'color:#0a6e4a;font-weight:bold');
   const inds = safeExec(`SELECT DISTINCT indicator FROM flux`);
@@ -1787,9 +1827,15 @@ function renderPuMain(){
       <span class="meta">${val!=null ? fmtNumber(val, c.unit_display)+' '+scaleSuffix(val,c.unit_display) : '—'}${rankLine?' · '+rankLine:''} · ${realYear||'—'} · ${src||'n/d'}</span>
     </div>
     <div class="pu-cells">
-      <div class="pu-cell">
-        <div class="pu-cell-head"><span class="pu-cell-title">Évolution</span><span class="meta" style="font-size:10px;color:var(--text3)">${state.subject.label}</span></div>
-        <div class="pu-cell-body"><div class="pu-curve-wrap" id="puCurve"></div></div>
+      <div class="top-row">
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">Radar percentilé</span><span class="meta" style="font-size:10px;color:var(--text3)">axes épinglés</span></div>
+          <div class="pu-cell-body"><div class="pu-radar-wrap" id="puRadar"></div></div>
+        </div>
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">Évolution</span><span class="meta" style="font-size:10px;color:var(--text3)">${state.subject.label}</span></div>
+          <div class="pu-cell-body"><div class="pu-curve-wrap" id="puCurve"></div></div>
+        </div>
       </div>
       <div class="pu-cell">
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear||state.year}</span></div>
@@ -1799,6 +1845,7 @@ function renderPuMain(){
         </div>
       </div>
     </div>`;
+  drawPuRadar();
   drawPuCurve();
   buildPuMap();
 }
@@ -1846,6 +1893,91 @@ function drawPuCurve(){
     ${last ? `<circle class="curve-dot" cx="${X(last.year).toFixed(1)}" cy="${Y(last.value).toFixed(1)}" r="3"/>` : ''}
     ${projMark}
     ${labX}
+  </svg>`;
+}
+
+/* ─── CELLULE RADAR PERCENTILÉ ────────────────────────────────── */
+function drawPuRadar(){
+  const wrap = document.getElementById('puRadar');
+  if(!wrap) return;
+  // axes du radar = indicateurs épinglés Synthèse (cohérence A/B et carte d'identité)
+  const axes = pinnedIdentiteIndicators().filter(c => c.presentInDb !== false);
+  if(axes.length < 3){
+    wrap.innerHTML = `<div class="radar-empty">Au moins 3 indicateurs épinglés requis (configurer dans Synthèse).</div>`;
+    return;
+  }
+  const W = 360, H = 320, cx = W/2, cy = H/2 + 4, R = Math.min(W,H)/2 - 38;
+  const N = axes.length;
+  const subjIsOne = state.subject.isos.length === 1;
+  // pour chaque axe : percentile (0..1) du sujet sur cet indicateur
+  const year = state.year;
+  const pts = axes.map((ax, i) => {
+    const angle = -Math.PI/2 + i * (2*Math.PI / N);
+    const val = getIdentiteValue(ax.indicator, year);
+    let pct = null;
+    if(val != null){
+      const rp = rankPercentile(ax.indicator, val, getValueYear(ax.indicator, year) || year);
+      if(rp) pct = rp.percentile;
+    }
+    return { axis: ax, angle, val, pct };
+  });
+
+  // axes (rayons)
+  let axesSvg = '';
+  for(const p of pts){
+    const x = cx + Math.cos(p.angle) * R;
+    const y = cy + Math.sin(p.angle) * R;
+    axesSvg += `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+  }
+  // cercles concentriques (25/50/75/100%)
+  let gridSvg = '';
+  for(const f of [0.25, 0.5, 0.75, 1]){
+    gridSvg += `<circle class="radar-grid" cx="${cx}" cy="${cy}" r="${(R*f).toFixed(1)}"/>`;
+  }
+  // référent médiane mondiale (cercle pointillé à 50%) — toujours présent comme repère
+  const medianRing = `<circle class="radar-median" cx="${cx}" cy="${cy}" r="${(R*0.5).toFixed(1)}"/>`;
+  // polygone du sujet
+  let poly = '';
+  const polyPts = pts.map(p => {
+    const r = (p.pct != null) ? R * p.pct : 0;
+    return [cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r];
+  });
+  if(polyPts.some(p => p[0] !== cx || p[1] !== cy)){
+    const d = polyPts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
+    poly = `<path class="radar-poly" d="${d}"/>`;
+  }
+  // points + labels
+  let dots = '', labels = '';
+  pts.forEach((p, i) => {
+    const isActive = p.axis.indicator === _puIndicator;
+    if(p.pct != null){
+      const r = R * p.pct;
+      const x = cx + Math.cos(p.angle)*r;
+      const y = cy + Math.sin(p.angle)*r;
+      dots += `<circle class="radar-pt ${isActive?'active':''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3"/>`;
+    }
+    // label : un peu au-delà du cercle externe
+    const lx = cx + Math.cos(p.angle) * (R + 22);
+    const ly = cy + Math.sin(p.angle) * (R + 22);
+    // alignement adaptatif selon la position angulaire
+    const cosA = Math.cos(p.angle);
+    let anchor = 'middle';
+    if(cosA > 0.3) anchor = 'start';
+    else if(cosA < -0.3) anchor = 'end';
+    const shortLbl = (p.axis.label || p.axis.indicator).length > 18
+      ? (p.axis.label || p.axis.indicator).slice(0, 17) + '…'
+      : (p.axis.label || p.axis.indicator);
+    const pctTxt = p.pct != null ? ` (${Math.round(p.pct*100)}%)` : '';
+    labels += `<text class="radar-lbl ${isActive?'active':''}" x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="${anchor}">${shortLbl}${pctTxt}</text>`;
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+    ${gridSvg}
+    ${axesSvg}
+    ${medianRing}
+    ${poly}
+    ${dots}
+    ${labels}
   </svg>`;
 }
 
@@ -1903,21 +2035,25 @@ async function buildPuMap(){
   g.append('path').datum(d3.geoGraticule()()).attr('d', path).attr('fill','none').attr('stroke','#b0c4d8').attr('stroke-width',0.2).attr('opacity',0.4);
 }
 
-// Couleur choroplèthe : échelle séquentielle verte sur la distribution mondiale.
+// Couleur choroplèthe : échelle par QUANTILES sur la distribution mondiale.
+// Quantiles plutôt que linéaire pour ne pas être écrasé par les outliers
+// (un seul pays très haut écraserait tout le reste en échelle linéaire).
 function computePuMapColors(){
   const year = getValueYear(_puIndicator, state.year) || state.year;
   const { sorted } = getWorldStats(_puIndicator, year);
   if(!sorted || !sorted.length) return {};
   const cfg = state.indicators.find(c => c.indicator === _puIndicator);
   const inverted = cfg && cfg.rank_inverted;
-  const vals = sorted.map(d => d.v);
-  const lo = vals[0], hi = vals[vals.length-1];
   const ramp = ['#e8f0e8','#bfe0c8','#9ec9a8','#6fb486','#4f9e6a','#2d8556','#0a6e4a','#064e34'];
+  const n = sorted.length;
+  // sorted est trié croissant : sorted[i] a le rang (i+1)
+  // bucket par quantile : floor(rang_relatif * nbBuckets), borné à nbBuckets-1
   const out = {};
-  for(const d of sorted){
-    let t = (hi>lo) ? (d.v - lo)/(hi - lo) : 0.5;
-    if(inverted) t = 1 - t;
-    const idx = Math.min(ramp.length-1, Math.max(0, Math.round(t*(ramp.length-1))));
+  for(let i = 0; i < n; i++){
+    const d = sorted[i];
+    let q = i / Math.max(1, n - 1);                  // 0 (plus faible) → 1 (plus élevé)
+    if(inverted) q = 1 - q;
+    const idx = Math.min(ramp.length - 1, Math.floor(q * ramp.length));
     out[d.iso] = ramp[idx];
   }
   return out;
