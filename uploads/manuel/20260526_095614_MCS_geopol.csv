@@ -1,719 +1,719 @@
 country_iso3,indicator,year,value,unit,source,subcategory
-USA,mineraux_reserves,2024,20000.0,thousand metric dry tons,MCS USGS,bauxite
-AUS,mineraux_production,2023,104000.0,thousand metric dry tons,MCS USGS,bauxite
-AUS,mineraux_production,2024,100000.0,thousand metric dry tons,MCS USGS,bauxite
-AUS,mineraux_reserves,2024,3500000.0,thousand metric dry tons,MCS USGS,bauxite
-BRA,mineraux_production,2023,32000.0,thousand metric dry tons,MCS USGS,bauxite
-BRA,mineraux_production,2024,33000.0,thousand metric dry tons,MCS USGS,bauxite
-BRA,mineraux_reserves,2024,2700000.0,thousand metric dry tons,MCS USGS,bauxite
-CHN,mineraux_production,2023,91000.0,thousand metric dry tons,MCS USGS,bauxite
-CHN,mineraux_production,2024,93000.0,thousand metric dry tons,MCS USGS,bauxite
-CHN,mineraux_reserves,2024,680000.0,thousand metric dry tons,MCS USGS,bauxite
-GRC,mineraux_production,2023,1200.0,thousand metric dry tons,MCS USGS,bauxite
-GRC,mineraux_production,2024,1200.0,thousand metric dry tons,MCS USGS,bauxite
-GIN,mineraux_production,2023,123000.0,thousand metric dry tons,MCS USGS,bauxite
-GIN,mineraux_production,2024,130000.0,thousand metric dry tons,MCS USGS,bauxite
-GIN,mineraux_reserves,2024,7400000.0,thousand metric dry tons,MCS USGS,bauxite
-IND,mineraux_production,2023,23400.0,thousand metric dry tons,MCS USGS,bauxite
-IND,mineraux_production,2024,25000.0,thousand metric dry tons,MCS USGS,bauxite
-IND,mineraux_reserves,2024,650000.0,thousand metric dry tons,MCS USGS,bauxite
-IDN,mineraux_production,2023,30000.0,thousand metric dry tons,MCS USGS,bauxite
-IDN,mineraux_production,2024,32000.0,thousand metric dry tons,MCS USGS,bauxite
-IDN,mineraux_reserves,2024,2800000.0,thousand metric dry tons,MCS USGS,bauxite
-JAM,mineraux_production,2023,6000.0,thousand metric dry tons,MCS USGS,bauxite
-JAM,mineraux_production,2024,6100.0,thousand metric dry tons,MCS USGS,bauxite
-JAM,mineraux_reserves,2024,2000000.0,thousand metric dry tons,MCS USGS,bauxite
-KAZ,mineraux_production,2023,4560.0,thousand metric dry tons,MCS USGS,bauxite
-KAZ,mineraux_production,2024,4900.0,thousand metric dry tons,MCS USGS,bauxite
-KAZ,mineraux_reserves,2024,280000.0,thousand metric dry tons,MCS USGS,bauxite
-RUS,mineraux_production,2023,5800.0,thousand metric dry tons,MCS USGS,bauxite
-RUS,mineraux_production,2024,6300.0,thousand metric dry tons,MCS USGS,bauxite
-RUS,mineraux_reserves,2024,480000.0,thousand metric dry tons,MCS USGS,bauxite
-SAU,mineraux_production,2023,5400.0,thousand metric dry tons,MCS USGS,bauxite
-SAU,mineraux_production,2024,5800.0,thousand metric dry tons,MCS USGS,bauxite
-SAU,mineraux_reserves,2024,180000.0,thousand metric dry tons,MCS USGS,bauxite
-TUR,mineraux_production,2023,2940.0,thousand metric dry tons,MCS USGS,bauxite
-TUR,mineraux_production,2024,3200.0,thousand metric dry tons,MCS USGS,bauxite
-TUR,mineraux_reserves,2024,69000.0,thousand metric dry tons,MCS USGS,bauxite
-VNM,mineraux_production,2023,3920.0,thousand metric dry tons,MCS USGS,bauxite
-VNM,mineraux_production,2024,4200.0,thousand metric dry tons,MCS USGS,bauxite
-VNM,mineraux_reserves,2024,3100000.0,thousand metric dry tons,MCS USGS,bauxite
-USA,mineraux_reserves,2024,630.0,thousand metric tons,MCS USGS,chrome
-BRA,mineraux_production,2023,1420.0,thousand metric tons,MCS USGS,chrome
-BRA,mineraux_production,2024,1400.0,thousand metric tons,MCS USGS,chrome
-BRA,mineraux_reserves,2024,6600.0,thousand metric tons,MCS USGS,chrome
-FIN,mineraux_production,2023,1910.0,thousand metric tons,MCS USGS,chrome
-FIN,mineraux_production,2024,1900.0,thousand metric tons,MCS USGS,chrome
-FIN,mineraux_reserves,2024,8300.0,thousand metric tons,MCS USGS,chrome
-IND,mineraux_production,2023,4100.0,thousand metric tons,MCS USGS,chrome
-IND,mineraux_production,2024,4100.0,thousand metric tons,MCS USGS,chrome
-IND,mineraux_reserves,2024,79000.0,thousand metric tons,MCS USGS,chrome
-KAZ,mineraux_production,2023,6000.0,thousand metric tons,MCS USGS,chrome
-KAZ,mineraux_production,2024,6500.0,thousand metric tons,MCS USGS,chrome
-KAZ,mineraux_reserves,2024,320000.0,thousand metric tons,MCS USGS,chrome
-ZAF,mineraux_production,2023,19700.0,thousand metric tons,MCS USGS,chrome
-ZAF,mineraux_production,2024,21000.0,thousand metric tons,MCS USGS,chrome
-ZAF,mineraux_reserves,2024,200000.0,thousand metric tons,MCS USGS,chrome
-TUR,mineraux_production,2023,8160.0,thousand metric tons,MCS USGS,chrome
-TUR,mineraux_production,2024,8000.0,thousand metric tons,MCS USGS,chrome
-TUR,mineraux_reserves,2024,27000.0,thousand metric tons,MCS USGS,chrome
-ZWE,mineraux_production,2023,1070.0,thousand metric tons,MCS USGS,chrome
-ZWE,mineraux_production,2024,1100.0,thousand metric tons,MCS USGS,chrome
-ZWE,mineraux_reserves,2024,540000.0,thousand metric tons,MCS USGS,chrome
-USA,mineraux_production,2023,500.0,metric tons,MCS USGS,cobalt
-USA,mineraux_production,2024,300.0,metric tons,MCS USGS,cobalt
-USA,mineraux_reserves,2024,70000.0,metric tons,MCS USGS,cobalt
-AUS,mineraux_production,2023,5220.0,metric tons,MCS USGS,cobalt
-AUS,mineraux_production,2024,3600.0,metric tons,MCS USGS,cobalt
-AUS,mineraux_reserves,2024,1700000.0,metric tons,MCS USGS,cobalt
-CAN,mineraux_production,2023,4220.0,metric tons,MCS USGS,cobalt
-CAN,mineraux_production,2024,4500.0,metric tons,MCS USGS,cobalt
-CAN,mineraux_reserves,2024,220000.0,metric tons,MCS USGS,cobalt
-COD,mineraux_production,2023,175000.0,metric tons,MCS USGS,cobalt
-COD,mineraux_production,2024,220000.0,metric tons,MCS USGS,cobalt
-COD,mineraux_reserves,2024,6000000.0,metric tons,MCS USGS,cobalt
-CUB,mineraux_production,2023,3300.0,metric tons,MCS USGS,cobalt
-CUB,mineraux_production,2024,3500.0,metric tons,MCS USGS,cobalt
-CUB,mineraux_reserves,2024,500000.0,metric tons,MCS USGS,cobalt
-IDN,mineraux_production,2023,19000.0,metric tons,MCS USGS,cobalt
-IDN,mineraux_production,2024,28000.0,metric tons,MCS USGS,cobalt
-IDN,mineraux_reserves,2024,640000.0,metric tons,MCS USGS,cobalt
-MDG,mineraux_production,2023,4000.0,metric tons,MCS USGS,cobalt
-MDG,mineraux_production,2024,2600.0,metric tons,MCS USGS,cobalt
-MDG,mineraux_reserves,2024,100000.0,metric tons,MCS USGS,cobalt
-NCL,mineraux_production,2023,2570.0,metric tons,MCS USGS,cobalt
-NCL,mineraux_production,2024,1500.0,metric tons,MCS USGS,cobalt
-PNG,mineraux_production,2023,3070.0,metric tons,MCS USGS,cobalt
-PNG,mineraux_production,2024,2800.0,metric tons,MCS USGS,cobalt
-PNG,mineraux_reserves,2024,62000.0,metric tons,MCS USGS,cobalt
-PHL,mineraux_production,2023,3800.0,metric tons,MCS USGS,cobalt
-PHL,mineraux_production,2024,3800.0,metric tons,MCS USGS,cobalt
-PHL,mineraux_reserves,2024,260000.0,metric tons,MCS USGS,cobalt
-RUS,mineraux_production,2023,8700.0,metric tons,MCS USGS,cobalt
-RUS,mineraux_production,2024,8700.0,metric tons,MCS USGS,cobalt
-RUS,mineraux_reserves,2024,250000.0,metric tons,MCS USGS,cobalt
-TUR,mineraux_production,2023,2500.0,metric tons,MCS USGS,cobalt
-TUR,mineraux_production,2024,2700.0,metric tons,MCS USGS,cobalt
-TUR,mineraux_reserves,2024,91000.0,metric tons,MCS USGS,cobalt
-USA,mineraux_production,2023,1130.0,thousand metric tons,MCS USGS,cuivre
-USA,mineraux_production,2024,1100.0,thousand metric tons,MCS USGS,cuivre
-USA,mineraux_reserves,2024,47000.0,thousand metric tons,MCS USGS,cuivre
-AUS,mineraux_production,2023,778.0,thousand metric tons,MCS USGS,cuivre
-AUS,mineraux_production,2024,800.0,thousand metric tons,MCS USGS,cuivre
-AUS,mineraux_reserves,2024,100000.0,thousand metric tons,MCS USGS,cuivre
-CAN,mineraux_production,2023,500.0,thousand metric tons,MCS USGS,cuivre
-CAN,mineraux_production,2024,450.0,thousand metric tons,MCS USGS,cuivre
-CAN,mineraux_reserves,2024,8300.0,thousand metric tons,MCS USGS,cuivre
-CHL,mineraux_production,2023,5250.0,thousand metric tons,MCS USGS,cuivre
-CHL,mineraux_production,2024,5300.0,thousand metric tons,MCS USGS,cuivre
-CHL,mineraux_reserves,2024,190000.0,thousand metric tons,MCS USGS,cuivre
-CHN,mineraux_production,2023,1820.0,thousand metric tons,MCS USGS,cuivre
-CHN,mineraux_production,2024,1800.0,thousand metric tons,MCS USGS,cuivre
-CHN,mineraux_reserves,2024,41000.0,thousand metric tons,MCS USGS,cuivre
-COD,mineraux_production,2023,2930.0,thousand metric tons,MCS USGS,cuivre
-COD,mineraux_production,2024,3300.0,thousand metric tons,MCS USGS,cuivre
-COD,mineraux_reserves,2024,80000.0,thousand metric tons,MCS USGS,cuivre
-IND,mineraux_production,2023,27.0,thousand metric tons,MCS USGS,cuivre
-IND,mineraux_production,2024,30.0,thousand metric tons,MCS USGS,cuivre
-IND,mineraux_reserves,2024,2200.0,thousand metric tons,MCS USGS,cuivre
-IDN,mineraux_production,2023,907.0,thousand metric tons,MCS USGS,cuivre
-IDN,mineraux_production,2024,1100.0,thousand metric tons,MCS USGS,cuivre
-IDN,mineraux_reserves,2024,21000.0,thousand metric tons,MCS USGS,cuivre
-KAZ,mineraux_production,2023,740.0,thousand metric tons,MCS USGS,cuivre
-KAZ,mineraux_production,2024,740.0,thousand metric tons,MCS USGS,cuivre
-KAZ,mineraux_reserves,2024,20000.0,thousand metric tons,MCS USGS,cuivre
-MEX,mineraux_production,2023,699.0,thousand metric tons,MCS USGS,cuivre
-MEX,mineraux_production,2024,700.0,thousand metric tons,MCS USGS,cuivre
-MEX,mineraux_reserves,2024,53000.0,thousand metric tons,MCS USGS,cuivre
-PER,mineraux_production,2023,2760.0,thousand metric tons,MCS USGS,cuivre
-PER,mineraux_production,2024,2600.0,thousand metric tons,MCS USGS,cuivre
-PER,mineraux_reserves,2024,100000.0,thousand metric tons,MCS USGS,cuivre
-POL,mineraux_production,2023,395.0,thousand metric tons,MCS USGS,cuivre
-POL,mineraux_production,2024,410.0,thousand metric tons,MCS USGS,cuivre
-POL,mineraux_reserves,2024,34000.0,thousand metric tons,MCS USGS,cuivre
-RUS,mineraux_production,2023,890.0,thousand metric tons,MCS USGS,cuivre
-RUS,mineraux_production,2024,930.0,thousand metric tons,MCS USGS,cuivre
-RUS,mineraux_reserves,2024,80000.0,thousand metric tons,MCS USGS,cuivre
-ZMB,mineraux_production,2023,712.0,thousand metric tons,MCS USGS,cuivre
-ZMB,mineraux_production,2024,680.0,thousand metric tons,MCS USGS,cuivre
-ZMB,mineraux_reserves,2024,21000.0,thousand metric tons,MCS USGS,cuivre
-USA,mineraux_production,2023,170.0,metric tons,MCS USGS,or
-USA,mineraux_production,2024,160.0,metric tons,MCS USGS,or
-USA,mineraux_reserves,2024,3000.0,metric tons,MCS USGS,or
-AUS,mineraux_production,2023,296.0,metric tons,MCS USGS,or
-AUS,mineraux_production,2024,290.0,metric tons,MCS USGS,or
-AUS,mineraux_reserves,2024,12000.0,metric tons,MCS USGS,or
-BRA,mineraux_production,2023,71.0,metric tons,MCS USGS,or
-BRA,mineraux_production,2024,70.0,metric tons,MCS USGS,or
-BRA,mineraux_reserves,2024,2400.0,metric tons,MCS USGS,or
-BFA,mineraux_production,2023,57.0,metric tons,MCS USGS,or
-BFA,mineraux_production,2024,60.0,metric tons,MCS USGS,or
-CAN,mineraux_production,2023,198.0,metric tons,MCS USGS,or
-CAN,mineraux_production,2024,200.0,metric tons,MCS USGS,or
-CAN,mineraux_reserves,2024,3200.0,metric tons,MCS USGS,or
-CHN,mineraux_production,2023,375.0,metric tons,MCS USGS,or
-CHN,mineraux_production,2024,380.0,metric tons,MCS USGS,or
-CHN,mineraux_reserves,2024,3100.0,metric tons,MCS USGS,or
-COL,mineraux_production,2023,61.0,metric tons,MCS USGS,or
-COL,mineraux_production,2024,60.0,metric tons,MCS USGS,or
-COL,mineraux_reserves,2024,700.0,metric tons,MCS USGS,or
-GHA,mineraux_production,2023,126.0,metric tons,MCS USGS,or
-GHA,mineraux_production,2024,130.0,metric tons,MCS USGS,or
-GHA,mineraux_reserves,2024,1000.0,metric tons,MCS USGS,or
-IDN,mineraux_production,2023,100.0,metric tons,MCS USGS,or
-IDN,mineraux_production,2024,100.0,metric tons,MCS USGS,or
-IDN,mineraux_reserves,2024,3600.0,metric tons,MCS USGS,or
-KAZ,mineraux_production,2023,133.0,metric tons,MCS USGS,or
-KAZ,mineraux_production,2024,130.0,metric tons,MCS USGS,or
-KAZ,mineraux_reserves,2024,2300.0,metric tons,MCS USGS,or
-MLI,mineraux_production,2023,67.0,metric tons,MCS USGS,or
-MLI,mineraux_production,2024,70.0,metric tons,MCS USGS,or
-MLI,mineraux_reserves,2024,800.0,metric tons,MCS USGS,or
-MEX,mineraux_production,2023,127.0,metric tons,MCS USGS,or
-MEX,mineraux_production,2024,130.0,metric tons,MCS USGS,or
-MEX,mineraux_reserves,2024,1400.0,metric tons,MCS USGS,or
-PER,mineraux_production,2023,100.0,metric tons,MCS USGS,or
-PER,mineraux_production,2024,100.0,metric tons,MCS USGS,or
-PER,mineraux_reserves,2024,2500.0,metric tons,MCS USGS,or
-RUS,mineraux_production,2023,313.0,metric tons,MCS USGS,or
-RUS,mineraux_production,2024,310.0,metric tons,MCS USGS,or
-RUS,mineraux_reserves,2024,12000.0,metric tons,MCS USGS,or
-ZAF,mineraux_production,2023,104.0,metric tons,MCS USGS,or
-ZAF,mineraux_production,2024,100.0,metric tons,MCS USGS,or
-ZAF,mineraux_reserves,2024,5000.0,metric tons,MCS USGS,or
-TZA,mineraux_production,2023,55.0,metric tons,MCS USGS,or
-TZA,mineraux_production,2024,60.0,metric tons,MCS USGS,or
-TZA,mineraux_reserves,2024,400.0,metric tons,MCS USGS,or
-UZB,mineraux_production,2023,120.0,metric tons,MCS USGS,or
-UZB,mineraux_production,2024,120.0,metric tons,MCS USGS,or
-UZB,mineraux_reserves,2024,1800.0,metric tons,MCS USGS,or
-AUT,mineraux_production,2023,500.0,metric tons,MCS USGS,graphite
-AUT,mineraux_production,2024,500.0,metric tons,MCS USGS,graphite
-BRA,mineraux_production,2023,66300.0,metric tons,MCS USGS,graphite
-BRA,mineraux_production,2024,68000.0,metric tons,MCS USGS,graphite
-BRA,mineraux_reserves,2024,74000000.0,metric tons,MCS USGS,graphite
-CAN,mineraux_production,2023,5470.0,metric tons,MCS USGS,graphite
-CAN,mineraux_production,2024,20000.0,metric tons,MCS USGS,graphite
-CAN,mineraux_reserves,2024,5900000.0,metric tons,MCS USGS,graphite
-CHN,mineraux_production,2023,1210000.0,metric tons,MCS USGS,graphite
-CHN,mineraux_production,2024,1270000.0,metric tons,MCS USGS,graphite
-CHN,mineraux_reserves,2024,81000000.0,metric tons,MCS USGS,graphite
-DEU,mineraux_production,2023,180.0,metric tons,MCS USGS,graphite
-DEU,mineraux_production,2024,170.0,metric tons,MCS USGS,graphite
-IND,mineraux_production,2023,25600.0,metric tons,MCS USGS,graphite
-IND,mineraux_production,2024,27800.0,metric tons,MCS USGS,graphite
-IND,mineraux_reserves,2024,8600000.0,metric tons,MCS USGS,graphite
-PRK,mineraux_production,2023,8100.0,metric tons,MCS USGS,graphite
-PRK,mineraux_production,2024,8100.0,metric tons,MCS USGS,graphite
-PRK,mineraux_reserves,2024,2000000.0,metric tons,MCS USGS,graphite
-KOR,mineraux_production,2023,9620.0,metric tons,MCS USGS,graphite
-KOR,mineraux_production,2024,9600.0,metric tons,MCS USGS,graphite
-KOR,mineraux_reserves,2024,1800000.0,metric tons,MCS USGS,graphite
-MDG,mineraux_production,2023,63000.0,metric tons,MCS USGS,graphite
-MDG,mineraux_production,2024,89000.0,metric tons,MCS USGS,graphite
-MDG,mineraux_reserves,2024,27000000.0,metric tons,MCS USGS,graphite
-MEX,mineraux_production,2023,1300.0,metric tons,MCS USGS,graphite
-MEX,mineraux_production,2024,900.0,metric tons,MCS USGS,graphite
-MEX,mineraux_reserves,2024,3100000.0,metric tons,MCS USGS,graphite
-MOZ,mineraux_production,2023,98000.0,metric tons,MCS USGS,graphite
-MOZ,mineraux_production,2024,75000.0,metric tons,MCS USGS,graphite
-MOZ,mineraux_reserves,2024,25000000.0,metric tons,MCS USGS,graphite
-NOR,mineraux_production,2023,6480.0,metric tons,MCS USGS,graphite
-NOR,mineraux_production,2024,7000.0,metric tons,MCS USGS,graphite
-NOR,mineraux_reserves,2024,600000.0,metric tons,MCS USGS,graphite
-RUS,mineraux_production,2023,15000.0,metric tons,MCS USGS,graphite
-RUS,mineraux_production,2024,20000.0,metric tons,MCS USGS,graphite
-RUS,mineraux_reserves,2024,14000000.0,metric tons,MCS USGS,graphite
-LKA,mineraux_production,2023,3000.0,metric tons,MCS USGS,graphite
-LKA,mineraux_production,2024,3300.0,metric tons,MCS USGS,graphite
-LKA,mineraux_reserves,2024,1500000.0,metric tons,MCS USGS,graphite
-TZA,mineraux_production,2023,13200.0,metric tons,MCS USGS,graphite
-TZA,mineraux_production,2024,25000.0,metric tons,MCS USGS,graphite
-TZA,mineraux_reserves,2024,18000000.0,metric tons,MCS USGS,graphite
-TUR,mineraux_production,2023,2800.0,metric tons,MCS USGS,graphite
-TUR,mineraux_production,2024,3100.0,metric tons,MCS USGS,graphite
-TUR,mineraux_reserves,2024,6900000.0,metric tons,MCS USGS,graphite
-UKR,mineraux_production,2023,1670.0,metric tons,MCS USGS,graphite
-UKR,mineraux_production,2024,1200.0,metric tons,MCS USGS,graphite
-VNM,mineraux_production,2023,2500.0,metric tons,MCS USGS,graphite
-VNM,mineraux_production,2024,2000.0,metric tons,MCS USGS,graphite
-VNM,mineraux_reserves,2024,9700000.0,metric tons,MCS USGS,graphite
-USA,mineraux_production,2023,44700.0,thousand metric tons,MCS USGS,fer
-USA,mineraux_production,2024,48000.0,thousand metric tons,MCS USGS,fer
-USA,mineraux_reserves,2024,3600.0,thousand metric tons,MCS USGS,fer
-AUS,mineraux_production,2023,953000.0,thousand metric tons,MCS USGS,fer
-AUS,mineraux_production,2024,930000.0,thousand metric tons,MCS USGS,fer
-AUS,mineraux_reserves,2024,58000.0,thousand metric tons,MCS USGS,fer
-BRA,mineraux_production,2023,445000.0,thousand metric tons,MCS USGS,fer
-BRA,mineraux_production,2024,440000.0,thousand metric tons,MCS USGS,fer
-BRA,mineraux_reserves,2024,34000.0,thousand metric tons,MCS USGS,fer
-CAN,mineraux_production,2023,59400.0,thousand metric tons,MCS USGS,fer
-CAN,mineraux_production,2024,54000.0,thousand metric tons,MCS USGS,fer
-CAN,mineraux_reserves,2024,6000.0,thousand metric tons,MCS USGS,fer
-CHL,mineraux_production,2023,18100.0,thousand metric tons,MCS USGS,fer
-CHL,mineraux_production,2024,18000.0,thousand metric tons,MCS USGS,fer
-CHN,mineraux_production,2023,278000.0,thousand metric tons,MCS USGS,fer
-CHN,mineraux_production,2024,270000.0,thousand metric tons,MCS USGS,fer
-CHN,mineraux_reserves,2024,20000.0,thousand metric tons,MCS USGS,fer
-IND,mineraux_production,2023,278000.0,thousand metric tons,MCS USGS,fer
-IND,mineraux_production,2024,270000.0,thousand metric tons,MCS USGS,fer
-IND,mineraux_reserves,2024,5500.0,thousand metric tons,MCS USGS,fer
-IRN,mineraux_production,2023,85400.0,thousand metric tons,MCS USGS,fer
-IRN,mineraux_production,2024,90000.0,thousand metric tons,MCS USGS,fer
-IRN,mineraux_reserves,2024,3800.0,thousand metric tons,MCS USGS,fer
-KAZ,mineraux_production,2023,28900.0,thousand metric tons,MCS USGS,fer
-KAZ,mineraux_production,2024,30000.0,thousand metric tons,MCS USGS,fer
-KAZ,mineraux_reserves,2024,2500.0,thousand metric tons,MCS USGS,fer
-MRT,mineraux_production,2023,14100.0,thousand metric tons,MCS USGS,fer
-MRT,mineraux_production,2024,15000.0,thousand metric tons,MCS USGS,fer
-MEX,mineraux_production,2023,8500.0,thousand metric tons,MCS USGS,fer
-MEX,mineraux_production,2024,8000.0,thousand metric tons,MCS USGS,fer
-PER,mineraux_production,2023,20900.0,thousand metric tons,MCS USGS,fer
-PER,mineraux_production,2024,21000.0,thousand metric tons,MCS USGS,fer
-PER,mineraux_reserves,2024,2600.0,thousand metric tons,MCS USGS,fer
-RUS,mineraux_production,2023,90900.0,thousand metric tons,MCS USGS,fer
-RUS,mineraux_production,2024,91000.0,thousand metric tons,MCS USGS,fer
-RUS,mineraux_reserves,2024,35000.0,thousand metric tons,MCS USGS,fer
-ZAF,mineraux_production,2023,63200.0,thousand metric tons,MCS USGS,fer
-ZAF,mineraux_production,2024,66000.0,thousand metric tons,MCS USGS,fer
-ZAF,mineraux_reserves,2024,930.0,thousand metric tons,MCS USGS,fer
-SWE,mineraux_production,2023,28900.0,thousand metric tons,MCS USGS,fer
-SWE,mineraux_production,2024,28000.0,thousand metric tons,MCS USGS,fer
-SWE,mineraux_reserves,2024,1300.0,thousand metric tons,MCS USGS,fer
-TUR,mineraux_production,2023,16800.0,thousand metric tons,MCS USGS,fer
-TUR,mineraux_production,2024,18000.0,thousand metric tons,MCS USGS,fer
-TUR,mineraux_reserves,2024,150.0,thousand metric tons,MCS USGS,fer
-UKR,mineraux_production,2023,41700.0,thousand metric tons,MCS USGS,fer
-UKR,mineraux_production,2024,42000.0,thousand metric tons,MCS USGS,fer
-UKR,mineraux_reserves,2024,6500.0,thousand metric tons,MCS USGS,fer
-USA,mineraux_production,2023,28200.0,thousand metric tons,MCS USGS,fer
-USA,mineraux_production,2024,30000.0,thousand metric tons,MCS USGS,fer
-USA,mineraux_reserves,2024,2300.0,thousand metric tons,MCS USGS,fer
-AUS,mineraux_production,2023,589000.0,thousand metric tons,MCS USGS,fer
-AUS,mineraux_production,2024,580000.0,thousand metric tons,MCS USGS,fer
-AUS,mineraux_reserves,2024,27000.0,thousand metric tons,MCS USGS,fer
-BRA,mineraux_production,2023,280000.0,thousand metric tons,MCS USGS,fer
-BRA,mineraux_production,2024,280000.0,thousand metric tons,MCS USGS,fer
-BRA,mineraux_reserves,2024,15000.0,thousand metric tons,MCS USGS,fer
-CAN,mineraux_production,2023,35700.0,thousand metric tons,MCS USGS,fer
-CAN,mineraux_production,2024,32000.0,thousand metric tons,MCS USGS,fer
-CAN,mineraux_reserves,2024,2300.0,thousand metric tons,MCS USGS,fer
-CHL,mineraux_production,2023,11400.0,thousand metric tons,MCS USGS,fer
-CHL,mineraux_production,2024,11000.0,thousand metric tons,MCS USGS,fer
-CHN,mineraux_production,2023,174000.0,thousand metric tons,MCS USGS,fer
-CHN,mineraux_production,2024,170000.0,thousand metric tons,MCS USGS,fer
-CHN,mineraux_reserves,2024,6900.0,thousand metric tons,MCS USGS,fer
-IND,mineraux_production,2023,172000.0,thousand metric tons,MCS USGS,fer
-IND,mineraux_production,2024,170000.0,thousand metric tons,MCS USGS,fer
-IND,mineraux_reserves,2024,3400.0,thousand metric tons,MCS USGS,fer
-IRN,mineraux_production,2023,55900.0,thousand metric tons,MCS USGS,fer
-IRN,mineraux_production,2024,59000.0,thousand metric tons,MCS USGS,fer
-IRN,mineraux_reserves,2024,1500.0,thousand metric tons,MCS USGS,fer
-KAZ,mineraux_production,2023,8890.0,thousand metric tons,MCS USGS,fer
-KAZ,mineraux_production,2024,9200.0,thousand metric tons,MCS USGS,fer
-KAZ,mineraux_reserves,2024,900.0,thousand metric tons,MCS USGS,fer
-MRT,mineraux_production,2023,8790.0,thousand metric tons,MCS USGS,fer
-MRT,mineraux_production,2024,9400.0,thousand metric tons,MCS USGS,fer
-MEX,mineraux_production,2023,5350.0,thousand metric tons,MCS USGS,fer
-MEX,mineraux_production,2024,5000.0,thousand metric tons,MCS USGS,fer
-PER,mineraux_production,2023,14100.0,thousand metric tons,MCS USGS,fer
-PER,mineraux_production,2024,14000.0,thousand metric tons,MCS USGS,fer
-PER,mineraux_reserves,2024,1500.0,thousand metric tons,MCS USGS,fer
-RUS,mineraux_production,2023,53300.0,thousand metric tons,MCS USGS,fer
-RUS,mineraux_production,2024,53000.0,thousand metric tons,MCS USGS,fer
-RUS,mineraux_reserves,2024,14000.0,thousand metric tons,MCS USGS,fer
-ZAF,mineraux_production,2023,40200.0,thousand metric tons,MCS USGS,fer
-ZAF,mineraux_production,2024,42000.0,thousand metric tons,MCS USGS,fer
-ZAF,mineraux_reserves,2024,590.0,thousand metric tons,MCS USGS,fer
-SWE,mineraux_production,2023,20400.0,thousand metric tons,MCS USGS,fer
-SWE,mineraux_production,2024,20000.0,thousand metric tons,MCS USGS,fer
-SWE,mineraux_reserves,2024,600.0,thousand metric tons,MCS USGS,fer
-TUR,mineraux_production,2023,10100.0,thousand metric tons,MCS USGS,fer
-TUR,mineraux_production,2024,11000.0,thousand metric tons,MCS USGS,fer
-TUR,mineraux_reserves,2024,99.0,thousand metric tons,MCS USGS,fer
-UKR,mineraux_production,2023,26100.0,thousand metric tons,MCS USGS,fer
-UKR,mineraux_production,2024,26000.0,thousand metric tons,MCS USGS,fer
-UKR,mineraux_reserves,2024,2300.0,thousand metric tons,MCS USGS,fer
-USA,mineraux_production,2023,270.0,thousand metric tons,MCS USGS,plomb
-USA,mineraux_production,2024,300.0,thousand metric tons,MCS USGS,plomb
-USA,mineraux_reserves,2024,4600.0,thousand metric tons,MCS USGS,plomb
-AUS,mineraux_production,2023,430.0,thousand metric tons,MCS USGS,plomb
-AUS,mineraux_production,2024,430.0,thousand metric tons,MCS USGS,plomb
-AUS,mineraux_reserves,2024,35000.0,thousand metric tons,MCS USGS,plomb
-BOL,mineraux_production,2023,60.0,thousand metric tons,MCS USGS,plomb
-BOL,mineraux_production,2024,60.0,thousand metric tons,MCS USGS,plomb
-BOL,mineraux_reserves,2024,1600.0,thousand metric tons,MCS USGS,plomb
-CHN,mineraux_production,2023,1960.0,thousand metric tons,MCS USGS,plomb
-CHN,mineraux_production,2024,1900.0,thousand metric tons,MCS USGS,plomb
-CHN,mineraux_reserves,2024,22000.0,thousand metric tons,MCS USGS,plomb
-IND,mineraux_production,2023,226.0,thousand metric tons,MCS USGS,plomb
-IND,mineraux_production,2024,220.0,thousand metric tons,MCS USGS,plomb
-IND,mineraux_reserves,2024,1900.0,thousand metric tons,MCS USGS,plomb
-IRN,mineraux_production,2023,60.0,thousand metric tons,MCS USGS,plomb
-IRN,mineraux_production,2024,60.0,thousand metric tons,MCS USGS,plomb
-IRN,mineraux_reserves,2024,2000.0,thousand metric tons,MCS USGS,plomb
-MEX,mineraux_production,2023,183.0,thousand metric tons,MCS USGS,plomb
-MEX,mineraux_production,2024,180.0,thousand metric tons,MCS USGS,plomb
-MEX,mineraux_reserves,2024,5600.0,thousand metric tons,MCS USGS,plomb
-PER,mineraux_production,2023,273.0,thousand metric tons,MCS USGS,plomb
-PER,mineraux_production,2024,270.0,thousand metric tons,MCS USGS,plomb
-PER,mineraux_reserves,2024,5000.0,thousand metric tons,MCS USGS,plomb
-RUS,mineraux_production,2023,218.0,thousand metric tons,MCS USGS,plomb
-RUS,mineraux_production,2024,220.0,thousand metric tons,MCS USGS,plomb
-RUS,mineraux_reserves,2024,8900.0,thousand metric tons,MCS USGS,plomb
-SWE,mineraux_production,2023,72.0,thousand metric tons,MCS USGS,plomb
-SWE,mineraux_production,2024,70.0,thousand metric tons,MCS USGS,plomb
-SWE,mineraux_reserves,2024,1700.0,thousand metric tons,MCS USGS,plomb
-TJK,mineraux_production,2023,39.0,thousand metric tons,MCS USGS,plomb
-TJK,mineraux_production,2024,40.0,thousand metric tons,MCS USGS,plomb
-TUR,mineraux_production,2023,68.0,thousand metric tons,MCS USGS,plomb
-TUR,mineraux_production,2024,70.0,thousand metric tons,MCS USGS,plomb
-TUR,mineraux_reserves,2024,1600.0,thousand metric tons,MCS USGS,plomb
-USA,mineraux_reserves,2024,1800000.0,metric tons,MCS USGS,lithium
-ARG,mineraux_production,2023,8630.0,metric tons,MCS USGS,lithium
-ARG,mineraux_production,2024,18000.0,metric tons,MCS USGS,lithium
-ARG,mineraux_reserves,2024,4000000.0,metric tons,MCS USGS,lithium
-AUS,mineraux_production,2023,91700.0,metric tons,MCS USGS,lithium
-AUS,mineraux_production,2024,88000.0,metric tons,MCS USGS,lithium
-AUS,mineraux_reserves,2024,7000000.0,metric tons,MCS USGS,lithium
-BRA,mineraux_production,2023,5260.0,metric tons,MCS USGS,lithium
-BRA,mineraux_production,2024,10000.0,metric tons,MCS USGS,lithium
-BRA,mineraux_reserves,2024,390000.0,metric tons,MCS USGS,lithium
-CAN,mineraux_production,2023,3240.0,metric tons,MCS USGS,lithium
-CAN,mineraux_production,2024,4300.0,metric tons,MCS USGS,lithium
-CAN,mineraux_reserves,2024,1200000.0,metric tons,MCS USGS,lithium
-CHL,mineraux_production,2023,41400.0,metric tons,MCS USGS,lithium
-CHL,mineraux_production,2024,49000.0,metric tons,MCS USGS,lithium
-CHL,mineraux_reserves,2024,9300000.0,metric tons,MCS USGS,lithium
-CHN,mineraux_production,2023,35700.0,metric tons,MCS USGS,lithium
-CHN,mineraux_production,2024,41000.0,metric tons,MCS USGS,lithium
-CHN,mineraux_reserves,2024,3000000.0,metric tons,MCS USGS,lithium
-NAM,mineraux_production,2023,2700.0,metric tons,MCS USGS,lithium
-NAM,mineraux_production,2024,2700.0,metric tons,MCS USGS,lithium
-NAM,mineraux_reserves,2024,14000.0,metric tons,MCS USGS,lithium
-PRT,mineraux_production,2023,380.0,metric tons,MCS USGS,lithium
-PRT,mineraux_production,2024,380.0,metric tons,MCS USGS,lithium
-PRT,mineraux_reserves,2024,60000.0,metric tons,MCS USGS,lithium
-ZWE,mineraux_production,2023,14900.0,metric tons,MCS USGS,lithium
-ZWE,mineraux_production,2024,22000.0,metric tons,MCS USGS,lithium
-ZWE,mineraux_reserves,2024,480000.0,metric tons,MCS USGS,lithium
-AUS,mineraux_production,2023,2860.0,thousand metric tons,MCS USGS,manganese
-AUS,mineraux_production,2024,2800.0,thousand metric tons,MCS USGS,manganese
-AUS,mineraux_reserves,2024,500000.0,thousand metric tons,MCS USGS,manganese
-BRA,mineraux_production,2023,580.0,thousand metric tons,MCS USGS,manganese
-BRA,mineraux_production,2024,590.0,thousand metric tons,MCS USGS,manganese
-BRA,mineraux_reserves,2024,270000.0,thousand metric tons,MCS USGS,manganese
-CHN,mineraux_production,2023,767.0,thousand metric tons,MCS USGS,manganese
-CHN,mineraux_production,2024,770.0,thousand metric tons,MCS USGS,manganese
-CHN,mineraux_reserves,2024,280000.0,thousand metric tons,MCS USGS,manganese
-GAB,mineraux_production,2023,4490.0,thousand metric tons,MCS USGS,manganese
-GAB,mineraux_production,2024,4600.0,thousand metric tons,MCS USGS,manganese
-GAB,mineraux_reserves,2024,61000.0,thousand metric tons,MCS USGS,manganese
-GHA,mineraux_production,2023,818.0,thousand metric tons,MCS USGS,manganese
-GHA,mineraux_production,2024,820.0,thousand metric tons,MCS USGS,manganese
-GHA,mineraux_reserves,2024,13000.0,thousand metric tons,MCS USGS,manganese
-IND,mineraux_production,2023,744.0,thousand metric tons,MCS USGS,manganese
-IND,mineraux_production,2024,800.0,thousand metric tons,MCS USGS,manganese
-IND,mineraux_reserves,2024,34000.0,thousand metric tons,MCS USGS,manganese
-MYS,mineraux_production,2023,410.0,thousand metric tons,MCS USGS,manganese
-MYS,mineraux_production,2024,410.0,thousand metric tons,MCS USGS,manganese
-ZAF,mineraux_production,2023,7300.0,thousand metric tons,MCS USGS,manganese
-ZAF,mineraux_production,2024,7400.0,thousand metric tons,MCS USGS,manganese
-ZAF,mineraux_reserves,2024,560000.0,thousand metric tons,MCS USGS,manganese
-USA,mineraux_production,2023,34000.0,metric tons,MCS USGS,molybdene
-USA,mineraux_production,2024,33000.0,metric tons,MCS USGS,molybdene
-USA,mineraux_reserves,2024,3500.0,metric tons,MCS USGS,molybdene
-ARG,mineraux_reserves,2024,100.0,metric tons,MCS USGS,molybdene
-ARM,mineraux_production,2023,7600.0,metric tons,MCS USGS,molybdene
-ARM,mineraux_production,2024,8000.0,metric tons,MCS USGS,molybdene
-ARM,mineraux_reserves,2024,150.0,metric tons,MCS USGS,molybdene
-AUS,mineraux_production,2023,660.0,metric tons,MCS USGS,molybdene
-AUS,mineraux_production,2024,1000.0,metric tons,MCS USGS,molybdene
-AUS,mineraux_reserves,2024,690.0,metric tons,MCS USGS,molybdene
-CAN,mineraux_production,2023,1150.0,metric tons,MCS USGS,molybdene
-CAN,mineraux_production,2024,1200.0,metric tons,MCS USGS,molybdene
-CAN,mineraux_reserves,2024,64.0,metric tons,MCS USGS,molybdene
-CHL,mineraux_production,2023,44100.0,metric tons,MCS USGS,molybdene
-CHL,mineraux_production,2024,38000.0,metric tons,MCS USGS,molybdene
-CHL,mineraux_reserves,2024,1400.0,metric tons,MCS USGS,molybdene
-CHN,mineraux_production,2023,96000.0,metric tons,MCS USGS,molybdene
-CHN,mineraux_production,2024,110000.0,metric tons,MCS USGS,molybdene
-CHN,mineraux_reserves,2024,5900.0,metric tons,MCS USGS,molybdene
-IRN,mineraux_production,2023,2500.0,metric tons,MCS USGS,molybdene
-IRN,mineraux_production,2024,3000.0,metric tons,MCS USGS,molybdene
-IRN,mineraux_reserves,2024,43.0,metric tons,MCS USGS,molybdene
-KAZ,mineraux_production,2023,3730.0,metric tons,MCS USGS,molybdene
-KAZ,mineraux_production,2024,3900.0,metric tons,MCS USGS,molybdene
-KAZ,mineraux_reserves,2024,7.0,metric tons,MCS USGS,molybdene
-PRK,mineraux_production,2023,400.0,metric tons,MCS USGS,molybdene
-PRK,mineraux_production,2024,700.0,metric tons,MCS USGS,molybdene
-KOR,mineraux_production,2023,339.0,metric tons,MCS USGS,molybdene
-KOR,mineraux_production,2024,300.0,metric tons,MCS USGS,molybdene
-KOR,mineraux_reserves,2024,8.0,metric tons,MCS USGS,molybdene
-MEX,mineraux_production,2023,17500.0,metric tons,MCS USGS,molybdene
-MEX,mineraux_production,2024,17000.0,metric tons,MCS USGS,molybdene
-MEX,mineraux_reserves,2024,130.0,metric tons,MCS USGS,molybdene
-MNG,mineraux_production,2023,3160.0,metric tons,MCS USGS,molybdene
-MNG,mineraux_production,2024,3100.0,metric tons,MCS USGS,molybdene
-MNG,mineraux_reserves,2024,10.0,metric tons,MCS USGS,molybdene
-PER,mineraux_production,2023,33500.0,metric tons,MCS USGS,molybdene
-PER,mineraux_production,2024,41000.0,metric tons,MCS USGS,molybdene
-PER,mineraux_reserves,2024,1900.0,metric tons,MCS USGS,molybdene
-RUS,mineraux_production,2023,1700.0,metric tons,MCS USGS,molybdene
-RUS,mineraux_production,2024,1700.0,metric tons,MCS USGS,molybdene
-RUS,mineraux_reserves,2024,1100.0,metric tons,MCS USGS,molybdene
-UZB,mineraux_production,2023,1700.0,metric tons,MCS USGS,molybdene
-UZB,mineraux_production,2024,1700.0,metric tons,MCS USGS,molybdene
-UZB,mineraux_reserves,2024,21.0,metric tons,MCS USGS,molybdene
-USA,mineraux_production,2023,16400.0,metric tons,MCS USGS,nickel
-USA,mineraux_production,2024,8000.0,metric tons,MCS USGS,nickel
-USA,mineraux_reserves,2024,310000.0,metric tons,MCS USGS,nickel
-AUS,mineraux_production,2023,149000.0,metric tons,MCS USGS,nickel
-AUS,mineraux_production,2024,110000.0,metric tons,MCS USGS,nickel
-AUS,mineraux_reserves,2024,24000000.0,metric tons,MCS USGS,nickel
-BRA,mineraux_production,2023,82700.0,metric tons,MCS USGS,nickel
-BRA,mineraux_production,2024,77000.0,metric tons,MCS USGS,nickel
-BRA,mineraux_reserves,2024,16000000.0,metric tons,MCS USGS,nickel
-CAN,mineraux_production,2023,159000.0,metric tons,MCS USGS,nickel
-CAN,mineraux_production,2024,190000.0,metric tons,MCS USGS,nickel
-CAN,mineraux_reserves,2024,2200000.0,metric tons,MCS USGS,nickel
-CHN,mineraux_production,2023,117000.0,metric tons,MCS USGS,nickel
-CHN,mineraux_production,2024,120000.0,metric tons,MCS USGS,nickel
-CHN,mineraux_reserves,2024,4400000.0,metric tons,MCS USGS,nickel
-IDN,mineraux_production,2023,2030000.0,metric tons,MCS USGS,nickel
-IDN,mineraux_production,2024,2200000.0,metric tons,MCS USGS,nickel
-IDN,mineraux_reserves,2024,55000000.0,metric tons,MCS USGS,nickel
-NCL,mineraux_production,2023,231000.0,metric tons,MCS USGS,nickel
-NCL,mineraux_production,2024,110000.0,metric tons,MCS USGS,nickel
-NCL,mineraux_reserves,2024,7100000.0,metric tons,MCS USGS,nickel
-PHL,mineraux_production,2023,413000.0,metric tons,MCS USGS,nickel
-PHL,mineraux_production,2024,330000.0,metric tons,MCS USGS,nickel
-PHL,mineraux_reserves,2024,4800000.0,metric tons,MCS USGS,nickel
-RUS,mineraux_production,2023,210000.0,metric tons,MCS USGS,nickel
-RUS,mineraux_production,2024,210000.0,metric tons,MCS USGS,nickel
-RUS,mineraux_reserves,2024,8300000.0,metric tons,MCS USGS,nickel
-USA,mineraux_reserves,2024,210000.0,metric tons,MCS USGS,niobium
-BRA,mineraux_production,2023,102000.0,metric tons,MCS USGS,niobium
-BRA,mineraux_production,2024,100000.0,metric tons,MCS USGS,niobium
-BRA,mineraux_reserves,2024,16000000.0,metric tons,MCS USGS,niobium
-CAN,mineraux_production,2023,6700.0,metric tons,MCS USGS,niobium
-CAN,mineraux_production,2024,7100.0,metric tons,MCS USGS,niobium
-CAN,mineraux_reserves,2024,1600000.0,metric tons,MCS USGS,niobium
-COD,mineraux_production,2023,740.0,metric tons,MCS USGS,niobium
-COD,mineraux_production,2024,700.0,metric tons,MCS USGS,niobium
-RUS,mineraux_production,2023,353.0,metric tons,MCS USGS,niobium
-RUS,mineraux_production,2024,350.0,metric tons,MCS USGS,niobium
-RWA,mineraux_production,2023,210.0,metric tons,MCS USGS,niobium
-RWA,mineraux_production,2024,200.0,metric tons,MCS USGS,niobium
-USA,mineraux_production,2023,10300.0,kilograms,MCS USGS,pgm
-USA,mineraux_production,2024,8000.0,kilograms,MCS USGS,pgm
-USA,mineraux_reserves,2024,820000.0,kilograms,MCS USGS,pgm
-CAN,mineraux_production,2023,16100.0,kilograms,MCS USGS,pgm
-CAN,mineraux_production,2024,15000.0,kilograms,MCS USGS,pgm
-CAN,mineraux_reserves,2024,310000.0,kilograms,MCS USGS,pgm
-RUS,mineraux_production,2023,87000.0,kilograms,MCS USGS,pgm
-RUS,mineraux_production,2024,75000.0,kilograms,MCS USGS,pgm
-RUS,mineraux_reserves,2024,16000000.0,kilograms,MCS USGS,pgm
-ZAF,mineraux_production,2023,74900.0,kilograms,MCS USGS,pgm
-ZAF,mineraux_production,2024,72000.0,kilograms,MCS USGS,pgm
-ZAF,mineraux_reserves,2024,63000000.0,kilograms,MCS USGS,pgm
-ZWE,mineraux_production,2023,15900.0,kilograms,MCS USGS,pgm
-ZWE,mineraux_production,2024,15000.0,kilograms,MCS USGS,pgm
-ZWE,mineraux_reserves,2024,1200000.0,kilograms,MCS USGS,pgm
-USA,mineraux_production,2023,3040.0,kilograms,MCS USGS,pgm
-USA,mineraux_production,2024,2000.0,kilograms,MCS USGS,pgm
-CAN,mineraux_production,2023,5170.0,kilograms,MCS USGS,pgm
-CAN,mineraux_production,2024,5200.0,kilograms,MCS USGS,pgm
-RUS,mineraux_production,2023,21000.0,kilograms,MCS USGS,pgm
-RUS,mineraux_production,2024,18000.0,kilograms,MCS USGS,pgm
-ZAF,mineraux_production,2023,125000.0,kilograms,MCS USGS,pgm
-ZAF,mineraux_production,2024,120000.0,kilograms,MCS USGS,pgm
-ZWE,mineraux_production,2023,19200.0,kilograms,MCS USGS,pgm
-ZWE,mineraux_production,2024,19000.0,kilograms,MCS USGS,pgm
-USA,mineraux_production,2023,41600.0,metric tons,MCS USGS,terres_rares
-USA,mineraux_production,2024,45000.0,metric tons,MCS USGS,terres_rares
-USA,mineraux_reserves,2024,1900000.0,metric tons,MCS USGS,terres_rares
-AUS,mineraux_production,2023,16000.0,metric tons,MCS USGS,terres_rares
-AUS,mineraux_production,2024,13000.0,metric tons,MCS USGS,terres_rares
-AUS,mineraux_reserves,2024,5700000.0,metric tons,MCS USGS,terres_rares
-BRA,mineraux_production,2023,140.0,metric tons,MCS USGS,terres_rares
-BRA,mineraux_production,2024,20.0,metric tons,MCS USGS,terres_rares
-BRA,mineraux_reserves,2024,21000000.0,metric tons,MCS USGS,terres_rares
-MMR,mineraux_production,2023,43000.0,metric tons,MCS USGS,terres_rares
-MMR,mineraux_production,2024,31000.0,metric tons,MCS USGS,terres_rares
-CAN,mineraux_reserves,2024,830000.0,metric tons,MCS USGS,terres_rares
-CHN,mineraux_production,2023,255000.0,metric tons,MCS USGS,terres_rares
-CHN,mineraux_production,2024,270000.0,metric tons,MCS USGS,terres_rares
-CHN,mineraux_reserves,2024,44000000.0,metric tons,MCS USGS,terres_rares
-GRL,mineraux_reserves,2024,1500000.0,metric tons,MCS USGS,terres_rares
-IND,mineraux_production,2023,2900.0,metric tons,MCS USGS,terres_rares
-IND,mineraux_production,2024,2900.0,metric tons,MCS USGS,terres_rares
-IND,mineraux_reserves,2024,6900000.0,metric tons,MCS USGS,terres_rares
-MDG,mineraux_production,2023,2100.0,metric tons,MCS USGS,terres_rares
-MDG,mineraux_production,2024,2000.0,metric tons,MCS USGS,terres_rares
-MYS,mineraux_production,2023,310.0,metric tons,MCS USGS,terres_rares
-MYS,mineraux_production,2024,130.0,metric tons,MCS USGS,terres_rares
-NGA,mineraux_production,2023,7200.0,metric tons,MCS USGS,terres_rares
-NGA,mineraux_production,2024,13000.0,metric tons,MCS USGS,terres_rares
-RUS,mineraux_production,2023,2500.0,metric tons,MCS USGS,terres_rares
-RUS,mineraux_production,2024,2500.0,metric tons,MCS USGS,terres_rares
-RUS,mineraux_reserves,2024,3800000.0,metric tons,MCS USGS,terres_rares
-ZAF,mineraux_reserves,2024,860000.0,metric tons,MCS USGS,terres_rares
-TZA,mineraux_reserves,2024,890000.0,metric tons,MCS USGS,terres_rares
-THA,mineraux_production,2023,3600.0,metric tons,MCS USGS,terres_rares
-THA,mineraux_production,2024,13000.0,metric tons,MCS USGS,terres_rares
-THA,mineraux_reserves,2024,4500.0,metric tons,MCS USGS,terres_rares
-VNM,mineraux_production,2023,300.0,metric tons,MCS USGS,terres_rares
-VNM,mineraux_production,2024,300.0,metric tons,MCS USGS,terres_rares
-VNM,mineraux_reserves,2024,3500000.0,metric tons,MCS USGS,terres_rares
-USA,mineraux_production,2023,1020.0,metric tons,MCS USGS,argent
-USA,mineraux_production,2024,1100.0,metric tons,MCS USGS,argent
-USA,mineraux_reserves,2024,23000.0,metric tons,MCS USGS,argent
-ARG,mineraux_production,2023,808.0,metric tons,MCS USGS,argent
-ARG,mineraux_production,2024,800.0,metric tons,MCS USGS,argent
-ARG,mineraux_reserves,2024,6500.0,metric tons,MCS USGS,argent
-AUS,mineraux_production,2023,1030.0,metric tons,MCS USGS,argent
-AUS,mineraux_production,2024,1000.0,metric tons,MCS USGS,argent
-AUS,mineraux_reserves,2024,94000.0,metric tons,MCS USGS,argent
-BOL,mineraux_production,2023,1350.0,metric tons,MCS USGS,argent
-BOL,mineraux_production,2024,1300.0,metric tons,MCS USGS,argent
-BOL,mineraux_reserves,2024,22000.0,metric tons,MCS USGS,argent
-CHL,mineraux_production,2023,1260.0,metric tons,MCS USGS,argent
-CHL,mineraux_production,2024,1200.0,metric tons,MCS USGS,argent
-CHL,mineraux_reserves,2024,26000.0,metric tons,MCS USGS,argent
-CAN,mineraux_production,2023,306.0,metric tons,MCS USGS,argent
-CAN,mineraux_production,2024,300.0,metric tons,MCS USGS,argent
-CAN,mineraux_reserves,2024,4900.0,metric tons,MCS USGS,argent
-CHN,mineraux_production,2023,3400.0,metric tons,MCS USGS,argent
-CHN,mineraux_production,2024,3300.0,metric tons,MCS USGS,argent
-CHN,mineraux_reserves,2024,70000.0,metric tons,MCS USGS,argent
-IND,mineraux_production,2023,813.0,metric tons,MCS USGS,argent
-IND,mineraux_production,2024,800.0,metric tons,MCS USGS,argent
-IND,mineraux_reserves,2024,8000.0,metric tons,MCS USGS,argent
-KAZ,mineraux_production,2023,985.0,metric tons,MCS USGS,argent
-KAZ,mineraux_production,2024,1000.0,metric tons,MCS USGS,argent
-MEX,mineraux_production,2023,6290.0,metric tons,MCS USGS,argent
-MEX,mineraux_production,2024,6300.0,metric tons,MCS USGS,argent
-MEX,mineraux_reserves,2024,37000.0,metric tons,MCS USGS,argent
-PER,mineraux_production,2023,3200.0,metric tons,MCS USGS,argent
-PER,mineraux_production,2024,3100.0,metric tons,MCS USGS,argent
-PER,mineraux_reserves,2024,140000.0,metric tons,MCS USGS,argent
-POL,mineraux_production,2023,1320.0,metric tons,MCS USGS,argent
-POL,mineraux_production,2024,1300.0,metric tons,MCS USGS,argent
-POL,mineraux_reserves,2024,61000.0,metric tons,MCS USGS,argent
-RUS,mineraux_production,2023,1240.0,metric tons,MCS USGS,argent
-RUS,mineraux_production,2024,1200.0,metric tons,MCS USGS,argent
-RUS,mineraux_reserves,2024,92000.0,metric tons,MCS USGS,argent
-SWE,mineraux_production,2023,404.0,metric tons,MCS USGS,argent
-SWE,mineraux_production,2024,400.0,metric tons,MCS USGS,argent
-AUS,mineraux_production,2023,9850.0,metric tons,MCS USGS,etain
-AUS,mineraux_production,2024,9900.0,metric tons,MCS USGS,etain
-AUS,mineraux_reserves,2024,620000.0,metric tons,MCS USGS,etain
-BOL,mineraux_production,2023,18700.0,metric tons,MCS USGS,etain
-BOL,mineraux_production,2024,21000.0,metric tons,MCS USGS,etain
-BOL,mineraux_reserves,2024,400000.0,metric tons,MCS USGS,etain
-BRA,mineraux_production,2023,29300.0,metric tons,MCS USGS,etain
-BRA,mineraux_production,2024,29000.0,metric tons,MCS USGS,etain
-BRA,mineraux_reserves,2024,420000.0,metric tons,MCS USGS,etain
-MMR,mineraux_production,2023,34000.0,metric tons,MCS USGS,etain
-MMR,mineraux_production,2024,34000.0,metric tons,MCS USGS,etain
-MMR,mineraux_reserves,2024,700000.0,metric tons,MCS USGS,etain
-CHN,mineraux_production,2023,70000.0,metric tons,MCS USGS,etain
-CHN,mineraux_production,2024,69000.0,metric tons,MCS USGS,etain
-CHN,mineraux_reserves,2024,1000000.0,metric tons,MCS USGS,etain
-COD,mineraux_production,2023,20000.0,metric tons,MCS USGS,etain
-COD,mineraux_production,2024,25000.0,metric tons,MCS USGS,etain
-COD,mineraux_reserves,2024,120000.0,metric tons,MCS USGS,etain
-IDN,mineraux_production,2023,69000.0,metric tons,MCS USGS,etain
-IDN,mineraux_production,2024,50000.0,metric tons,MCS USGS,etain
-LAO,mineraux_production,2023,1700.0,metric tons,MCS USGS,etain
-LAO,mineraux_production,2024,1500.0,metric tons,MCS USGS,etain
-MYS,mineraux_production,2023,3770.0,metric tons,MCS USGS,etain
-MYS,mineraux_production,2024,3000.0,metric tons,MCS USGS,etain
-NGA,mineraux_production,2023,7000.0,metric tons,MCS USGS,etain
-NGA,mineraux_production,2024,7000.0,metric tons,MCS USGS,etain
-PER,mineraux_production,2023,26200.0,metric tons,MCS USGS,etain
-PER,mineraux_production,2024,31000.0,metric tons,MCS USGS,etain
-PER,mineraux_reserves,2024,130000.0,metric tons,MCS USGS,etain
-RUS,mineraux_production,2023,2700.0,metric tons,MCS USGS,etain
-RUS,mineraux_production,2024,3000.0,metric tons,MCS USGS,etain
-RUS,mineraux_reserves,2024,460000.0,metric tons,MCS USGS,etain
-RWA,mineraux_production,2023,3600.0,metric tons,MCS USGS,etain
-RWA,mineraux_production,2024,3600.0,metric tons,MCS USGS,etain
-VNM,mineraux_production,2023,7600.0,metric tons,MCS USGS,etain
-VNM,mineraux_production,2024,6700.0,metric tons,MCS USGS,etain
-VNM,mineraux_reserves,2024,23000.0,metric tons,MCS USGS,etain
-AUS,mineraux_production,2023,430.0,metric tons,MCS USGS,tungstene
-AUS,mineraux_production,2024,1000.0,metric tons,MCS USGS,tungstene
-AUS,mineraux_reserves,2024,570000.0,metric tons,MCS USGS,tungstene
-AUT,mineraux_production,2023,850.0,metric tons,MCS USGS,tungstene
-AUT,mineraux_production,2024,800.0,metric tons,MCS USGS,tungstene
-AUT,mineraux_reserves,2024,10000.0,metric tons,MCS USGS,tungstene
-BOL,mineraux_production,2023,1500.0,metric tons,MCS USGS,tungstene
-BOL,mineraux_production,2024,1600.0,metric tons,MCS USGS,tungstene
-CHN,mineraux_production,2023,66000.0,metric tons,MCS USGS,tungstene
-CHN,mineraux_production,2024,67000.0,metric tons,MCS USGS,tungstene
-CHN,mineraux_reserves,2024,2400000.0,metric tons,MCS USGS,tungstene
-PRK,mineraux_production,2023,1600.0,metric tons,MCS USGS,tungstene
-PRK,mineraux_production,2024,1700.0,metric tons,MCS USGS,tungstene
-PRK,mineraux_reserves,2024,29000.0,metric tons,MCS USGS,tungstene
-PRT,mineraux_production,2023,450.0,metric tons,MCS USGS,tungstene
-PRT,mineraux_production,2024,500.0,metric tons,MCS USGS,tungstene
-PRT,mineraux_reserves,2024,3400.0,metric tons,MCS USGS,tungstene
-RUS,mineraux_production,2023,2000.0,metric tons,MCS USGS,tungstene
-RUS,mineraux_production,2024,2000.0,metric tons,MCS USGS,tungstene
-RUS,mineraux_reserves,2024,400000.0,metric tons,MCS USGS,tungstene
-RWA,mineraux_production,2023,1200.0,metric tons,MCS USGS,tungstene
-RWA,mineraux_production,2024,1200.0,metric tons,MCS USGS,tungstene
-ESP,mineraux_production,2023,650.0,metric tons,MCS USGS,tungstene
-ESP,mineraux_production,2024,700.0,metric tons,MCS USGS,tungstene
-ESP,mineraux_reserves,2024,66000.0,metric tons,MCS USGS,tungstene
-VNM,mineraux_production,2023,3500.0,metric tons,MCS USGS,tungstene
-VNM,mineraux_production,2024,3400.0,metric tons,MCS USGS,tungstene
-VNM,mineraux_reserves,2024,140000.0,metric tons,MCS USGS,tungstene
-USA,mineraux_reserves,2024,45.0,metric tons,MCS USGS,vanadium
-AUS,mineraux_reserves,2024,8500.0,metric tons,MCS USGS,vanadium
-BRA,mineraux_production,2023,5420.0,metric tons,MCS USGS,vanadium
-BRA,mineraux_production,2024,5000.0,metric tons,MCS USGS,vanadium
-BRA,mineraux_reserves,2024,120.0,metric tons,MCS USGS,vanadium
-CHN,mineraux_production,2023,70000.0,metric tons,MCS USGS,vanadium
-CHN,mineraux_production,2024,70000.0,metric tons,MCS USGS,vanadium
-CHN,mineraux_reserves,2024,4100.0,metric tons,MCS USGS,vanadium
-RUS,mineraux_production,2023,20000.0,metric tons,MCS USGS,vanadium
-RUS,mineraux_production,2024,20000.0,metric tons,MCS USGS,vanadium
-RUS,mineraux_reserves,2024,5000.0,metric tons,MCS USGS,vanadium
-ZAF,mineraux_production,2023,8670.0,metric tons,MCS USGS,vanadium
-ZAF,mineraux_production,2024,8000.0,metric tons,MCS USGS,vanadium
-ZAF,mineraux_reserves,2024,430.0,metric tons,MCS USGS,vanadium
-USA,mineraux_production,2023,767.0,thousand metric tons,MCS USGS,zinc
-USA,mineraux_production,2024,750.0,thousand metric tons,MCS USGS,zinc
-USA,mineraux_reserves,2024,9200.0,thousand metric tons,MCS USGS,zinc
-AUS,mineraux_production,2023,1090.0,thousand metric tons,MCS USGS,zinc
-AUS,mineraux_production,2024,1100.0,thousand metric tons,MCS USGS,zinc
-AUS,mineraux_reserves,2024,64000.0,thousand metric tons,MCS USGS,zinc
-BOL,mineraux_production,2023,492.0,thousand metric tons,MCS USGS,zinc
-BOL,mineraux_production,2024,510.0,thousand metric tons,MCS USGS,zinc
-CHN,mineraux_production,2023,4060.0,thousand metric tons,MCS USGS,zinc
-CHN,mineraux_production,2024,4000.0,thousand metric tons,MCS USGS,zinc
-CHN,mineraux_reserves,2024,46000.0,thousand metric tons,MCS USGS,zinc
-IND,mineraux_production,2023,854.0,thousand metric tons,MCS USGS,zinc
-IND,mineraux_production,2024,860.0,thousand metric tons,MCS USGS,zinc
-IND,mineraux_reserves,2024,9800.0,thousand metric tons,MCS USGS,zinc
-KAZ,mineraux_production,2023,340.0,thousand metric tons,MCS USGS,zinc
-KAZ,mineraux_production,2024,370.0,thousand metric tons,MCS USGS,zinc
-KAZ,mineraux_reserves,2024,7600.0,thousand metric tons,MCS USGS,zinc
-MEX,mineraux_production,2023,584.0,thousand metric tons,MCS USGS,zinc
-MEX,mineraux_production,2024,700.0,thousand metric tons,MCS USGS,zinc
-MEX,mineraux_reserves,2024,14000.0,thousand metric tons,MCS USGS,zinc
-PER,mineraux_production,2023,1470.0,thousand metric tons,MCS USGS,zinc
-PER,mineraux_production,2024,1300.0,thousand metric tons,MCS USGS,zinc
-PER,mineraux_reserves,2024,20000.0,thousand metric tons,MCS USGS,zinc
-RUS,mineraux_production,2023,300.0,thousand metric tons,MCS USGS,zinc
-RUS,mineraux_production,2024,310.0,thousand metric tons,MCS USGS,zinc
-RUS,mineraux_reserves,2024,29000.0,thousand metric tons,MCS USGS,zinc
-ZAF,mineraux_production,2023,198.0,thousand metric tons,MCS USGS,zinc
-ZAF,mineraux_production,2024,120.0,thousand metric tons,MCS USGS,zinc
-ZAF,mineraux_reserves,2024,5900.0,thousand metric tons,MCS USGS,zinc
-SWE,mineraux_production,2023,218.0,thousand metric tons,MCS USGS,zinc
-SWE,mineraux_production,2024,240.0,thousand metric tons,MCS USGS,zinc
-SWE,mineraux_reserves,2024,3900.0,thousand metric tons,MCS USGS,zinc
+USA,mineraux_reserves,2024,20000.0,kt,MCS USGS,bauxite
+AUS,mineraux_production,2023,104000.0,kt,MCS USGS,bauxite
+AUS,mineraux_production,2024,100000.0,kt,MCS USGS,bauxite
+AUS,mineraux_reserves,2024,3500000.0,kt,MCS USGS,bauxite
+BRA,mineraux_production,2023,32000.0,kt,MCS USGS,bauxite
+BRA,mineraux_production,2024,33000.0,kt,MCS USGS,bauxite
+BRA,mineraux_reserves,2024,2700000.0,kt,MCS USGS,bauxite
+CHN,mineraux_production,2023,91000.0,kt,MCS USGS,bauxite
+CHN,mineraux_production,2024,93000.0,kt,MCS USGS,bauxite
+CHN,mineraux_reserves,2024,680000.0,kt,MCS USGS,bauxite
+GRC,mineraux_production,2023,1200.0,kt,MCS USGS,bauxite
+GRC,mineraux_production,2024,1200.0,kt,MCS USGS,bauxite
+GIN,mineraux_production,2023,123000.0,kt,MCS USGS,bauxite
+GIN,mineraux_production,2024,130000.0,kt,MCS USGS,bauxite
+GIN,mineraux_reserves,2024,7400000.0,kt,MCS USGS,bauxite
+IND,mineraux_production,2023,23400.0,kt,MCS USGS,bauxite
+IND,mineraux_production,2024,25000.0,kt,MCS USGS,bauxite
+IND,mineraux_reserves,2024,650000.0,kt,MCS USGS,bauxite
+IDN,mineraux_production,2023,30000.0,kt,MCS USGS,bauxite
+IDN,mineraux_production,2024,32000.0,kt,MCS USGS,bauxite
+IDN,mineraux_reserves,2024,2800000.0,kt,MCS USGS,bauxite
+JAM,mineraux_production,2023,6000.0,kt,MCS USGS,bauxite
+JAM,mineraux_production,2024,6100.0,kt,MCS USGS,bauxite
+JAM,mineraux_reserves,2024,2000000.0,kt,MCS USGS,bauxite
+KAZ,mineraux_production,2023,4560.0,kt,MCS USGS,bauxite
+KAZ,mineraux_production,2024,4900.0,kt,MCS USGS,bauxite
+KAZ,mineraux_reserves,2024,280000.0,kt,MCS USGS,bauxite
+RUS,mineraux_production,2023,5800.0,kt,MCS USGS,bauxite
+RUS,mineraux_production,2024,6300.0,kt,MCS USGS,bauxite
+RUS,mineraux_reserves,2024,480000.0,kt,MCS USGS,bauxite
+SAU,mineraux_production,2023,5400.0,kt,MCS USGS,bauxite
+SAU,mineraux_production,2024,5800.0,kt,MCS USGS,bauxite
+SAU,mineraux_reserves,2024,180000.0,kt,MCS USGS,bauxite
+TUR,mineraux_production,2023,2940.0,kt,MCS USGS,bauxite
+TUR,mineraux_production,2024,3200.0,kt,MCS USGS,bauxite
+TUR,mineraux_reserves,2024,69000.0,kt,MCS USGS,bauxite
+VNM,mineraux_production,2023,3920.0,kt,MCS USGS,bauxite
+VNM,mineraux_production,2024,4200.0,kt,MCS USGS,bauxite
+VNM,mineraux_reserves,2024,3100000.0,kt,MCS USGS,bauxite
+USA,mineraux_reserves,2024,630.0,kt,MCS USGS,chrome
+BRA,mineraux_production,2023,1420.0,kt,MCS USGS,chrome
+BRA,mineraux_production,2024,1400.0,kt,MCS USGS,chrome
+BRA,mineraux_reserves,2024,6600.0,kt,MCS USGS,chrome
+FIN,mineraux_production,2023,1910.0,kt,MCS USGS,chrome
+FIN,mineraux_production,2024,1900.0,kt,MCS USGS,chrome
+FIN,mineraux_reserves,2024,8300.0,kt,MCS USGS,chrome
+IND,mineraux_production,2023,4100.0,kt,MCS USGS,chrome
+IND,mineraux_production,2024,4100.0,kt,MCS USGS,chrome
+IND,mineraux_reserves,2024,79000.0,kt,MCS USGS,chrome
+KAZ,mineraux_production,2023,6000.0,kt,MCS USGS,chrome
+KAZ,mineraux_production,2024,6500.0,kt,MCS USGS,chrome
+KAZ,mineraux_reserves,2024,320000.0,kt,MCS USGS,chrome
+ZAF,mineraux_production,2023,19700.0,kt,MCS USGS,chrome
+ZAF,mineraux_production,2024,21000.0,kt,MCS USGS,chrome
+ZAF,mineraux_reserves,2024,200000.0,kt,MCS USGS,chrome
+TUR,mineraux_production,2023,8160.0,kt,MCS USGS,chrome
+TUR,mineraux_production,2024,8000.0,kt,MCS USGS,chrome
+TUR,mineraux_reserves,2024,27000.0,kt,MCS USGS,chrome
+ZWE,mineraux_production,2023,1070.0,kt,MCS USGS,chrome
+ZWE,mineraux_production,2024,1100.0,kt,MCS USGS,chrome
+ZWE,mineraux_reserves,2024,540000.0,kt,MCS USGS,chrome
+USA,mineraux_production,2023,0.5,kt,MCS USGS,cobalt
+USA,mineraux_production,2024,0.3,kt,MCS USGS,cobalt
+USA,mineraux_reserves,2024,70.0,kt,MCS USGS,cobalt
+AUS,mineraux_production,2023,5.22,kt,MCS USGS,cobalt
+AUS,mineraux_production,2024,3.6,kt,MCS USGS,cobalt
+AUS,mineraux_reserves,2024,1700.0,kt,MCS USGS,cobalt
+CAN,mineraux_production,2023,4.22,kt,MCS USGS,cobalt
+CAN,mineraux_production,2024,4.5,kt,MCS USGS,cobalt
+CAN,mineraux_reserves,2024,220.0,kt,MCS USGS,cobalt
+COD,mineraux_production,2023,175.0,kt,MCS USGS,cobalt
+COD,mineraux_production,2024,220.0,kt,MCS USGS,cobalt
+COD,mineraux_reserves,2024,6000.0,kt,MCS USGS,cobalt
+CUB,mineraux_production,2023,3.3,kt,MCS USGS,cobalt
+CUB,mineraux_production,2024,3.5,kt,MCS USGS,cobalt
+CUB,mineraux_reserves,2024,500.0,kt,MCS USGS,cobalt
+IDN,mineraux_production,2023,19.0,kt,MCS USGS,cobalt
+IDN,mineraux_production,2024,28.0,kt,MCS USGS,cobalt
+IDN,mineraux_reserves,2024,640.0,kt,MCS USGS,cobalt
+MDG,mineraux_production,2023,4.0,kt,MCS USGS,cobalt
+MDG,mineraux_production,2024,2.6,kt,MCS USGS,cobalt
+MDG,mineraux_reserves,2024,100.0,kt,MCS USGS,cobalt
+NCL,mineraux_production,2023,2.57,kt,MCS USGS,cobalt
+NCL,mineraux_production,2024,1.5,kt,MCS USGS,cobalt
+PNG,mineraux_production,2023,3.07,kt,MCS USGS,cobalt
+PNG,mineraux_production,2024,2.8,kt,MCS USGS,cobalt
+PNG,mineraux_reserves,2024,62.0,kt,MCS USGS,cobalt
+PHL,mineraux_production,2023,3.8,kt,MCS USGS,cobalt
+PHL,mineraux_production,2024,3.8,kt,MCS USGS,cobalt
+PHL,mineraux_reserves,2024,260.0,kt,MCS USGS,cobalt
+RUS,mineraux_production,2023,8.7,kt,MCS USGS,cobalt
+RUS,mineraux_production,2024,8.7,kt,MCS USGS,cobalt
+RUS,mineraux_reserves,2024,250.0,kt,MCS USGS,cobalt
+TUR,mineraux_production,2023,2.5,kt,MCS USGS,cobalt
+TUR,mineraux_production,2024,2.7,kt,MCS USGS,cobalt
+TUR,mineraux_reserves,2024,91.0,kt,MCS USGS,cobalt
+USA,mineraux_production,2023,1130.0,kt,MCS USGS,cuivre
+USA,mineraux_production,2024,1100.0,kt,MCS USGS,cuivre
+USA,mineraux_reserves,2024,47000.0,kt,MCS USGS,cuivre
+AUS,mineraux_production,2023,778.0,kt,MCS USGS,cuivre
+AUS,mineraux_production,2024,800.0,kt,MCS USGS,cuivre
+AUS,mineraux_reserves,2024,100000.0,kt,MCS USGS,cuivre
+CAN,mineraux_production,2023,500.0,kt,MCS USGS,cuivre
+CAN,mineraux_production,2024,450.0,kt,MCS USGS,cuivre
+CAN,mineraux_reserves,2024,8300.0,kt,MCS USGS,cuivre
+CHL,mineraux_production,2023,5250.0,kt,MCS USGS,cuivre
+CHL,mineraux_production,2024,5300.0,kt,MCS USGS,cuivre
+CHL,mineraux_reserves,2024,190000.0,kt,MCS USGS,cuivre
+CHN,mineraux_production,2023,1820.0,kt,MCS USGS,cuivre
+CHN,mineraux_production,2024,1800.0,kt,MCS USGS,cuivre
+CHN,mineraux_reserves,2024,41000.0,kt,MCS USGS,cuivre
+COD,mineraux_production,2023,2930.0,kt,MCS USGS,cuivre
+COD,mineraux_production,2024,3300.0,kt,MCS USGS,cuivre
+COD,mineraux_reserves,2024,80000.0,kt,MCS USGS,cuivre
+IND,mineraux_production,2023,27.0,kt,MCS USGS,cuivre
+IND,mineraux_production,2024,30.0,kt,MCS USGS,cuivre
+IND,mineraux_reserves,2024,2200.0,kt,MCS USGS,cuivre
+IDN,mineraux_production,2023,907.0,kt,MCS USGS,cuivre
+IDN,mineraux_production,2024,1100.0,kt,MCS USGS,cuivre
+IDN,mineraux_reserves,2024,21000.0,kt,MCS USGS,cuivre
+KAZ,mineraux_production,2023,740.0,kt,MCS USGS,cuivre
+KAZ,mineraux_production,2024,740.0,kt,MCS USGS,cuivre
+KAZ,mineraux_reserves,2024,20000.0,kt,MCS USGS,cuivre
+MEX,mineraux_production,2023,699.0,kt,MCS USGS,cuivre
+MEX,mineraux_production,2024,700.0,kt,MCS USGS,cuivre
+MEX,mineraux_reserves,2024,53000.0,kt,MCS USGS,cuivre
+PER,mineraux_production,2023,2760.0,kt,MCS USGS,cuivre
+PER,mineraux_production,2024,2600.0,kt,MCS USGS,cuivre
+PER,mineraux_reserves,2024,100000.0,kt,MCS USGS,cuivre
+POL,mineraux_production,2023,395.0,kt,MCS USGS,cuivre
+POL,mineraux_production,2024,410.0,kt,MCS USGS,cuivre
+POL,mineraux_reserves,2024,34000.0,kt,MCS USGS,cuivre
+RUS,mineraux_production,2023,890.0,kt,MCS USGS,cuivre
+RUS,mineraux_production,2024,930.0,kt,MCS USGS,cuivre
+RUS,mineraux_reserves,2024,80000.0,kt,MCS USGS,cuivre
+ZMB,mineraux_production,2023,712.0,kt,MCS USGS,cuivre
+ZMB,mineraux_production,2024,680.0,kt,MCS USGS,cuivre
+ZMB,mineraux_reserves,2024,21000.0,kt,MCS USGS,cuivre
+USA,mineraux_production,2023,0.17,kt,MCS USGS,or
+USA,mineraux_production,2024,0.16,kt,MCS USGS,or
+USA,mineraux_reserves,2024,3.0,kt,MCS USGS,or
+AUS,mineraux_production,2023,0.296,kt,MCS USGS,or
+AUS,mineraux_production,2024,0.29,kt,MCS USGS,or
+AUS,mineraux_reserves,2024,12.0,kt,MCS USGS,or
+BRA,mineraux_production,2023,0.071,kt,MCS USGS,or
+BRA,mineraux_production,2024,0.07,kt,MCS USGS,or
+BRA,mineraux_reserves,2024,2.4,kt,MCS USGS,or
+BFA,mineraux_production,2023,0.057,kt,MCS USGS,or
+BFA,mineraux_production,2024,0.06,kt,MCS USGS,or
+CAN,mineraux_production,2023,0.198,kt,MCS USGS,or
+CAN,mineraux_production,2024,0.2,kt,MCS USGS,or
+CAN,mineraux_reserves,2024,3.2,kt,MCS USGS,or
+CHN,mineraux_production,2023,0.375,kt,MCS USGS,or
+CHN,mineraux_production,2024,0.38,kt,MCS USGS,or
+CHN,mineraux_reserves,2024,3.1,kt,MCS USGS,or
+COL,mineraux_production,2023,0.061,kt,MCS USGS,or
+COL,mineraux_production,2024,0.06,kt,MCS USGS,or
+COL,mineraux_reserves,2024,0.7,kt,MCS USGS,or
+GHA,mineraux_production,2023,0.126,kt,MCS USGS,or
+GHA,mineraux_production,2024,0.13,kt,MCS USGS,or
+GHA,mineraux_reserves,2024,1.0,kt,MCS USGS,or
+IDN,mineraux_production,2023,0.1,kt,MCS USGS,or
+IDN,mineraux_production,2024,0.1,kt,MCS USGS,or
+IDN,mineraux_reserves,2024,3.6,kt,MCS USGS,or
+KAZ,mineraux_production,2023,0.133,kt,MCS USGS,or
+KAZ,mineraux_production,2024,0.13,kt,MCS USGS,or
+KAZ,mineraux_reserves,2024,2.3,kt,MCS USGS,or
+MLI,mineraux_production,2023,0.067,kt,MCS USGS,or
+MLI,mineraux_production,2024,0.07,kt,MCS USGS,or
+MLI,mineraux_reserves,2024,0.8,kt,MCS USGS,or
+MEX,mineraux_production,2023,0.127,kt,MCS USGS,or
+MEX,mineraux_production,2024,0.13,kt,MCS USGS,or
+MEX,mineraux_reserves,2024,1.4,kt,MCS USGS,or
+PER,mineraux_production,2023,0.1,kt,MCS USGS,or
+PER,mineraux_production,2024,0.1,kt,MCS USGS,or
+PER,mineraux_reserves,2024,2.5,kt,MCS USGS,or
+RUS,mineraux_production,2023,0.313,kt,MCS USGS,or
+RUS,mineraux_production,2024,0.31,kt,MCS USGS,or
+RUS,mineraux_reserves,2024,12.0,kt,MCS USGS,or
+ZAF,mineraux_production,2023,0.104,kt,MCS USGS,or
+ZAF,mineraux_production,2024,0.1,kt,MCS USGS,or
+ZAF,mineraux_reserves,2024,5.0,kt,MCS USGS,or
+TZA,mineraux_production,2023,0.055,kt,MCS USGS,or
+TZA,mineraux_production,2024,0.06,kt,MCS USGS,or
+TZA,mineraux_reserves,2024,0.4,kt,MCS USGS,or
+UZB,mineraux_production,2023,0.12,kt,MCS USGS,or
+UZB,mineraux_production,2024,0.12,kt,MCS USGS,or
+UZB,mineraux_reserves,2024,1.8,kt,MCS USGS,or
+AUT,mineraux_production,2023,0.5,kt,MCS USGS,graphite
+AUT,mineraux_production,2024,0.5,kt,MCS USGS,graphite
+BRA,mineraux_production,2023,66.3,kt,MCS USGS,graphite
+BRA,mineraux_production,2024,68.0,kt,MCS USGS,graphite
+BRA,mineraux_reserves,2024,74000.0,kt,MCS USGS,graphite
+CAN,mineraux_production,2023,5.47,kt,MCS USGS,graphite
+CAN,mineraux_production,2024,20.0,kt,MCS USGS,graphite
+CAN,mineraux_reserves,2024,5900.0,kt,MCS USGS,graphite
+CHN,mineraux_production,2023,1210.0,kt,MCS USGS,graphite
+CHN,mineraux_production,2024,1270.0,kt,MCS USGS,graphite
+CHN,mineraux_reserves,2024,81000.0,kt,MCS USGS,graphite
+DEU,mineraux_production,2023,0.18,kt,MCS USGS,graphite
+DEU,mineraux_production,2024,0.17,kt,MCS USGS,graphite
+IND,mineraux_production,2023,25.6,kt,MCS USGS,graphite
+IND,mineraux_production,2024,27.8,kt,MCS USGS,graphite
+IND,mineraux_reserves,2024,8600.0,kt,MCS USGS,graphite
+PRK,mineraux_production,2023,8.1,kt,MCS USGS,graphite
+PRK,mineraux_production,2024,8.1,kt,MCS USGS,graphite
+PRK,mineraux_reserves,2024,2000.0,kt,MCS USGS,graphite
+KOR,mineraux_production,2023,9.62,kt,MCS USGS,graphite
+KOR,mineraux_production,2024,9.6,kt,MCS USGS,graphite
+KOR,mineraux_reserves,2024,1800.0,kt,MCS USGS,graphite
+MDG,mineraux_production,2023,63.0,kt,MCS USGS,graphite
+MDG,mineraux_production,2024,89.0,kt,MCS USGS,graphite
+MDG,mineraux_reserves,2024,27000.0,kt,MCS USGS,graphite
+MEX,mineraux_production,2023,1.3,kt,MCS USGS,graphite
+MEX,mineraux_production,2024,0.9,kt,MCS USGS,graphite
+MEX,mineraux_reserves,2024,3100.0,kt,MCS USGS,graphite
+MOZ,mineraux_production,2023,98.0,kt,MCS USGS,graphite
+MOZ,mineraux_production,2024,75.0,kt,MCS USGS,graphite
+MOZ,mineraux_reserves,2024,25000.0,kt,MCS USGS,graphite
+NOR,mineraux_production,2023,6.48,kt,MCS USGS,graphite
+NOR,mineraux_production,2024,7.0,kt,MCS USGS,graphite
+NOR,mineraux_reserves,2024,600.0,kt,MCS USGS,graphite
+RUS,mineraux_production,2023,15.0,kt,MCS USGS,graphite
+RUS,mineraux_production,2024,20.0,kt,MCS USGS,graphite
+RUS,mineraux_reserves,2024,14000.0,kt,MCS USGS,graphite
+LKA,mineraux_production,2023,3.0,kt,MCS USGS,graphite
+LKA,mineraux_production,2024,3.3,kt,MCS USGS,graphite
+LKA,mineraux_reserves,2024,1500.0,kt,MCS USGS,graphite
+TZA,mineraux_production,2023,13.2,kt,MCS USGS,graphite
+TZA,mineraux_production,2024,25.0,kt,MCS USGS,graphite
+TZA,mineraux_reserves,2024,18000.0,kt,MCS USGS,graphite
+TUR,mineraux_production,2023,2.8,kt,MCS USGS,graphite
+TUR,mineraux_production,2024,3.1,kt,MCS USGS,graphite
+TUR,mineraux_reserves,2024,6900.0,kt,MCS USGS,graphite
+UKR,mineraux_production,2023,1.67,kt,MCS USGS,graphite
+UKR,mineraux_production,2024,1.2,kt,MCS USGS,graphite
+VNM,mineraux_production,2023,2.5,kt,MCS USGS,graphite
+VNM,mineraux_production,2024,2.0,kt,MCS USGS,graphite
+VNM,mineraux_reserves,2024,9700.0,kt,MCS USGS,graphite
+USA,mineraux_production,2023,44700.0,kt,MCS USGS,fer
+USA,mineraux_production,2024,48000.0,kt,MCS USGS,fer
+USA,mineraux_reserves,2024,3600.0,kt,MCS USGS,fer
+AUS,mineraux_production,2023,953000.0,kt,MCS USGS,fer
+AUS,mineraux_production,2024,930000.0,kt,MCS USGS,fer
+AUS,mineraux_reserves,2024,58000.0,kt,MCS USGS,fer
+BRA,mineraux_production,2023,445000.0,kt,MCS USGS,fer
+BRA,mineraux_production,2024,440000.0,kt,MCS USGS,fer
+BRA,mineraux_reserves,2024,34000.0,kt,MCS USGS,fer
+CAN,mineraux_production,2023,59400.0,kt,MCS USGS,fer
+CAN,mineraux_production,2024,54000.0,kt,MCS USGS,fer
+CAN,mineraux_reserves,2024,6000.0,kt,MCS USGS,fer
+CHL,mineraux_production,2023,18100.0,kt,MCS USGS,fer
+CHL,mineraux_production,2024,18000.0,kt,MCS USGS,fer
+CHN,mineraux_production,2023,278000.0,kt,MCS USGS,fer
+CHN,mineraux_production,2024,270000.0,kt,MCS USGS,fer
+CHN,mineraux_reserves,2024,20000.0,kt,MCS USGS,fer
+IND,mineraux_production,2023,278000.0,kt,MCS USGS,fer
+IND,mineraux_production,2024,270000.0,kt,MCS USGS,fer
+IND,mineraux_reserves,2024,5500.0,kt,MCS USGS,fer
+IRN,mineraux_production,2023,85400.0,kt,MCS USGS,fer
+IRN,mineraux_production,2024,90000.0,kt,MCS USGS,fer
+IRN,mineraux_reserves,2024,3800.0,kt,MCS USGS,fer
+KAZ,mineraux_production,2023,28900.0,kt,MCS USGS,fer
+KAZ,mineraux_production,2024,30000.0,kt,MCS USGS,fer
+KAZ,mineraux_reserves,2024,2500.0,kt,MCS USGS,fer
+MRT,mineraux_production,2023,14100.0,kt,MCS USGS,fer
+MRT,mineraux_production,2024,15000.0,kt,MCS USGS,fer
+MEX,mineraux_production,2023,8500.0,kt,MCS USGS,fer
+MEX,mineraux_production,2024,8000.0,kt,MCS USGS,fer
+PER,mineraux_production,2023,20900.0,kt,MCS USGS,fer
+PER,mineraux_production,2024,21000.0,kt,MCS USGS,fer
+PER,mineraux_reserves,2024,2600.0,kt,MCS USGS,fer
+RUS,mineraux_production,2023,90900.0,kt,MCS USGS,fer
+RUS,mineraux_production,2024,91000.0,kt,MCS USGS,fer
+RUS,mineraux_reserves,2024,35000.0,kt,MCS USGS,fer
+ZAF,mineraux_production,2023,63200.0,kt,MCS USGS,fer
+ZAF,mineraux_production,2024,66000.0,kt,MCS USGS,fer
+ZAF,mineraux_reserves,2024,930.0,kt,MCS USGS,fer
+SWE,mineraux_production,2023,28900.0,kt,MCS USGS,fer
+SWE,mineraux_production,2024,28000.0,kt,MCS USGS,fer
+SWE,mineraux_reserves,2024,1300.0,kt,MCS USGS,fer
+TUR,mineraux_production,2023,16800.0,kt,MCS USGS,fer
+TUR,mineraux_production,2024,18000.0,kt,MCS USGS,fer
+TUR,mineraux_reserves,2024,150.0,kt,MCS USGS,fer
+UKR,mineraux_production,2023,41700.0,kt,MCS USGS,fer
+UKR,mineraux_production,2024,42000.0,kt,MCS USGS,fer
+UKR,mineraux_reserves,2024,6500.0,kt,MCS USGS,fer
+USA,mineraux_production,2023,28200.0,kt,MCS USGS,fer
+USA,mineraux_production,2024,30000.0,kt,MCS USGS,fer
+USA,mineraux_reserves,2024,2300.0,kt,MCS USGS,fer
+AUS,mineraux_production,2023,589000.0,kt,MCS USGS,fer
+AUS,mineraux_production,2024,580000.0,kt,MCS USGS,fer
+AUS,mineraux_reserves,2024,27000.0,kt,MCS USGS,fer
+BRA,mineraux_production,2023,280000.0,kt,MCS USGS,fer
+BRA,mineraux_production,2024,280000.0,kt,MCS USGS,fer
+BRA,mineraux_reserves,2024,15000.0,kt,MCS USGS,fer
+CAN,mineraux_production,2023,35700.0,kt,MCS USGS,fer
+CAN,mineraux_production,2024,32000.0,kt,MCS USGS,fer
+CAN,mineraux_reserves,2024,2300.0,kt,MCS USGS,fer
+CHL,mineraux_production,2023,11400.0,kt,MCS USGS,fer
+CHL,mineraux_production,2024,11000.0,kt,MCS USGS,fer
+CHN,mineraux_production,2023,174000.0,kt,MCS USGS,fer
+CHN,mineraux_production,2024,170000.0,kt,MCS USGS,fer
+CHN,mineraux_reserves,2024,6900.0,kt,MCS USGS,fer
+IND,mineraux_production,2023,172000.0,kt,MCS USGS,fer
+IND,mineraux_production,2024,170000.0,kt,MCS USGS,fer
+IND,mineraux_reserves,2024,3400.0,kt,MCS USGS,fer
+IRN,mineraux_production,2023,55900.0,kt,MCS USGS,fer
+IRN,mineraux_production,2024,59000.0,kt,MCS USGS,fer
+IRN,mineraux_reserves,2024,1500.0,kt,MCS USGS,fer
+KAZ,mineraux_production,2023,8890.0,kt,MCS USGS,fer
+KAZ,mineraux_production,2024,9200.0,kt,MCS USGS,fer
+KAZ,mineraux_reserves,2024,900.0,kt,MCS USGS,fer
+MRT,mineraux_production,2023,8790.0,kt,MCS USGS,fer
+MRT,mineraux_production,2024,9400.0,kt,MCS USGS,fer
+MEX,mineraux_production,2023,5350.0,kt,MCS USGS,fer
+MEX,mineraux_production,2024,5000.0,kt,MCS USGS,fer
+PER,mineraux_production,2023,14100.0,kt,MCS USGS,fer
+PER,mineraux_production,2024,14000.0,kt,MCS USGS,fer
+PER,mineraux_reserves,2024,1500.0,kt,MCS USGS,fer
+RUS,mineraux_production,2023,53300.0,kt,MCS USGS,fer
+RUS,mineraux_production,2024,53000.0,kt,MCS USGS,fer
+RUS,mineraux_reserves,2024,14000.0,kt,MCS USGS,fer
+ZAF,mineraux_production,2023,40200.0,kt,MCS USGS,fer
+ZAF,mineraux_production,2024,42000.0,kt,MCS USGS,fer
+ZAF,mineraux_reserves,2024,590.0,kt,MCS USGS,fer
+SWE,mineraux_production,2023,20400.0,kt,MCS USGS,fer
+SWE,mineraux_production,2024,20000.0,kt,MCS USGS,fer
+SWE,mineraux_reserves,2024,600.0,kt,MCS USGS,fer
+TUR,mineraux_production,2023,10100.0,kt,MCS USGS,fer
+TUR,mineraux_production,2024,11000.0,kt,MCS USGS,fer
+TUR,mineraux_reserves,2024,99.0,kt,MCS USGS,fer
+UKR,mineraux_production,2023,26100.0,kt,MCS USGS,fer
+UKR,mineraux_production,2024,26000.0,kt,MCS USGS,fer
+UKR,mineraux_reserves,2024,2300.0,kt,MCS USGS,fer
+USA,mineraux_production,2023,270.0,kt,MCS USGS,plomb
+USA,mineraux_production,2024,300.0,kt,MCS USGS,plomb
+USA,mineraux_reserves,2024,4600.0,kt,MCS USGS,plomb
+AUS,mineraux_production,2023,430.0,kt,MCS USGS,plomb
+AUS,mineraux_production,2024,430.0,kt,MCS USGS,plomb
+AUS,mineraux_reserves,2024,35000.0,kt,MCS USGS,plomb
+BOL,mineraux_production,2023,60.0,kt,MCS USGS,plomb
+BOL,mineraux_production,2024,60.0,kt,MCS USGS,plomb
+BOL,mineraux_reserves,2024,1600.0,kt,MCS USGS,plomb
+CHN,mineraux_production,2023,1960.0,kt,MCS USGS,plomb
+CHN,mineraux_production,2024,1900.0,kt,MCS USGS,plomb
+CHN,mineraux_reserves,2024,22000.0,kt,MCS USGS,plomb
+IND,mineraux_production,2023,226.0,kt,MCS USGS,plomb
+IND,mineraux_production,2024,220.0,kt,MCS USGS,plomb
+IND,mineraux_reserves,2024,1900.0,kt,MCS USGS,plomb
+IRN,mineraux_production,2023,60.0,kt,MCS USGS,plomb
+IRN,mineraux_production,2024,60.0,kt,MCS USGS,plomb
+IRN,mineraux_reserves,2024,2000.0,kt,MCS USGS,plomb
+MEX,mineraux_production,2023,183.0,kt,MCS USGS,plomb
+MEX,mineraux_production,2024,180.0,kt,MCS USGS,plomb
+MEX,mineraux_reserves,2024,5600.0,kt,MCS USGS,plomb
+PER,mineraux_production,2023,273.0,kt,MCS USGS,plomb
+PER,mineraux_production,2024,270.0,kt,MCS USGS,plomb
+PER,mineraux_reserves,2024,5000.0,kt,MCS USGS,plomb
+RUS,mineraux_production,2023,218.0,kt,MCS USGS,plomb
+RUS,mineraux_production,2024,220.0,kt,MCS USGS,plomb
+RUS,mineraux_reserves,2024,8900.0,kt,MCS USGS,plomb
+SWE,mineraux_production,2023,72.0,kt,MCS USGS,plomb
+SWE,mineraux_production,2024,70.0,kt,MCS USGS,plomb
+SWE,mineraux_reserves,2024,1700.0,kt,MCS USGS,plomb
+TJK,mineraux_production,2023,39.0,kt,MCS USGS,plomb
+TJK,mineraux_production,2024,40.0,kt,MCS USGS,plomb
+TUR,mineraux_production,2023,68.0,kt,MCS USGS,plomb
+TUR,mineraux_production,2024,70.0,kt,MCS USGS,plomb
+TUR,mineraux_reserves,2024,1600.0,kt,MCS USGS,plomb
+USA,mineraux_reserves,2024,1800.0,kt,MCS USGS,lithium
+ARG,mineraux_production,2023,8.63,kt,MCS USGS,lithium
+ARG,mineraux_production,2024,18.0,kt,MCS USGS,lithium
+ARG,mineraux_reserves,2024,4000.0,kt,MCS USGS,lithium
+AUS,mineraux_production,2023,91.7,kt,MCS USGS,lithium
+AUS,mineraux_production,2024,88.0,kt,MCS USGS,lithium
+AUS,mineraux_reserves,2024,7000.0,kt,MCS USGS,lithium
+BRA,mineraux_production,2023,5.26,kt,MCS USGS,lithium
+BRA,mineraux_production,2024,10.0,kt,MCS USGS,lithium
+BRA,mineraux_reserves,2024,390.0,kt,MCS USGS,lithium
+CAN,mineraux_production,2023,3.24,kt,MCS USGS,lithium
+CAN,mineraux_production,2024,4.3,kt,MCS USGS,lithium
+CAN,mineraux_reserves,2024,1200.0,kt,MCS USGS,lithium
+CHL,mineraux_production,2023,41.4,kt,MCS USGS,lithium
+CHL,mineraux_production,2024,49.0,kt,MCS USGS,lithium
+CHL,mineraux_reserves,2024,9300.0,kt,MCS USGS,lithium
+CHN,mineraux_production,2023,35.7,kt,MCS USGS,lithium
+CHN,mineraux_production,2024,41.0,kt,MCS USGS,lithium
+CHN,mineraux_reserves,2024,3000.0,kt,MCS USGS,lithium
+NAM,mineraux_production,2023,2.7,kt,MCS USGS,lithium
+NAM,mineraux_production,2024,2.7,kt,MCS USGS,lithium
+NAM,mineraux_reserves,2024,14.0,kt,MCS USGS,lithium
+PRT,mineraux_production,2023,0.38,kt,MCS USGS,lithium
+PRT,mineraux_production,2024,0.38,kt,MCS USGS,lithium
+PRT,mineraux_reserves,2024,60.0,kt,MCS USGS,lithium
+ZWE,mineraux_production,2023,14.9,kt,MCS USGS,lithium
+ZWE,mineraux_production,2024,22.0,kt,MCS USGS,lithium
+ZWE,mineraux_reserves,2024,480.0,kt,MCS USGS,lithium
+AUS,mineraux_production,2023,2860.0,kt,MCS USGS,manganese
+AUS,mineraux_production,2024,2800.0,kt,MCS USGS,manganese
+AUS,mineraux_reserves,2024,500000.0,kt,MCS USGS,manganese
+BRA,mineraux_production,2023,580.0,kt,MCS USGS,manganese
+BRA,mineraux_production,2024,590.0,kt,MCS USGS,manganese
+BRA,mineraux_reserves,2024,270000.0,kt,MCS USGS,manganese
+CHN,mineraux_production,2023,767.0,kt,MCS USGS,manganese
+CHN,mineraux_production,2024,770.0,kt,MCS USGS,manganese
+CHN,mineraux_reserves,2024,280000.0,kt,MCS USGS,manganese
+GAB,mineraux_production,2023,4490.0,kt,MCS USGS,manganese
+GAB,mineraux_production,2024,4600.0,kt,MCS USGS,manganese
+GAB,mineraux_reserves,2024,61000.0,kt,MCS USGS,manganese
+GHA,mineraux_production,2023,818.0,kt,MCS USGS,manganese
+GHA,mineraux_production,2024,820.0,kt,MCS USGS,manganese
+GHA,mineraux_reserves,2024,13000.0,kt,MCS USGS,manganese
+IND,mineraux_production,2023,744.0,kt,MCS USGS,manganese
+IND,mineraux_production,2024,800.0,kt,MCS USGS,manganese
+IND,mineraux_reserves,2024,34000.0,kt,MCS USGS,manganese
+MYS,mineraux_production,2023,410.0,kt,MCS USGS,manganese
+MYS,mineraux_production,2024,410.0,kt,MCS USGS,manganese
+ZAF,mineraux_production,2023,7300.0,kt,MCS USGS,manganese
+ZAF,mineraux_production,2024,7400.0,kt,MCS USGS,manganese
+ZAF,mineraux_reserves,2024,560000.0,kt,MCS USGS,manganese
+USA,mineraux_production,2023,34.0,kt,MCS USGS,molybdene
+USA,mineraux_production,2024,33.0,kt,MCS USGS,molybdene
+USA,mineraux_reserves,2024,3.5,kt,MCS USGS,molybdene
+ARG,mineraux_reserves,2024,0.1,kt,MCS USGS,molybdene
+ARM,mineraux_production,2023,7.6,kt,MCS USGS,molybdene
+ARM,mineraux_production,2024,8.0,kt,MCS USGS,molybdene
+ARM,mineraux_reserves,2024,0.15,kt,MCS USGS,molybdene
+AUS,mineraux_production,2023,0.66,kt,MCS USGS,molybdene
+AUS,mineraux_production,2024,1.0,kt,MCS USGS,molybdene
+AUS,mineraux_reserves,2024,0.69,kt,MCS USGS,molybdene
+CAN,mineraux_production,2023,1.15,kt,MCS USGS,molybdene
+CAN,mineraux_production,2024,1.2,kt,MCS USGS,molybdene
+CAN,mineraux_reserves,2024,0.064,kt,MCS USGS,molybdene
+CHL,mineraux_production,2023,44.1,kt,MCS USGS,molybdene
+CHL,mineraux_production,2024,38.0,kt,MCS USGS,molybdene
+CHL,mineraux_reserves,2024,1.4,kt,MCS USGS,molybdene
+CHN,mineraux_production,2023,96.0,kt,MCS USGS,molybdene
+CHN,mineraux_production,2024,110.0,kt,MCS USGS,molybdene
+CHN,mineraux_reserves,2024,5.9,kt,MCS USGS,molybdene
+IRN,mineraux_production,2023,2.5,kt,MCS USGS,molybdene
+IRN,mineraux_production,2024,3.0,kt,MCS USGS,molybdene
+IRN,mineraux_reserves,2024,0.043,kt,MCS USGS,molybdene
+KAZ,mineraux_production,2023,3.73,kt,MCS USGS,molybdene
+KAZ,mineraux_production,2024,3.9,kt,MCS USGS,molybdene
+KAZ,mineraux_reserves,2024,0.007,kt,MCS USGS,molybdene
+PRK,mineraux_production,2023,0.4,kt,MCS USGS,molybdene
+PRK,mineraux_production,2024,0.7,kt,MCS USGS,molybdene
+KOR,mineraux_production,2023,0.339,kt,MCS USGS,molybdene
+KOR,mineraux_production,2024,0.3,kt,MCS USGS,molybdene
+KOR,mineraux_reserves,2024,0.008,kt,MCS USGS,molybdene
+MEX,mineraux_production,2023,17.5,kt,MCS USGS,molybdene
+MEX,mineraux_production,2024,17.0,kt,MCS USGS,molybdene
+MEX,mineraux_reserves,2024,0.13,kt,MCS USGS,molybdene
+MNG,mineraux_production,2023,3.16,kt,MCS USGS,molybdene
+MNG,mineraux_production,2024,3.1,kt,MCS USGS,molybdene
+MNG,mineraux_reserves,2024,0.01,kt,MCS USGS,molybdene
+PER,mineraux_production,2023,33.5,kt,MCS USGS,molybdene
+PER,mineraux_production,2024,41.0,kt,MCS USGS,molybdene
+PER,mineraux_reserves,2024,1.9,kt,MCS USGS,molybdene
+RUS,mineraux_production,2023,1.7,kt,MCS USGS,molybdene
+RUS,mineraux_production,2024,1.7,kt,MCS USGS,molybdene
+RUS,mineraux_reserves,2024,1.1,kt,MCS USGS,molybdene
+UZB,mineraux_production,2023,1.7,kt,MCS USGS,molybdene
+UZB,mineraux_production,2024,1.7,kt,MCS USGS,molybdene
+UZB,mineraux_reserves,2024,0.021,kt,MCS USGS,molybdene
+USA,mineraux_production,2023,16.4,kt,MCS USGS,nickel
+USA,mineraux_production,2024,8.0,kt,MCS USGS,nickel
+USA,mineraux_reserves,2024,310.0,kt,MCS USGS,nickel
+AUS,mineraux_production,2023,149.0,kt,MCS USGS,nickel
+AUS,mineraux_production,2024,110.0,kt,MCS USGS,nickel
+AUS,mineraux_reserves,2024,24000.0,kt,MCS USGS,nickel
+BRA,mineraux_production,2023,82.7,kt,MCS USGS,nickel
+BRA,mineraux_production,2024,77.0,kt,MCS USGS,nickel
+BRA,mineraux_reserves,2024,16000.0,kt,MCS USGS,nickel
+CAN,mineraux_production,2023,159.0,kt,MCS USGS,nickel
+CAN,mineraux_production,2024,190.0,kt,MCS USGS,nickel
+CAN,mineraux_reserves,2024,2200.0,kt,MCS USGS,nickel
+CHN,mineraux_production,2023,117.0,kt,MCS USGS,nickel
+CHN,mineraux_production,2024,120.0,kt,MCS USGS,nickel
+CHN,mineraux_reserves,2024,4400.0,kt,MCS USGS,nickel
+IDN,mineraux_production,2023,2030.0,kt,MCS USGS,nickel
+IDN,mineraux_production,2024,2200.0,kt,MCS USGS,nickel
+IDN,mineraux_reserves,2024,55000.0,kt,MCS USGS,nickel
+NCL,mineraux_production,2023,231.0,kt,MCS USGS,nickel
+NCL,mineraux_production,2024,110.0,kt,MCS USGS,nickel
+NCL,mineraux_reserves,2024,7100.0,kt,MCS USGS,nickel
+PHL,mineraux_production,2023,413.0,kt,MCS USGS,nickel
+PHL,mineraux_production,2024,330.0,kt,MCS USGS,nickel
+PHL,mineraux_reserves,2024,4800.0,kt,MCS USGS,nickel
+RUS,mineraux_production,2023,210.0,kt,MCS USGS,nickel
+RUS,mineraux_production,2024,210.0,kt,MCS USGS,nickel
+RUS,mineraux_reserves,2024,8300.0,kt,MCS USGS,nickel
+USA,mineraux_reserves,2024,210.0,kt,MCS USGS,niobium
+BRA,mineraux_production,2023,102.0,kt,MCS USGS,niobium
+BRA,mineraux_production,2024,100.0,kt,MCS USGS,niobium
+BRA,mineraux_reserves,2024,16000.0,kt,MCS USGS,niobium
+CAN,mineraux_production,2023,6.7,kt,MCS USGS,niobium
+CAN,mineraux_production,2024,7.1,kt,MCS USGS,niobium
+CAN,mineraux_reserves,2024,1600.0,kt,MCS USGS,niobium
+COD,mineraux_production,2023,0.74,kt,MCS USGS,niobium
+COD,mineraux_production,2024,0.7,kt,MCS USGS,niobium
+RUS,mineraux_production,2023,0.353,kt,MCS USGS,niobium
+RUS,mineraux_production,2024,0.35,kt,MCS USGS,niobium
+RWA,mineraux_production,2023,0.21,kt,MCS USGS,niobium
+RWA,mineraux_production,2024,0.2,kt,MCS USGS,niobium
+USA,mineraux_production,2023,0.0103,kt,MCS USGS,pgm
+USA,mineraux_production,2024,0.008,kt,MCS USGS,pgm
+USA,mineraux_reserves,2024,0.82,kt,MCS USGS,pgm
+CAN,mineraux_production,2023,0.0161,kt,MCS USGS,pgm
+CAN,mineraux_production,2024,0.015,kt,MCS USGS,pgm
+CAN,mineraux_reserves,2024,0.31,kt,MCS USGS,pgm
+RUS,mineraux_production,2023,0.087,kt,MCS USGS,pgm
+RUS,mineraux_production,2024,0.075,kt,MCS USGS,pgm
+RUS,mineraux_reserves,2024,16.0,kt,MCS USGS,pgm
+ZAF,mineraux_production,2023,0.0749,kt,MCS USGS,pgm
+ZAF,mineraux_production,2024,0.072,kt,MCS USGS,pgm
+ZAF,mineraux_reserves,2024,63.0,kt,MCS USGS,pgm
+ZWE,mineraux_production,2023,0.0159,kt,MCS USGS,pgm
+ZWE,mineraux_production,2024,0.015,kt,MCS USGS,pgm
+ZWE,mineraux_reserves,2024,1.2,kt,MCS USGS,pgm
+USA,mineraux_production,2023,0.00304,kt,MCS USGS,pgm
+USA,mineraux_production,2024,0.002,kt,MCS USGS,pgm
+CAN,mineraux_production,2023,0.00517,kt,MCS USGS,pgm
+CAN,mineraux_production,2024,0.0052,kt,MCS USGS,pgm
+RUS,mineraux_production,2023,0.021,kt,MCS USGS,pgm
+RUS,mineraux_production,2024,0.018,kt,MCS USGS,pgm
+ZAF,mineraux_production,2023,0.125,kt,MCS USGS,pgm
+ZAF,mineraux_production,2024,0.12,kt,MCS USGS,pgm
+ZWE,mineraux_production,2023,0.0192,kt,MCS USGS,pgm
+ZWE,mineraux_production,2024,0.019,kt,MCS USGS,pgm
+USA,mineraux_production,2023,41.6,kt,MCS USGS,terres_rares
+USA,mineraux_production,2024,45.0,kt,MCS USGS,terres_rares
+USA,mineraux_reserves,2024,1900.0,kt,MCS USGS,terres_rares
+AUS,mineraux_production,2023,16.0,kt,MCS USGS,terres_rares
+AUS,mineraux_production,2024,13.0,kt,MCS USGS,terres_rares
+AUS,mineraux_reserves,2024,5700.0,kt,MCS USGS,terres_rares
+BRA,mineraux_production,2023,0.14,kt,MCS USGS,terres_rares
+BRA,mineraux_production,2024,0.02,kt,MCS USGS,terres_rares
+BRA,mineraux_reserves,2024,21000.0,kt,MCS USGS,terres_rares
+MMR,mineraux_production,2023,43.0,kt,MCS USGS,terres_rares
+MMR,mineraux_production,2024,31.0,kt,MCS USGS,terres_rares
+CAN,mineraux_reserves,2024,830.0,kt,MCS USGS,terres_rares
+CHN,mineraux_production,2023,255.0,kt,MCS USGS,terres_rares
+CHN,mineraux_production,2024,270.0,kt,MCS USGS,terres_rares
+CHN,mineraux_reserves,2024,44000.0,kt,MCS USGS,terres_rares
+GRL,mineraux_reserves,2024,1500.0,kt,MCS USGS,terres_rares
+IND,mineraux_production,2023,2.9,kt,MCS USGS,terres_rares
+IND,mineraux_production,2024,2.9,kt,MCS USGS,terres_rares
+IND,mineraux_reserves,2024,6900.0,kt,MCS USGS,terres_rares
+MDG,mineraux_production,2023,2.1,kt,MCS USGS,terres_rares
+MDG,mineraux_production,2024,2.0,kt,MCS USGS,terres_rares
+MYS,mineraux_production,2023,0.31,kt,MCS USGS,terres_rares
+MYS,mineraux_production,2024,0.13,kt,MCS USGS,terres_rares
+NGA,mineraux_production,2023,7.2,kt,MCS USGS,terres_rares
+NGA,mineraux_production,2024,13.0,kt,MCS USGS,terres_rares
+RUS,mineraux_production,2023,2.5,kt,MCS USGS,terres_rares
+RUS,mineraux_production,2024,2.5,kt,MCS USGS,terres_rares
+RUS,mineraux_reserves,2024,3800.0,kt,MCS USGS,terres_rares
+ZAF,mineraux_reserves,2024,860.0,kt,MCS USGS,terres_rares
+TZA,mineraux_reserves,2024,890.0,kt,MCS USGS,terres_rares
+THA,mineraux_production,2023,3.6,kt,MCS USGS,terres_rares
+THA,mineraux_production,2024,13.0,kt,MCS USGS,terres_rares
+THA,mineraux_reserves,2024,4.5,kt,MCS USGS,terres_rares
+VNM,mineraux_production,2023,0.3,kt,MCS USGS,terres_rares
+VNM,mineraux_production,2024,0.3,kt,MCS USGS,terres_rares
+VNM,mineraux_reserves,2024,3500.0,kt,MCS USGS,terres_rares
+USA,mineraux_production,2023,1.02,kt,MCS USGS,argent
+USA,mineraux_production,2024,1.1,kt,MCS USGS,argent
+USA,mineraux_reserves,2024,23.0,kt,MCS USGS,argent
+ARG,mineraux_production,2023,0.808,kt,MCS USGS,argent
+ARG,mineraux_production,2024,0.8,kt,MCS USGS,argent
+ARG,mineraux_reserves,2024,6.5,kt,MCS USGS,argent
+AUS,mineraux_production,2023,1.03,kt,MCS USGS,argent
+AUS,mineraux_production,2024,1.0,kt,MCS USGS,argent
+AUS,mineraux_reserves,2024,94.0,kt,MCS USGS,argent
+BOL,mineraux_production,2023,1.35,kt,MCS USGS,argent
+BOL,mineraux_production,2024,1.3,kt,MCS USGS,argent
+BOL,mineraux_reserves,2024,22.0,kt,MCS USGS,argent
+CHL,mineraux_production,2023,1.26,kt,MCS USGS,argent
+CHL,mineraux_production,2024,1.2,kt,MCS USGS,argent
+CHL,mineraux_reserves,2024,26.0,kt,MCS USGS,argent
+CAN,mineraux_production,2023,0.306,kt,MCS USGS,argent
+CAN,mineraux_production,2024,0.3,kt,MCS USGS,argent
+CAN,mineraux_reserves,2024,4.9,kt,MCS USGS,argent
+CHN,mineraux_production,2023,3.4,kt,MCS USGS,argent
+CHN,mineraux_production,2024,3.3,kt,MCS USGS,argent
+CHN,mineraux_reserves,2024,70.0,kt,MCS USGS,argent
+IND,mineraux_production,2023,0.813,kt,MCS USGS,argent
+IND,mineraux_production,2024,0.8,kt,MCS USGS,argent
+IND,mineraux_reserves,2024,8.0,kt,MCS USGS,argent
+KAZ,mineraux_production,2023,0.985,kt,MCS USGS,argent
+KAZ,mineraux_production,2024,1.0,kt,MCS USGS,argent
+MEX,mineraux_production,2023,6.29,kt,MCS USGS,argent
+MEX,mineraux_production,2024,6.3,kt,MCS USGS,argent
+MEX,mineraux_reserves,2024,37.0,kt,MCS USGS,argent
+PER,mineraux_production,2023,3.2,kt,MCS USGS,argent
+PER,mineraux_production,2024,3.1,kt,MCS USGS,argent
+PER,mineraux_reserves,2024,140.0,kt,MCS USGS,argent
+POL,mineraux_production,2023,1.32,kt,MCS USGS,argent
+POL,mineraux_production,2024,1.3,kt,MCS USGS,argent
+POL,mineraux_reserves,2024,61.0,kt,MCS USGS,argent
+RUS,mineraux_production,2023,1.24,kt,MCS USGS,argent
+RUS,mineraux_production,2024,1.2,kt,MCS USGS,argent
+RUS,mineraux_reserves,2024,92.0,kt,MCS USGS,argent
+SWE,mineraux_production,2023,0.404,kt,MCS USGS,argent
+SWE,mineraux_production,2024,0.4,kt,MCS USGS,argent
+AUS,mineraux_production,2023,9.85,kt,MCS USGS,etain
+AUS,mineraux_production,2024,9.9,kt,MCS USGS,etain
+AUS,mineraux_reserves,2024,620.0,kt,MCS USGS,etain
+BOL,mineraux_production,2023,18.7,kt,MCS USGS,etain
+BOL,mineraux_production,2024,21.0,kt,MCS USGS,etain
+BOL,mineraux_reserves,2024,400.0,kt,MCS USGS,etain
+BRA,mineraux_production,2023,29.3,kt,MCS USGS,etain
+BRA,mineraux_production,2024,29.0,kt,MCS USGS,etain
+BRA,mineraux_reserves,2024,420.0,kt,MCS USGS,etain
+MMR,mineraux_production,2023,34.0,kt,MCS USGS,etain
+MMR,mineraux_production,2024,34.0,kt,MCS USGS,etain
+MMR,mineraux_reserves,2024,700.0,kt,MCS USGS,etain
+CHN,mineraux_production,2023,70.0,kt,MCS USGS,etain
+CHN,mineraux_production,2024,69.0,kt,MCS USGS,etain
+CHN,mineraux_reserves,2024,1000.0,kt,MCS USGS,etain
+COD,mineraux_production,2023,20.0,kt,MCS USGS,etain
+COD,mineraux_production,2024,25.0,kt,MCS USGS,etain
+COD,mineraux_reserves,2024,120.0,kt,MCS USGS,etain
+IDN,mineraux_production,2023,69.0,kt,MCS USGS,etain
+IDN,mineraux_production,2024,50.0,kt,MCS USGS,etain
+LAO,mineraux_production,2023,1.7,kt,MCS USGS,etain
+LAO,mineraux_production,2024,1.5,kt,MCS USGS,etain
+MYS,mineraux_production,2023,3.77,kt,MCS USGS,etain
+MYS,mineraux_production,2024,3.0,kt,MCS USGS,etain
+NGA,mineraux_production,2023,7.0,kt,MCS USGS,etain
+NGA,mineraux_production,2024,7.0,kt,MCS USGS,etain
+PER,mineraux_production,2023,26.2,kt,MCS USGS,etain
+PER,mineraux_production,2024,31.0,kt,MCS USGS,etain
+PER,mineraux_reserves,2024,130.0,kt,MCS USGS,etain
+RUS,mineraux_production,2023,2.7,kt,MCS USGS,etain
+RUS,mineraux_production,2024,3.0,kt,MCS USGS,etain
+RUS,mineraux_reserves,2024,460.0,kt,MCS USGS,etain
+RWA,mineraux_production,2023,3.6,kt,MCS USGS,etain
+RWA,mineraux_production,2024,3.6,kt,MCS USGS,etain
+VNM,mineraux_production,2023,7.6,kt,MCS USGS,etain
+VNM,mineraux_production,2024,6.7,kt,MCS USGS,etain
+VNM,mineraux_reserves,2024,23.0,kt,MCS USGS,etain
+AUS,mineraux_production,2023,0.43,kt,MCS USGS,tungstene
+AUS,mineraux_production,2024,1.0,kt,MCS USGS,tungstene
+AUS,mineraux_reserves,2024,570.0,kt,MCS USGS,tungstene
+AUT,mineraux_production,2023,0.85,kt,MCS USGS,tungstene
+AUT,mineraux_production,2024,0.8,kt,MCS USGS,tungstene
+AUT,mineraux_reserves,2024,10.0,kt,MCS USGS,tungstene
+BOL,mineraux_production,2023,1.5,kt,MCS USGS,tungstene
+BOL,mineraux_production,2024,1.6,kt,MCS USGS,tungstene
+CHN,mineraux_production,2023,66.0,kt,MCS USGS,tungstene
+CHN,mineraux_production,2024,67.0,kt,MCS USGS,tungstene
+CHN,mineraux_reserves,2024,2400.0,kt,MCS USGS,tungstene
+PRK,mineraux_production,2023,1.6,kt,MCS USGS,tungstene
+PRK,mineraux_production,2024,1.7,kt,MCS USGS,tungstene
+PRK,mineraux_reserves,2024,29.0,kt,MCS USGS,tungstene
+PRT,mineraux_production,2023,0.45,kt,MCS USGS,tungstene
+PRT,mineraux_production,2024,0.5,kt,MCS USGS,tungstene
+PRT,mineraux_reserves,2024,3.4,kt,MCS USGS,tungstene
+RUS,mineraux_production,2023,2.0,kt,MCS USGS,tungstene
+RUS,mineraux_production,2024,2.0,kt,MCS USGS,tungstene
+RUS,mineraux_reserves,2024,400.0,kt,MCS USGS,tungstene
+RWA,mineraux_production,2023,1.2,kt,MCS USGS,tungstene
+RWA,mineraux_production,2024,1.2,kt,MCS USGS,tungstene
+ESP,mineraux_production,2023,0.65,kt,MCS USGS,tungstene
+ESP,mineraux_production,2024,0.7,kt,MCS USGS,tungstene
+ESP,mineraux_reserves,2024,66.0,kt,MCS USGS,tungstene
+VNM,mineraux_production,2023,3.5,kt,MCS USGS,tungstene
+VNM,mineraux_production,2024,3.4,kt,MCS USGS,tungstene
+VNM,mineraux_reserves,2024,140.0,kt,MCS USGS,tungstene
+USA,mineraux_reserves,2024,0.045,kt,MCS USGS,vanadium
+AUS,mineraux_reserves,2024,8.5,kt,MCS USGS,vanadium
+BRA,mineraux_production,2023,5.42,kt,MCS USGS,vanadium
+BRA,mineraux_production,2024,5.0,kt,MCS USGS,vanadium
+BRA,mineraux_reserves,2024,0.12,kt,MCS USGS,vanadium
+CHN,mineraux_production,2023,70.0,kt,MCS USGS,vanadium
+CHN,mineraux_production,2024,70.0,kt,MCS USGS,vanadium
+CHN,mineraux_reserves,2024,4.1,kt,MCS USGS,vanadium
+RUS,mineraux_production,2023,20.0,kt,MCS USGS,vanadium
+RUS,mineraux_production,2024,20.0,kt,MCS USGS,vanadium
+RUS,mineraux_reserves,2024,5.0,kt,MCS USGS,vanadium
+ZAF,mineraux_production,2023,8.67,kt,MCS USGS,vanadium
+ZAF,mineraux_production,2024,8.0,kt,MCS USGS,vanadium
+ZAF,mineraux_reserves,2024,0.43,kt,MCS USGS,vanadium
+USA,mineraux_production,2023,767.0,kt,MCS USGS,zinc
+USA,mineraux_production,2024,750.0,kt,MCS USGS,zinc
+USA,mineraux_reserves,2024,9200.0,kt,MCS USGS,zinc
+AUS,mineraux_production,2023,1090.0,kt,MCS USGS,zinc
+AUS,mineraux_production,2024,1100.0,kt,MCS USGS,zinc
+AUS,mineraux_reserves,2024,64000.0,kt,MCS USGS,zinc
+BOL,mineraux_production,2023,492.0,kt,MCS USGS,zinc
+BOL,mineraux_production,2024,510.0,kt,MCS USGS,zinc
+CHN,mineraux_production,2023,4060.0,kt,MCS USGS,zinc
+CHN,mineraux_production,2024,4000.0,kt,MCS USGS,zinc
+CHN,mineraux_reserves,2024,46000.0,kt,MCS USGS,zinc
+IND,mineraux_production,2023,854.0,kt,MCS USGS,zinc
+IND,mineraux_production,2024,860.0,kt,MCS USGS,zinc
+IND,mineraux_reserves,2024,9800.0,kt,MCS USGS,zinc
+KAZ,mineraux_production,2023,340.0,kt,MCS USGS,zinc
+KAZ,mineraux_production,2024,370.0,kt,MCS USGS,zinc
+KAZ,mineraux_reserves,2024,7600.0,kt,MCS USGS,zinc
+MEX,mineraux_production,2023,584.0,kt,MCS USGS,zinc
+MEX,mineraux_production,2024,700.0,kt,MCS USGS,zinc
+MEX,mineraux_reserves,2024,14000.0,kt,MCS USGS,zinc
+PER,mineraux_production,2023,1470.0,kt,MCS USGS,zinc
+PER,mineraux_production,2024,1300.0,kt,MCS USGS,zinc
+PER,mineraux_reserves,2024,20000.0,kt,MCS USGS,zinc
+RUS,mineraux_production,2023,300.0,kt,MCS USGS,zinc
+RUS,mineraux_production,2024,310.0,kt,MCS USGS,zinc
+RUS,mineraux_reserves,2024,29000.0,kt,MCS USGS,zinc
+ZAF,mineraux_production,2023,198.0,kt,MCS USGS,zinc
+ZAF,mineraux_production,2024,120.0,kt,MCS USGS,zinc
+ZAF,mineraux_reserves,2024,5900.0,kt,MCS USGS,zinc
+SWE,mineraux_production,2023,218.0,kt,MCS USGS,zinc
+SWE,mineraux_production,2024,240.0,kt,MCS USGS,zinc
+SWE,mineraux_reserves,2024,3900.0,kt,MCS USGS,zinc
