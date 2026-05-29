@@ -550,6 +550,48 @@ main { flex: 1; padding: 16px 18px 28px; }
 
 .rel-empty { padding: 50px 20px; text-align: center; color: var(--text3); font-size: 12.5px; }
 
+/* Barres horizontales d'influence (panel gauche mode Influence) */
+.inf-bars { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; }
+.inf-bar-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 52px;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .12s;
+}
+.inf-bar-row:hover { background: rgba(180, 83, 9, 0.06); }
+.inf-bar-row.pinned { background: rgba(180, 83, 9, 0.14); box-shadow: inset 0 0 0 1px var(--orange); }
+.inf-bar-label { display: flex; align-items: center; gap: 6px; font-size: 12px; min-width: 0; }
+.inf-bar-label .flag { font-size: 14px; flex-shrink: 0; }
+.inf-bar-label .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inf-bar-track { background: var(--bg2); border-radius: 2px; height: 14px; overflow: hidden; position: relative; }
+.inf-bar-fill { background: var(--orange); height: 100%; border-radius: 2px; transition: width .25s ease; }
+.inf-bar-row.pinned .inf-bar-fill { background: var(--green); }
+.inf-bar-val { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text); text-align: right; }
+.inf-bars-more { font-size: 10.5px; color: var(--text3); font-style: italic; padding: 6px 8px; text-align: center; }
+.inf-bars-hint { font-size: 11px; color: var(--text3); padding: 8px 4px 0; text-align: center; }
+.inf-bars-hint.pinned { color: var(--green); }
+.inf-bars-hint strong { color: var(--text); font-weight: 600; }
+
+/* Courbes superposées d'influence dans le temps (panel droit mode Influence) */
+.inf-tl-wrap { width: 100%; }
+.inf-tl-wrap svg { display: block; width: 100%; height: 280px; }
+.inf-tl-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: var(--bg-card-soft);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.inf-tl-stat-k { font-size: 10px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+.inf-tl-stat-v { font-size: 13px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+
 /* Aires empilées (évolution flux) */
 .rel-evo-wrap { width: 100%; }
 .rel-evo-wrap svg { display: block; width: 100%; height: 280px; }
@@ -1131,6 +1173,7 @@ function ensureIdentiteCache(){
   cache.world.clear();
   _fluxTimelineCache.clear();
   _fluxPartnerTotalsCache.clear();
+  _fluxPartnerTotalsTimelineCache.clear();
 
   const inList = sqlList(isos);
   // récupère SUBCATEGORY pour distinguer historique (NULL) vs projection ('projection')
@@ -1453,6 +1496,46 @@ function getFluxPartnerWorldTotals(entry){
   return out;
 }
 
+// Variante temporelle : total mondial PAR partenaire ET PAR ANNÉE (sur toutes les années dispo).
+// Permet de tracer l'influence du sujet chez un partenaire au fil des ans (influence = volume_sujet/total_partenaire).
+// Cache séparé du non-timeline parce que la requête est différente (groupé par année aussi).
+const _fluxPartnerTotalsTimelineCache = new Map();
+function getFluxPartnerWorldTotalsTimeline(entry){
+  ensureIdentiteCache();
+  const isos = currentIsos();
+  if(!isos.length) return {};
+  let realIndicator = entry.realIndicator;
+  let partnerCol, otherCol;
+  if(realIndicator === 'import_commercial'){ partnerCol = 'country_from'; otherCol = 'country_to'; }
+  else if(realIndicator === 'export_commercial'){ partnerCol = 'country_to'; otherCol = 'country_from'; }
+  else {
+    partnerCol = (entry.side === 'to') ? 'country_from' : 'country_to';
+    otherCol = (entry.side === 'to') ? 'country_to' : 'country_from';
+  }
+  const cacheKey = entry.key + '|PWT-TL|' + subjectKey(isos);
+  if(_fluxPartnerTotalsTimelineCache.has(cacheKey)) return _fluxPartnerTotalsTimelineCache.get(cacheKey);
+
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  // Total mondial par partenaire et par année, hors agrégats régionaux et sentinelles
+  const r = safeExec(`SELECT year, ${partnerCol} AS partner, SUM(value) AS total
+                      FROM flux WHERE indicator='${escapeSql(realIndicator)}'
+                      AND ${partnerCol} NOT IN (${exclAgg})
+                      AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                      AND ${otherCol} NOT IN (${exclAgg})
+                      AND ${otherCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                      GROUP BY year, ${partnerCol}`);
+  // Indexation { partner: { year: total } }
+  const out = {};
+  if(r.length){
+    for(const [y, p, t] of r[0].values){
+      if(!out[p]) out[p] = {};
+      out[p][y] = t || 0;
+    }
+  }
+  _fluxPartnerTotalsTimelineCache.set(cacheKey, out);
+  return out;
+}
+
 function getFluxWorldMap(entry){
   const rows = getFluxRows(entry);
   if(!rows.length) return {};
@@ -1472,7 +1555,7 @@ function getFluxWorldMap(entry){
 }
 
 // Invalide le cache quand l'année change (les valeurs annuelles dépendent de l'année).
-function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); _fluxTimelineCache.clear(); _fluxPartnerTotalsCache.clear(); }
+function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); _fluxTimelineCache.clear(); _fluxPartnerTotalsCache.clear(); _fluxPartnerTotalsTimelineCache.clear(); }
 
 /* ─── UI : helpers chargement ─────────────────────────────────── */
 function setLoadingMsg(msg, pct){
@@ -1761,6 +1844,7 @@ function renderYearSlot(){
 
 function setSubject(isos, label){
   state.subject = { isos: isos.slice(), label: label || detectZoneLabel(isos) };
+  _relInfluencePinned = null;  // reset sélection mode Influence : un nouveau sujet → nouvelle sélection
   renderContextBar();
   syncUrl();
   refreshActiveView();
@@ -2954,6 +3038,7 @@ let _relDim = 'partner';          // 'partner' | 'sub1' | 'sub2' | 'sub3' — di
 let _relPath = [];                // chemin de drill-down dans le treemap (= filtre cumulatif partagé)
 let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
 let _relMetric = 'volume';        // 'volume' | 'influence' — métrique d'affichage
+let _relInfluencePinned = null;   // en mode Influence, ISO3 du partenaire sélectionné pour zoom courbe
 
 /* ─── Dimensions disponibles pour le référentiel d'analyse ────────
    Pour un flux donné, on renvoie la liste des dimensions possibles
@@ -3064,7 +3149,7 @@ function renderRelNav(filter){
 function toggleRelCat(cat){ _relCatCollapsed[cat] = !_relCatCollapsed[cat]; renderRelNav(document.getElementById('relSearch')?.value || ''); }
 function filterRelNav(v){ renderRelNav(v); }
 function selectRelEntry(key){
-  _relEntryKey = key; _relPath = []; _relDim = 'partner';
+  _relEntryKey = key; _relPath = []; _relDim = 'partner'; _relInfluencePinned = null;
   renderRelNav(document.getElementById('relSearch')?.value || '');
   renderRelMain();
   syncUrl();
@@ -3135,7 +3220,7 @@ function renderRelMain(){
   renderRelEvolution();
   renderRelFluxMap();
 }
-function setRelMetric(m){ _relMetric = m; renderRelMain(); syncUrl(); }
+function setRelMetric(m){ _relMetric = m; _relInfluencePinned = null; renderRelMain(); syncUrl(); }
 function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label: 'Partenaire' }).label; }
 
 
@@ -3230,7 +3315,67 @@ function renderRelComposition(){
     body.innerHTML = `<div class="rel-empty">Pas de flux pour ce filtre.</div>`;
     return;
   }
-  drawTreemapRel(agg, body);
+  // Mode Influence + dim=partner : barres horizontales avec sélection
+  // Mode Volume ou dim ≠ partner : treemap classique
+  if(agg.metric === 'influence'){
+    drawInfluenceBars(agg, body);
+  } else {
+    drawTreemapRel(agg, body);
+  }
+}
+
+/* ─── Barres horizontales d'influence (mode Influence) ─────────
+   Une barre par partenaire, longueur = % d'influence chez ce partenaire.
+   Tri décroissant. Clic = épingle le pays pour zoom dans le panel droit. */
+function drawInfluenceBars(node, host){
+  const items = node.children.slice().sort((a,b)=>b.value-a.value);
+  // On limite à 20 barres pour rester lisible. Au-delà, indication discrète.
+  const MAX_BARS = 20;
+  const visible = items.slice(0, MAX_BARS);
+  const remaining = items.length - visible.length;
+  const maxPct = visible[0].value || 1;
+  const entry = getFlowEntryByKey(_relEntryKey);
+  const cfg = state.indicators.find(c => c.indicator === entry?.realIndicator) || entry;
+
+  let html = `<div class="inf-bars">`;
+  for(const it of visible){
+    const w = Math.max(2, (it.value / maxPct) * 100);
+    const isPinned = (_relInfluencePinned === it.key);
+    const volumeStr = fmtWithUnit(it.volume, cfg?.unit_display);
+    html += `
+      <div class="inf-bar-row ${isPinned ? 'pinned' : ''}"
+           onclick="toggleInfluencePinned('${escAttr(it.key)}')"
+           title="${escAttr((it.flag?it.flag+' ':'')+it.name + ' — ' + volumeStr)}">
+        <div class="inf-bar-label">
+          <span class="flag">${it.flag || ''}</span>
+          <span class="nm">${it.name}</span>
+        </div>
+        <div class="inf-bar-track">
+          <div class="inf-bar-fill" style="width:${w.toFixed(1)}%"></div>
+        </div>
+        <div class="inf-bar-val">${it.value.toFixed(1)}%</div>
+      </div>`;
+  }
+  html += `</div>`;
+  if(remaining > 0){
+    html += `<div class="inf-bars-more">+ ${remaining} autres partenaires (volumes plus faibles)</div>`;
+  }
+  if(!_relInfluencePinned){
+    html += `<div class="inf-bars-hint">Clique un pays pour voir son évolution temporelle</div>`;
+  } else {
+    const sel = items.find(it => it.key === _relInfluencePinned);
+    if(sel){
+      html += `<div class="inf-bars-hint pinned">Sélectionné : <strong>${sel.flag||''} ${sel.name}</strong> · re-clique pour désélectionner</div>`;
+    }
+  }
+  host.innerHTML = html;
+}
+
+function toggleInfluencePinned(key){
+  if(_relInfluencePinned === key) _relInfluencePinned = null;
+  else _relInfluencePinned = key;
+  renderRelComposition();
+  renderRelEvolution();
 }
 
 /* ─── Treemap (squarified) ───────────────────────────────────── */
@@ -3314,11 +3459,9 @@ function renderRelEvolution(){
   if(!body) return;
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ body.innerHTML = ''; return; }
-  // En mode influence avec dim=partner, les aires empilées n'ont pas de sens additif
-  // (chaque partenaire a son propre dénominateur mondial). On le signale et on bascule l'aperçu temporel
-  // sur le volume du sujet (cohérent avec le treemap en mode volume), pour ne pas masquer l'information.
+  // Mode Influence + dim=partner : courbes superposées du Top 5 (avec zoom sur sélection)
   if(_relMetric === 'influence' && _relDim === 'partner'){
-    body.innerHTML = `<div class="rel-empty">L'évolution en aires empilées n'est pertinente qu'en mode <b>Volume</b>.<br><span style="opacity:.7">Bascule en haut pour la voir.</span></div>`;
+    renderInfluenceTimeline(body, entry);
     return;
   }
   let rows = getFluxRowsTimeline(entry);
@@ -3417,6 +3560,166 @@ function renderRelEvolution(){
   `).join('');
   const more = keys.length > TOP_LEGEND ? `<span class="leg-item" style="color:var(--text3)">+${keys.length - TOP_LEGEND} autres</span>` : '';
   body.innerHTML = `<div class="rel-evo-wrap">${svg}</div><div class="evo-legend">${legendItems}${more}</div>`;
+}
+
+/* ─── Courbes superposées d'influence (panel droit mode Influence) ─
+   Affiche l'évolution du % d'influence du sujet chez chaque partenaire au fil du temps.
+   - Par défaut : Top 5 partenaires (selon l'influence actuelle), courbes superposées.
+   - Si _relInfluencePinned est défini : ce pays apparaît en gras avec stats, les autres en arrière-plan.
+*/
+function renderInfluenceTimeline(host, entry){
+  // Timelines : volume du sujet par (année, partenaire) + total mondial par (année, partenaire)
+  let subjectRows = getFluxRowsTimeline(entry);
+  if(!subjectRows.length){ host.innerHTML = `<div class="rel-empty">Pas de série temporelle disponible.</div>`; return; }
+  // filtres cohérents avec le reste de Relations
+  if(isDebtIndicator(entry.indicator)){
+    const bil = subjectRows.filter(r => isBilateral(r));
+    if(bil.length) subjectRows = bil;
+  }
+  subjectRows = subjectRows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
+  subjectRows = applyDrillFilter(subjectRows);
+  if(!subjectRows.length){ host.innerHTML = `<div class="rel-empty">Pas de série temporelle utile.</div>`; return; }
+
+  const worldTotalsTL = getFluxPartnerWorldTotalsTimeline(entry);
+
+  // Agréger : { partner: { year: subject_volume } }
+  const subjectByPY = {};
+  const yearsSet = new Set();
+  for(const r of subjectRows){
+    const p = r.partner, y = r.year;
+    if(!p || !y) continue;
+    if(!subjectByPY[p]) subjectByPY[p] = {};
+    subjectByPY[p][y] = (subjectByPY[p][y] || 0) + (r.value || 0);
+    yearsSet.add(y);
+  }
+  // Calculer l'influence par année pour chaque partenaire
+  const series = [];   // [{ partner, name, flag, points: [{year, pct, volume, worldTotal}], lastPct }]
+  for(const p of Object.keys(subjectByPY)){
+    const points = [];
+    const yearsPartner = Object.keys(subjectByPY[p]).map(Number).sort((a,b)=>a-b);
+    for(const y of yearsPartner){
+      const v = subjectByPY[p][y] || 0;
+      const wt = worldTotalsTL[p]?.[y] || 0;
+      if(wt > 0 && v > 0){
+        points.push({ year: y, pct: (v/wt)*100, volume: v, worldTotal: wt });
+      }
+    }
+    if(points.length){
+      series.push({
+        partner: p,
+        name: partnerLabel(p),
+        flag: partnerFlag(p),
+        points,
+        lastPct: points[points.length-1].pct,
+      });
+    }
+  }
+  if(!series.length){ host.innerHTML = `<div class="rel-empty">Pas d'historique d'influence calculable.</div>`; return; }
+
+  // Tri par dernier pct (plus haut → plus influent) et sélection Top 5
+  series.sort((a,b) => b.lastPct - a.lastPct);
+  const TOP_N = 5;
+  let topSeries = series.slice(0, TOP_N);
+  const pinnedSeries = _relInfluencePinned ? series.find(s => s.partner === _relInfluencePinned) : null;
+  if(pinnedSeries && !topSeries.includes(pinnedSeries)){
+    // Si le pays épinglé n'est pas dans le top, on l'ajoute en plus
+    topSeries = [...topSeries, pinnedSeries];
+  }
+
+  // Bornes
+  const years = [...yearsSet].sort((a,b)=>a-b);
+  if(years.length < 2){ host.innerHTML = `<div class="rel-empty">Une seule année disponible — impossible de tracer une courbe.</div>`; return; }
+  const yMin = years[0], yMax = years[years.length-1];
+  // max pct sur les séries affichées (pour scaler l'axe Y avec un peu de marge)
+  let maxPctAll = 0;
+  for(const s of topSeries) for(const pt of s.points) if(pt.pct > maxPctAll) maxPctAll = pt.pct;
+  if(maxPctAll <= 0) maxPctAll = 1;
+  const yAxisMax = maxPctAll * 1.15;
+
+  // Geometry
+  const W = 700, H = 320;
+  const M = { top: 18, right: 110, bottom: 26, left: 38 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const xScale = (y) => M.left + ((y - yMin) / (yMax - yMin)) * innerW;
+  const yScale = (v) => M.top + innerH - (v / yAxisMax) * innerH;
+
+  // Palette : orange pour le pays épinglé, autres en bleus/verts atténués
+  const palette = ['#0a6e4a', '#1d4ed8', '#5b6b8c', '#7a8b6c', '#a08654', '#8a6d4e'];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="background:transparent">`;
+
+  // Axes
+  // Y ticks (5 graduations)
+  for(let i = 0; i <= 4; i++){
+    const v = (yAxisMax / 4) * i;
+    const yy = yScale(v);
+    svg += `<line x1="${M.left}" y1="${yy.toFixed(1)}" x2="${(W-M.right).toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2 3"/>`;
+    svg += `<text x="${(M.left-6).toFixed(1)}" y="${(yy+3).toFixed(1)}" text-anchor="end" font-family="var(--mono)" font-size="10" fill="var(--text3)">${v.toFixed(1)}%</text>`;
+  }
+  // X ticks (années principales, ~5 max)
+  const yearStep = Math.max(1, Math.ceil(years.length / 6));
+  for(let i = 0; i < years.length; i += yearStep){
+    const y = years[i];
+    const xx = xScale(y);
+    svg += `<text x="${xx.toFixed(1)}" y="${(H-M.bottom+14).toFixed(1)}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--text3)">${y}</text>`;
+  }
+
+  // Courbes : non épinglées en atténué, épinglée en gros
+  topSeries.forEach((s, idx) => {
+    const isPinned = pinnedSeries && s.partner === pinnedSeries.partner;
+    const isDimmed = pinnedSeries && !isPinned;
+    const color = isPinned ? 'var(--orange)' : palette[idx % palette.length];
+    const strokeW = isPinned ? 3 : 1.8;
+    const opacity = isDimmed ? 0.25 : 1;
+    // path
+    const d = s.points.map((pt, i) => (i === 0 ? 'M' : 'L') + xScale(pt.year).toFixed(1) + ',' + yScale(pt.pct).toFixed(1)).join(' ');
+    svg += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${strokeW}" opacity="${opacity}" stroke-linejoin="round"/>`;
+    // points
+    for(const pt of s.points){
+      svg += `<circle cx="${xScale(pt.year).toFixed(1)}" cy="${yScale(pt.pct).toFixed(1)}" r="${isPinned ? 4 : 2.5}" fill="${color}" opacity="${opacity}"
+                onmouseenter="showTip2(event, '${escAttr((s.flag?s.flag+' ':'')+s.name+' · '+pt.year)}', '${escAttr(pt.pct.toFixed(1)+'% du marché mondial')}')"
+                onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
+    }
+    // étiquette à droite : nom + dernier pct
+    if(s.points.length > 0){
+      const last = s.points[s.points.length-1];
+      const labelOpacity = isDimmed ? 0.3 : 1;
+      const labelColor = isPinned ? 'var(--orange)' : color;
+      const fontWeight = isPinned ? '700' : '500';
+      const shortName = s.name.length > 12 ? s.name.slice(0,11)+'…' : s.name;
+      svg += `<text x="${(xScale(last.year)+6).toFixed(1)}" y="${(yScale(last.pct)+3).toFixed(1)}" font-family="var(--sans)" font-size="11" font-weight="${fontWeight}" fill="${labelColor}" opacity="${labelOpacity}">${shortName} · ${last.pct.toFixed(1)}%</text>`;
+    }
+  });
+
+  svg += `</svg>`;
+
+  // Stats du pays épinglé en bas
+  let statsBlock = '';
+  if(pinnedSeries){
+    const pts = pinnedSeries.points;
+    const first = pts[0], last = pts[pts.length-1];
+    const variation = last.pct - first.pct;
+    const cfg = state.indicators.find(c => c.indicator === entry.realIndicator) || entry;
+    const sign = variation >= 0 ? '+' : '';
+    const colorVar = variation >= 0 ? 'var(--green)' : 'var(--orange)';
+    statsBlock = `
+      <div class="inf-tl-stats">
+        <div class="inf-tl-stat">
+          <div class="inf-tl-stat-k">${first.year} → ${last.year}</div>
+          <div class="inf-tl-stat-v">${first.pct.toFixed(1)}% → ${last.pct.toFixed(1)}%</div>
+        </div>
+        <div class="inf-tl-stat">
+          <div class="inf-tl-stat-k">Variation</div>
+          <div class="inf-tl-stat-v" style="color:${colorVar}">${sign}${variation.toFixed(1)} pt</div>
+        </div>
+        <div class="inf-tl-stat">
+          <div class="inf-tl-stat-k">Volume ${last.year}</div>
+          <div class="inf-tl-stat-v">${fmtWithUnit(last.volume, cfg?.unit_display)}</div>
+        </div>
+      </div>`;
+  }
+
+  host.innerHTML = `<div class="inf-tl-wrap">${svg}${statsBlock}</div>`;
 }
 
 /* ─── Carte du flux ─────────────────────────────────────────────
