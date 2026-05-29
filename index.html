@@ -1327,13 +1327,19 @@ const REGIONAL_CODES = new Set(['AFE','AFW','ARB','CEB','CSS','EAP','EAR','EAS',
    sens est ambigu en base (commerce = import OU export selon sens).
 ─────────────────────────────────────────────────────────────── */
 const FLOW_DIRECTIONS = {
+  // Convention : le libellé décrit le PARTENAIRE affiché (l'autre extrémité du flux),
+  // pas le rôle du sujet. Ex. quand sujet=country_to pour la dette, partenaires=country_from=créanciers.
   dette_exterieure:           { to: { label: 'Créanciers' }, from: { label: 'Débiteurs' } },
   transferts_armement:        { to: { label: 'Fournisseurs d\'armement' }, from: { label: 'Bénéficiaires' } },
-  representation_diplomatique:{ to: { label: 'Représentations accueillies' }, from: { label: 'Représentations envoyées' } },
-  refugies:                   { to: { label: 'Pays d\'asile' }, from: { label: 'Pays d\'origine' } },
-  migrants:                   { to: { label: 'Destinations' }, from: { label: 'Origines' } },
-  etudiants_international:    { to: { label: 'Pays d\'accueil' }, from: { label: 'Pays d\'origine' } },
-  // commerce : indicateur logique unifié, en base = import_commercial OU export_commercial
+  // diplomatie : country_from=pays envoyant la représentation, country_to=pays hôte
+  representation_diplomatique:{ to: { label: 'Représentations envoyées chez le sujet' }, from: { label: 'Pays hôtes des représentations du sujet' } },
+  // réfugiés : country_from=pays d'origine, country_to=pays d'asile
+  refugies:                   { to: { label: 'Pays d\'origine des réfugiés accueillis' }, from: { label: 'Pays d\'asile des réfugiés issus du sujet' } },
+  // migrants : country_from=origine, country_to=destination
+  migrants:                   { to: { label: 'Pays d\'origine des migrants reçus' }, from: { label: 'Destinations des migrants partis' } },
+  // étudiants : country_from=pays d'origine, country_to=pays d'accueil
+  etudiants_international:    { to: { label: 'Pays d\'origine des étudiants accueillis' }, from: { label: 'Pays d\'accueil des étudiants partis' } },
+  // commerce : import → sujet=country_to, partenaires=fournisseurs ; export → sujet=country_from, partenaires=clients
   commerce:                   {
     to:   { label: 'Fournisseurs', realIndicator: 'import_commercial' },
     from: { label: 'Clients',      realIndicator: 'export_commercial' }
@@ -1762,6 +1768,28 @@ function diagMap(indicator, year){
   const buckets = ramp.map(()=>0);
   for(const d of rows){ const t = (hi>lo)?(d.v-lo)/(hi-lo):0.5; const i = Math.min(ramp.length-1, Math.max(0, Math.round(t*(ramp.length-1)))); buckets[i]++; }
   console.log('Pays par bucket couleur (linéaire) :', buckets.map((c,i)=>`#${i}:${c}`).join(' '));
+  console.groupEnd();
+}
+
+// Diagnostic panorama : pour le sujet actuel, dump des entrées flux des deux colonnes
+// avec leur cacheKey, le nombre de lignes et le top 3 — usage console : diagPanorama()
+function diagPanorama(){
+  console.group('%cDIAGNOSTIC PANORAMA', 'color:#1d4ed8;font-weight:bold');
+  for(const col of ['partner','influence']){
+    console.group('Colonne: ' + col);
+    const entries = pinnedFlowEntries(col);
+    for(const e of entries){
+      const rows = getFluxRows(e);
+      const byPartner = new Map();
+      for(const r of rows){
+        if(r.partner && r.partner.startsWith('__')) continue;
+        byPartner.set(r.partner, (byPartner.get(r.partner)||0) + (r.value||0));
+      }
+      const top3 = [...byPartner.entries()].sort((a,b)=>b[1]-a[1]).slice(0,3);
+      console.log(`[${e.key}] real=${e.realIndicator} side=${e.side} → ${rows.length} lignes, top3:`, top3.map(([p,v])=>p+':'+v.toFixed(0)).join(' | '));
+    }
+    console.groupEnd();
+  }
   console.groupEnd();
 }
 
