@@ -1653,10 +1653,14 @@ function openPinModal(mode){
   _pinMode = mode || 'identite';
   const isFlux = (mode === 'flux_partner' || mode === 'flux_influence');
   const isRadar = (mode === 'radar');
+  const isRelHeatmap = (mode === 'rel_heatmap');
   let currentSet, pool;
   if(isFlux){
     const column = (mode === 'flux_partner') ? 'partner' : 'influence';
     currentSet = new Set(pinnedFlowEntries(column).map(e => e.key));
+    pool = flowEntriesPresent();
+  } else if(isRelHeatmap){
+    currentSet = new Set(pinnedHeatmapEntries().map(e => e.key));
     pool = flowEntriesPresent();
   } else if(isRadar){
     currentSet = new Set(pinnedRadarIndicators().map(c => c.indicator));
@@ -1673,9 +1677,11 @@ function openPinModal(mode){
   for(const cat of Object.keys(byCat).sort()){
     html += `<div class="pin-cat">${cat}</div>`;
     for(const x of byCat[cat]){
-      const id = isFlux ? x.key : x.indicator;
-      const txt = isFlux ? x.label_long : (x.label || x.indicator);
-      const miss = (!isFlux && x.presentInDb === false) ? `<span class="miss">sans données</span>` : '';
+      // entrées-flux : id = clé indicator|side ; sinon id = indicator pur
+      const useFlowKey = isFlux || isRelHeatmap;
+      const id = useFlowKey ? x.key : x.indicator;
+      const txt = useFlowKey ? x.label_long : (x.label || x.indicator);
+      const miss = (!useFlowKey && x.presentInDb === false) ? `<span class="miss">sans données</span>` : '';
       const on = _pinDraft.has(id) ? 'on' : '';
       html += `<div class="pin-item ${on}" data-id="${id}" onclick="togglePin('${id.replace(/'/g,"\\'")}')">
         <span class="pin-chk">${_pinDraft.has(id)?'✓':''}</span>
@@ -1687,7 +1693,8 @@ function openPinModal(mode){
     identite: 'Indicateurs de la synthèse',
     radar: 'Axes du radar (Puissance)',
     flux_partner: 'Flux affichés — Qui pèse pour le sujet',
-    flux_influence: 'Flux affichés — Pour qui le sujet pèse'
+    flux_influence: 'Flux affichés — Pour qui le sujet pèse',
+    rel_heatmap: 'Flux affichés dans la heatmap (Relations)'
   };
   document.querySelector('#pinModal .pin-head .t').textContent = titles[mode] || titles.identite;
   document.getElementById('pinBody').innerHTML = html;
@@ -1708,21 +1715,28 @@ function _pinStorageKey(){
   if(_pinMode === 'flux_partner') return PIN_FLUX_PARTNER_KEY;
   if(_pinMode === 'flux_influence') return PIN_FLUX_INFLUENCE_KEY;
   if(_pinMode === 'radar') return PIN_RADAR_KEY;
+  if(_pinMode === 'rel_heatmap') return PIN_REL_HEATMAP_KEY;
   return PIN_KEY;
 }
 function applyPins(){
   savePins(_pinStorageKey(), _pinDraft);
   closePinModal();
-  // selon le mode, rafraîchir la bonne vue
-  if(_pinMode === 'radar' && state.view === 'puissance') renderPuissance();
-  else renderSynthese();
+  // rafraîchir la vue active selon le mode
+  if(_pinMode === 'radar' || _pinMode === 'rel_heatmap'){
+    refreshActiveView();
+  } else {
+    renderSynthese();
+  }
   if(state.view === 'puissance') renderPuissance();
 }
 function resetPins(){
   try { localStorage.removeItem(_pinStorageKey()); } catch {}
   closePinModal();
-  if(_pinMode === 'radar' && state.view === 'puissance') renderPuissance();
-  else renderSynthese();
+  if(_pinMode === 'radar' || _pinMode === 'rel_heatmap'){
+    refreshActiveView();
+  } else {
+    renderSynthese();
+  }
   if(state.view === 'puissance') renderPuissance();
 }
 
@@ -2485,14 +2499,24 @@ function puMapValue(iso){
 
 
 /* ════════════════════════════════════════════════════════════════
-   RENDU — ONGLET RELATIONS (palier 1 : heatmap + composition)
-   Heatmap d'accueil = boussole pour repérer où il y a matière à creuser.
-   Composition = sunburst (par défaut) / treemap, drill-down sur subcategories.
+   RENDU — ONGLET RELATIONS
+   Heatmap d'accueil = boussole. Indicateurs cochables via engrenage propre.
+   Composition = sunburst (hiérarchie complète d'emblée) / treemap.
+   Tout passe par les entrées flux (clé indicator|side) → libellés contextuels,
+   sens correct, alias et commerce import/export gérés en amont.
 ═════════════════════════════════════════════════════════════════ */
-let _relIndicator = null;        // indicateur de flux actif (null = vue heatmap)
-let _relDir = 'partner';         // 'partner' (qui pèse pour) | 'influence' (pour qui pèse)
-let _relMode = 'sunburst';       // 'sunburst' | 'treemap'
-let _relPath = [];               // breadcrumb du drill-down [subcat1, subcat2, ...]
+let _relEntryKey = null;          // clé d'entrée flux active (ex. 'dette_exterieure|to')
+let _relMode = 'sunburst';        // 'sunburst' | 'treemap'
+let _relPath = [];                // breadcrumb du drill-down [nom_niv1, nom_niv2, ...]
+
+const PIN_REL_HEATMAP_KEY = 'geopol_pins_rel_heatmap_v1';   // entrées affichées dans la heatmap
+function pinnedHeatmapEntries(){
+  const all = flowEntriesPresent();
+  const perso = loadPins(PIN_REL_HEATMAP_KEY);
+  if(perso && perso.size) return all.filter(e => perso.has(e.key));
+  // défaut : sens 'to' de chaque indicateur (la moitié des entrées, lecture la plus naturelle)
+  return all.filter(e => e.side === 'to');
+}
 
 function renderRelations(){
   const root = document.getElementById('relationsContent');
@@ -2504,58 +2528,52 @@ function renderRelations(){
     </div>`;
     return;
   }
-  // focus venant d'une porte de Synthèse
+  // focus venant d'une porte de Synthèse (clé d'entrée flux)
   if(_pendingFocus.flowEntryKey){
-    const e = getFlowEntryByKey(_pendingFocus.flowEntryKey);
-    if(e){
-      _relIndicator = e.realIndicator;
-      _relDir = (e.side === 'to') ? 'partner' : 'influence';
-    }
+    _relEntryKey = _pendingFocus.flowEntryKey;
     _pendingFocus.flowEntryKey = null;
     _relPath = [];
-  } else if(_pendingFocus.indicator){
-    _relIndicator = _pendingFocus.indicator;
-    _relDir = _pendingFocus.fluxDir || 'partner';
+  }
+  // (compat ancien focus indicator+dir, plus utilisé mais on garde le code)
+  if(_pendingFocus.indicator && !_relEntryKey){
+    const side = (_pendingFocus.fluxDir === 'partner') ? 'to' : 'from';
+    _relEntryKey = _pendingFocus.indicator + '|' + side;
     _pendingFocus.indicator = null; _pendingFocus.fluxDir = null;
     _relPath = [];
   }
-  if(!_relIndicator){
-    // Pas d'indicateur encore → vue heatmap d'accueil
+
+  if(!_relEntryKey){
+    // Vue heatmap d'accueil
     root.innerHTML = `
       <div class="rel-head">
         <div>
           <div class="name">Relations</div>
-          <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label} · choisir un flux pour explorer</div>
+          <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label} · cliquer une cellule pour explorer</div>
         </div>
         <div class="controls">
-          <div class="seg">
-            <button class="${_relDir==='partner'?'on':''}" onclick="setRelDir('partner')">Partenaire</button>
-            <button class="${_relDir==='influence'?'on':''}" onclick="setRelDir('influence')">Influence</button>
-          </div>
+          <button class="hbtn" onclick="openPinModal('rel_heatmap')" title="Choisir les flux affichés"><span>⚙</span> Flux</button>
         </div>
       </div>
       <div id="relHeatHost"></div>`;
     renderRelHeatmap();
     return;
   }
-  // Indicateur choisi → vue composition
-  const c = state.indicators.find(x => x.indicator === _relIndicator);
+
+  // Vue composition (un flux choisi)
+  const entry = getFlowEntryByKey(_relEntryKey);
+  if(!entry){ _relEntryKey = null; renderRelations(); return; }
   root.innerHTML = `
     <div class="rel-head">
       <div>
-        <div class="name">${c?.label || _relIndicator}</div>
-        <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label} · ${_relDir==='partner'?'qui pèse pour le sujet':'pour qui le sujet pèse'}</div>
+        <div class="name">${entry.label_long}</div>
+        <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label}</div>
       </div>
       <div class="controls">
-        <div class="seg">
-          <button class="${_relDir==='partner'?'on':''}" onclick="setRelDir('partner')">Partenaire</button>
-          <button class="${_relDir==='influence'?'on':''}" onclick="setRelDir('influence')">Influence</button>
-        </div>
         <div class="seg">
           <button class="${_relMode==='sunburst'?'on':''}" onclick="setRelMode('sunburst')">Sunburst</button>
           <button class="${_relMode==='treemap'?'on':''}" onclick="setRelMode('treemap')">Treemap</button>
         </div>
-        <button class="hbtn" onclick="leaveRelIndicator()" title="Revenir à la heatmap">← Heatmap</button>
+        <button class="hbtn" onclick="leaveRelEntry()" title="Revenir à la heatmap">← Heatmap</button>
       </div>
     </div>
     <div class="rel-comp-card">
@@ -2572,20 +2590,16 @@ function renderRelations(){
 /* ─── Heatmap d'accueil ───────────────────────────────────────── */
 function renderRelHeatmap(){
   const host = document.getElementById('relHeatHost');
-  const flux = state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false);
-  if(!flux.length){
-    host.innerHTML = `<div class="rel-empty">Aucun indicateur de flux disponible.</div>`;
+  const entries = pinnedHeatmapEntries();
+  if(!entries.length){
+    host.innerHTML = `<div class="rel-empty">Aucun flux sélectionné. <button onclick="openPinModal('rel_heatmap')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">configurer</button></div>`;
     return;
   }
-  // Pour chaque flux : top 5 partenaires (selon _relDir), pourcentages.
-  // Cellule = % du partenaire dans le total du flux pour le sujet.
-  // Couleur = intensité ; clic = creuser cet indicateur (avec partenaire pré-fixé plus tard).
-  const rows = []; // [{ind, label, partners:[{code,name,flag,pct}]}]
-  const allPartners = new Set();
-  for(const c of flux){
-    let rs = getFluxRows(c.indicator, _relDir);
+  const rows = [];
+  for(const e of entries){
+    let rs = getFluxRows(e);
     if(!rs.length) continue;
-    if(isDebtIndicator(c.indicator)){
+    if(isDebtIndicator(e.indicator)){
       const bil = rs.filter(r => isBilateral(r));
       if(bil.length) rs = bil;
     }
@@ -2599,20 +2613,15 @@ function renderRelHeatmap(){
     }
     if(total <= 0) continue;
     const top = [...byPartner.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 5);
-    const partners = top.map(([code, v]) => {
-      allPartners.add(code);
-      return { code, name: partnerLabel(code), flag: partnerFlag(code), pct: (v/total)*100 };
-    });
-    rows.push({ ind: c.indicator, label: c.label || c.indicator, partners });
+    const partners = top.map(([code, v]) => ({ code, name: partnerLabel(code), flag: partnerFlag(code), pct: (v/total)*100 }));
+    rows.push({ entry: e, label: e.label_long, partners });
   }
   if(!rows.length){
     host.innerHTML = `<div class="rel-empty">Pas de flux renseigné pour ce sujet.</div>`;
     return;
   }
-  // Pour chaque flux on a un top 5 propre. Affichage : matrice flux × rang (1..5)
-  // où chaque cellule indique le partenaire + son %.
   const RANKS = [1, 2, 3, 4, 5];
-  const gridCols = `220px repeat(${RANKS.length}, 1fr)`;
+  const gridCols = `260px repeat(${RANKS.length}, 1fr)`;
   let head = `<div class="heat-rowhead" style="visibility:hidden">flux</div>`;
   for(const r of RANKS) head += `<div class="heat-colhead">${r}${r===1?'er':'e'}</div>`;
   let body = '';
@@ -2625,7 +2634,7 @@ function renderRelHeatmap(){
       const bg = mixColors('#eef5ee', '#0a6e4a', intensity);
       const fg = intensity > 0.55 ? '#fff' : 'var(--text)';
       body += `<div class="heat-cell" style="background:${bg};color:${fg}"
-                    onclick="enterRelIndicator('${row.ind}')"
+                    onclick="enterRelEntry('${row.entry.key}')"
                     data-tt="${escAttr(p.flag+' '+p.name)}" data-tb="${escAttr(row.label+' · '+p.pct.toFixed(0)+'%')}"
                     onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()">
         ${p.flag} ${p.pct.toFixed(0)}%
@@ -2634,8 +2643,8 @@ function renderRelHeatmap(){
   }
   host.innerHTML = `<div class="rel-heat-card">
     <div class="rel-heat-head">
-      <span class="rel-heat-title">Boussole des flux · ${_relDir==='partner'?'Partenaires':'Influence'}</span>
-      <span class="rel-heat-sub">cliquer une cellule pour creuser</span>
+      <span class="rel-heat-title">Boussole des flux</span>
+      <span class="rel-heat-sub">${rows.length} flux affichés · cliquer une cellule pour creuser</span>
     </div>
     <div class="rel-heat-body">
       <div class="heat-grid" style="grid-template-columns:${gridCols}">${head}${body}</div>
@@ -2657,17 +2666,16 @@ function hexToRgb(h){
   return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
 }
 
-function setRelDir(d){ _relDir = d; _relPath = []; renderRelations(); syncUrl(); }
 function setRelMode(m){ _relMode = m; renderRelComposition(); }
-function enterRelIndicator(ind){ _relIndicator = ind; _relPath = []; renderRelations(); syncUrl(); }
-function leaveRelIndicator(){ _relIndicator = null; _relPath = []; renderRelations(); syncUrl(); }
+function enterRelEntry(key){ _relEntryKey = key; _relPath = []; renderRelations(); syncUrl(); }
+function leaveRelEntry(){ _relEntryKey = null; _relPath = []; renderRelations(); syncUrl(); }
 
 /* ─── Breadcrumb du drill-down ────────────────────────────────── */
 function renderRelCrumb(){
   const el = document.getElementById('relCrumb');
   if(!el) return;
-  const c = state.indicators.find(x => x.indicator === _relIndicator);
-  let html = `<span class="step current" onclick="setRelPath([])">${c?.label || _relIndicator}</span>`;
+  const entry = getFlowEntryByKey(_relEntryKey);
+  let html = `<span class="step current" onclick="setRelPath([])">${entry?.label_long || ''}</span>`;
   for(let i = 0; i < _relPath.length; i++){
     html += `<span class="sep">▸</span><span class="step" onclick="setRelPath(${i+1})">${_relPath[i]}</span>`;
   }
@@ -2687,57 +2695,71 @@ function setRelPath(arg){
    Pour la dette : niveau 0 affiche les pays créanciers (subcategory_1='bilaterale'
    ne sert qu'à filtrer, on agrège par partenaire). Sinon, par subcategory.
 ─────────────────────────────────────────────────────────────── */
+/* ─── Composition : hiérarchie complète (subcat1 → subcat2 → subcat3 → partenaire) ─────────
+   Le sunburst affiche TOUS les niveaux d'emblée en anneaux concentriques.
+   Le treemap utilise les mêmes données mais à plat (ou drillable).
+   Filtres : agrégats régionaux exclus, dette bilatérale uniquement, sentinelles __ écartées.
+─────────────────────────────────────────────────────────────────────────────── */
 function buildHierarchyForFlux(){
-  const rs = getFluxRows(_relIndicator, _relDir);
-  if(!rs.length) return null;
-  let rows = rs;
-  // pour la dette, on filtre sur le bilatéral (cohérence avec Synthèse)
-  if(isDebtIndicator(_relIndicator)){
+  const entry = getFlowEntryByKey(_relEntryKey);
+  if(!entry) return null;
+  let rows = getFluxRows(entry);
+  if(!rows.length) return null;
+  // dette : bilatéral uniquement (cohérence Synthèse)
+  if(isDebtIndicator(entry.indicator)){
     const bil = rows.filter(r => isBilateral(r));
     if(bil.length) rows = bil;
   }
-  // exclure agrégats Banque Mondiale + sentinelles __
+  // exclure agrégats Banque Mondiale + sentinelles
   rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   if(!rows.length) return null;
-  // Construction : niveau 0 = partenaire (le partenaire EST la première dimension visible)
-  // Si tu veux à terme regrouper par subcategory_1 (catégorie : aide / prêt / etc.), il suffit de changer ici.
-  const root = { name: 'Total', children: [] };
-  // Partenaires agrégés (somme sur subcategories)
-  const byPartner = new Map();
+
+  // Détermine quels niveaux subcategory sont effectivement renseignés.
+  const has1 = rows.some(r => r.sub1 && String(r.sub1).trim() !== '');
+  const has2 = rows.some(r => r.sub2 && String(r.sub2).trim() !== '');
+  const has3 = rows.some(r => r.sub3 && String(r.sub3).trim() !== '');
+  // Pour la dette : si on a filtré sur bilatérale, sub1 devient trivial → on l'omet
+  const skipSub1 = isDebtIndicator(entry.indicator);
+  const levels = [];
+  if(has1 && !skipSub1) levels.push('sub1');
+  if(has2) levels.push('sub2');
+  if(has3) levels.push('sub3');
+  levels.push('partner');   // partenaire toujours présent en dernier
+
+  function nodeKey(r, level){
+    if(level === 'partner') return r.partner;
+    return r[level] && String(r[level]).trim() !== '' ? String(r[level]) : '(non précisé)';
+  }
+  function nodeMeta(name, level, r){
+    if(level === 'partner') return { name: partnerLabel(name), code: name, flag: partnerFlag(name), isPartner: true };
+    return { name, isPartner: false };
+  }
+
+  const root = { name: 'Total', value: 0, children: new Map() };
   for(const r of rows){
-    if(!byPartner.has(r.partner)) byPartner.set(r.partner, { name: partnerLabel(r.partner), code: r.partner, flag: partnerFlag(r.partner), children: new Map(), value: 0 });
-    const p = byPartner.get(r.partner);
-    p.value += (r.value || 0);
-    // sous-niveau par subcategory_2/3 si présent (utile pour Comtrade : par produit)
-    const sub = r.sub2 || r.sub3 || null;
-    if(sub){
-      if(!p.children.has(sub)) p.children.set(sub, { name: sub, value: 0, children: new Map() });
-      const s = p.children.get(sub);
-      s.value += (r.value || 0);
-      const sub3 = (r.sub2 && r.sub3) ? r.sub3 : null;
-      if(sub3){
-        if(!s.children.has(sub3)) s.children.set(sub3, { name: sub3, value: 0 });
-        s.children.get(sub3).value += (r.value || 0);
+    const v = r.value || 0;
+    if(v <= 0) continue;
+    let node = root;
+    node.value += v;
+    for(const lvl of levels){
+      const k = nodeKey(r, lvl);
+      if(!node.children.has(k)){
+        const meta = nodeMeta(k, lvl, r);
+        node.children.set(k, { ...meta, value: 0, level: lvl, children: new Map() });
       }
+      node = node.children.get(k);
+      node.value += v;
     }
   }
-  // matérialisation en arbre
-  const partnersArr = [...byPartner.values()]
-    .sort((a,b) => b.value - a.value)
-    .map(p => ({
-      name: p.name, code: p.code, flag: p.flag, value: p.value,
-      children: [...p.children.values()]
-        .sort((a,b) => b.value - a.value)
-        .map(s => ({
-          name: s.name, value: s.value,
-          children: [...s.children.values()].sort((a,b)=>b.value-a.value)
-        }))
-    }));
-  root.children = partnersArr;
-  return root;
+  // matérialiser en arbre trié
+  function materialize(n){
+    const kids = [...n.children.values()].sort((a,b) => b.value - a.value).map(materialize);
+    return { ...n, children: kids };
+  }
+  return materialize(root);
 }
 
-// Descend dans l'arbre selon le chemin _relPath (noms de nœuds).
+// Pour le treemap (drill-down classique), on descend dans l'arbre.
 function descendHierarchy(tree){
   let node = tree;
   for(const step of _relPath){
@@ -2753,80 +2775,114 @@ function renderRelComposition(){
   const body = document.getElementById('relCompBody');
   if(!body) return;
   const tree = buildHierarchyForFlux();
-  if(!tree){ body.innerHTML = `<div class="rel-empty">Pas de flux renseigné pour ce sujet.</div>`; return; }
-  const node = descendHierarchy(tree);
-  if(!node.children || !node.children.length){
-    body.innerHTML = `<div class="rel-empty">Pas de sous-décomposition disponible à ce niveau.</div>`;
+  if(!tree || !tree.children || !tree.children.length){
+    body.innerHTML = `<div class="rel-empty">Pas de flux renseigné pour ce sujet.</div>`;
     return;
   }
-  if(_relMode === 'sunburst') drawSunburst(node, body);
-  else drawTreemapRel(node, body);
+  if(_relMode === 'sunburst'){
+    // Sunburst : on passe l'arbre complet, tous les anneaux s'affichent d'un coup.
+    drawSunburst(tree, body);
+  } else {
+    // Treemap : drill-down classique sur _relPath
+    const node = descendHierarchy(tree);
+    if(!node.children || !node.children.length){
+      body.innerHTML = `<div class="rel-empty">Pas de sous-décomposition disponible à ce niveau.</div>`;
+      return;
+    }
+    drawTreemapRel(node, body);
+  }
 }
 
 /* ─── Sunburst ───────────────────────────────────────────────── */
-function drawSunburst(node, host){
-  const W = 560, H = 460, cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 30;
-  const total = node.children.reduce((s,c)=>s+c.value, 0) || 1;
-  const items = node.children;
-  // angles
-  let a0 = -Math.PI/2;
-  const slices = [];
-  for(const it of items){
-    const a1 = a0 + (it.value/total) * 2*Math.PI;
-    slices.push({ it, a0, a1 });
-    a0 = a1;
-  }
-  function arc(r0, r1, A0, A1){
-    const x0 = cx + Math.cos(A0)*r1, y0 = cy + Math.sin(A0)*r1;
-    const x1 = cx + Math.cos(A1)*r1, y1 = cy + Math.sin(A1)*r1;
-    const x2 = cx + Math.cos(A1)*r0, y2 = cy + Math.sin(A1)*r0;
-    const x3 = cx + Math.cos(A0)*r0, y3 = cy + Math.sin(A0)*r0;
+/* ─── Sunburst multi-anneau ──────────────────────────────────────
+   Chaque anneau = un niveau de la hiérarchie (subcat1 / subcat2 / subcat3 / partenaire).
+   La profondeur est calculée à partir de l'arbre construit par buildHierarchyForFlux.
+   Chaque enfant reste contenu dans l'angle de son parent (radial layout standard).
+─────────────────────────────────────────────────────────────── */
+function drawSunburst(rootNode, host){
+  const W = 640, H = 520, cx = W/2, cy = H/2;
+  const maxRadius = Math.min(W,H)/2 - 30;
+  // profondeur réelle
+  function depth(n){ if(!n.children || !n.children.length) return 0; return 1 + Math.max(...n.children.map(depth)); }
+  const D = Math.max(1, depth(rootNode));
+  const r0 = maxRadius * 0.18;                          // rayon du cercle central (pour titre)
+  const ringW = (maxRadius - r0) / D;
+  const palette = ['#0a6e4a','#2d8556','#b45309','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#c2410c','#4f9e6a','#6fb486','#6a5d4e'];
+
+  function arcPath(R0, R1, A0, A1){
+    const x0 = cx + Math.cos(A0)*R1, y0 = cy + Math.sin(A0)*R1;
+    const x1 = cx + Math.cos(A1)*R1, y1 = cy + Math.sin(A1)*R1;
+    const x2 = cx + Math.cos(A1)*R0, y2 = cy + Math.sin(A1)*R0;
+    const x3 = cx + Math.cos(A0)*R0, y3 = cy + Math.sin(A0)*R0;
     const large = (A1 - A0) > Math.PI ? 1 : 0;
-    return `M${x0.toFixed(1)},${y0.toFixed(1)} A${r1.toFixed(1)},${r1.toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y2.toFixed(1)} A${r0.toFixed(1)},${r0.toFixed(1)} 0 ${large} 0 ${x3.toFixed(1)},${y3.toFixed(1)} Z`;
+    return `M${x0.toFixed(1)},${y0.toFixed(1)} A${R1.toFixed(1)},${R1.toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y2.toFixed(1)} A${R0.toFixed(1)},${R0.toFixed(1)} 0 ${large} 0 ${x3.toFixed(1)},${y3.toFixed(1)} Z`;
   }
-  // palette catégorielle (palette terre/papier en cohérence avec l'identité)
-  const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
+  function tintColor(hex, t){
+    // mélange la couleur avec le blanc selon t (0 = couleur pure, 1 = blanc)
+    const m = hex.replace('#','').match(/^([0-9a-f]{6})$/i);
+    if(!m) return hex;
+    const n = parseInt(m[1],16);
+    const r = (n>>16)&255, g = (n>>8)&255, b = n&255;
+    const r2 = Math.round(r + (255-r)*t), g2 = Math.round(g + (255-g)*t), b2 = Math.round(b + (255-b)*t);
+    return `rgb(${r2},${g2},${b2})`;
+  }
+
+  const total = rootNode.children.reduce((s,c)=>s+c.value, 0) || 1;
   let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
-  slices.forEach((s, i) => {
-    const fill = palette[i % palette.length];
-    const d = arc(R*0.35, R, s.a0, s.a1);
-    const pct = (s.it.value/total)*100;
-    const tit = `${s.it.name} · ${pct.toFixed(1)}%`;
-    svg += `<path class="sb-slice" d="${d}" fill="${fill}"
-              data-tt="${escAttr(s.it.name)}" data-tb="${escAttr(fmtNumber(s.it.value)+' · '+pct.toFixed(1)+'%')}"
-              onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
-              onclick="sunburstClick('${escAttr(s.it.name)}')"/>`;
-    // label seulement si la tranche est assez grande
-    if((s.a1 - s.a0) > 0.18){
-      const am = (s.a0 + s.a1)/2;
-      const lr = R*0.68;
-      const lx = cx + Math.cos(am)*lr;
-      const ly = cy + Math.sin(am)*lr;
-      const flag = s.it.flag || '';
-      const short = s.it.name.length > 14 ? s.it.name.slice(0,13)+'…' : s.it.name;
-      svg += `<text class="sb-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${flag} ${short}</text>`;
-      svg += `<text class="sb-label" x="${lx.toFixed(1)}" y="${(ly+12).toFixed(1)}" text-anchor="middle" style="opacity:.85;font-size:9px">${pct.toFixed(0)}%</text>`;
+  let labels = '';
+
+  // Parcours DFS : à chaque enfant on attribue son arc dans l'angle hérité du parent.
+  function walk(node, depthLevel, angleStart, angleEnd, parentColor){
+    if(!node.children || !node.children.length) return;
+    const localTotal = node.children.reduce((s,c)=>s+c.value, 0) || 1;
+    let a = angleStart;
+    for(let i = 0; i < node.children.length; i++){
+      const child = node.children[i];
+      const span = (child.value / localTotal) * (angleEnd - angleStart);
+      const aEnd = a + span;
+      const R1 = r0 + (depthLevel + 1) * ringW;
+      const R0 = r0 + depthLevel * ringW;
+      // couleur : au 1er niveau on prend dans la palette par ordre ; aux niveaux suivants on éclaircit la couleur du parent
+      const baseColor = depthLevel === 0 ? palette[i % palette.length] : parentColor;
+      const fill = depthLevel === 0 ? baseColor : tintColor(baseColor, Math.min(0.6, depthLevel * 0.18));
+      const pct = (child.value / total) * 100;
+      const lblTitle = child.isPartner ? `${child.flag||''} ${child.name}` : child.name;
+      svg += `<path class="sb-slice" d="${arcPath(R0, R1, a, aEnd)}" fill="${fill}" stroke="#fff" stroke-width="1"
+                data-tt="${escAttr(lblTitle)}" data-tb="${escAttr(fmtNumber(child.value)+' · '+pct.toFixed(1)+'%')}"
+                onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
+      // label si la tranche est suffisamment large angulairement
+      const minAngle = 0.14;
+      if((aEnd - a) > minAngle){
+        const am = (a + aEnd) / 2;
+        const lr = (R0 + R1) / 2;
+        const lx = cx + Math.cos(am) * lr;
+        const ly = cy + Math.sin(am) * lr;
+        const isLight = depthLevel > 0;
+        const txtColor = isLight ? 'var(--text)' : '#fff';
+        const short = (child.name || '').length > 14 ? child.name.slice(0,13)+'…' : (child.name || '');
+        const flag = child.flag ? child.flag + ' ' : '';
+        labels += `<text class="sb-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" style="fill:${txtColor};font-size:10px">${flag}${short}</text>`;
+        if((aEnd - a) > 0.28){
+          labels += `<text class="sb-label" x="${lx.toFixed(1)}" y="${(ly+11).toFixed(1)}" text-anchor="middle" style="fill:${txtColor};font-size:9px;opacity:.85">${pct.toFixed(0)}%</text>`;
+        }
+      }
+      walk(child, depthLevel + 1, a, aEnd, baseColor);
+      a = aEnd;
     }
-  });
-  // centre : titre + total
-  const cfg = state.indicators.find(x => x.indicator === _relIndicator);
-  svg += `<text class="sb-center-title" x="${cx}" y="${cy-4}">${cfg?.label || _relIndicator}</text>`;
-  svg += `<text class="sb-center-total" x="${cx}" y="${cy+14}">${fmtNumber(total, cfg?.unit_display)} ${scaleSuffix(total, cfg?.unit_display)}</text>`;
+  }
+  walk(rootNode, 0, -Math.PI/2, -Math.PI/2 + 2*Math.PI, palette[0]);
+
+  // centre : libellé court de l'entrée + total
+  const entry = getFlowEntryByKey(_relEntryKey);
+  svg += `<circle cx="${cx}" cy="${cy}" r="${r0.toFixed(1)}" fill="var(--bg2)" stroke="var(--border)" stroke-width="1"/>`;
+  svg += `<text class="sb-center-title" x="${cx}" y="${cy-4}" text-anchor="middle">${entry?.label || ''}</text>`;
+  svg += `<text class="sb-center-total" x="${cx}" y="${cy+14}" text-anchor="middle">${fmtNumber(total, entry?.unit_display)} ${scaleSuffix(total, entry?.unit_display)}</text>`;
+  svg += labels;
   svg += `</svg>`;
   host.innerHTML = svg;
 }
 
-function sunburstClick(name){
-  // descendre d'un cran si l'élément a des enfants
-  const tree = buildHierarchyForFlux();
-  const cur = descendHierarchy(tree);
-  const child = cur.children?.find(c => c.name === name);
-  if(child && child.children && child.children.length){
-    _relPath = [..._relPath, name];
-    renderRelComposition();
-    renderRelCrumb();
-  }
-}
+function sunburstClick(){ /* le sunburst multi-anneau ne descend pas — tout est visible */ }
 
 /* ─── Treemap (squarified) ───────────────────────────────────── */
 function drawTreemapRel(node, host){
@@ -2855,7 +2911,16 @@ function drawTreemapRel(node, host){
   svg += `</svg>`;
   host.innerHTML = svg;
 }
-function treemapClick(name){ sunburstClick(name); }   // même comportement
+function treemapClick(name){
+  const tree = buildHierarchyForFlux();
+  const cur = descendHierarchy(tree);
+  const child = cur.children?.find(c => c.name === name);
+  if(child && child.children && child.children.length){
+    _relPath = [..._relPath, name];
+    renderRelComposition();
+    renderRelCrumb();
+  }
+}
 
 // Treemap : algorithme « slice-and-dice » avec orientation alternée.
 // Simple, correct (surface = somme exacte des valeurs), suffisant pour Relations.
