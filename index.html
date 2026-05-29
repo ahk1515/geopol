@@ -1546,8 +1546,8 @@ function fmtNumber(v, unit){
   if(v == null || isNaN(v)) return '—';
   const abs = Math.abs(v);
   let s;
-  // mise à l'échelle lisible
-  if(unit === 'M hab' || (unit === 'hab')){ return Math.round(v/1e6).toLocaleString('fr-FR') ; }
+  // mise à l'échelle lisible — applicable indépendamment de l'unité
+  // (l'unité est purement décorative, scaleSuffix s'en charge)
   if(abs >= 1e12) s = (v/1e12).toLocaleString('fr-FR',{maximumFractionDigits:1});
   else if(abs >= 1e9) s = (v/1e9).toLocaleString('fr-FR',{maximumFractionDigits:1});
   else if(abs >= 1e6) s = (v/1e6).toLocaleString('fr-FR',{maximumFractionDigits:1});
@@ -1558,14 +1558,29 @@ function fmtNumber(v, unit){
 }
 function scaleSuffix(v, unitDisplay){
   // ajuste le suffixe selon l'échelle appliquée par fmtNumber
-  const abs = Math.abs(v||0);
-  if(unitDisplay && (unitDisplay.includes('Mrd') || unitDisplay.includes('M hab'))) return unitDisplay;
-  if(abs >= 1e12) return 'T ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
-  if(abs >= 1e9)  return 'Mrd ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
-  if(abs >= 1e6)  return 'M ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
-  return unitDisplay || '';
+  // Le suffixe combine l'échelle (T/Mrd/M) et l'unité de base (hab, USD, etc.).
+  // unitDisplay est traité comme l'unité de base : on retire toute échelle déjà préfixée.
+  const abs = Math.abs(v || 0);
+  const baseUnit = (unitDisplay || '').replace(/^(T|Mrd|M)\s+/, '');   // retire l'échelle éventuelle
+  let prefix = '';
+  if(abs >= 1e12) prefix = 'T';
+  else if(abs >= 1e9) prefix = 'Mrd';
+  else if(abs >= 1e6) prefix = 'M';
+  if(prefix){
+    return baseUnit ? (prefix + ' ' + baseUnit) : prefix;
+  }
+  return baseUnit;
 }
 function ordinalFr(n){ return n === 1 ? '1er' : n + 'e'; }
+
+// Helper : formate valeur + suffixe d'échelle en une seule chaîne.
+// Garantit qu'on n'oublie jamais le suffixe (ex. « 5,4 M hab » au lieu de « 5,4 »).
+function fmtWithUnit(v, unit){
+  if(v == null || isNaN(v)) return '—';
+  const num = fmtNumber(v, unit);
+  const suf = scaleSuffix(v, unit);
+  return suf ? (num + ' ' + suf) : num;
+}
 
 /* ─── SOURCE & ANNÉE RÉELLE D'UNE VALEUR ──────────────────────── */
 function getIndicatorSource(indicator, year){
@@ -2492,7 +2507,7 @@ async function buildPuMap(){
       const v = puMapValue(iso);
       const name = isoToName(iso);
       const c = state.indicators.find(x=>x.indicator===_puIndicator);
-      showTip2(ev, `${isoToFlag(iso)} ${name}`, v!=null ? `${fmtNumber(v,c?.unit_display)} ${scaleSuffix(v,c?.unit_display)}` : 'pas de donnée');
+      showTip2(ev, `${isoToFlag(iso)} ${name}`, v!=null ? fmtWithUnit(v, c?.unit_display) : 'pas de donnée');
     })
     .on('mousemove', moveTip)
     .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
@@ -2801,9 +2816,11 @@ function drawTreemapRel(node, host){
   cells.forEach((c, i) => {
     const fill = palette[i % palette.length];
     const pct = (c.item.value/total)*100;
+    const entry = getFlowEntryByKey(_relEntryKey);
+    const cfg = state.indicators.find(c => c.indicator === entry?.realIndicator) || entry;
     svg += `<g class="tm-cell">
       <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
-            data-tt="${escAttr((c.item.flag?c.item.flag+' ':'')+c.item.name)}" data-tb="${escAttr(fmtNumber(c.item.value)+' · '+pct.toFixed(1)+'%')}"
+            data-tt="${escAttr((c.item.flag?c.item.flag+' ':'')+c.item.name)}" data-tb="${escAttr(fmtWithUnit(c.item.value, cfg?.unit_display)+' · '+pct.toFixed(1)+'%')}"
             onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
             onclick="treemapClick('${escAttr(c.item.key)}')"/>`;
     if(c.w > 60 && c.h > 30){
@@ -2914,7 +2931,7 @@ function renderRelEvolution(){
     const fill = colorOf(idx);
     const tot = totalPerKey.get(k) || 0;
     svg += `<path class="evo-area" d="${dTop} ${dBot} Z" fill="${fill}"
-              data-tt="${escAttr(bucketLabel(k))}" data-tb="${escAttr('Total période · ' + fmtNumber(tot, cfg.unit_display))}"
+              data-tt="${escAttr(bucketLabel(k))}" data-tb="${escAttr('Total période · ' + fmtWithUnit(tot, cfg.unit_display))}"
               onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
   });
   svg += `</svg>`;
@@ -2982,7 +2999,7 @@ async function renderRelFluxMap(){
       const v = byPartner[iso] || 0;
       const pct = total ? (v/total)*100 : 0;
       const cfg = state.indicators.find(c => c.indicator === entry.realIndicator) || entry;
-      if(v > 0) showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, `${fmtNumber(v, cfg.unit_display)} · ${pct.toFixed(1)}%`);
+      if(v > 0) showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, `${fmtWithUnit(v, cfg.unit_display)} · ${pct.toFixed(1)}%`);
       else showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, 'pas de flux');
     })
     .on('mousemove', moveTip)
