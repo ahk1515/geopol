@@ -1599,8 +1599,8 @@ function sparklineSvg(series, color){
 /* ─── ÉPINGLAGE PERSONNEL (localStorage) ──────────────────────── */
 const PIN_KEY = 'geopol_pins_synthese';
 const PIN_RADAR_KEY = 'geopol_pins_radar';
-const PIN_FLUX_PARTNER_KEY = 'geopol_pins_flux_partner_v2';   // _v2 = nouvelle structure (clés indicator|side)
-const PIN_FLUX_INFLUENCE_KEY = 'geopol_pins_flux_influence_v2';
+const PIN_FLUX_PARTNER_KEY = 'geopol_pins_flux_partner_v3';   // bump : structure validée, reset défauts
+const PIN_FLUX_INFLUENCE_KEY = 'geopol_pins_flux_influence_v3';
 function loadPins(key){
   try { const j = localStorage.getItem(key); if(j) return new Set(JSON.parse(j)); } catch {}
   return null;
@@ -1941,8 +1941,8 @@ function renderSynthese(){
   // ── Colonne droite : panorama des flux (2 colonnes indépendantes) ──
   const partnerEntries = pinnedFlowEntries('partner');
   const influenceEntries = pinnedFlowEntries('influence');
-  const partnersHtml = buildPanorama(partnerEntries);
-  const influenceHtml = buildPanorama(influenceEntries);
+  const partnersHtml = buildPanorama(partnerEntries, 'partner');
+  const influenceHtml = buildPanorama(influenceEntries, 'influence');
 
   root.innerHTML = `
     <div class="syn-grid">
@@ -1996,8 +1996,9 @@ function bindKvTips(){
 
 // Construit le panorama à partir d'une liste d'entrées flux (clé indicator|side).
 // Chaque entrée porte son sens et son libellé contextuel propre.
-function buildPanorama(entries){
-  if(!entries.length) return `<div class="pano-empty">Aucun flux sélectionné. <button onclick="openPinModal('flux_partner')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">configurer</button></div>`;
+function buildPanorama(entries, columnId){
+  const colSuffix = columnId || 'panorama';
+  if(!entries.length) return `<div class="pano-empty">Aucun flux sélectionné. <button onclick="openPinModal('flux_${colSuffix==='partner'?'partner':'influence'}')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">configurer</button></div>`;
   let html = '';
   let any = false;
   for(const e of entries){
@@ -2021,7 +2022,7 @@ function buildPanorama(entries){
     const top = ranked[0];
     const pct = (top[1] / total) * 100;
     const cls = concentrationClass(pct);
-    const rowId = ('pano_' + e.key).replace(/[^a-zA-Z0-9_]/g,'_');
+    const rowId = ('pano_' + colSuffix + '_' + e.key).replace(/[^a-zA-Z0-9_]/g,'_');
     const visualClass = (e.side === 'to') ? 'partner' : 'influence';
     const maxPct = (ranked[0][1] / total) * 100 || 1;
     const top5 = ranked.slice(0, 5).map(([code, v]) => {
