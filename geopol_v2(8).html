@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GÉOPOL — Atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   GÉOPOL v2 — THÈME
+   Palette papier / éditoriale reprise de l'app actuelle (identité forte
+   à conserver) + ajout d'une famille d'affichage (Fraunces) pour les titres.
+═════════════════════════════════════════════════════════════════ */
+:root {
+  --bg:       #f7f5f0;
+  --bg2:      #ffffff;
+  --bg3:      #f0ede6;
+  --bg4:      #e8e4db;
+  --bg5:      #ddd9cf;
+  --border:   #d8d3c8;
+  --border2:  #b8b2a4;
+  --text:     #1a1c22;
+  --text2:    #4a4e5c;
+  --text3:    #888070;
+  --green:    #0a6e4a;
+  --green-d:  rgba(10,110,74,.07);
+  --green-b:  rgba(10,110,74,.2);
+  --orange:   #b45309;
+  --orange-d: rgba(180,83,9,.07);
+  --orange-b: rgba(180,83,9,.2);
+  --red:      #b91c1c;
+  --red-d:    rgba(185,28,28,.07);
+  --red-b:    rgba(185,28,28,.2);
+  --blue:     #1d4ed8;
+  --blue-d:   rgba(29,78,216,.07);
+  --blue-b:   rgba(29,78,216,.2);
+  --terra:    #c2410c;
+  --terra-d:  rgba(194,65,12,.08);
+  --terra-b:  rgba(194,65,12,.25);
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+  --display:  'Fraunces', Georgia, serif;
+  --shadow:   0 1px 2px rgba(26,28,34,.04), 0 4px 16px rgba(26,28,34,.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  /* texture grain très subtile pour l'atmosphère papier */
+  background-image: radial-gradient(var(--bg4) 0.5px, transparent 0.5px);
+  background-size: 22px 22px;
+}
+
+/* ── App shell ───────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── Header ──────────────────────────────────────────────────── */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 18px;
+  display: flex; align-items: center; gap: 16px;
+  height: 50px; flex-shrink: 0;
+  position: sticky; top: 0; z-index: 50;
+}
+.logo {
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  letter-spacing: .22em; color: var(--green);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-mark {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--green), #064e34);
+  box-shadow: inset -2px -2px 4px rgba(0,0,0,.2);
+}
+.logo-sub {
+  font-size: 9px; font-weight: 400; letter-spacing: .15em;
+  color: var(--text3); text-transform: uppercase; font-family: var(--mono);
+}
+
+/* ── Onglets (Synthèse / Puissance / Relations) ──────────────── */
+.tabs { display: flex; gap: 2px; margin-left: 8px; height: 100%; }
+.tab {
+  display: flex; align-items: center; padding: 0 16px;
+  font-size: 12px; font-weight: 500; color: var(--text3);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  letter-spacing: .02em; transition: color .15s, border-color .15s;
+  background: none; border-top: none; border-left: none; border-right: none;
+  font-family: var(--sans);
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
+
+.header-spacer { flex: 1; }
+
+/* ── Bouton générique header ─────────────────────────────────── */
+.hbtn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; font-size: 11px; font-family: var(--mono);
+  color: var(--text2); background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; transition: all .15s;
+}
+.hbtn:hover { border-color: var(--border2); color: var(--text); }
+.hbtn .kbd {
+  font-size: 9px; padding: 1px 4px; border-radius: 3px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-bottom-width: 2px;
+}
+
+/* ── Badge DB ────────────────────────────────────────────────── */
+.db-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); }
+.dot.ok { background: var(--green); box-shadow: 0 0 0 3px var(--green-d); }
+.dot.loading { background: var(--orange); animation: pulse 1.2s ease-in-out infinite; }
+.dot.error { background: var(--red); }
+.dot.demo { background: var(--blue); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Barre de contexte (sujet + année) ───────────────────────── */
+#contextBar {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 9px 18px; display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; flex-shrink: 0;
+  position: sticky; top: 50px; z-index: 40;
+  box-shadow: 0 1px 0 var(--border);
+}
+.ctx-label {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+  color: var(--text3); text-transform: uppercase;
+}
+.subject-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px; border-radius: 20px;
+  background: var(--green-d); border: 1px solid var(--green-b);
+  color: var(--green); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all .15s;
+}
+.subject-chip:hover { background: var(--green-b); }
+.subject-chip .flag { font-size: 15px; }
+.subject-chip.empty { background: var(--bg3); border-color: var(--border); color: var(--text3); font-style: italic; }
+.subject-chip .x { opacity: .5; font-size: 13px; line-height: 1; }
+.subject-chip .x:hover { opacity: 1; }
+/* chip du comparant B (orange, distinct du sujet A vert) */
+.subject-chip.b { background: var(--orange-d); border-color: var(--orange-b); color: var(--orange); }
+.subject-chip.b:hover { background: var(--orange-b); }
+.subject-chip.b.empty { background: var(--bg3); border: 1px dashed var(--border2); color: var(--text3); }
+
+.ctx-sep { width: 1px; height: 18px; background: var(--border); }
+
+/* slider année */
+.year-control { display: inline-flex; align-items: center; gap: 9px; }
+.year-control input[type=range] { width: 150px; accent-color: var(--green); }
+.year-out {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  color: var(--text); min-width: 36px; text-align: right;
+}
+/* menu déroulant d'année (Puissance / Relations) */
+.year-select {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  padding: 4px 26px 4px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" fill="none" stroke="%23666" stroke-width="1.5"/></svg>') no-repeat right 8px center;
+  appearance: none; cursor: pointer; color: var(--text);
+}
+.year-select:hover { border-color: var(--border2); }
+.year-select:focus { outline: none; border-color: var(--green); }
+
+/* ── Zone principale ─────────────────────────────────────────── */
+main { flex: 1; padding: 16px 18px 28px; }
+.view { display: none; animation: fadeIn .25s ease; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* placeholder d'onglet (étape 0) */
+.placeholder {
+  border: 1.5px dashed var(--border2); border-radius: 12px;
+  padding: 60px 30px; text-align: center; color: var(--text3);
+  background: var(--bg2); max-width: 760px; margin: 30px auto;
+}
+.placeholder h2 {
+  font-family: var(--display); font-size: 26px; font-weight: 500;
+  color: var(--text); margin-bottom: 10px; letter-spacing: -.01em;
+}
+.placeholder .tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--green);
+  background: var(--green-d); padding: 4px 10px; border-radius: 20px;
+  display: inline-block; margin-bottom: 18px;
+}
+.placeholder p { font-size: 13px; line-height: 1.7; max-width: 520px; margin: 0 auto 8px; }
+.placeholder ul { text-align: left; max-width: 460px; margin: 16px auto 0; font-size: 12.5px; line-height: 1.9; }
+
+/* ── Overlay de chargement ───────────────────────────────────── */
+#loadingScreen {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--bg); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 22px;
+  transition: opacity .4s; 
+}
+#loadingScreen.hidden { opacity: 0; pointer-events: none; }
+.load-logo {
+  font-family: var(--mono); font-size: 14px; font-weight: 600;
+  letter-spacing: .3em; color: var(--green);
+}
+.load-bar-wrap { width: 240px; height: 3px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+.load-bar { height: 100%; width: 0%; background: var(--green); transition: width .4s ease; border-radius: 2px; }
+#loadingMsg { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+/* ── Popover de recherche sujet (⌘K minimal pour l'étape 0) ──── */
+#searchOverlay {
+  position: fixed; inset: 0; z-index: 150; display: none;
+  background: rgba(26,28,34,.25); backdrop-filter: blur(2px);
+  align-items: flex-start; justify-content: center; padding-top: 12vh;
+}
+#searchOverlay.open { display: flex; }
+.search-box {
+  width: min(540px, 92vw); background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(26,28,34,.22); overflow: hidden;
+}
+.search-box input {
+  width: 100%; padding: 16px 18px; border: none; outline: none;
+  font-family: var(--sans); font-size: 16px; background: none; color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+.search-results { max-height: 320px; overflow-y: auto; }
+.search-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+  cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--bg3);
+}
+.search-item:hover, .search-item.sel { background: var(--green-d); }
+.search-item .flag { font-size: 17px; }
+.search-item .iso { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-left: auto; }
+.search-item .kind { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; }
+.search-empty { padding: 22px; text-align: center; color: var(--text3); font-size: 12px; }
+/* case à cocher (pays seulement ; les zones se choisissent en 1 clic) */
+.search-item .chk {
+  width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
+  border: 1.5px solid var(--border2); display: inline-flex;
+  align-items: center; justify-content: center; font-size: 11px;
+  color: #fff; background: var(--bg2); transition: all .12s;
+}
+.search-item.checked .chk { background: var(--green); border-color: var(--green); }
+.search-item .chk-spacer { width: 16px; flex-shrink: 0; } /* alignement pour les zones */
+.search-hint {
+  padding: 8px 18px; font-family: var(--mono); font-size: 9px;
+  letter-spacing: .06em; color: var(--text3); text-transform: uppercase;
+  background: var(--bg3); border-bottom: 1px solid var(--border);
+}
+/* bandeau de validation de la sélection multiple */
+.search-tray {
+  display: none; align-items: center; gap: 10px; padding: 11px 16px;
+  border-top: 1px solid var(--border); background: var(--bg3);
+}
+.search-tray.show { display: flex; }
+.search-tray .tray-chips { flex: 1; display: flex; flex-wrap: wrap; gap: 5px; }
+.tray-chip {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
+  background: var(--bg2); border: 1px solid var(--green-b); border-radius: 14px;
+  font-size: 11px; color: var(--green);
+}
+.tray-chip .flag { font-size: 13px; }
+.tray-chip .rm { cursor: pointer; opacity: .5; font-size: 12px; }
+.tray-chip .rm:hover { opacity: 1; }
+.tray-validate {
+  padding: 7px 14px; background: var(--green); color: #fff; border: none;
+  border-radius: 7px; font-family: var(--sans); font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.tray-validate:hover { background: #064e34; }
+/* ════════════════════════════════════════════════════════════════
+   ONGLET SYNTHÈSE
+═════════════════════════════════════════════════════════════════ */
+.syn-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; align-items: start; }
+@media (max-width: 920px){ .syn-grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 13px 16px; border-bottom: 1px solid var(--border);
+}
+.card-title {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text2); font-weight: 600;
+}
+.card-sub { font-size: 11px; color: var(--text3); }
+.card-body { padding: 6px 16px 14px; }
+
+/* tableau valeurs clés */
+.kv-row {
+  display: grid; grid-template-columns: 1.4fr auto auto 88px; gap: 12px;
+  align-items: center; padding: 9px 0; border-bottom: 1px solid var(--bg3);
+  cursor: pointer; transition: background .12s; margin: 0 -8px; padding-left: 8px; padding-right: 8px;
+  border-radius: 6px;
+}
+.kv-row:last-child { border-bottom: none; }
+.kv-row:hover { background: var(--green-d); }
+.kv-name { font-size: 12.5px; color: var(--text); }
+.kv-name .cat { font-family: var(--mono); font-size: 8.5px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; display: block; margin-top: 1px; }
+.kv-val { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--green); text-align: right; }
+.kv-val .u { font-size: 9px; color: var(--text3); font-weight: 400; margin-left: 3px; }
+.kv-rank { font-family: var(--mono); font-size: 10.5px; color: var(--text3); text-align: right; white-space: nowrap; }
+.kv-spark { height: 26px; }
+.kv-spark svg { display: block; width: 100%; height: 100%; }
+.kv-empty { padding: 30px; text-align: center; color: var(--text3); font-size: 12px; }
+
+/* panorama des flux */
+.flux-block { margin-bottom: 6px; }
+.flux-block-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 9px 0 6px; 
+}
+.flux-block-head .t { font-size: 13px; font-weight: 600; color: var(--text); }
+.flux-block-head .h { font-size: 10px; color: var(--text3); }
+.pano-row {
+  display: grid; grid-template-columns: 92px 1fr 64px 46px; gap: 9px;
+  align-items: center; padding: 7px 6px; cursor: pointer; border-radius: 6px;
+  border-bottom: 1px solid var(--bg3);
+}
+.pano-row:last-child { border-bottom: none; }
+.pano-row:hover { background: var(--bg3); }
+.pano-flux { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pano-partner { display: flex; align-items: center; gap: 6px; font-size: 12px; min-width: 0; }
+.pano-partner .flag { font-size: 14px; flex-shrink: 0; }
+.pano-partner .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pano-bar { height: 8px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.pano-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+.pano-fill.clair    { opacity: .55; }
+.pano-fill.moyen    { opacity: .8; }
+.pano-fill.intense  { opacity: 1; }
+.pano-fill.partner  { background: var(--blue); }
+.pano-fill.influence{ background: var(--green); }
+.pano-val { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; }
+.pano-empty { padding: 16px 6px; color: var(--text3); font-size: 11.5px; font-style: italic; }
+/* dépliage top 5 */
+.pano-wrap { border-bottom: 1px solid var(--bg3); }
+.pano-wrap:last-child { border-bottom: none; }
+.pano-row { border-bottom: none; }
+.pano-row { grid-template-columns: 86px 1fr 60px 40px 14px; }
+.pano-caret { font-size: 9px; color: var(--text3); text-align: center; }
+.pano-detail { display: none; padding: 4px 6px 10px 6px; }
+.pano-detail.open { display: block; animation: fadeIn .2s ease; }
+.pano-detail-title { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin: 4px 0 6px; }
+.pano-sub { display: grid; grid-template-columns: 16px 1fr 80px 36px; gap: 8px; align-items: center; padding: 3px 0; font-size: 11.5px; }
+.pano-sub .flag { font-size: 13px; }
+.pano-sub .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text2); }
+.pano-sub .bar { width: 80px; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; display: block; }
+.pano-sub .fill { display: block; height: 100%; border-radius: 3px; min-width: 2px; }
+.pano-sub .fill.partner { background: var(--blue); opacity: .7; }
+.pano-sub .fill.influence { background: var(--green); opacity: .7; }
+.pano-sub .v { font-family: var(--mono); font-size: 10px; text-align: right; color: var(--text2); }
+.pano-detail-link { font-size: 10.5px; color: var(--green); cursor: pointer; margin-top: 8px; display: inline-block; font-weight: 500; }
+.pano-detail-link:hover { text-decoration: underline; }
+
+/* bloc ressources (Synthèse) */
+.res-block { margin-top: 14px; }
+.res-group { margin-bottom: 10px; }
+.res-group-head { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; padding: 0 2px; }
+.res-row { display: grid; grid-template-columns: 130px 1fr 50px; gap: 10px; align-items: center; padding: 5px 2px; font-size: 12px; }
+.res-name { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-name .sub { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-left: 4px; }
+.res-bar { height: 7px; background: var(--bg4); border-radius: 3px; overflow: hidden; position: relative; }
+.res-fill { height: 100%; background: var(--green); border-radius: 3px; opacity: .8; min-width: 2px; }
+.res-fill.reserves { background: var(--terra); }
+.res-pct { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; color: var(--text); }
+.res-empty { padding: 12px; text-align: center; color: var(--text3); font-size: 11.5px; font-style: italic; }
+
+/* hint sujet absent */
+.need-subject {
+  border: 1.5px dashed var(--border2); border-radius: 12px;
+  padding: 48px 30px; text-align: center; color: var(--text3);
+  background: var(--bg2); max-width: 620px; margin: 40px auto;
+}
+.need-subject .big { font-family: var(--display); font-size: 22px; color: var(--text); margin-bottom: 8px; }
+.need-subject button {
+  margin-top: 16px; padding: 9px 18px; background: var(--green); color: #fff;
+  border: none; border-radius: 8px; font-family: var(--sans); font-size: 13px;
+  font-weight: 600; cursor: pointer;
+}
+
+/* bouton config (engrenage) dans l'en-tête de carte */
+.card-cog {
+  font-size: 13px; color: var(--text3); cursor: pointer; background: none;
+  border: none; padding: 2px 4px; border-radius: 5px; transition: all .12s;
+}
+.card-cog:hover { color: var(--text); background: var(--bg3); }
+
+/* infobulle générique */
+.tip { position: relative; }
+#globalTip {
+  position: fixed; z-index: 300; pointer-events: none; display: none;
+  background: var(--text); color: var(--bg); font-size: 11px; line-height: 1.5;
+  padding: 7px 10px; border-radius: 7px; max-width: 240px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25); font-family: var(--sans);
+}
+#globalTip .tt { font-family: var(--mono); font-size: 9px; opacity: .65; text-transform: uppercase; letter-spacing: .06em; }
+#globalTip b { color: #fff; }
+
+/* modale de configuration des indicateurs épinglés */
+#pinModal {
+  position: fixed; inset: 0; z-index: 160; display: none;
+  background: rgba(26,28,34,.3); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center;
+}
+#pinModal.open { display: flex; }
+.pin-box {
+  width: min(560px, 92vw); max-height: 80vh; background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: 14px; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.pin-head {
+  padding: 15px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.pin-head .t { font-family: var(--display); font-size: 17px; font-weight: 500; }
+.pin-head .x { cursor: pointer; font-size: 20px; color: var(--text3); }
+.pin-head .x:hover { color: var(--text); }
+.pin-body { overflow-y: auto; padding: 8px 0; }
+.pin-cat { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); padding: 10px 18px 4px; }
+.pin-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 18px; cursor: pointer;
+  font-size: 13px;
+}
+.pin-item:hover { background: var(--bg3); }
+.pin-chk {
+  width: 17px; height: 17px; border-radius: 5px; border: 1.5px solid var(--border2);
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  background: var(--bg2); font-size: 11px; flex-shrink: 0;
+}
+.pin-item.on .pin-chk { background: var(--green); border-color: var(--green); }
+.pin-item .miss { font-size: 9px; color: var(--orange); font-family: var(--mono); margin-left: auto; }
+.pin-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.pin-foot .count { font-size: 11px; color: var(--text3); }
+.pin-foot button { padding: 8px 16px; background: var(--green); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--sans); }
+.pin-foot .reset { background: none; color: var(--text3); margin-right: auto; }
+.pin-foot .reset:hover { color: var(--text); }
+/* ════════════════════════════════════════════════════════════════
+   ONGLET PUISSANCE
+═════════════════════════════════════════════════════════════════ */
+.pu-layout { display: grid; grid-template-columns: 230px 1fr; gap: 14px; align-items: start; }
+@media (max-width: 860px){ .pu-layout { grid-template-columns: 1fr; } }
+
+/* navigateur d'indicateurs */
+.pu-nav { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.pu-nav-search { padding: 10px; border-bottom: 1px solid var(--border); }
+.pu-nav-search input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-family: var(--sans); font-size: 12px; background: var(--bg); outline: none; }
+.pu-nav-search input:focus { border-color: var(--green); }
+.pu-nav-body { max-height: 62vh; overflow-y: auto; padding: 4px 0 8px; }
+.pu-cat { }
+.pu-cat-head { display: flex; align-items: center; gap: 6px; padding: 8px 12px 4px; cursor: pointer; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); }
+.pu-cat-head:hover { color: var(--text2); }
+.pu-cat-head .caret { transition: transform .15s; font-size: 8px; }
+.pu-cat.collapsed .caret { transform: rotate(-90deg); }
+.pu-cat.collapsed .pu-cat-list { display: none; }
+.pu-ind { display: flex; align-items: center; gap: 8px; padding: 6px 12px; cursor: pointer; font-size: 12.5px; color: var(--text2); border-left: 2px solid transparent; }
+.pu-ind:hover { background: var(--bg3); color: var(--text); }
+.pu-ind.active { background: var(--green-d); color: var(--green); border-left-color: var(--green); font-weight: 600; }
+.pu-ind .radar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; opacity: .55; }
+.pu-ind .radar-dot.off { background: transparent; }
+
+/* zone principale Puissance */
+.pu-main { display: flex; flex-direction: column; gap: 14px; }
+.pu-head { display: flex; align-items: baseline; gap: 12px; padding: 2px 4px; }
+.pu-head .name { font-family: var(--display); font-size: 22px; font-weight: 500; letter-spacing: -.01em; }
+.pu-head .meta { font-size: 11px; color: var(--text3); }
+.pu-cells { display: grid; gap: 14px; grid-template-columns: 1fr; }
+.pu-cells .top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 920px){ .pu-cells .top-row { grid-template-columns: 1fr; } }
+
+/* radar */
+.pu-radar-wrap { display: flex; align-items: center; justify-content: center; min-height: 280px; }
+.pu-radar-wrap svg { display: block; max-width: 100%; height: auto; }
+.radar-axis { stroke: var(--border); stroke-width: .6; }
+.radar-grid { stroke: var(--border); stroke-width: .4; fill: none; opacity: .5; }
+.radar-median { stroke: var(--text3); stroke-width: 1; stroke-dasharray: 3 3; fill: none; opacity: .55; }
+.radar-poly { fill: var(--green); fill-opacity: .15; stroke: var(--green); stroke-width: 1.8; }
+.radar-pt { fill: var(--green); }
+.radar-pt.active { fill: var(--orange); r: 4.5; stroke: #fff; stroke-width: 1.5; }
+.radar-lbl { font-family: var(--sans); font-size: 10px; fill: var(--text2); }
+.radar-lbl.active { fill: var(--orange); font-weight: 600; }
+.radar-empty { padding: 30px; text-align: center; color: var(--text3); font-size: 12px; }
+.pu-cell { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.pu-cell-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+.pu-cell-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text2); font-weight: 600; }
+.pu-cell-body { padding: 14px 16px; }
+
+/* cellule courbe */
+.pu-curve-wrap { width: 100%; }
+.pu-curve-wrap svg { display: block; width: 100%; height: 260px; }
+.curve-line { fill: none; stroke: var(--green); stroke-width: 2; }
+.curve-area { fill: var(--green); opacity: .07; }
+.curve-dot { fill: var(--green); }
+.curve-axis { stroke: var(--border); stroke-width: .5; }
+.curve-grid { stroke: var(--border); stroke-width: .5; opacity: .5; stroke-dasharray: 2 3; }
+.curve-lbl { font-family: var(--mono); font-size: 9px; fill: var(--text3); }
+.curve-proj { stroke-dasharray: 4 3; opacity: .6; }
+
+/* cellule carte */
+#puMapContainer { position: relative; width: 100%; }
+#puMap { display: block; width: 100%; height: 340px; border-radius: 8px; background: #dce8f0; }
+.map-country { stroke: var(--border); stroke-width: .4px; cursor: pointer; transition: fill-opacity .15s; }
+.pu-map-legend { display: flex; align-items: center; gap: 8px; padding: 10px 4px 0; font-size: 10px; color: var(--text3); }
+.pu-map-legend .bar { height: 8px; width: 120px; border-radius: 3px; background: linear-gradient(to right, #e8f0e8, #9ec9a8, #4f9e6a, #0a6e4a, #064e34); }
+
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ░░ HEADER ░░ -->
+  <header>
+    <div class="logo"><span class="logo-mark"></span>GÉOPOL <span class="logo-sub">atelier</span></div>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-view="synthese">Synthèse</button>
+      <button class="tab" data-view="puissance">Puissance</button>
+      <button class="tab" data-view="relations">Relations</button>
+    </nav>
+    <div class="header-spacer"></div>
+    <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
+    <button class="hbtn" id="exportBtn" onclick="exportCurrentView()"><span>⬇</span> Exporter</button>
+    <div class="db-badge"><span class="dot" id="dbDot"></span><span id="dbName">—</span></div>
+  </header>
+
+  <!-- ░░ BARRE DE CONTEXTE ░░ -->
+  <div id="contextBar">
+    <span class="ctx-label">Sujet</span>
+    <div id="subjectSlot"></div>
+    <div id="compareBSlotWrap" style="display:none;align-items:center;gap:12px">
+      <span class="ctx-sep"></span>
+      <span class="ctx-label">Comparer à</span>
+      <div id="compareBSlot"></div>
+    </div>
+    <span class="ctx-sep"></span>
+    <span class="ctx-label">Année</span>
+    <div id="yearSlot"></div>
+  </div>
+
+  <!-- ░░ ZONE PRINCIPALE — 3 ONGLETS ░░ -->
+  <main>
+    <section class="view active" id="view-synthese">
+      <div id="syntheseContent"></div>
+    </section>
+
+    <section class="view" id="view-puissance">
+      <div id="puissanceContent"></div>
+    </section>
+
+    <section class="view" id="view-relations">
+      <div class="placeholder">
+        <span class="tag">Onglet 3</span>
+        <h2>Relations</h2>
+        <p>Exploration d'un flux : qui pèse pour le sujet, et pour qui le sujet pèse.</p>
+        <ul>
+          <li>Heatmap d'accueil (boussole : où creuser)</li>
+          <li>Composition : sunburst ⇄ treemap drill-down</li>
+          <li>Évolution (aires empilées) &amp; carte</li>
+          <li>Bascule Partenaire / Influence, filtre partagé</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ░░ OVERLAY DE CHARGEMENT ░░ -->
+<div id="loadingScreen">
+  <div class="load-logo">GÉOPOL</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="loadPbar"></div></div>
+  <div id="loadingMsg">Initialisation…</div>
+</div>
+
+<!-- ░░ OVERLAY RECHERCHE (sujet) ░░ -->
+<div id="searchOverlay" onclick="if(event.target===this)closeSearch()">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Rechercher un pays ou une zone…" oninput="onSearchInput(this.value)" onkeydown="onSearchKey(event)">
+    <div class="search-results" id="searchResults"></div>
+    <div class="search-tray" id="searchTray">
+      <div class="tray-chips" id="trayChips"></div>
+      <button class="tray-validate" id="trayValidate" onclick="validateMultiSelection()">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ MODALE CONFIG INDICATEURS ÉPINGLÉS ░░ -->
+<div id="pinModal" onclick="if(event.target===this)closePinModal()">
+  <div class="pin-box">
+    <div class="pin-head">
+      <span class="t">Indicateurs de la synthèse</span>
+      <span class="x" onclick="closePinModal()">×</span>
+    </div>
+    <div class="pin-body" id="pinBody"></div>
+    <div class="pin-foot">
+      <button class="reset" onclick="resetPins()">Réinitialiser</button>
+      <span class="count" id="pinCount"></span>
+      <button onclick="applyPins()">Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ INFOBULLE GLOBALE ░░ -->
+<div id="globalTip"></div>
+
+<script id="appScript">
+/* ════════════════════════════════════════════════════════════════
+   GÉOPOL v2 — SOCLE JS
+   Étape 0/1 : état unifié, boot DB (+ démo), onglets, contexte,
+   registre d'indicateurs dynamique, recherche sujet minimale.
+   Les briques de visualisation seront greffées aux étapes suivantes.
+═════════════════════════════════════════════════════════════════ */
+
+/* ─── RÉFÉRENTIEL PAYS (repris de l'app actuelle) ─────────────── */
+const COUNTRY_REF = {
+  AFG:{name:'Afghanistan',flag:'🇦🇫',continent:'Asie'},
+  ALB:{name:'Albanie',flag:'🇦🇱',continent:'Europe'},
+  DZA:{name:'Algérie',flag:'🇩🇿',continent:'Afrique'},
+  AGO:{name:'Angola',flag:'🇦🇴',continent:'Afrique'},
+  ARG:{name:'Argentine',flag:'🇦🇷',continent:'Amériques'},
+  AUS:{name:'Australie',flag:'🇦🇺',continent:'Océanie'},
+  AUT:{name:'Autriche',flag:'🇦🇹',continent:'Europe'},
+  AZE:{name:'Azerbaïdjan',flag:'🇦🇿',continent:'Asie'},
+  BGD:{name:'Bangladesh',flag:'🇧🇩',continent:'Asie'},
+  BLR:{name:'Biélorussie',flag:'🇧🇾',continent:'Europe'},
+  BEL:{name:'Belgique',flag:'🇧🇪',continent:'Europe'},
+  BEN:{name:'Bénin',flag:'🇧🇯',continent:'Afrique'},
+  BOL:{name:'Bolivie',flag:'🇧🇴',continent:'Amériques'},
+  BIH:{name:'Bosnie-Herzégovine',flag:'🇧🇦',continent:'Europe'},
+  BWA:{name:'Botswana',flag:'🇧🇼',continent:'Afrique'},
+  BRA:{name:'Brésil',flag:'🇧🇷',continent:'Amériques'},
+  BFA:{name:'Burkina Faso',flag:'🇧🇫',continent:'Afrique'},
+  BDI:{name:'Burundi',flag:'🇧🇮',continent:'Afrique'},
+  KHM:{name:'Cambodge',flag:'🇰🇭',continent:'Asie'},
+  CMR:{name:'Cameroun',flag:'🇨🇲',continent:'Afrique'},
+  CAN:{name:'Canada',flag:'🇨🇦',continent:'Amériques'},
+  CAF:{name:'République centrafricaine',flag:'🇨🇫',continent:'Afrique'},
+  TCD:{name:'Tchad',flag:'🇹🇩',continent:'Afrique'},
+  CHL:{name:'Chili',flag:'🇨🇱',continent:'Amériques'},
+  CHN:{name:'Chine',flag:'🇨🇳',continent:'Asie'},
+  COL:{name:'Colombie',flag:'🇨🇴',continent:'Amériques'},
+  COD:{name:'RD Congo',flag:'🇨🇩',continent:'Afrique'},
+  COG:{name:'Congo',flag:'🇨🇬',continent:'Afrique'},
+  CRI:{name:'Costa Rica',flag:'🇨🇷',continent:'Amériques'},
+  HRV:{name:'Croatie',flag:'🇭🇷',continent:'Europe'},
+  CUB:{name:'Cuba',flag:'🇨🇺',continent:'Amériques'},
+  CZE:{name:'Tchéquie',flag:'🇨🇿',continent:'Europe'},
+  DNK:{name:'Danemark',flag:'🇩🇰',continent:'Europe'},
+  DJI:{name:'Djibouti',flag:'🇩🇯',continent:'Afrique'},
+  DOM:{name:'Rép. dominicaine',flag:'🇩🇴',continent:'Amériques'},
+  ECU:{name:'Équateur',flag:'🇪🇨',continent:'Amériques'},
+  EGY:{name:'Égypte',flag:'🇪🇬',continent:'Afrique'},
+  SLV:{name:'Salvador',flag:'🇸🇻',continent:'Amériques'},
+  ERI:{name:'Érythrée',flag:'🇪🇷',continent:'Afrique'},
+  EST:{name:'Estonie',flag:'🇪🇪',continent:'Europe'},
+  ETH:{name:'Éthiopie',flag:'🇪🇹',continent:'Afrique'},
+  FIN:{name:'Finlande',flag:'🇫🇮',continent:'Europe'},
+  FRA:{name:'France',flag:'🇫🇷',continent:'Europe'},
+  GAB:{name:'Gabon',flag:'🇬🇦',continent:'Afrique'},
+  GEO:{name:'Géorgie',flag:'🇬🇪',continent:'Asie'},
+  DEU:{name:'Allemagne',flag:'🇩🇪',continent:'Europe'},
+  GHA:{name:'Ghana',flag:'🇬🇭',continent:'Afrique'},
+  GRC:{name:'Grèce',flag:'🇬🇷',continent:'Europe'},
+  GTM:{name:'Guatemala',flag:'🇬🇹',continent:'Amériques'},
+  GIN:{name:'Guinée',flag:'🇬🇳',continent:'Afrique'},
+  GNQ:{name:'Guinée équatoriale',flag:'🇬🇶',continent:'Afrique'},
+  HTI:{name:'Haïti',flag:'🇭🇹',continent:'Amériques'},
+  HND:{name:'Honduras',flag:'🇭🇳',continent:'Amériques'},
+  HUN:{name:'Hongrie',flag:'🇭🇺',continent:'Europe'},
+  IND:{name:'Inde',flag:'🇮🇳',continent:'Asie'},
+  IDN:{name:'Indonésie',flag:'🇮🇩',continent:'Asie'},
+  IRN:{name:'Iran',flag:'🇮🇷',continent:'Asie'},
+  IRQ:{name:'Irak',flag:'🇮🇶',continent:'Asie'},
+  IRL:{name:'Irlande',flag:'🇮🇪',continent:'Europe'},
+  ISR:{name:'Israël',flag:'🇮🇱',continent:'Asie'},
+  ITA:{name:'Italie',flag:'🇮🇹',continent:'Europe'},
+  JAM:{name:'Jamaïque',flag:'🇯🇲',continent:'Amériques'},
+  JPN:{name:'Japon',flag:'🇯🇵',continent:'Asie'},
+  JOR:{name:'Jordanie',flag:'🇯🇴',continent:'Asie'},
+  KAZ:{name:'Kazakhstan',flag:'🇰🇿',continent:'Asie'},
+  KEN:{name:'Kenya',flag:'🇰🇪',continent:'Afrique'},
+  PRK:{name:'Corée du Nord',flag:'🇰🇵',continent:'Asie'},
+  KOR:{name:'Corée du Sud',flag:'🇰🇷',continent:'Asie'},
+  KWT:{name:'Koweït',flag:'🇰🇼',continent:'Asie'},
+  KGZ:{name:'Kirghizistan',flag:'🇰🇬',continent:'Asie'},
+  LAO:{name:'Laos',flag:'🇱🇦',continent:'Asie'},
+  LVA:{name:'Lettonie',flag:'🇱🇻',continent:'Europe'},
+  LBN:{name:'Liban',flag:'🇱🇧',continent:'Asie'},
+  LBY:{name:'Libye',flag:'🇱🇾',continent:'Afrique'},
+  LTU:{name:'Lituanie',flag:'🇱🇹',continent:'Europe'},
+  LSO:{name:'Lesotho',flag:'🇱🇸',continent:'Afrique'},
+  LBR:{name:'Libéria',flag:'🇱🇷',continent:'Afrique'},
+  MKD:{name:'Macédoine du Nord',flag:'🇲🇰',continent:'Europe'},
+  MWI:{name:'Malawi',flag:'🇲🇼',continent:'Afrique'},
+  MYS:{name:'Malaisie',flag:'🇲🇾',continent:'Asie'},
+  MLI:{name:'Mali',flag:'🇲🇱',continent:'Afrique'},
+  MAR:{name:'Maroc',flag:'🇲🇦',continent:'Afrique'},
+  MEX:{name:'Mexique',flag:'🇲🇽',continent:'Amériques'},
+  MDA:{name:'Moldavie',flag:'🇲🇩',continent:'Europe'},
+  MNG:{name:'Mongolie',flag:'🇲🇳',continent:'Asie'},
+  MNE:{name:'Monténégro',flag:'🇲🇪',continent:'Europe'},
+  MOZ:{name:'Mozambique',flag:'🇲🇿',continent:'Afrique'},
+  MMR:{name:'Myanmar',flag:'🇲🇲',continent:'Asie'},
+  NAM:{name:'Namibie',flag:'🇳🇦',continent:'Afrique'},
+  NPL:{name:'Népal',flag:'🇳🇵',continent:'Asie'},
+  NLD:{name:'Pays-Bas',flag:'🇳🇱',continent:'Europe'},
+  NZL:{name:'Nouvelle-Zélande',flag:'🇳🇿',continent:'Océanie'},
+  NIC:{name:'Nicaragua',flag:'🇳🇮',continent:'Amériques'},
+  NER:{name:'Niger',flag:'🇳🇪',continent:'Afrique'},
+  NGA:{name:'Nigéria',flag:'🇳🇬',continent:'Afrique'},
+  NOR:{name:'Norvège',flag:'🇳🇴',continent:'Europe'},
+  OMN:{name:'Oman',flag:'🇴🇲',continent:'Asie'},
+  PAK:{name:'Pakistan',flag:'🇵🇰',continent:'Asie'},
+  PAN:{name:'Panama',flag:'🇵🇦',continent:'Amériques'},
+  PRY:{name:'Paraguay',flag:'🇵🇾',continent:'Amériques'},
+  PER:{name:'Pérou',flag:'🇵🇪',continent:'Amériques'},
+  PHL:{name:'Philippines',flag:'🇵🇭',continent:'Asie'},
+  POL:{name:'Pologne',flag:'🇵🇱',continent:'Europe'},
+  PRT:{name:'Portugal',flag:'🇵🇹',continent:'Europe'},
+  QAT:{name:'Qatar',flag:'🇶🇦',continent:'Asie'},
+  ROU:{name:'Roumanie',flag:'🇷🇴',continent:'Europe'},
+  RUS:{name:'Russie',flag:'🇷🇺',continent:'Europe'},
+  RWA:{name:'Rwanda',flag:'🇷🇼',continent:'Afrique'},
+  SAU:{name:'Arabie Saoudite',flag:'🇸🇦',continent:'Asie'},
+  SEN:{name:'Sénégal',flag:'🇸🇳',continent:'Afrique'},
+  SRB:{name:'Serbie',flag:'🇷🇸',continent:'Europe'},
+  SLE:{name:'Sierra Leone',flag:'🇸🇱',continent:'Afrique'},
+  SGP:{name:'Singapour',flag:'🇸🇬',continent:'Asie'},
+  SVK:{name:'Slovaquie',flag:'🇸🇰',continent:'Europe'},
+  SVN:{name:'Slovénie',flag:'🇸🇮',continent:'Europe'},
+  SOM:{name:'Somalie',flag:'🇸🇴',continent:'Afrique'},
+  ZAF:{name:'Afrique du Sud',flag:'🇿🇦',continent:'Afrique'},
+  SSD:{name:'Soudan du Sud',flag:'🇸🇸',continent:'Afrique'},
+  ESP:{name:'Espagne',flag:'🇪🇸',continent:'Europe'},
+  LKA:{name:'Sri Lanka',flag:'🇱🇰',continent:'Asie'},
+  SDN:{name:'Soudan',flag:'🇸🇩',continent:'Afrique'},
+  SUR:{name:'Suriname',flag:'🇸🇷',continent:'Amériques'},
+  SWZ:{name:'Eswatini',flag:'🇸🇿',continent:'Afrique'},
+  SWE:{name:'Suède',flag:'🇸🇪',continent:'Europe'},
+  CHE:{name:'Suisse',flag:'🇨🇭',continent:'Europe'},
+  SYR:{name:'Syrie',flag:'🇸🇾',continent:'Asie'},
+  TWN:{name:'Taïwan',flag:'🇹🇼',continent:'Asie'},
+  TJK:{name:'Tadjikistan',flag:'🇹🇯',continent:'Asie'},
+  TZA:{name:'Tanzanie',flag:'🇹🇿',continent:'Afrique'},
+  THA:{name:'Thaïlande',flag:'🇹🇭',continent:'Asie'},
+  TGO:{name:'Togo',flag:'🇹🇬',continent:'Afrique'},
+  TTO:{name:'Trinité-et-Tobago',flag:'🇹🇹',continent:'Amériques'},
+  TUN:{name:'Tunisie',flag:'🇹🇳',continent:'Afrique'},
+  TUR:{name:'Türkiye',flag:'🇹🇷',continent:'Asie'},
+  TKM:{name:'Turkménistan',flag:'🇹🇲',continent:'Asie'},
+  UGA:{name:'Ouganda',flag:'🇺🇬',continent:'Afrique'},
+  UKR:{name:'Ukraine',flag:'🇺🇦',continent:'Europe'},
+  ARE:{name:'Émirats arabes unis',flag:'🇦🇪',continent:'Asie'},
+  GBR:{name:'Royaume-Uni',flag:'🇬🇧',continent:'Europe'},
+  USA:{name:'États-Unis',flag:'🇺🇸',continent:'Amériques'},
+  URY:{name:'Uruguay',flag:'🇺🇾',continent:'Amériques'},
+  UZB:{name:'Ouzbékistan',flag:'🇺🇿',continent:'Asie'},
+  VEN:{name:'Venezuela',flag:'🇻🇪',continent:'Amériques'},
+  VNM:{name:'Viêt Nam',flag:'🇻🇳',continent:'Asie'},
+  YEM:{name:'Yémen',flag:'🇾🇪',continent:'Asie'},
+  ZMB:{name:'Zambie',flag:'🇿🇲',continent:'Afrique'},
+  ZWE:{name:'Zimbabwe',flag:'🇿🇼',continent:'Afrique'},
+};
+
+// Table code numérique (topojson world-atlas) → ISO3, reprise de l'ancien index.
+const ISO_NUM_TO_3={4:'AFG',8:'ALB',12:'DZA',24:'AGO',32:'ARG',36:'AUS',40:'AUT',50:'BGD',56:'BEL',64:'BTN',68:'BOL',76:'BRA',100:'BGR',116:'KHM',120:'CMR',124:'CAN',144:'LKA',152:'CHL',156:'CHN',170:'COL',180:'COD',188:'CRI',192:'CUB',208:'DNK',218:'ECU',818:'EGY',246:'FIN',250:'FRA',266:'GAB',288:'GHA',300:'GRC',320:'GTM',340:'HND',348:'HUN',356:'IND',360:'IDN',364:'IRN',368:'IRQ',372:'IRL',376:'ISR',380:'ITA',388:'JAM',392:'JPN',400:'JOR',398:'KAZ',404:'KEN',410:'KOR',414:'KWT',418:'LAO',422:'LBN',434:'LBY',484:'MEX',504:'MAR',508:'MOZ',516:'NAM',524:'NPL',528:'NLD',554:'NZL',558:'NIC',566:'NGA',578:'NOR',586:'PAK',591:'PAN',604:'PER',608:'PHL',616:'POL',620:'PRT',634:'QAT',642:'ROU',643:'RUS',682:'SAU',686:'SEN',706:'SOM',710:'ZAF',724:'ESP',729:'SDN',752:'SWE',756:'CHE',760:'SYR',764:'THA',788:'TUN',792:'TUR',800:'UGA',804:'UKR',784:'ARE',826:'GBR',840:'USA',858:'URY',862:'VEN',704:'VNM',887:'YEM',894:'ZMB',716:'ZWE',694:'SLE',231:'ETH',222:'SLV',630:'PRI',262:'DJI',178:'COG',226:'GNQ',454:'MWI',748:'SWZ',426:'LSO',72:'BWA',646:'RWA',108:'BDI',270:'GMB',324:'GIN',624:'GNB',768:'TGO',204:'BEN',466:'MLI',562:'NER',854:'BFA',148:'TCD',140:'CAF',232:'ERI',728:'SSD',275:'PSE',512:'OMN',48:'BHR',598:'PNG',242:'FJI',548:'VUT',90:'SLB',203:'CZE',703:'SVK',705:'SVN',196:'CYP',470:'MLT',688:'SRB',191:'HRV',70:'BIH',807:'MKD',499:'MNE',112:'BLR',428:'LVA',440:'LTU',233:'EST',498:'MDA',268:'GEO',51:'ARM',31:'AZE',795:'TKM',860:'UZB',762:'TJK',417:'KGZ',496:'MNG',702:'SGP',458:'MYS',96:'BRN',332:'HTI',214:'DOM',780:'TTO',84:'BLZ',600:'PRY',740:'SUR',328:'GUY',44:'BHS',52:'BRB'};
+
+function isoToFlag(iso3){ return COUNTRY_REF[iso3]?.flag || '🏳️'; }
+function isoToName(iso3){ return COUNTRY_REF[iso3]?.name || iso3; }
+function isoToContinent(iso3){ return COUNTRY_REF[iso3]?.continent || ''; }
+
+/* ─── ÉTAT GLOBAL UNIFIÉ ──────────────────────────────────────
+   Refonte : remplace selectedCountry/compareCountries/groupMode/
+   groupCountries par UN sujet unifié + (Puissance) un comparé B.
+   subject = { isos:[...], label } — un pays = 1 iso, une zone/multi = n isos.
+─────────────────────────────────────────────────────────────── */
+const state = {
+  db: null,
+  config: null,            // config.json brut (registre d'indicateurs)
+  indicators: [],          // registre dérivé dynamiquement (config ∩ DB)
+  allCountries: [],        // pays présents en DB (enrichis du référentiel)
+  year: 2022,
+  yearBounds: { min: 2000, max: 2024 },
+  view: 'synthese',        // onglet actif
+  subject: null,           // { isos:[iso3,...], label }  — null si vide
+  compareB: null,          // { isos:[...], label } — exclusif à Puissance
+  isDemo: false,
+  // caches perf (récupérés/étendus depuis l'ancien code aux étapes suivantes)
+  _rankCache: new Map(),
+  _boundsCache: new Map(),
+};
+
+/* ─── HELPERS SUJET ───────────────────────────────────────────── */
+function subjectIsGroup(s){ return s && s.isos && s.isos.length > 1; }
+function currentIsos(){ return state.subject?.isos || []; }
+// Fonction-pont : équivalent de l'ancien currentTarget() pour réutiliser
+// les briques héritées (iso3 string si pays unique, sinon tableau).
+function currentTarget(){
+  const s = state.subject;
+  if(!s || !s.isos.length) return null;
+  return s.isos.length === 1 ? s.isos[0] : s.isos.slice();
+}
+
+/* ─── SQL SÛRS (repris de l'ancien) ───────────────────────────── */
+function safeExec(sql){
+  try { const r = state.db.exec(sql); return (r && r.length) ? r : []; }
+  catch(e){ console.warn('SQL', e, sql); return []; }
+}
+function escapeSql(s){ return String(s).replace(/'/g,"''"); }
+function sqlList(arr){ return arr.map(x => `'${escapeSql(x)}'`).join(','); }
+
+/* ─── DÉTECTION DE ZONE (repris de l'ancien detectGroupLabel) ──── */
+function detectZoneLabel(isos){
+  if(!state.db || !isos.length) return isos.length===1 ? isoToName(isos[0]) : 'Sélection libre';
+  if(isos.length === 1) return isoToName(isos[0]);
+  try {
+    const r = state.db.exec(`SELECT zone_id, zone_nom, country_iso3 FROM zones ORDER BY zone_id`);
+    if(r.length && r[0].values.length){
+      const byZone = new Map();
+      for(const [zid, znom, ciso] of r[0].values){
+        if(!byZone.has(zid)) byZone.set(zid, { nom: znom, iso: new Set() });
+        byZone.get(zid).iso.add(ciso);
+      }
+      const wanted = new Set(isos);
+      for(const { nom, iso } of byZone.values()){
+        if(iso.size === wanted.size && [...wanted].every(c => iso.has(c))) return nom;
+      }
+    }
+  } catch {}
+  return 'Sélection libre';
+}
+
+/* ════════════════════════════════════════════════════════════════
+   CACHE DE DONNÉES PAR SUJET (parade performance)
+   Chargement paresseux : identite chargé au choix du sujet ;
+   flux et stats mondiales calculés à la demande puis mémoïsés.
+   Invalidation par clé = liste d'isos triée.
+═════════════════════════════════════════════════════════════════ */
+const cache = {
+  key: null,          // signature du sujet courant ("FRA" / "DEU,FRA,ITA")
+  identite: null,     // { indicator: { year: value_agrégée } }
+  flux: new Map(),    // indicator -> { partner:{rows}, influence:{rows} } (à la demande)
+  world: new Map(),   // "indicator|year" -> { sorted:[...], n } (stats mondiales, à la demande)
+};
+// Cache parallèle pour le comparant B (Puissance A vs B).
+const cacheB = { key: null, identite: null, projection: null };
+
+function subjectKey(isos){ return isos.slice().sort().join(','); }
+
+function aggMethodFor(indicator){
+  const c = (state.config || []).find(x => x.indicator === indicator);
+  return (c && c.aggregation === 'sum') ? 'sum' : 'mean';
+}
+
+// (Re)charge le cache identite pour le sujet courant si nécessaire.
+function ensureIdentiteCache(){
+  const isos = currentIsos();
+  if(!isos.length) return false;
+  const key = subjectKey(isos);
+  if(cache.key === key && cache.identite) return true;   // déjà en cache
+
+  // reset cache pour ce nouveau sujet
+  cache.key = key;
+  cache.identite = {};        // indicator -> year -> valeur agrégée HISTORIQUE
+  cache.projection = {};      // indicator -> year -> valeur agrégée PROJECTION
+  cache.flux.clear();
+  cache.world.clear();
+
+  const inList = sqlList(isos);
+  // récupère SUBCATEGORY pour distinguer historique (NULL) vs projection ('projection')
+  const r = safeExec(`SELECT indicator, year, country_iso3, value, subcategory FROM identite WHERE country_iso3 IN (${inList})`);
+  if(!r.length) return true;
+
+  // regroupement séparé historique vs projection
+  const tmpH = {}, tmpP = {};
+  for(const [ind, year, iso, val, sub] of r[0].values){
+    if(val == null) continue;
+    const bucket = (sub === 'projection') ? tmpP : tmpH;
+    (bucket[ind] ??= {});
+    (bucket[ind][year] ??= []).push(val);
+  }
+  function aggregate(tmp, target){
+    for(const ind in tmp){
+      const method = aggMethodFor(ind);
+      const byYear = {};
+      for(const y in tmp[ind]){
+        const arr = tmp[ind][y];
+        if(method === 'sum') byYear[y] = arr.reduce((a,b)=>a+b, 0);
+        else byYear[y] = arr.reduce((a,b)=>a+b, 0) / arr.length;
+      }
+      target[ind] = byYear;
+    }
+  }
+  aggregate(tmpH, cache.identite);
+  aggregate(tmpP, cache.projection);
+  return true;
+}
+
+// Valeur agrégée d'un indicateur pour une année, avec repli sur la dernière
+// année réellement renseignée (≠ null ET ≠ 0). Corrige les valeurs « 0 » des
+// années futures non encore peuplées (ex. projection 2030).
+function getIdentiteValue(indicator, year){
+  ensureIdentiteCache();
+  const y = year ?? state.year;
+  const series = cache.identite?.[indicator];
+  if(!series) return null;
+  if(series[y] != null && series[y] !== 0) return series[y];
+  // repli : dernière année <= y avec valeur non nulle et non zéro
+  const years = Object.keys(series).map(Number).filter(yy => yy <= y && series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  if(years.length) return series[years[0]];
+  // sinon, dernière valeur renseignée toutes années confondues
+  const any = Object.keys(series).map(Number).filter(yy => series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  return any.length ? series[any[0]] : null;
+}
+
+// Série temporelle (valeurs non nulles/non zéro) pour courbes/sparklines.
+// Renvoie [{year, value, projection}], projection=true pour les valeurs WEO futures.
+function getIdentiteSeries(indicator){
+  ensureIdentiteCache();
+  const out = [];
+  const h = cache.identite?.[indicator];
+  if(h){
+    for(const y of Object.keys(h).map(Number).sort((a,b)=>a-b)){
+      if(h[y] != null && h[y] !== 0) out.push({ year: y, value: h[y], projection: false });
+    }
+  }
+  const p = cache.projection?.[indicator];
+  if(p){
+    for(const y of Object.keys(p).map(Number).sort((a,b)=>a-b)){
+      if(p[y] != null && p[y] !== 0) out.push({ year: y, value: p[y], projection: true });
+    }
+  }
+  // tri global par année (au cas où historique et projection se chevauchent)
+  return out.sort((a,b) => a.year - b.year);
+}
+
+/* ─── CACHE POUR LE COMPARANT B (Puissance A vs B) ────────────── */
+function ensureIdentiteCacheB(){
+  if(!state.compareB || !state.compareB.isos.length){ cacheB.key = null; cacheB.identite = null; cacheB.projection = null; return false; }
+  const isos = state.compareB.isos;
+  const key = subjectKey(isos);
+  if(cacheB.key === key && cacheB.identite) return true;
+  cacheB.key = key; cacheB.identite = {}; cacheB.projection = {};
+  const inList = sqlList(isos);
+  const r = safeExec(`SELECT indicator, year, country_iso3, value, subcategory FROM identite WHERE country_iso3 IN (${inList})`);
+  if(!r.length) return true;
+  const tmpH = {}, tmpP = {};
+  for(const [ind, year, iso, val, sub] of r[0].values){
+    if(val == null) continue;
+    const bucket = (sub === 'projection') ? tmpP : tmpH;
+    (bucket[ind] ??= {});
+    (bucket[ind][year] ??= []).push(val);
+  }
+  function aggregate(tmp, target){
+    for(const ind in tmp){
+      const method = aggMethodFor(ind);
+      const byYear = {};
+      for(const y in tmp[ind]){
+        const arr = tmp[ind][y];
+        byYear[y] = (method === 'sum') ? arr.reduce((a,b)=>a+b,0) : arr.reduce((a,b)=>a+b,0) / arr.length;
+      }
+      target[ind] = byYear;
+    }
+  }
+  aggregate(tmpH, cacheB.identite);
+  aggregate(tmpP, cacheB.projection);
+  return true;
+}
+function getIdentiteValueB(indicator, year){
+  if(!ensureIdentiteCacheB()) return null;
+  const y = year ?? state.year;
+  const series = cacheB.identite?.[indicator]; if(!series) return null;
+  if(series[y] != null && series[y] !== 0) return series[y];
+  const ys = Object.keys(series).map(Number).filter(yy => yy <= y && series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  if(ys.length) return series[ys[0]];
+  const any = Object.keys(series).map(Number).filter(yy => series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  return any.length ? series[any[0]] : null;
+}
+function getIdentiteSeriesB(indicator){
+  if(!ensureIdentiteCacheB()) return [];
+  const out = [];
+  const h = cacheB.identite?.[indicator];
+  if(h){
+    for(const y of Object.keys(h).map(Number).sort((a,b)=>a-b)){
+      if(h[y] != null && h[y] !== 0) out.push({ year: y, value: h[y], projection: false });
+    }
+  }
+  const p = cacheB.projection?.[indicator];
+  if(p){
+    for(const y of Object.keys(p).map(Number).sort((a,b)=>a-b)){
+      if(p[y] != null && p[y] !== 0) out.push({ year: y, value: p[y], projection: true });
+    }
+  }
+  return out.sort((a,b) => a.year - b.year);
+}
+
+// Stats mondiales pour un indicateur/année (percentiles, rangs) — paresseux.
+function getWorldStats(indicator, year){
+  const y = year ?? state.year;
+  const k = indicator + '|' + y;
+  if(cache.world.has(k)) return cache.world.get(k);
+  const r = safeExec(`SELECT country_iso3, value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND value IS NOT NULL`);
+  let pairs = [];
+  if(r.length) pairs = r[0].values
+    .filter(([iso]) => !REGIONAL_CODES.has(iso))
+    .map(([iso, v]) => ({ iso, v }));
+  const sorted = pairs.slice().sort((a,b) => a.v - b.v);
+  const stats = { sorted, n: sorted.length };
+  cache.world.set(k, stats);
+  return stats;
+}
+
+// Rang + percentile d'une valeur dans la distribution mondiale.
+// inverted=true => "beaucoup = défavorable" (le percentile est inversé).
+function rankPercentile(indicator, value, year){
+  if(value == null) return null;
+  const { sorted, n } = getWorldStats(indicator, year);
+  if(!n) return null;
+  let below = 0;
+  for(const d of sorted){ if(d.v < value) below++; else break; }
+  let pct = below / n;                       // 0..1 (position basse->haute)
+  const cfg = (state.config || []).find(c => c.indicator === indicator);
+  if(cfg && cfg.rank_inverted) pct = 1 - pct;
+  const rankFromTop = n - below;             // 1 = meilleur (valeur la plus haute)
+  return { percentile: pct, rank: rankFromTop, total: n };
+}
+
+// Flux d'un indicateur pour le sujet, dans un sens donné — paresseux.
+// dir: 'partner' (le sujet reçoit/émet, on regarde ses partenaires)
+//      'influence' (pour qui le sujet pèse).
+function getFluxRows(indicator, dir){
+  ensureIdentiteCache();
+  const isos = currentIsos();
+  if(!isos.length) return [];
+  const entry = cache.flux.get(indicator) || {};
+  if(entry[dir]) return entry[dir];
+
+  const inList = sqlList(isos);
+  // Convention de schéma : country_from = origine, country_to = destination.
+  // 'partner' : sujet côté country_to ; 'influence' : sujet côté country_from.
+  const subjectCol = (dir === 'partner') ? 'country_to' : 'country_from';
+  const partnerCol = (dir === 'partner') ? 'country_from' : 'country_to';
+
+  // Année des flux : l'année courante si elle a des données, sinon la dernière
+  // année de flux disponible pour ce sujet (les flux ne couvrent pas forcément
+  // les mêmes années que l'identité, ni les projections futures).
+  let y = state.year;
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND ${subjectCol} IN (${inList}) LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(indicator)}' AND ${subjectCol} IN (${inList})`);
+    if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+  }
+
+  let rows = [];
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                      FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                      AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
+                      AND ${partnerCol} NOT IN (${exclAgg})
+                      GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
+  if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v, fluxYear:y }));
+  entry[dir] = rows;
+  cache.flux.set(indicator, entry);
+  return rows;
+}
+
+// Invalide le cache quand l'année change (les valeurs annuelles dépendent de l'année).
+function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); }
+
+/* ─── UI : helpers chargement ─────────────────────────────────── */
+function setLoadingMsg(msg, pct){
+  const e = document.getElementById('loadingMsg'); if(e) e.textContent = msg;
+  const p = document.getElementById('loadPbar'); if(p && pct!=null) p.style.width = pct + '%';
+}
+function setDbBadge(name, st){
+  document.getElementById('dbDot').className = 'dot ' + st;
+  document.getElementById('dbName').textContent = name;
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+/* ─── BOOT (repris/adapté de l'ancien) ────────────────────────── */
+async function boot(){
+  setLoadingMsg('Initialisation WebAssembly…', 15);
+  let SQL;
+  try {
+    SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` });
+  } catch(e){ setLoadingMsg('Erreur WebAssembly : ' + e.message, 0); return; }
+
+  setLoadingMsg('Chargement de la base…', 35);
+  let buf;
+  try {
+    const res = await fetch('https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/geopolitique.db?v=' + Date.now());
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    buf = await res.arrayBuffer();
+  } catch(e){
+    setLoadingMsg('Base distante indisponible — mode démo', 60);
+    await sleep(350);
+    initDemo(SQL);
+    return;
+  }
+  setLoadingMsg('Ouverture de la base…', 70);
+  state.db = new SQL.Database(new Uint8Array(buf));
+  setLoadingMsg('Chargement de la configuration…', 85);
+  await loadConfig();
+  finishBoot('Base distante', 'ok');
+}
+
+/* ─── CONFIG + REGISTRE D'INDICATEURS DYNAMIQUE ────────────────
+   Principe « UI pilotée par les données » : la liste d'indicateurs
+   n'est jamais câblée en dur. On lit config.json (actif:true), on
+   croise avec les indicateurs réellement présents en DB, et on
+   enrichit des champs radar / rank_inverted (backfill si absents).
+─────────────────────────────────────────────────────────────── */
+async function loadConfig(){
+  try {
+    const r = await fetch('./config.json?v=' + Date.now());
+    if(!r.ok) throw new Error();
+    state.config = await r.json();
+  } catch { state.config = DEMO_CONFIG.slice(); }
+
+  // Backfill des champs de présentation s'ils manquent dans config.json
+  const RADAR_DEFAULTS = new Set(['population','pib_usd','pib_par_hab','fecondite','age_median','budget_defense_pib']);
+  const INVERTED_DEFAULTS = new Set(['violent_death','idps_securitaire','idps_climatique','taux_chomage','inflation','dette_pct_pib','dette_publique_pib']);
+  for(const c of (state.config || [])){
+    if(c.radar === undefined) c.radar = RADAR_DEFAULTS.has(c.indicator);
+    if(c.rank_inverted === undefined) c.rank_inverted = INVERTED_DEFAULTS.has(c.indicator);
+  }
+  buildIndicatorRegistry();
+  buildCountryList();
+}
+
+// Croise config.json (actif) avec les indicateurs présents en DB.
+function buildIndicatorRegistry(){
+  const present = new Set();
+  for(const tbl of ['identite','flux']){
+    const r = safeExec(`SELECT DISTINCT indicator FROM ${tbl}`);
+    if(r.length) for(const [ind] of r[0].values) present.add(ind);
+  }
+  // Déduplication : un même indicateur (même clé indicator+table) ne doit
+  // apparaître qu'une fois, même s'il est déclaré plusieurs fois dans config.json.
+  const seen = new Set();
+  state.indicators = (state.config || [])
+    .filter(c => c.actif !== false)
+    .filter(c => { const k = (c.table||'')+'|'+c.indicator; if(seen.has(k)) return false; seen.add(k); return true; })
+    .map(c => ({ ...c, presentInDb: present.has(c.indicator) }));
+  const missing = state.indicators.filter(c => !c.presentInDb).map(c => c.indicator);
+  if(missing.length) console.info('Indicateurs config sans données DB :', missing);
+}
+
+function buildCountryList(){
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM identite`);
+  if(r.length){
+    state.allCountries = r[0].values.map(([iso3]) => {
+      const ref = COUNTRY_REF[iso3];
+      return { iso3, name: ref?.name || iso3, continent: ref?.continent || '', flag: ref?.flag || isoToFlag(iso3) };
+    }).filter(c => !REGIONAL_CODES.has(c.iso3));
+  }
+}
+
+// Codes d'agrégats Banque Mondiale à exclure (repris de l'ancien set REGIONAL).
+const REGIONAL_CODES = new Set(['AFE','AFW','ARB','CEB','CSS','EAP','EAR','EAS','ECA','ECS','EMU','EUU','FCS','HIC','HPC','IBD','IBT','IDA','IDB','IDX','LAC','LCN','LDC','LIC','LMC','LMY','LTE','MEA','MIC','MNA','NAC','OED','OSS','PRE','PSS','PST','SAS','SSA','SSF','SST','TEA','TEC','TLA','TMN','TSA','TSS','UMC','WLD','INX','OEC']);
+
+// Année « présent » max : on ne démarre jamais sur une projection future.
+const CURRENT_YEAR = new Date().getFullYear();
+
+function finishBoot(dbName, badge){
+  // Bornes d'années réelles depuis la DB
+  const r = safeExec(`SELECT MIN(year), MAX(year) FROM identite`);
+  if(r.length && r[0].values.length){
+    const [mn, mx] = r[0].values[0];
+    if(mn && mx){
+      state.yearBounds = { min: mn, max: mx };   // bornes complètes (projections incluses) pour le curseur
+      // année par défaut = dernière année réelle, jamais une projection future
+      state.year = Math.min(mx, CURRENT_YEAR);
+    }
+  }
+  setDbBadge(dbName, badge);
+  setLoadingMsg('Prêt', 100);
+  applyUrlState();        // restaure l'état depuis l'URL si présent
+  renderContextBar();
+  refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
+  setTimeout(() => document.getElementById('loadingScreen').classList.add('hidden'), 250);
+}
+
+// Dernière année où le sujet a des données identité, hors projections futures.
+function latestYearWithData(){
+  ensureIdentiteCache();
+  let best = null;
+  for(const ind in (cache.identite || {})){
+    for(const y in cache.identite[ind]){
+      const yy = +y;
+      if(yy > CURRENT_YEAR) continue;            // ignore les projections futures
+      const v = cache.identite[ind][y];
+      if(v != null && v !== 0){ if(best == null || yy > best) best = yy; }
+    }
+  }
+  return best || Math.min(state.yearBounds.max, CURRENT_YEAR);
+}
+
+/* ─── ONGLETS ─────────────────────────────────────────────────── */
+function switchView(v){
+  state.view = v;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+  renderContextBar();
+  refreshActiveView();
+  syncUrl();
+}
+
+/* ─── CONTEXTE (barre sujet + année) ──────────────────────────── */
+function renderContextBar(){
+  renderSubjectSlot();
+  renderCompareBSlot();
+  renderYearSlot();
+}
+// Slot B : visible uniquement en Puissance (le comparant n'a pas de sens sur les autres onglets).
+function renderCompareBSlot(){
+  const wrap = document.getElementById('compareBSlotWrap');
+  const slot = document.getElementById('compareBSlot');
+  if(state.view !== 'puissance'){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'inline-flex';
+  if(!state.compareB || !state.compareB.isos.length){
+    slot.innerHTML = `<span class="subject-chip b empty" onclick="openSearchForB()">+ ajouter un comparant</span>`;
+    return;
+  }
+  const b = state.compareB;
+  const flag = b.isos.length === 1 ? isoToFlag(b.isos[0]) : '⊞';
+  slot.innerHTML =
+    `<span class="subject-chip b" onclick="openSearchForB()">
+       <span class="flag">${flag}</span>${b.label}
+       ${b.isos.length>1 ? `<span style="font-family:var(--mono);font-size:10px;opacity:.6">${b.isos.length} pays</span>` : ''}
+       <span class="x" onclick="event.stopPropagation();clearCompareB()">×</span>
+     </span>`;
+}
+function clearCompareB(){
+  state.compareB = null;
+  renderContextBar();
+  refreshActiveView();
+  syncUrl();
+}
+function renderSubjectSlot(){
+  const slot = document.getElementById('subjectSlot');
+  if(!state.subject || !state.subject.isos.length){
+    slot.innerHTML = `<span class="subject-chip empty" onclick="openSearch()">aucun sujet — cliquer pour choisir</span>`;
+    return;
+  }
+  const s = state.subject;
+  const flag = s.isos.length === 1 ? isoToFlag(s.isos[0]) : '⊞';
+  slot.innerHTML =
+    `<span class="subject-chip" onclick="openSearch()">
+       <span class="flag">${flag}</span>${s.label}
+       ${s.isos.length>1 ? `<span style="font-family:var(--mono);font-size:10px;opacity:.6">${s.isos.length} pays</span>` : ''}
+       <span class="x" onclick="event.stopPropagation();clearSubject()">×</span>
+     </span>`;
+}
+// Année : en Synthèse on affiche juste la dernière année dispo (pas de curseur) ;
+// en Puissance/Relations on garde un menu déroulant pour explorer le détail temporel.
+function renderYearSlot(){
+  const slot = document.getElementById('yearSlot');
+  if(state.view === 'synthese'){
+    if(state.subject) state.year = latestYearWithData();
+    slot.innerHTML = `<span class="year-out" style="font-family:var(--mono);font-size:13px;font-weight:600">${state.subject ? state.year : '—'}</span>
+      <span style="font-size:10px;color:var(--text3);margin-left:6px">dernière donnée</span>`;
+  } else {
+    const mn = state.yearBounds.min, mx = state.yearBounds.max;
+    let opts = '';
+    for(let y = mx; y >= mn; y--){
+      opts += `<option value="${y}" ${y===state.year?'selected':''}>${y}</option>`;
+    }
+    slot.innerHTML = `<select id="yearSelect" class="year-select" onchange="onYearChange(this.value)">${opts}</select>`;
+  }
+}
+
+function setSubject(isos, label){
+  state.subject = { isos: isos.slice(), label: label || detectZoneLabel(isos) };
+  renderContextBar();
+  syncUrl();
+  refreshActiveView();
+}
+function clearSubject(){
+  state.subject = null;
+  renderContextBar();
+  syncUrl();
+  refreshActiveView();
+}
+function onYearChange(v){
+  state.year = parseInt(v);
+  const out = document.getElementById('yearOut');
+  if(out) out.textContent = v;
+  invalidateYearScoped();
+  syncUrl();
+  refreshActiveView();
+}
+
+// Étape 0 : les vues sont des placeholders. Les étapes suivantes
+// brancheront ici le vrai rendu de l'onglet actif.
+// Dispatcher : rend l'onglet actif. Branché aux étapes 3/5/6.
+function refreshActiveView(){
+  if(state.view === 'synthese') renderSynthese();
+  else if(state.view === 'puissance') renderPuissance();
+  // relations : étape 6
+}
+
+/* ════════════════════════════════════════════════════════════════
+   FORMATAGE & SPARKLINES (utilitaires partagés)
+═════════════════════════════════════════════════════════════════ */
+function fmtNumber(v, unit){
+  if(v == null || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  let s;
+  // mise à l'échelle lisible
+  if(unit === 'M hab' || (unit === 'hab')){ return Math.round(v/1e6).toLocaleString('fr-FR') ; }
+  if(abs >= 1e12) s = (v/1e12).toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else if(abs >= 1e9) s = (v/1e9).toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else if(abs >= 1e6) s = (v/1e6).toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else if(abs >= 1000) s = Math.round(v).toLocaleString('fr-FR');
+  else if(abs >= 1) s = v.toLocaleString('fr-FR',{maximumFractionDigits:1});
+  else s = v.toLocaleString('fr-FR',{maximumFractionDigits:2});
+  return s;
+}
+function scaleSuffix(v, unitDisplay){
+  // ajuste le suffixe selon l'échelle appliquée par fmtNumber
+  const abs = Math.abs(v||0);
+  if(unitDisplay && (unitDisplay.includes('Mrd') || unitDisplay.includes('M hab'))) return unitDisplay;
+  if(abs >= 1e12) return 'T ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
+  if(abs >= 1e9)  return 'Mrd ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
+  if(abs >= 1e6)  return 'M ' + (unitDisplay||'').replace(/^(Mrd|M)\s?/,'');
+  return unitDisplay || '';
+}
+function ordinalFr(n){ return n === 1 ? '1er' : n + 'e'; }
+
+/* ─── SOURCE & ANNÉE RÉELLE D'UNE VALEUR ──────────────────────── */
+function getIndicatorSource(indicator, year){
+  // source la plus récente connue pour cet indicateur (sur le 1er pays du sujet)
+  const isos = currentIsos(); if(!isos.length) return null;
+  const r = safeExec(`SELECT source FROM identite WHERE indicator='${escapeSql(indicator)}' AND country_iso3='${escapeSql(isos[0])}' AND source IS NOT NULL AND source!='' ORDER BY year DESC LIMIT 1`);
+  return r.length && r[0].values.length ? r[0].values[0][0] : null;
+}
+function getValueYear(indicator, year){
+  const series = cache.identite?.[indicator]; if(!series) return null;
+  if(series[year] != null && series[year] !== 0) return year;
+  const ys = Object.keys(series).map(Number).filter(y => y <= year && series[y] != null && series[y] !== 0).sort((a,b)=>b-a);
+  if(ys.length) return ys[0];
+  const any = Object.keys(series).map(Number).filter(y => series[y] != null && series[y] !== 0).sort((a,b)=>b-a);
+  return any.length ? any[0] : null;
+}
+
+/* ─── INFOBULLE GLOBALE ───────────────────────────────────────── */
+function escAttr(s){ return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function showTip(ev, raw){
+  const tip = document.getElementById('globalTip');
+  // format : "titre::ligne1::ligne2" → titre en gras, lignes en dessous
+  const parts = String(raw).split('::');
+  let html = '';
+  parts.forEach((p,i) => {
+    if(i===0) html += `<div style="margin-bottom:3px">${p}</div>`;
+    else html += `<div class="tt">${p}</div>`;
+  });
+  tip.innerHTML = html;
+  tip.style.display = 'block';
+  moveTip(ev);
+}
+function moveTip(ev){
+  const tip = document.getElementById('globalTip');
+  if(tip.style.display !== 'block') return;
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  const r = tip.getBoundingClientRect();
+  if(x + r.width > window.innerWidth - 10) x = ev.clientX - r.width - 14;
+  if(y + r.height > window.innerHeight - 10) y = ev.clientY - r.height - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip(){ document.getElementById('globalTip').style.display = 'none'; }
+// Variante à deux arguments (titre, corps) — passés en data-attributes, sûrs.
+function showTip2(ev, title, body){
+  const tip = document.getElementById('globalTip');
+  tip.innerHTML = `<div style="margin-bottom:3px"><b>${title||''}</b></div><div class="tt">${body||''}</div>`;
+  tip.style.display = 'block';
+  moveTip(ev);
+}
+
+// Sparkline SVG (forme de la série, sans axes).
+function sparklineSvg(series, color){
+  if(!series || series.length < 2) return '';
+  const W = 88, H = 26, pad = 2;
+  const vals = series.map(d => d.value);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = (max - min) || 1;
+  const n = series.length;
+  const pts = series.map((d,i) => {
+    const x = pad + (i/(n-1)) * (W - 2*pad);
+    const y = H - pad - ((d.value - min)/range) * (H - 2*pad);
+    return [x, y];
+  });
+  const path = pts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+  const area = path + ` L${W-pad},${H} L${pad},${H} Z`;
+  const last = pts[pts.length-1];
+  const c = color || 'var(--green)';
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <path d="${area}" fill="${c}" opacity="0.1"/>
+    <path d="${path}" fill="none" stroke="${c}" stroke-width="1.3"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="1.8" fill="${c}"/>
+  </svg>`;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   RENDU — ONGLET SYNTHÈSE
+═════════════════════════════════════════════════════════════════ */
+
+/* ─── ÉPINGLAGE PERSONNEL (localStorage) ──────────────────────── */
+const PIN_KEY = 'geopol_pins_synthese';
+const PIN_FLUX_KEY = 'geopol_pins_flux';
+function loadPins(key){
+  try { const j = localStorage.getItem(key); if(j) return new Set(JSON.parse(j)); } catch {}
+  return null;
+}
+function savePins(key, set){
+  try { localStorage.setItem(key, JSON.stringify([...set])); } catch {}
+}
+
+function pinnedIdentiteIndicators(){
+  const ident = state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
+  const perso = loadPins(PIN_KEY);
+  if(perso && perso.size){
+    return ident.filter(c => perso.has(c.indicator)).slice(0, 14);
+  }
+  const def = ident.filter(c => c.epingle_synthese || c.radar);
+  return (def.length ? def : ident.slice(0, 10)).slice(0, 12);
+}
+function pinnedFluxIndicators(){
+  const flux = state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false);
+  const perso = loadPins(PIN_FLUX_KEY);
+  if(perso && perso.size){
+    return flux.filter(c => perso.has(c.indicator)).slice(0, 12);
+  }
+  return flux.slice(0, 10);
+}
+
+/* ─── MODALE DE CONFIGURATION (identite OU flux) ──────────────── */
+let _pinDraft = null, _pinMode = 'identite';
+function openPinModal(mode){
+  _pinMode = mode || 'identite';
+  const isFlux = _pinMode === 'flux';
+  const current = new Set((isFlux ? pinnedFluxIndicators() : pinnedIdentiteIndicators()).map(c => c.indicator));
+  _pinDraft = new Set(current);
+  const pool = state.indicators.filter(c => c.table === (isFlux ? 'flux' : 'identite'));
+  const byCat = {};
+  for(const c of pool){ (byCat[c.category || 'autre'] ??= []).push(c); }
+  let html = '';
+  for(const cat of Object.keys(byCat).sort()){
+    html += `<div class="pin-cat">${cat}</div>`;
+    for(const c of byCat[cat]){
+      const on = _pinDraft.has(c.indicator) ? 'on' : '';
+      const miss = c.presentInDb === false ? `<span class="miss">sans données</span>` : '';
+      html += `<div class="pin-item ${on}" data-ind="${c.indicator}" onclick="togglePin('${c.indicator}')">
+        <span class="pin-chk">${_pinDraft.has(c.indicator)?'✓':''}</span>
+        <span>${c.label || c.indicator}</span>${miss}
+      </div>`;
+    }
+  }
+  document.querySelector('#pinModal .pin-head .t').textContent = isFlux ? 'Flux affichés dans la synthèse' : 'Indicateurs de la synthèse';
+  document.getElementById('pinBody').innerHTML = html;
+  updatePinCount();
+  document.getElementById('pinModal').classList.add('open');
+}
+function closePinModal(){ document.getElementById('pinModal').classList.remove('open'); }
+function togglePin(ind){
+  if(_pinDraft.has(ind)) _pinDraft.delete(ind); else _pinDraft.add(ind);
+  const row = document.querySelector(`.pin-item[data-ind="${ind}"]`);
+  if(row){ row.classList.toggle('on', _pinDraft.has(ind)); row.querySelector('.pin-chk').textContent = _pinDraft.has(ind)?'✓':''; }
+  updatePinCount();
+}
+function updatePinCount(){
+  document.getElementById('pinCount').textContent = `${_pinDraft.size} sélectionné(s)`;
+}
+function applyPins(){
+  savePins(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY, _pinDraft);
+  closePinModal();
+  renderSynthese();
+}
+function resetPins(){
+  try { localStorage.removeItem(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY); } catch {}
+  closePinModal();
+  renderSynthese();
+}
+
+function concentrationClass(pct){
+  if(pct >= 50) return 'intense';
+  if(pct >= 30) return 'moyen';
+  return 'clair';
+}
+
+/* ─── DIAGNOSTIC FLUX (temporaire — aide au calage du schéma) ──── */
+function diagProjections(){
+  console.group('%cDIAGNOSTIC PROJECTIONS', 'color:#b45309;font-weight:bold');
+  if(!state.subject){ console.log('Pas de sujet'); console.groupEnd(); return; }
+  const iso = state.subject.isos[0];
+  for(const ind of ['pib_par_hab','pib_usd','population']){
+    const r = safeExec(`SELECT year, value, subcategory FROM identite WHERE country_iso3='${escapeSql(iso)}' AND indicator='${escapeSql(ind)}' ORDER BY year`);
+    if(!r.length){ console.log(`[${ind}] aucune donnée`); continue; }
+    console.log(`[${ind}] ${iso} :`);
+    console.table(r[0].values.map(([y,v,s])=>({an:y, valeur:v, subcategory:s||'(null)'})));
+  }
+  console.groupEnd();
+}
+
+// Diagnostic carte : distribution d'un indicateur dans le monde pour une année.
+// Usage console : diagMap('violent_death', 2023)
+function diagMap(indicator, year){
+  indicator = indicator || _puIndicator;
+  year = year || state.year;
+  console.group('%cDIAGNOSTIC CARTE — '+indicator+' @ '+year, 'color:#b91c1c;font-weight:bold');
+  const r = safeExec(`SELECT country_iso3, value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${year} AND value IS NOT NULL AND value!=0`);
+  if(!r.length){ console.log('Aucune donnée'); console.groupEnd(); return; }
+  const rows = r[0].values.filter(([iso])=>!REGIONAL_CODES.has(iso)).map(([iso,v])=>({iso,v}));
+  rows.sort((a,b)=>b.v-a.v);
+  console.log('Pays avec valeur :', rows.length);
+  console.log('Min/Max :', rows[rows.length-1].v, '/', rows[0].v);
+  console.log('Ratio max/min :', (rows[0].v / (rows[rows.length-1].v||1)).toFixed(1));
+  const median = rows[Math.floor(rows.length/2)].v;
+  console.log('Médiane :', median);
+  console.log('Top 10 :'); console.table(rows.slice(0,10).map(r=>({iso:r.iso, pays:isoToName(r.iso), valeur:r.v})));
+  console.log('Bottom 10 (non nuls) :'); console.table(rows.slice(-10).map(r=>({iso:r.iso, pays:isoToName(r.iso), valeur:r.v})));
+  const ramp = ['#e8f0e8','#bfe0c8','#9ec9a8','#6fb486','#4f9e6a','#2d8556','#0a6e4a','#064e34'];
+  const lo = rows[rows.length-1].v, hi = rows[0].v;
+  const buckets = ramp.map(()=>0);
+  for(const d of rows){ const t = (hi>lo)?(d.v-lo)/(hi-lo):0.5; const i = Math.min(ramp.length-1, Math.max(0, Math.round(t*(ramp.length-1)))); buckets[i]++; }
+  console.log('Pays par bucket couleur (linéaire) :', buckets.map((c,i)=>`#${i}:${c}`).join(' '));
+  console.groupEnd();
+}
+
+function diagFlux(){
+  console.group('%cDIAGNOSTIC FLUX', 'color:#0a6e4a;font-weight:bold');
+  const inds = safeExec(`SELECT DISTINCT indicator FROM flux`);
+  const indList = inds.length ? inds[0].values.map(v=>v[0]) : [];
+  console.log('Indicateurs flux :', indList);
+  // repérer l'indicateur dette
+  const debtInds = indList.filter(i => /dette|debt/i.test(i));
+  console.log('Indicateur(s) dette détecté(s) :', debtInds);
+  for(const di of debtInds){
+    const s1 = safeExec(`SELECT DISTINCT subcategory_1 FROM flux WHERE indicator='${escapeSql(di)}'`);
+    const s2 = safeExec(`SELECT DISTINCT subcategory_2 FROM flux WHERE indicator='${escapeSql(di)}'`);
+    const s3 = safeExec(`SELECT DISTINCT subcategory_3 FROM flux WHERE indicator='${escapeSql(di)}'`);
+    console.log(`  [${di}] subcategory_1 :`, s1.length?s1[0].values.map(v=>v[0]):[]);
+    console.log(`  [${di}] subcategory_2 :`, s2.length?s2[0].values.map(v=>v[0]):[]);
+    console.log(`  [${di}] subcategory_3 :`, s3.length?s3[0].values.map(v=>v[0]):[]);
+    if(state.subject){
+      const inList = sqlList(currentIsos());
+      const ex = safeExec(`SELECT country_from, country_to, subcategory_1, subcategory_2, subcategory_3, value, year FROM flux WHERE indicator='${escapeSql(di)}' AND country_to IN (${inList}) ORDER BY year DESC LIMIT 8`);
+      if(ex.length){ console.log(`  [${di}] exemples (sujet=country_to) :`); console.table(ex[0].values.map(r=>({from:r[0],to:r[1],s1:r[2],s2:r[3],s3:r[4],val:r[5],an:r[6]}))); }
+    }
+  }
+  console.groupEnd();
+}
+
+/* ─── BLOC RESSOURCES (parts mondiales par type) ──────────────── */
+// Indicateurs _share suivis, groupés par thème.
+const RES_INDICATORS = [
+  { ind: 'energie_production_share', group: 'energie', label: 'Production énergie', cls: '' },
+  { ind: 'energie_reserves_share',   group: 'energie', label: 'Réserves énergie',   cls: 'reserves' },
+  { ind: 'mineraux_production_share', group: 'mineraux', label: 'Production minéraux', cls: '' },
+  { ind: 'mineraux_reserves_share',   group: 'mineraux', label: 'Réserves minéraux',   cls: 'reserves' },
+];
+const RES_NOTABILITY_THRESHOLD = 0.5;   // % minimum pour qu'une ressource soit "notable"
+
+// Récupère les parts mondiales par subcategory (petrole/gaz/charbon, cuivre/fer/...).
+// Pour un sujet multi-pays, on somme les parts (correct car déjà en %).
+function getResourceShares(){
+  const isos = currentIsos();
+  if(!isos.length) return [];
+  const inList = sqlList(isos);
+  const indList = RES_INDICATORS.map(r => `'${r.ind}'`).join(',');
+  // dernière année disponible pour chaque indicateur ressource
+  const r = safeExec(`
+    SELECT indicator, subcategory, year, SUM(value) AS share
+    FROM identite
+    WHERE country_iso3 IN (${inList})
+      AND indicator IN (${indList})
+      AND subcategory IS NOT NULL AND subcategory != ''
+      AND value IS NOT NULL AND value != 0
+    GROUP BY indicator, subcategory, year
+  `);
+  if(!r.length) return [];
+  // garde la valeur de la dernière année disponible pour chaque (indicator, subcategory)
+  const lastByKey = new Map();
+  for(const [ind, sub, y, val] of r[0].values){
+    const k = ind + '|' + sub;
+    const prev = lastByKey.get(k);
+    if(!prev || y > prev.year) lastByKey.set(k, { ind, sub, year: y, value: val });
+  }
+  // enrichir + filtrer par notabilité
+  const out = [];
+  for(const { ind, sub, year, value } of lastByKey.values()){
+    const meta = RES_INDICATORS.find(r => r.ind === ind);
+    if(!meta) continue;
+    if(value < RES_NOTABILITY_THRESHOLD) continue;
+    out.push({ ind, sub, year, value, group: meta.group, label: meta.label, cls: meta.cls });
+  }
+  // tri par valeur décroissante au sein de chaque ligne
+  out.sort((a,b) => b.value - a.value);
+  return out;
+}
+
+function buildResourcesBlock(){
+  const shares = getResourceShares();
+  if(!shares.length) return '';   // pas de bloc affiché si rien de notable
+  // grouper par theme (energie / mineraux)
+  const byGroup = { energie: [], mineraux: [] };
+  for(const s of shares) (byGroup[s.group] ??= []).push(s);
+  const labels = { energie: 'Énergie', mineraux: 'Minéraux & métaux' };
+  let html = '';
+  for(const grp of ['energie','mineraux']){
+    if(!byGroup[grp] || !byGroup[grp].length) continue;
+    let rows = '';
+    for(const s of byGroup[grp]){
+      const w = Math.min(100, s.value).toFixed(1);
+      const subLabel = s.sub.charAt(0).toUpperCase() + s.sub.slice(1).replace(/_/g,' ');
+      rows += `<div class="res-row">
+        <div class="res-name">${subLabel}<span class="sub">${s.label.includes('Réserves')?'réserves':'production'} · ${s.year}</span></div>
+        <div class="res-bar"><div class="res-fill ${s.cls}" style="width:${w}%"></div></div>
+        <div class="res-pct">${s.value.toFixed(1)}%</div>
+      </div>`;
+    }
+    html += `<div class="res-group"><div class="res-group-head">${labels[grp]}</div>${rows}</div>`;
+  }
+  return `<div class="card res-block">
+    <div class="card-head">
+      <span class="card-title">Atouts en ressources</span>
+      <span class="card-sub">part mondiale par type · seuil ${RES_NOTABILITY_THRESHOLD}%</span>
+    </div>
+    <div class="card-body">${html}</div>
+  </div>`;
+}
+
+function renderSynthese(){
+  const root = document.getElementById('syntheseContent');
+  if(!state.subject || !state.subject.isos.length){
+    root.innerHTML = `<div class="need-subject">
+      <div class="big">Choisir un sujet</div>
+      <p>Sélectionnez un pays ou une zone pour afficher sa synthèse.</p>
+      <button onclick="openSearch()">⌕ Rechercher un sujet</button>
+    </div>`;
+    return;
+  }
+  ensureIdentiteCache();
+
+  // ── Colonne gauche : valeurs clés + sparklines ──
+  const inds = pinnedIdentiteIndicators();
+  let kvRows = '';
+  for(const c of inds){
+    const val = getIdentiteValue(c.indicator, state.year);
+    if(val == null) continue;
+    const series = getIdentiteSeries(c.indicator);
+    const realYear = getValueYear(c.indicator, state.year);
+    const src = getIndicatorSource(c.indicator);
+    let rankTxt = '';
+    if(state.subject.isos.length === 1){
+      const rp = rankPercentile(c.indicator, val, realYear || state.year);
+      if(rp) rankTxt = `${ordinalFr(rp.rank)} <span style="opacity:.5">/ ${rp.total}</span>`;
+    } else {
+      rankTxt = `<span style="opacity:.5">agrégat</span>`;
+    }
+    const suffix = scaleSuffix(val, c.unit_display);
+    const aggTxt = state.subject.isos.length>1 ? ` · agrégat ${aggMethodFor(c.indicator)==='sum'?'somme':'moyenne'}` : '';
+    // infobulle via data-attributes (pas d'injection dans les handlers → plus de crash)
+    const tipTitle = (c.label||c.indicator);
+    const tipBody = `Année : ${realYear||'—'} · Source : ${src||'n/d'}${aggTxt}`;
+    kvRows += `<div class="kv-row" data-tt="${escAttr(tipTitle)}" data-tb="${escAttr(tipBody)}" data-ind="${c.indicator}">
+      <div class="kv-name">${c.label || c.indicator}<span class="cat">${c.category||''} · ${realYear||'—'}</span></div>
+      <div class="kv-val">${fmtNumber(val, c.unit_display)}<span class="u">${suffix}</span></div>
+      <div class="kv-rank">${rankTxt}</div>
+      <div class="kv-spark">${sparklineSvg(series)}</div>
+    </div>`;
+  }
+  if(!kvRows) kvRows = `<div class="kv-empty">Aucune donnée identité pour ce sujet.</div>`;
+
+  // ── Colonne droite : panorama des flux ──
+  const fluxInds = pinnedFluxIndicators();
+  const partnersHtml = buildPanorama(fluxInds, 'partner');
+  const influenceHtml = buildPanorama(fluxInds, 'influence');
+
+  root.innerHTML = `
+    <div class="syn-grid">
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Valeurs clés</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="card-sub">${inds.length} indicateurs</span>
+            <button class="card-cog" onclick="openPinModal('identite')" title="Choisir les indicateurs">⚙</button>
+          </span>
+        </div>
+        <div class="card-body">${kvRows}</div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">Profil relationnel</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span class="card-sub">premier partenaire par flux</span>
+            <button class="card-cog" onclick="openPinModal('flux')" title="Choisir les flux">⚙</button>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="flux-block">
+            <div class="flux-block-head"><span class="t">Grands partenaires</span><span class="h">qui pèse pour le sujet</span></div>
+            ${partnersHtml}
+          </div>
+          <div class="flux-block">
+            <div class="flux-block-head"><span class="t">Zone d'influence</span><span class="h">pour qui le sujet pèse</span></div>
+            ${influenceHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+    ${buildResourcesBlock()}`;
+
+  bindKvTips();
+}
+
+// Branche les infobulles sur les lignes de valeurs (via data-attributes, sûr).
+function bindKvTips(){
+  document.querySelectorAll('.kv-row').forEach(row => {
+    row.addEventListener('mouseenter', e => showTip2(e, row.dataset.tt, row.dataset.tb));
+    row.addEventListener('mousemove', moveTip);
+    row.addEventListener('mouseleave', hideTip);
+    row.addEventListener('click', () => goToPuissance(row.dataset.ind));
+  });
+}
+
+// Construit le panorama (un flux par ligne, top-1 + dépliage top-5).
+function buildPanorama(fluxInds, dir){
+  if(!fluxInds.length) return `<div class="pano-empty">Aucun indicateur de flux sélectionné.</div>`;
+  let html = '';
+  let any = false;
+  for(const c of fluxInds){
+    let rows = getFluxRows(c.indicator, dir);
+    if(!rows.length) continue;
+    // Pour la dette : ne garder que le bilatéral (exclut multilatéral/privé,
+    // plus parlant en synthèse). Robuste aux variantes d'orthographe.
+    if(isDebtIndicator(c.indicator)){
+      const bil = rows.filter(r => isBilateral(r));
+      if(bil.length) rows = bil;
+    }
+    const byPartner = new Map();
+    let total = 0;
+    for(const r of rows){
+      if(r.partner && r.partner.startsWith('__')) continue;  // ignore agrégats non-pays dans le panorama dette bilatérale
+      const v = r.value || 0;
+      byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
+      total += v;
+    }
+    if(total <= 0) continue;
+    any = true;
+    const ranked = [...byPartner.entries()].sort((a,b) => b[1]-a[1]);
+    const top = ranked[0];
+    const pct = (top[1] / total) * 100;
+    const cls = concentrationClass(pct);
+    const rowId = `pano_${dir}_${c.indicator}`.replace(/[^a-zA-Z0-9_]/g,'');
+    // top 5 (déplié au clic) — jauge normalisée sur le 1er du classement
+    const maxPct = (ranked[0][1] / total) * 100 || 1;
+    const top5 = ranked.slice(0, 5).map(([code, v]) => {
+      const p = (v/total)*100;
+      const w = Math.max(2, (p / maxPct) * 100);
+      return `<div class="pano-sub">
+        <span class="flag">${partnerFlag(code)}</span>
+        <span class="nm">${partnerLabel(code)}</span>
+        <span class="bar"><span class="fill ${dir}" style="width:${w.toFixed(0)}%"></span></span>
+        <span class="v">${p.toFixed(0)}%</span>
+      </div>`;
+    }).join('');
+    html += `<div class="pano-wrap">
+      <div class="pano-row" onclick="togglePano('${rowId}')">
+        <div class="pano-flux">${c.label || c.indicator}</div>
+        <div class="pano-partner"><span class="flag">${partnerFlag(top[0])}</span><span class="nm">${partnerLabel(top[0])}</span></div>
+        <div class="pano-bar"><div class="pano-fill ${dir} ${cls}" style="width:${Math.min(100,pct).toFixed(0)}%"></div></div>
+        <div class="pano-val">${pct.toFixed(0)}%</div>
+        <div class="pano-caret" id="caret_${rowId}">▸</div>
+      </div>
+      <div class="pano-detail" id="${rowId}">
+        <div class="pano-detail-title">Top 5 · ${c.label||c.indicator}</div>
+        ${top5}
+        <div class="pano-detail-link" onclick="event.stopPropagation();goToRelations('${c.indicator}','${dir}')">→ explorer dans Relations</div>
+      </div>
+    </div>`;
+  }
+  return any ? html : `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
+}
+function togglePano(id){
+  const el = document.getElementById(id);
+  const caret = document.getElementById('caret_' + id);
+  if(!el) return;
+  const open = el.classList.toggle('open');
+  if(caret) caret.textContent = open ? '▾' : '▸';
+}
+// Détecte un indicateur de dette (pour appliquer le filtre bilatéral en synthèse).
+function isDebtIndicator(ind){ return /dette|debt/i.test(ind); }
+// Ligne de dette bilatérale : subcategory_1 = 'bilaterale' (valeur réelle ETL IDS).
+function isBilateral(r){
+  return /bilat/i.test(String(r.sub1 || ''));
+}
+function partnerLabel(code){
+  if(code === '__multilateral__') return 'Multilatéral';
+  if(code === '__private__') return 'Privé';
+  if(code === '__intra__') return 'Intra-groupe';
+  if(code === '__world__' || code === 'WLD') return 'Monde';
+  return isoToName(code);
+}
+function partnerFlag(code){
+  if(code && code.startsWith('__')) return '⊟';
+  return isoToFlag(code);
+}
+
+// Portes vers les autres onglets (état mémorisé ; rendu cible aux étapes 5/6).
+let _pendingFocus = { indicator: null, fluxDir: null };
+function goToPuissance(indicator){ _pendingFocus.indicator = indicator; switchView('puissance'); }
+function goToRelations(indicator, dir){ _pendingFocus.indicator = indicator; _pendingFocus.fluxDir = dir; switchView('relations'); }
+
+/* ════════════════════════════════════════════════════════════════
+   RENDU — ONGLET PUISSANCE (palier 1 : nav + courbe + carte)
+═════════════════════════════════════════════════════════════════ */
+let _puIndicator = null;          // indicateur actif
+let _puCatCollapsed = {};         // état plié/déplié des catégories
+let puMapState = { svg:null, g:null, path:null, proj:null, zoom:null, features:null, ready:false };
+
+function defaultPuIndicator(){
+  // priorité au focus venant d'une porte (clic Synthèse), sinon 1er identité
+  if(_pendingFocus.indicator){
+    const f = _pendingFocus.indicator; _pendingFocus.indicator = null;
+    if(state.indicators.find(c => c.indicator === f && c.table === 'identite')) return f;
+  }
+  if(_puIndicator && state.indicators.find(c => c.indicator === _puIndicator)) return _puIndicator;
+  const ident = state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
+  return ident.length ? ident[0].indicator : null;
+}
+
+function renderPuissance(){
+  const root = document.getElementById('puissanceContent');
+  if(!state.subject || !state.subject.isos.length){
+    root.innerHTML = `<div class="need-subject">
+      <div class="big">Choisir un sujet</div>
+      <p>Sélectionnez un pays ou une zone pour explorer ses indicateurs.</p>
+      <button onclick="openSearch()">⌕ Rechercher un sujet</button>
+    </div>`;
+    return;
+  }
+  _puIndicator = defaultPuIndicator();
+  ensureIdentiteCache();
+
+  root.innerHTML = `
+    <div class="pu-layout">
+      <div class="pu-nav">
+        <div class="pu-nav-search"><input type="text" id="puSearch" placeholder="Filtrer un indicateur…" oninput="filterPuNav(this.value)"></div>
+        <div class="pu-nav-body" id="puNavBody"></div>
+      </div>
+      <div class="pu-main" id="puMain"></div>
+    </div>`;
+  renderPuNav('');
+  renderPuMain();
+}
+
+// Navigateur d'indicateurs identité, groupés par catégorie, pliables.
+function renderPuNav(filter){
+  const body = document.getElementById('puNavBody');
+  const ident = state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
+  const ql = (filter||'').trim().toLowerCase();
+  const byCat = {};
+  for(const c of ident){
+    if(ql && !((c.label||c.indicator).toLowerCase().includes(ql))) continue;
+    (byCat[c.category || 'autre'] ??= []).push(c);
+  }
+  let html = '';
+  for(const cat of Object.keys(byCat).sort()){
+    const collapsed = _puCatCollapsed[cat] && !ql ? 'collapsed' : '';
+    html += `<div class="pu-cat ${collapsed}" data-cat="${cat}">
+      <div class="pu-cat-head" onclick="togglePuCat('${cat}')"><span class="caret">▼</span>${cat}</div>
+      <div class="pu-cat-list">`;
+    for(const c of byCat[cat]){
+      const active = c.indicator === _puIndicator ? 'active' : '';
+      const isRadar = c.radar ? '' : 'off';
+      html += `<div class="pu-ind ${active}" data-ind="${c.indicator}" onclick="selectPuIndicator('${c.indicator}')">
+        <span class="radar-dot ${isRadar}" title="${c.radar?'axe du radar':''}"></span>
+        <span>${c.label || c.indicator}</span>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+  body.innerHTML = html || `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Aucun indicateur</div>`;
+}
+function togglePuCat(cat){ _puCatCollapsed[cat] = !_puCatCollapsed[cat]; renderPuNav(document.getElementById('puSearch')?.value||''); }
+function filterPuNav(v){ renderPuNav(v); }
+function selectPuIndicator(ind){
+  _puIndicator = ind;
+  renderPuNav(document.getElementById('puSearch')?.value||'');
+  renderPuMain();
+}
+
+// Zone principale : entête + cellules (courbe en haut, carte en bas).
+function renderPuMain(){
+  const main = document.getElementById('puMain');
+  const c = state.indicators.find(x => x.indicator === _puIndicator);
+  if(!c){ main.innerHTML = `<div class="need-subject"><p>Aucun indicateur sélectionné.</p></div>`; return; }
+  const val = getIdentiteValue(_puIndicator, state.year);
+  const realYear = getValueYear(_puIndicator, state.year);
+  const src = getIndicatorSource(_puIndicator);
+  let rankLine = '';
+  if(state.subject.isos.length === 1 && val != null){
+    const rp = rankPercentile(_puIndicator, val, realYear || state.year);
+    if(rp) rankLine = `${ordinalFr(rp.rank)} / ${rp.total} mondial`;
+  }
+  // valeur B et écart relatif (B vs A) si comparaison active
+  const hasB = state.compareB && state.compareB.isos.length > 0;
+  const valB = hasB ? getIdentiteValueB(_puIndicator, state.year) : null;
+  let cmpLine = '';
+  if(hasB && valB != null){
+    const bTxt = `${fmtNumber(valB, c.unit_display)} ${scaleSuffix(valB, c.unit_display)}`;
+    let delta = '';
+    if(val != null && val !== 0){
+      const ratio = (valB - val) / Math.abs(val) * 100;
+      const sign = ratio >= 0 ? '+' : '';
+      delta = ` <span style="color:var(--orange);font-weight:600">(${sign}${ratio.toFixed(0)}%)</span>`;
+    }
+    cmpLine = ` <span style="color:var(--orange);font-family:var(--mono);font-size:10px;letter-spacing:.05em;margin-left:8px">vs ${state.compareB.label} ${bTxt}${delta}</span>`;
+  }
+  main.innerHTML = `
+    <div class="pu-head">
+      <span class="name">${c.label || c.indicator}</span>
+      <span class="meta">${val!=null ? fmtNumber(val, c.unit_display)+' '+scaleSuffix(val,c.unit_display) : '—'}${rankLine?' · '+rankLine:''} · ${realYear||'—'} · ${src||'n/d'}${cmpLine}</span>
+    </div>
+    <div class="pu-cells">
+      <div class="top-row">
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">Radar percentilé</span><span class="meta" style="font-size:10px;color:var(--text3)">axes épinglés</span></div>
+          <div class="pu-cell-body"><div class="pu-radar-wrap" id="puRadar"></div></div>
+        </div>
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">Évolution</span><span class="meta" style="font-size:10px;color:var(--text3)">${state.subject.label}</span></div>
+          <div class="pu-cell-body"><div class="pu-curve-wrap" id="puCurve"></div></div>
+        </div>
+      </div>
+      <div class="pu-cell">
+        <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear||state.year}</span></div>
+        <div class="pu-cell-body">
+          <div id="puMapContainer"><svg id="puMap"></svg></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span></div>
+        </div>
+      </div>
+    </div>`;
+  drawPuRadar();
+  drawPuCurve();
+  buildPuMap();
+}
+
+/* ─── CELLULE COURBE ──────────────────────────────────────────── */
+function drawPuCurve(){
+  const wrap = document.getElementById('puCurve');
+  if(!wrap) return;
+  const seriesA = getIdentiteSeries(_puIndicator);
+  const hasB = state.compareB && state.compareB.isos.length > 0;
+  const seriesB = hasB ? getIdentiteSeriesB(_puIndicator) : [];
+  if(seriesA.length < 2 && seriesB.length < 2){
+    wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Série temporelle insuffisante</div>`;
+    return;
+  }
+  const W = wrap.clientWidth || 600, H = 260, m = { t:14, r:16, b:24, l:48 };
+  // échelle commune A ∪ B
+  const allYears = seriesA.concat(seriesB).map(d => d.year);
+  const allVals = seriesA.concat(seriesB).map(d => d.value);
+  const xMin = Math.min(...allYears), xMax = Math.max(...allYears);
+  const yMin = Math.min(...allVals), yMax = Math.max(...allVals);
+  const yLo = yMin - (yMax-yMin)*0.08, yHi = yMax + (yMax-yMin)*0.08;
+  const X = y => m.l + ((y - xMin)/((xMax-xMin)||1)) * (W - m.l - m.r);
+  const Y = v => H - m.b - ((v - yLo)/((yHi-yLo)||1)) * (H - m.t - m.b);
+
+  function buildPathsFor(series){
+    const hist = series.filter(d => !d.projection);
+    const proj = series.filter(d => d.projection);
+    const projWithJoin = (hist.length && proj.length) ? [hist[hist.length-1], ...proj] : proj;
+    const histPath = hist.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ');
+    const projPath = projWithJoin.length>1 ? projWithJoin.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ') : '';
+    return { hist, proj, histPath, projPath };
+  }
+  const A = buildPathsFor(seriesA);
+  const B = hasB ? buildPathsFor(seriesB) : null;
+  // aire (uniquement pour A, par lisibilité)
+  const area = (A.histPath && A.hist.length) ? A.histPath + ` L${X(A.hist[A.hist.length-1].year).toFixed(1)},${Y(yLo).toFixed(1)} L${X(A.hist[0].year).toFixed(1)},${Y(yLo).toFixed(1)} Z` : '';
+
+  // ticks Y
+  let gridY = '';
+  const cfg = state.indicators.find(c=>c.indicator===_puIndicator);
+  for(let i=0;i<=3;i++){
+    const v = yLo + (yHi-yLo)*i/3;
+    const yy = Y(v).toFixed(1);
+    gridY += `<line class="curve-grid" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"/><text class="curve-lbl" x="${m.l-6}" y="${(+yy+3).toFixed(1)}" text-anchor="end">${fmtNumber(v, cfg?.unit_display)}</text>`;
+  }
+  // ticks X
+  const xticks = [xMin, Math.round((xMin+xMax)/2), xMax];
+  const labX = xticks.map(t => `<text class="curve-lbl" x="${X(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`).join('');
+
+  // séparateur visuel projection (basé sur A)
+  let projMark = '';
+  if(A.hist.length && A.proj.length){
+    const xp = X(A.proj[0].year).toFixed(1);
+    projMark = `<line class="curve-grid" x1="${xp}" y1="${m.t}" x2="${xp}" y2="${H-m.b}" style="stroke:var(--orange);opacity:.4;stroke-dasharray:3 3"/><text class="curve-lbl" x="${xp}" y="${m.t+8}" text-anchor="middle" style="fill:var(--orange)">projection →</text>`;
+  }
+  const lastA = A.hist[A.hist.length-1] || A.proj[A.proj.length-1];
+  const lastB = B ? (B.hist[B.hist.length-1] || B.proj[B.proj.length-1]) : null;
+
+  // légende quand B actif
+  let legend = '';
+  if(hasB){
+    legend = `<g transform="translate(${m.l+6},${m.t-2})">
+      <line x1="0" y1="6" x2="14" y2="6" stroke="var(--green)" stroke-width="2"/><text x="18" y="9" class="curve-lbl" style="font-size:10px;fill:var(--text2)">${state.subject.label}</text>
+      <line x1="120" y1="6" x2="134" y2="6" stroke="var(--orange)" stroke-width="2" stroke-dasharray="4 3"/><text x="138" y="9" class="curve-lbl" style="font-size:10px;fill:var(--text2)">${state.compareB.label}</text>
+    </g>`;
+  }
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    ${gridY}
+    ${area ? `<path class="curve-area" d="${area}"/>` : ''}
+    ${A.histPath ? `<path class="curve-line" d="${A.histPath}"/>` : ''}
+    ${A.projPath ? `<path class="curve-line curve-proj" d="${A.projPath}" style="stroke:var(--orange)"/>` : ''}
+    ${B && B.histPath ? `<path class="curve-line" d="${B.histPath}" style="stroke:var(--orange);stroke-dasharray:4 3"/>` : ''}
+    ${B && B.projPath ? `<path class="curve-line" d="${B.projPath}" style="stroke:var(--orange);stroke-dasharray:2 3;opacity:.6"/>` : ''}
+    ${lastA ? `<circle class="curve-dot" cx="${X(lastA.year).toFixed(1)}" cy="${Y(lastA.value).toFixed(1)}" r="3"/>` : ''}
+    ${lastB ? `<circle cx="${X(lastB.year).toFixed(1)}" cy="${Y(lastB.value).toFixed(1)}" r="3" fill="var(--orange)"/>` : ''}
+    ${projMark}
+    ${labX}
+    ${legend}
+  </svg>`;
+}
+
+/* ─── CELLULE RADAR PERCENTILÉ ────────────────────────────────── */
+function drawPuRadar(){
+  const wrap = document.getElementById('puRadar');
+  if(!wrap) return;
+  const axes = pinnedIdentiteIndicators().filter(c => c.presentInDb !== false);
+  if(axes.length < 3){
+    wrap.innerHTML = `<div class="radar-empty">Au moins 3 indicateurs épinglés requis (configurer dans Synthèse).</div>`;
+    return;
+  }
+  const W = 360, H = 320, cx = W/2, cy = H/2 + 4, R = Math.min(W,H)/2 - 38;
+  const N = axes.length;
+  const year = state.year;
+  const hasB = state.compareB && state.compareB.isos.length > 0;
+  if(hasB) ensureIdentiteCacheB();
+  // points par axe : A et (option) B
+  const pts = axes.map((ax, i) => {
+    const angle = -Math.PI/2 + i * (2*Math.PI / N);
+    const valA = getIdentiteValue(ax.indicator, year);
+    const rpA = valA != null ? rankPercentile(ax.indicator, valA, getValueYear(ax.indicator, year) || year) : null;
+    let pctB = null;
+    if(hasB){
+      const valB = getIdentiteValueB(ax.indicator, year);
+      if(valB != null){
+        const rpB = rankPercentile(ax.indicator, valB, year);
+        if(rpB) pctB = rpB.percentile;
+      }
+    }
+    return { axis: ax, angle, valA, pct: rpA?.percentile ?? null, pctB };
+  });
+
+  // axes (rayons)
+  let axesSvg = '';
+  for(const p of pts){
+    const x = cx + Math.cos(p.angle) * R, y = cy + Math.sin(p.angle) * R;
+    axesSvg += `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+  }
+  // cercles concentriques + médiane
+  let gridSvg = '';
+  for(const f of [0.25, 0.5, 0.75, 1]) gridSvg += `<circle class="radar-grid" cx="${cx}" cy="${cy}" r="${(R*f).toFixed(1)}"/>`;
+  const medianRing = `<circle class="radar-median" cx="${cx}" cy="${cy}" r="${(R*0.5).toFixed(1)}"/>`;
+
+  // polygone A
+  let polyA = '';
+  const polyPtsA = pts.map(p => {
+    const r = (p.pct != null) ? R * p.pct : 0;
+    return [cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r];
+  });
+  if(polyPtsA.some(p => p[0] !== cx || p[1] !== cy)){
+    const d = polyPtsA.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
+    polyA = `<path class="radar-poly" d="${d}"/>`;
+  }
+  // polygone B (orange) — par-dessus A en transparence
+  let polyB = '';
+  if(hasB){
+    const polyPtsB = pts.map(p => {
+      const r = (p.pctB != null) ? R * p.pctB : 0;
+      return [cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r];
+    });
+    if(polyPtsB.some(p => p[0] !== cx || p[1] !== cy)){
+      const d = polyPtsB.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
+      polyB = `<path d="${d}" fill="var(--orange)" fill-opacity=".12" stroke="var(--orange)" stroke-width="1.8" stroke-dasharray="4 3"/>`;
+    }
+  }
+
+  // points + labels
+  let dots = '', labels = '';
+  pts.forEach(p => {
+    const isActive = p.axis.indicator === _puIndicator;
+    if(p.pct != null){
+      const r = R * p.pct;
+      dots += `<circle class="radar-pt ${isActive?'active':''}" cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3"/>`;
+    }
+    if(hasB && p.pctB != null){
+      const r = R * p.pctB;
+      dots += `<circle cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3" fill="var(--orange)"/>`;
+    }
+    const lx = cx + Math.cos(p.angle) * (R + 22);
+    const ly = cy + Math.sin(p.angle) * (R + 22);
+    const cosA = Math.cos(p.angle);
+    let anchor = 'middle'; if(cosA > 0.3) anchor = 'start'; else if(cosA < -0.3) anchor = 'end';
+    const shortLbl = (p.axis.label || p.axis.indicator).length > 18
+      ? (p.axis.label || p.axis.indicator).slice(0, 17) + '…'
+      : (p.axis.label || p.axis.indicator);
+    const pctTxt = p.pct != null ? ` (${Math.round(p.pct*100)}%)` : '';
+    labels += `<text class="radar-lbl ${isActive?'active':''}" x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" text-anchor="${anchor}">${shortLbl}${pctTxt}</text>`;
+  });
+
+  wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+    ${gridSvg}
+    ${axesSvg}
+    ${medianRing}
+    ${polyA}
+    ${polyB}
+    ${dots}
+    ${labels}
+  </svg>`;
+}
+
+/* ─── CELLULE CARTE (D3, reprise de l'ancien moteur) ──────────── */
+async function buildPuMap(){
+  const svgEl = document.getElementById('puMap');
+  const container = document.getElementById('puMapContainer');
+  if(!svgEl || !container) return;
+  const W = container.clientWidth || 700, H = 340;
+  // (re)construction propre à chaque rendu
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H);
+  svg.selectAll('*').remove();
+  const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
+  const path = d3.geoPath().projection(proj);
+  svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#dce8f0');
+  const g = svg.append('g');
+  const zoom = d3.zoom().scaleExtent([1,12]).on('zoom', ev => g.attr('transform', ev.transform));
+  svg.call(zoom);
+  svg.on('dblclick.zoom', () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity));
+
+  let world;
+  if(puMapState.world){ world = puMapState.world; }
+  else {
+    try { world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'); puMapState.world = world; }
+    catch(e){ svgEl.innerHTML = `<rect width="${W}" height="${H}" fill="#dce8f0"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#888" style="font:12px var(--mono)">Carte indisponible (réseau)</text>`; return; }
+  }
+  const features = topojson.feature(world, world.objects.countries).features;
+  puMapState = { ...puMapState, svg, g, path, proj, zoom, features, ready:true };
+
+  // échelle de couleur sur la valeur de l'indicateur (année courante)
+  const colorByIso = computePuMapColors();
+
+  g.selectAll('.map-country').data(features).join('path')
+    .attr('class','map-country')
+    .attr('d', path)
+    .attr('data-iso3', d => ISO_NUM_TO_3[+d.id] || '')
+    .style('fill', d => { const iso = ISO_NUM_TO_3[+d.id]; return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
+    .on('mouseover', function(ev,d){
+      const iso = ISO_NUM_TO_3[+d.id]; if(!iso) return;
+      d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
+      const v = puMapValue(iso);
+      const name = isoToName(iso);
+      const c = state.indicators.find(x=>x.indicator===_puIndicator);
+      showTip2(ev, `${isoToFlag(iso)} ${name}`, v!=null ? `${fmtNumber(v,c?.unit_display)} ${scaleSuffix(v,c?.unit_display)}` : 'pas de donnée');
+    })
+    .on('mousemove', moveTip)
+    .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
+    .on('click', function(ev,d){ const iso = ISO_NUM_TO_3[+d.id]; if(iso) setSubject([iso], isoToName(iso)); });
+
+  // surligner le(s) pays du sujet
+  const subjSet = new Set(currentIsos());
+  g.selectAll('.map-country').filter(function(){ return subjSet.has(d3.select(this).attr('data-iso3')); })
+    .attr('stroke','var(--green)').attr('stroke-width',1.3).raise();
+
+  g.append('path').datum(d3.geoGraticule()()).attr('d', path).attr('fill','none').attr('stroke','#b0c4d8').attr('stroke-width',0.2).attr('opacity',0.4);
+}
+
+// Couleur choroplèthe : échelle par QUANTILES sur la distribution mondiale.
+// Quantiles plutôt que linéaire pour ne pas être écrasé par les outliers
+// (un seul pays très haut écraserait tout le reste en échelle linéaire).
+function computePuMapColors(){
+  const year = getValueYear(_puIndicator, state.year) || state.year;
+  const { sorted } = getWorldStats(_puIndicator, year);
+  if(!sorted || !sorted.length) return {};
+  const cfg = state.indicators.find(c => c.indicator === _puIndicator);
+  const inverted = cfg && cfg.rank_inverted;
+  const ramp = ['#e8f0e8','#bfe0c8','#9ec9a8','#6fb486','#4f9e6a','#2d8556','#0a6e4a','#064e34'];
+  const n = sorted.length;
+  // sorted est trié croissant : sorted[i] a le rang (i+1)
+  // bucket par quantile : floor(rang_relatif * nbBuckets), borné à nbBuckets-1
+  const out = {};
+  for(let i = 0; i < n; i++){
+    const d = sorted[i];
+    let q = i / Math.max(1, n - 1);                  // 0 (plus faible) → 1 (plus élevé)
+    if(inverted) q = 1 - q;
+    const idx = Math.min(ramp.length - 1, Math.floor(q * ramp.length));
+    out[d.iso] = ramp[idx];
+  }
+  return out;
+}
+function puMapValue(iso){
+  const year = getValueYear(_puIndicator, state.year) || state.year;
+  const { sorted } = getWorldStats(_puIndicator, year);
+  const f = sorted?.find(d => d.iso === iso);
+  return f ? f.v : null;
+}
+
+
+/* ─── RECHERCHE SUJET (⌘K) — pays multi-cochables, zones en 1 clic ─── */
+let _searchSel = 0, _searchItems = [];
+let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
+
+let _searchMode = 'subject';   // 'subject' | 'compareB'
+
+function openSearch(){
+  _searchMode = 'subject';
+  document.getElementById('searchOverlay').classList.add('open');
+  _multiPick = [];
+  if(state.subject && state.subject.isos.length > 1){
+    _multiPick = state.subject.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
+  }
+  const inp = document.getElementById('searchInput');
+  inp.value = ''; inp.focus();
+  inp.placeholder = 'Rechercher un pays ou une zone…';
+  onSearchInput('');
+  renderTray();
+}
+function openSearchForB(){
+  _searchMode = 'compareB';
+  document.getElementById('searchOverlay').classList.add('open');
+  _multiPick = [];
+  if(state.compareB && state.compareB.isos.length > 1){
+    _multiPick = state.compareB.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
+  }
+  const inp = document.getElementById('searchInput');
+  inp.value = ''; inp.focus();
+  inp.placeholder = 'Choisir un comparant…';
+  onSearchInput('');
+  renderTray();
+}
+function setCompareB(isos, label){
+  state.compareB = { isos: isos.slice(), label: label || detectZoneLabel(isos) };
+  renderContextBar();
+  refreshActiveView();
+  syncUrl();
+}
+function closeSearch(){ document.getElementById('searchOverlay').classList.remove('open'); }
+
+function isPicked(iso3){ return _multiPick.some(p => p.iso3 === iso3); }
+
+function onSearchInput(q){
+  const ql = q.trim().toLowerCase();
+  const res = document.getElementById('searchResults');
+  _searchSel = 0;
+  let items = [];
+
+  // pays (cochables pour la multi-sélection)
+  const countries = state.allCountries
+    .filter(c => !ql || c.name.toLowerCase().includes(ql) || c.iso3.toLowerCase().includes(ql))
+    .slice(0, 8)
+    .map(c => ({ kind: 'pays', isos: [c.iso3], label: c.name, flag: c.flag, iso: c.iso3 }));
+  items = items.concat(countries);
+
+  // zones (sélection directe en un clic, non cochables)
+  if(state.db){
+    const r = safeExec(`SELECT DISTINCT zone_id, zone_nom FROM zones${ql ? ` WHERE LOWER(zone_nom) LIKE '%${escapeSql(ql)}%' OR LOWER(zone_id) LIKE '%${escapeSql(ql)}%'` : ''} ORDER BY zone_nom LIMIT 5`);
+    if(r.length){
+      for(const [zid, znom] of r[0].values){
+        const zr = safeExec(`SELECT country_iso3 FROM zones WHERE zone_id='${escapeSql(zid)}'`);
+        const isos = zr.length ? zr[0].values.map(v => v[0]).filter(Boolean) : [];
+        if(isos.length) items.push({ kind: 'zone', isos, label: znom, flag: '⊞', iso: zid });
+      }
+    }
+  }
+
+  _searchItems = items;
+  if(!items.length){ res.innerHTML = `<div class="search-empty">Aucun résultat</div>`; return; }
+
+  const hasCountries = items.some(it => it.kind === 'pays');
+  const hint = hasCountries
+    ? `<div class="search-hint">Cocher plusieurs pays pour un bloc · cliquer une zone pour la choisir directement</div>` : '';
+
+  res.innerHTML = hint + items.map((it, i) => {
+    if(it.kind === 'pays'){
+      const checked = isPicked(it.iso) ? 'checked' : '';
+      return `<div class="search-item ${i===0?'sel':''} ${checked}" data-i="${i}" onclick="toggleCountry(${i})">
+                <span class="chk">${isPicked(it.iso)?'✓':''}</span>
+                <span class="flag">${it.flag}</span>
+                <span>${it.label}</span>
+                <span class="kind">${it.kind}</span>
+                <span class="iso">${it.iso}</span>
+              </div>`;
+    }
+    return `<div class="search-item ${i===0?'sel':''}" data-i="${i}" onclick="pickZone(${i})">
+              <span class="chk-spacer"></span>
+              <span class="flag">${it.flag}</span>
+              <span>${it.label}</span>
+              <span class="kind">${it.kind}</span>
+              <span class="iso">${it.iso}</span>
+            </div>`;
+  }).join('');
+}
+
+function toggleCountry(i){
+  const it = _searchItems[i]; if(!it || it.kind !== 'pays') return;
+  const iso = it.iso;
+  if(isPicked(iso)) _multiPick = _multiPick.filter(p => p.iso3 !== iso);
+  else _multiPick.push({ iso3: iso, name: it.label, flag: it.flag });
+  // rafraîchir l'état visuel de la ligne + le bandeau
+  const row = document.querySelector(`.search-item[data-i="${i}"]`);
+  if(row){ row.classList.toggle('checked', isPicked(iso)); row.querySelector('.chk').textContent = isPicked(iso) ? '✓' : ''; }
+  renderTray();
+}
+
+function pickZone(i){
+  const it = _searchItems[i]; if(!it || it.kind !== 'zone') return;
+  if(_searchMode === 'compareB') setCompareB(it.isos, it.label);
+  else setSubject(it.isos, it.label);
+  closeSearch();
+}
+
+function renderTray(){
+  const tray = document.getElementById('searchTray');
+  const chips = document.getElementById('trayChips');
+  const btn = document.getElementById('trayValidate');
+  if(!_multiPick.length){ tray.classList.remove('show'); return; }
+  tray.classList.add('show');
+  chips.innerHTML = _multiPick.map(p =>
+    `<span class="tray-chip"><span class="flag">${p.flag}</span>${p.name}<span class="rm" onclick="removePick('${p.iso3}')">×</span></span>`
+  ).join('');
+  btn.textContent = _multiPick.length === 1
+    ? `Valider (1 pays)` : `Valider le bloc (${_multiPick.length} pays)`;
+}
+function removePick(iso){
+  _multiPick = _multiPick.filter(p => p.iso3 !== iso);
+  renderTray();
+  // resynchroniser les coches visibles
+  onSearchInput(document.getElementById('searchInput').value);
+}
+function validateMultiSelection(){
+  if(!_multiPick.length) return;
+  const isos = _multiPick.map(p => p.iso3);
+  const label = detectZoneLabel(isos);
+  if(_searchMode === 'compareB') setCompareB(isos, label);
+  else setSubject(isos, label);
+  closeSearch();
+}
+
+function onSearchKey(e){
+  if(e.key === 'Escape'){ closeSearch(); return; }
+  const rows = _searchItems.length;
+  if(e.key === 'ArrowDown'){ e.preventDefault(); _searchSel = Math.min(_searchSel+1, rows-1); updateSearchSel(); }
+  if(e.key === 'ArrowUp'){ e.preventDefault(); _searchSel = Math.max(_searchSel-1, 0); updateSearchSel(); }
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    if(_multiPick.length){ validateMultiSelection(); return; }   // Entrée valide le bloc si en cours
+    const it = _searchItems[_searchSel];
+    if(it){ it.kind === 'zone' ? pickZone(_searchSel) : toggleCountry(_searchSel); }
+  }
+}
+function updateSearchSel(){
+  document.querySelectorAll('.search-item').forEach(el => {
+    el.classList.toggle('sel', parseInt(el.dataset.i) === _searchSel);
+  });
+}
+
+/* ─── EXPORT (placeholder étape 4) ────────────────────────────── */
+function exportCurrentView(){
+  alert('Export — sera implémenté à l\'étape 4 (PDF par onglet).');
+}
+
+/* ─── ÉTAT DANS L'URL (sérialisation) ─────────────────────────── */
+function syncUrl(){
+  const p = new URLSearchParams();
+  if(state.subject) p.set('s', state.subject.isos.join(','));
+  if(state.compareB) p.set('b', state.compareB.isos.join(','));
+  p.set('y', state.year);
+  p.set('tab', state.view);
+  history.replaceState(null, '', '#' + p.toString());
+}
+function applyUrlState(){
+  const h = location.hash.replace(/^#/, '');
+  if(!h) return;
+  const p = new URLSearchParams(h);
+  if(p.get('tab')) switchViewSilent(p.get('tab'));
+  if(p.get('y')){
+    const y = parseInt(p.get('y'));
+    if(y >= state.yearBounds.min && y <= state.yearBounds.max){
+      state.year = y;
+      // le slider est rendu dynamiquement par renderYearSlot() ; ne pas y toucher ici
+    }
+  }
+  if(p.get('s')){
+    const isos = p.get('s').split(',').filter(Boolean);
+    if(isos.length) state.subject = { isos, label: detectZoneLabel(isos) };
+  }
+  if(p.get('b')){
+    const isos = p.get('b').split(',').filter(Boolean);
+    if(isos.length) state.compareB = { isos, label: detectZoneLabel(isos) };
+  }
+}
+function switchViewSilent(v){
+  if(!['synthese','puissance','relations'].includes(v)) return;
+  state.view = v;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
+}
+
+/* ─── RACCOURCIS CLAVIER ──────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'){ e.preventDefault(); openSearch(); }
+});
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab'); if(btn) switchView(btn.dataset.view);
+});
+
+/* ─── DÉMARRAGE ───────────────────────────────────────────────── */
+boot();
+
+/* ─── MODE DÉMO ───────────────────────────────────────────────
+   Données synthétiques minimales pour développer/démontrer le
+   squelette sans dépendre de la base R2. Inspiré de initWithDemoData
+   de l'ancien code, réduit à l'essentiel pour l'étape 0.
+─────────────────────────────────────────────────────────────── */
+const DEMO_CONFIG = [
+  {indicator:'population',label:'Population',table:'identite',category:'demographie',unit:'hab',unit_display:'M hab',aggregation:'sum',actif:true},
+  {indicator:'pib_par_hab',label:'PIB par habitant',table:'identite',category:'economie',unit:'USD',unit_display:'USD',aggregation:'mean',actif:true},
+  {indicator:'pib_usd',label:'PIB (USD courant)',table:'identite',category:'economie',unit:'USD',unit_display:'Mrd USD',aggregation:'sum',actif:true},
+  {indicator:'age_median',label:'Âge médian',table:'identite',category:'demographie',unit:'ans',unit_display:'ans',aggregation:'mean',actif:true},
+  {indicator:'budget_defense_pib',label:'Budget défense / PIB',table:'identite',category:'militaire',unit:'%',unit_display:'%',aggregation:'mean',actif:true},
+  {indicator:'fecondite',label:'Taux de fécondité',table:'identite',category:'demographie',unit:'enf/femme',unit_display:'enf/femme',aggregation:'mean',actif:true},
+  {indicator:'dette_exterieure',label:'Dette extérieure',table:'flux',category:'finance',unit:'USD',unit_display:'Mrd USD',aggregation:'sum',actif:true},
+  {indicator:'import_commercial',label:'Commerce bilatéral',table:'flux',category:'commerce',unit:'USD',unit_display:'Mrd USD',aggregation:'sum',actif:true},
+];
+
+function initDemo(SQL){
+  state.db = new SQL.Database();
+  state.isDemo = true;
+  const db = state.db;
+  db.run(`CREATE TABLE identite(country_iso3 TEXT,indicator TEXT,year INTEGER,value REAL,unit TEXT,source TEXT,subcategory TEXT);
+          CREATE TABLE flux(country_from TEXT,country_to TEXT,indicator TEXT,year INTEGER,value REAL,unit TEXT,source TEXT,subcategory_1 TEXT,subcategory_2 TEXT,subcategory_3 TEXT);
+          CREATE TABLE zones(zone_id TEXT,zone_nom TEXT,country_iso3 TEXT,zone_type TEXT);`);
+
+  const PAYS = ['FRA','DEU','USA','CHN','BRA','IND','RUS','GBR','ITA','ESP','JPN','CAN','AUS','ZAF','NGA'];
+  const BASE = {FRA:[67.8,42330,2780],DEU:[83.2,48720,4080],USA:[333,70250,25000],CHN:[1412,12720,17900],BRA:[215,8920,1920],IND:[1420,2410,3420],RUS:[144,15270,2240],GBR:[67,45850,3100],ITA:[59,35550,2100],ESP:[47,29350,1390],JPN:[125,39280,4230],CAN:[39,54970,2140],AUS:[26,60440,1550],ZAF:[60,7050,420],NGA:[218,2080,440]};
+  const stmt = db.prepare(`INSERT INTO identite VALUES (?,?,?,?,?,?,?)`);
+  for(const iso of PAYS){
+    const [pop,pibh,pib] = BASE[iso];
+    for(let y=2000;y<=2024;y++){
+      const t=y-2000, g=1+t*0.012;
+      stmt.run([iso,'population',y,Math.round(pop*1e6*(1+t*0.006)),'hab','demo',null]);
+      stmt.run([iso,'pib_par_hab',y,Math.round(pibh*g),'USD','demo',null]);
+      stmt.run([iso,'pib_usd',y,Math.round(pib*g),'USD','demo',null]);
+      stmt.run([iso,'age_median',y,30+t*0.2,'ans','demo',null]);
+      stmt.run([iso,'budget_defense_pib',y,1.5+(iso==='USA'?2:0)+(iso==='RUS'?2.5:0),'%','demo',null]);
+      stmt.run([iso,'fecondite',y,1.8-t*0.005,'enf/femme','demo',null]);
+    }
+  }
+  stmt.free();
+
+  // quelques flux de dette (avec subcategory pour préfigurer le drill-down)
+  const fstmt = db.prepare(`INSERT INTO flux VALUES (?,?,?,?,?,?,?,?,?,?)`);
+  const DETTE = {BRA:[['CHN',112,'Bilatéral'],['JPN',58,'Bilatéral'],['USA',42,'Bilatéral'],['__multilateral__',206,'Multilatéral'],['__private__',167,'Privé']],
+                 FRA:[['USA',45,'Bilatéral'],['DEU',38,'Bilatéral'],['__private__',120,'Privé'],['__multilateral__',60,'Multilatéral']]};
+  for(const [from,rows] of Object.entries(DETTE))
+    for(const [to,val,sub] of rows)
+      for(let y=2018;y<=2024;y++) fstmt.run([from,to,'dette_exterieure',y,val*(1+(y-2018)*0.03),'USD','demo',sub,null,null]);
+  fstmt.free();
+
+  db.run(`INSERT INTO zones VALUES ('G7','G7','USA','organisationnel'),('G7','G7','DEU','organisationnel'),('G7','G7','FRA','organisationnel'),('G7','G7','GBR','organisationnel'),('G7','G7','ITA','organisationnel'),('G7','G7','JPN','organisationnel'),('G7','G7','CAN','organisationnel'),('BRICS','BRICS','BRA','organisationnel'),('BRICS','BRICS','RUS','organisationnel'),('BRICS','BRICS','IND','organisationnel'),('BRICS','BRICS','CHN','organisationnel'),('BRICS','BRICS','ZAF','organisationnel');`);
+
+  state.config = DEMO_CONFIG.slice();
+  for(const c of state.config){ if(c.radar===undefined) c.radar=['population','pib_usd','pib_par_hab','fecondite','age_median','budget_defense_pib'].includes(c.indicator); if(c.rank_inverted===undefined) c.rank_inverted=false; }
+  buildIndicatorRegistry();
+  buildCountryList();
+  finishBoot('Mode démo', 'demo');
+}
+</script>
+</body>
+</html>
