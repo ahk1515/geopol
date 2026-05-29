@@ -519,6 +519,70 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-map-legend { display: flex; align-items: center; gap: 8px; padding: 10px 4px 0; font-size: 10px; color: var(--text3); }
 .pu-map-legend .bar { height: 8px; width: 120px; border-radius: 3px; background: linear-gradient(to right, #e8f0e8, #9ec9a8, #4f9e6a, #0a6e4a, #064e34); }
 
+/* ════════════════════════════════════════════════════════════════
+   ONGLET RELATIONS
+═════════════════════════════════════════════════════════════════ */
+.rel-head { display: flex; align-items: baseline; justify-content: space-between; padding: 4px 4px 12px; gap: 12px; flex-wrap: wrap; }
+.rel-head .name { font-family: var(--display); font-size: 22px; font-weight: 500; letter-spacing: -.01em; }
+.rel-head .controls { display: flex; align-items: center; gap: 6px; }
+
+/* segmented control (Partenaire / Influence + Sunburst / Treemap) */
+.seg { display: inline-flex; background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button {
+  font-family: var(--mono); font-size: 10.5px; padding: 5px 10px; letter-spacing: .04em;
+  border: none; background: none; color: var(--text3); border-radius: 5px; cursor: pointer; transition: all .12s;
+}
+.seg button.on { background: var(--green); color: #fff; }
+.seg button:not(.on):hover { color: var(--text); background: var(--bg3); }
+
+/* Heatmap d'accueil */
+.rel-heat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.rel-heat-head { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: baseline; }
+.rel-heat-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text2); font-weight: 600; }
+.rel-heat-sub { font-size: 11px; color: var(--text3); }
+.rel-heat-body { padding: 14px 16px 18px; overflow-x: auto; }
+.heat-grid { display: grid; gap: 2px; }
+.heat-row { display: contents; }
+.heat-cell {
+  height: 28px; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 9.5px; color: var(--text); cursor: pointer; transition: transform .12s, outline .12s;
+}
+.heat-cell:hover { transform: scale(1.05); outline: 2px solid var(--text); outline-offset: 1px; z-index: 2; position: relative; }
+.heat-cell.empty { background: var(--bg3); color: var(--text3); cursor: default; }
+.heat-cell.empty:hover { transform: none; outline: none; }
+.heat-colhead, .heat-rowhead {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--text3); text-transform: uppercase;
+  display: flex; align-items: center; padding: 0 4px;
+}
+.heat-colhead { justify-content: center; height: 28px; }
+.heat-rowhead { justify-content: flex-end; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Sunburst / Treemap (composition) */
+.rel-comp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.rel-comp-head { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rel-crumb { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); flex-wrap: wrap; }
+.rel-crumb .step { padding: 2px 8px; border-radius: 4px; background: var(--bg3); cursor: pointer; color: var(--text2); font-family: var(--mono); font-size: 10px; }
+.rel-crumb .step:hover { background: var(--green-d); color: var(--green); }
+.rel-crumb .step.current { background: var(--green); color: #fff; cursor: default; }
+.rel-crumb .sep { color: var(--text3); }
+.rel-comp-body { padding: 16px; min-height: 460px; display: flex; align-items: center; justify-content: center; }
+.rel-comp-body svg { display: block; max-width: 100%; height: auto; }
+
+/* tranches sunburst */
+.sb-slice { cursor: pointer; transition: opacity .15s; }
+.sb-slice:hover { opacity: .85; }
+.sb-label { font-family: var(--sans); font-size: 10px; fill: #fff; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.sb-center-title { font-family: var(--display); font-size: 14px; fill: var(--text); text-anchor: middle; }
+.sb-center-total { font-family: var(--mono); font-size: 11px; fill: var(--text2); text-anchor: middle; }
+
+/* cellules treemap */
+.tm-cell rect { cursor: pointer; transition: opacity .15s; }
+.tm-cell rect:hover { opacity: .85; }
+.tm-label { font-family: var(--sans); fill: #fff; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.tm-label-sub { font-family: var(--mono); fill: rgba(255,255,255,.85); pointer-events: none; }
+
+.rel-empty { padding: 60px 20px; text-align: center; color: var(--text3); font-size: 12.5px; }
+
 </style>
 </head>
 <body>
@@ -563,17 +627,7 @@ main { flex: 1; padding: 16px 18px 28px; }
     </section>
 
     <section class="view" id="view-relations">
-      <div class="placeholder">
-        <span class="tag">Onglet 3</span>
-        <h2>Relations</h2>
-        <p>Exploration d'un flux : qui pèse pour le sujet, et pour qui le sujet pèse.</p>
-        <ul>
-          <li>Heatmap d'accueil (boussole : où creuser)</li>
-          <li>Composition : sunburst ⇄ treemap drill-down</li>
-          <li>Évolution (aires empilées) &amp; carte</li>
-          <li>Bascule Partenaire / Influence, filtre partagé</li>
-        </ul>
-      </div>
+      <div id="relationsContent"></div>
     </section>
   </main>
 </div>
@@ -1311,7 +1365,7 @@ function onYearChange(v){
 function refreshActiveView(){
   if(state.view === 'synthese') renderSynthese();
   else if(state.view === 'puissance') renderPuissance();
-  // relations : étape 6
+  else if(state.view === 'relations') renderRelations();
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2223,10 +2277,425 @@ function puMapValue(iso){
 }
 
 
+/* ════════════════════════════════════════════════════════════════
+   RENDU — ONGLET RELATIONS (palier 1 : heatmap + composition)
+   Heatmap d'accueil = boussole pour repérer où il y a matière à creuser.
+   Composition = sunburst (par défaut) / treemap, drill-down sur subcategories.
+═════════════════════════════════════════════════════════════════ */
+let _relIndicator = null;        // indicateur de flux actif (null = vue heatmap)
+let _relDir = 'partner';         // 'partner' (qui pèse pour) | 'influence' (pour qui pèse)
+let _relMode = 'sunburst';       // 'sunburst' | 'treemap'
+let _relPath = [];               // breadcrumb du drill-down [subcat1, subcat2, ...]
+
+function renderRelations(){
+  const root = document.getElementById('relationsContent');
+  if(!state.subject || !state.subject.isos.length){
+    root.innerHTML = `<div class="need-subject">
+      <div class="big">Choisir un sujet</div>
+      <p>Sélectionnez un pays ou une zone pour explorer ses relations.</p>
+      <button onclick="openSearch()">⌕ Rechercher un sujet</button>
+    </div>`;
+    return;
+  }
+  // focus venant d'une porte de Synthèse
+  if(_pendingFocus.indicator){
+    _relIndicator = _pendingFocus.indicator;
+    _relDir = _pendingFocus.fluxDir || 'partner';
+    _pendingFocus.indicator = null; _pendingFocus.fluxDir = null;
+    _relPath = [];
+  }
+  if(!_relIndicator){
+    // Pas d'indicateur encore → vue heatmap d'accueil
+    root.innerHTML = `
+      <div class="rel-head">
+        <div>
+          <div class="name">Relations</div>
+          <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label} · choisir un flux pour explorer</div>
+        </div>
+        <div class="controls">
+          <div class="seg">
+            <button class="${_relDir==='partner'?'on':''}" onclick="setRelDir('partner')">Partenaire</button>
+            <button class="${_relDir==='influence'?'on':''}" onclick="setRelDir('influence')">Influence</button>
+          </div>
+        </div>
+      </div>
+      <div id="relHeatHost"></div>`;
+    renderRelHeatmap();
+    return;
+  }
+  // Indicateur choisi → vue composition
+  const c = state.indicators.find(x => x.indicator === _relIndicator);
+  root.innerHTML = `
+    <div class="rel-head">
+      <div>
+        <div class="name">${c?.label || _relIndicator}</div>
+        <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label} · ${_relDir==='partner'?'qui pèse pour le sujet':'pour qui le sujet pèse'}</div>
+      </div>
+      <div class="controls">
+        <div class="seg">
+          <button class="${_relDir==='partner'?'on':''}" onclick="setRelDir('partner')">Partenaire</button>
+          <button class="${_relDir==='influence'?'on':''}" onclick="setRelDir('influence')">Influence</button>
+        </div>
+        <div class="seg">
+          <button class="${_relMode==='sunburst'?'on':''}" onclick="setRelMode('sunburst')">Sunburst</button>
+          <button class="${_relMode==='treemap'?'on':''}" onclick="setRelMode('treemap')">Treemap</button>
+        </div>
+        <button class="hbtn" onclick="leaveRelIndicator()" title="Revenir à la heatmap">← Heatmap</button>
+      </div>
+    </div>
+    <div class="rel-comp-card">
+      <div class="rel-comp-head">
+        <span class="rel-heat-title">Composition · ${_relMode==='sunburst'?'Sunburst':'Treemap'}</span>
+        <div class="rel-crumb" id="relCrumb"></div>
+      </div>
+      <div class="rel-comp-body" id="relCompBody"></div>
+    </div>`;
+  renderRelCrumb();
+  renderRelComposition();
+}
+
+/* ─── Heatmap d'accueil ───────────────────────────────────────── */
+function renderRelHeatmap(){
+  const host = document.getElementById('relHeatHost');
+  const flux = state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false);
+  if(!flux.length){
+    host.innerHTML = `<div class="rel-empty">Aucun indicateur de flux disponible.</div>`;
+    return;
+  }
+  // Pour chaque flux : top 5 partenaires (selon _relDir), pourcentages.
+  // Cellule = % du partenaire dans le total du flux pour le sujet.
+  // Couleur = intensité ; clic = creuser cet indicateur (avec partenaire pré-fixé plus tard).
+  const rows = []; // [{ind, label, partners:[{code,name,flag,pct}]}]
+  const allPartners = new Set();
+  for(const c of flux){
+    let rs = getFluxRows(c.indicator, _relDir);
+    if(!rs.length) continue;
+    if(isDebtIndicator(c.indicator)){
+      const bil = rs.filter(r => isBilateral(r));
+      if(bil.length) rs = bil;
+    }
+    const byPartner = new Map();
+    let total = 0;
+    for(const r of rs){
+      if(r.partner && r.partner.startsWith('__')) continue;
+      const v = r.value || 0;
+      byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
+      total += v;
+    }
+    if(total <= 0) continue;
+    const top = [...byPartner.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 5);
+    const partners = top.map(([code, v]) => {
+      allPartners.add(code);
+      return { code, name: partnerLabel(code), flag: partnerFlag(code), pct: (v/total)*100 };
+    });
+    rows.push({ ind: c.indicator, label: c.label || c.indicator, partners });
+  }
+  if(!rows.length){
+    host.innerHTML = `<div class="rel-empty">Pas de flux renseigné pour ce sujet.</div>`;
+    return;
+  }
+  // Pour chaque flux on a un top 5 propre. Affichage : matrice flux × rang (1..5)
+  // où chaque cellule indique le partenaire + son %.
+  const RANKS = [1, 2, 3, 4, 5];
+  const gridCols = `220px repeat(${RANKS.length}, 1fr)`;
+  let head = `<div class="heat-rowhead" style="visibility:hidden">flux</div>`;
+  for(const r of RANKS) head += `<div class="heat-colhead">${r}${r===1?'er':'e'}</div>`;
+  let body = '';
+  for(const row of rows){
+    body += `<div class="heat-rowhead" title="${row.label}">${row.label}</div>`;
+    for(let i = 0; i < RANKS.length; i++){
+      const p = row.partners[i];
+      if(!p){ body += `<div class="heat-cell empty">—</div>`; continue; }
+      const intensity = Math.min(100, p.pct) / 100;
+      const bg = mixColors('#eef5ee', '#0a6e4a', intensity);
+      const fg = intensity > 0.55 ? '#fff' : 'var(--text)';
+      body += `<div class="heat-cell" style="background:${bg};color:${fg}"
+                    onclick="enterRelIndicator('${row.ind}')"
+                    data-tt="${escAttr(p.flag+' '+p.name)}" data-tb="${escAttr(row.label+' · '+p.pct.toFixed(0)+'%')}"
+                    onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()">
+        ${p.flag} ${p.pct.toFixed(0)}%
+      </div>`;
+    }
+  }
+  host.innerHTML = `<div class="rel-heat-card">
+    <div class="rel-heat-head">
+      <span class="rel-heat-title">Boussole des flux · ${_relDir==='partner'?'Partenaires':'Influence'}</span>
+      <span class="rel-heat-sub">cliquer une cellule pour creuser</span>
+    </div>
+    <div class="rel-heat-body">
+      <div class="heat-grid" style="grid-template-columns:${gridCols}">${head}${body}</div>
+    </div>
+  </div>`;
+}
+function mixColors(c1, c2, t){
+  const p1 = hexToRgb(c1), p2 = hexToRgb(c2);
+  if(!p1 || !p2) return c1;
+  const r = Math.round(p1.r + (p2.r-p1.r)*t);
+  const g = Math.round(p1.g + (p2.g-p1.g)*t);
+  const b = Math.round(p1.b + (p2.b-p1.b)*t);
+  return `rgb(${r},${g},${b})`;
+}
+function hexToRgb(h){
+  const m = h.replace('#','').match(/^([0-9a-f]{6})$/i);
+  if(!m) return null;
+  const n = parseInt(m[1],16);
+  return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
+}
+
+function setRelDir(d){ _relDir = d; _relPath = []; renderRelations(); syncUrl(); }
+function setRelMode(m){ _relMode = m; renderRelComposition(); }
+function enterRelIndicator(ind){ _relIndicator = ind; _relPath = []; renderRelations(); syncUrl(); }
+function leaveRelIndicator(){ _relIndicator = null; _relPath = []; renderRelations(); syncUrl(); }
+
+/* ─── Breadcrumb du drill-down ────────────────────────────────── */
+function renderRelCrumb(){
+  const el = document.getElementById('relCrumb');
+  if(!el) return;
+  const c = state.indicators.find(x => x.indicator === _relIndicator);
+  let html = `<span class="step current" onclick="setRelPath([])">${c?.label || _relIndicator}</span>`;
+  for(let i = 0; i < _relPath.length; i++){
+    html += `<span class="sep">▸</span><span class="step" onclick="setRelPath(${i+1})">${_relPath[i]}</span>`;
+  }
+  el.innerHTML = html;
+}
+function setRelPath(arg){
+  if(Array.isArray(arg)){ _relPath = arg; }
+  else { _relPath = _relPath.slice(0, arg); }
+  renderRelComposition();
+  renderRelCrumb();
+}
+
+/* ─── Composition : agrégation hiérarchique ─────────────────────
+   Niveau 0 = subcategory_1 (partenaire bilatéral pour pays, ou catégorie)
+   Niveau 1 = subcategory_2
+   Niveau 2 = subcategory_3
+   Pour la dette : niveau 0 affiche les pays créanciers (subcategory_1='bilaterale'
+   ne sert qu'à filtrer, on agrège par partenaire). Sinon, par subcategory.
+─────────────────────────────────────────────────────────────── */
+function buildHierarchyForFlux(){
+  const rs = getFluxRows(_relIndicator, _relDir);
+  if(!rs.length) return null;
+  let rows = rs;
+  // pour la dette, on filtre sur le bilatéral (cohérence avec Synthèse)
+  if(isDebtIndicator(_relIndicator)){
+    const bil = rows.filter(r => isBilateral(r));
+    if(bil.length) rows = bil;
+  }
+  // exclure agrégats Banque Mondiale + sentinelles __
+  rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
+  if(!rows.length) return null;
+  // Construction : niveau 0 = partenaire (le partenaire EST la première dimension visible)
+  // Si tu veux à terme regrouper par subcategory_1 (catégorie : aide / prêt / etc.), il suffit de changer ici.
+  const root = { name: 'Total', children: [] };
+  // Partenaires agrégés (somme sur subcategories)
+  const byPartner = new Map();
+  for(const r of rows){
+    if(!byPartner.has(r.partner)) byPartner.set(r.partner, { name: partnerLabel(r.partner), code: r.partner, flag: partnerFlag(r.partner), children: new Map(), value: 0 });
+    const p = byPartner.get(r.partner);
+    p.value += (r.value || 0);
+    // sous-niveau par subcategory_2/3 si présent (utile pour Comtrade : par produit)
+    const sub = r.sub2 || r.sub3 || null;
+    if(sub){
+      if(!p.children.has(sub)) p.children.set(sub, { name: sub, value: 0, children: new Map() });
+      const s = p.children.get(sub);
+      s.value += (r.value || 0);
+      const sub3 = (r.sub2 && r.sub3) ? r.sub3 : null;
+      if(sub3){
+        if(!s.children.has(sub3)) s.children.set(sub3, { name: sub3, value: 0 });
+        s.children.get(sub3).value += (r.value || 0);
+      }
+    }
+  }
+  // matérialisation en arbre
+  const partnersArr = [...byPartner.values()]
+    .sort((a,b) => b.value - a.value)
+    .map(p => ({
+      name: p.name, code: p.code, flag: p.flag, value: p.value,
+      children: [...p.children.values()]
+        .sort((a,b) => b.value - a.value)
+        .map(s => ({
+          name: s.name, value: s.value,
+          children: [...s.children.values()].sort((a,b)=>b.value-a.value)
+        }))
+    }));
+  root.children = partnersArr;
+  return root;
+}
+
+// Descend dans l'arbre selon le chemin _relPath (noms de nœuds).
+function descendHierarchy(tree){
+  let node = tree;
+  for(const step of _relPath){
+    if(!node.children || !node.children.length) break;
+    const next = node.children.find(c => c.name === step);
+    if(!next) break;
+    node = next;
+  }
+  return node;
+}
+
+function renderRelComposition(){
+  const body = document.getElementById('relCompBody');
+  if(!body) return;
+  const tree = buildHierarchyForFlux();
+  if(!tree){ body.innerHTML = `<div class="rel-empty">Pas de flux renseigné pour ce sujet.</div>`; return; }
+  const node = descendHierarchy(tree);
+  if(!node.children || !node.children.length){
+    body.innerHTML = `<div class="rel-empty">Pas de sous-décomposition disponible à ce niveau.</div>`;
+    return;
+  }
+  if(_relMode === 'sunburst') drawSunburst(node, body);
+  else drawTreemapRel(node, body);
+}
+
+/* ─── Sunburst ───────────────────────────────────────────────── */
+function drawSunburst(node, host){
+  const W = 560, H = 460, cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 30;
+  const total = node.children.reduce((s,c)=>s+c.value, 0) || 1;
+  const items = node.children;
+  // angles
+  let a0 = -Math.PI/2;
+  const slices = [];
+  for(const it of items){
+    const a1 = a0 + (it.value/total) * 2*Math.PI;
+    slices.push({ it, a0, a1 });
+    a0 = a1;
+  }
+  function arc(r0, r1, A0, A1){
+    const x0 = cx + Math.cos(A0)*r1, y0 = cy + Math.sin(A0)*r1;
+    const x1 = cx + Math.cos(A1)*r1, y1 = cy + Math.sin(A1)*r1;
+    const x2 = cx + Math.cos(A1)*r0, y2 = cy + Math.sin(A1)*r0;
+    const x3 = cx + Math.cos(A0)*r0, y3 = cy + Math.sin(A0)*r0;
+    const large = (A1 - A0) > Math.PI ? 1 : 0;
+    return `M${x0.toFixed(1)},${y0.toFixed(1)} A${r1.toFixed(1)},${r1.toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y2.toFixed(1)} A${r0.toFixed(1)},${r0.toFixed(1)} 0 ${large} 0 ${x3.toFixed(1)},${y3.toFixed(1)} Z`;
+  }
+  // palette catégorielle (palette terre/papier en cohérence avec l'identité)
+  const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  slices.forEach((s, i) => {
+    const fill = palette[i % palette.length];
+    const d = arc(R*0.35, R, s.a0, s.a1);
+    const pct = (s.it.value/total)*100;
+    const tit = `${s.it.name} · ${pct.toFixed(1)}%`;
+    svg += `<path class="sb-slice" d="${d}" fill="${fill}"
+              data-tt="${escAttr(s.it.name)}" data-tb="${escAttr(fmtNumber(s.it.value)+' · '+pct.toFixed(1)+'%')}"
+              onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
+              onclick="sunburstClick('${escAttr(s.it.name)}')"/>`;
+    // label seulement si la tranche est assez grande
+    if((s.a1 - s.a0) > 0.18){
+      const am = (s.a0 + s.a1)/2;
+      const lr = R*0.68;
+      const lx = cx + Math.cos(am)*lr;
+      const ly = cy + Math.sin(am)*lr;
+      const flag = s.it.flag || '';
+      const short = s.it.name.length > 14 ? s.it.name.slice(0,13)+'…' : s.it.name;
+      svg += `<text class="sb-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${flag} ${short}</text>`;
+      svg += `<text class="sb-label" x="${lx.toFixed(1)}" y="${(ly+12).toFixed(1)}" text-anchor="middle" style="opacity:.85;font-size:9px">${pct.toFixed(0)}%</text>`;
+    }
+  });
+  // centre : titre + total
+  const cfg = state.indicators.find(x => x.indicator === _relIndicator);
+  svg += `<text class="sb-center-title" x="${cx}" y="${cy-4}">${cfg?.label || _relIndicator}</text>`;
+  svg += `<text class="sb-center-total" x="${cx}" y="${cy+14}">${fmtNumber(total, cfg?.unit_display)} ${scaleSuffix(total, cfg?.unit_display)}</text>`;
+  svg += `</svg>`;
+  host.innerHTML = svg;
+}
+
+function sunburstClick(name){
+  // descendre d'un cran si l'élément a des enfants
+  const tree = buildHierarchyForFlux();
+  const cur = descendHierarchy(tree);
+  const child = cur.children?.find(c => c.name === name);
+  if(child && child.children && child.children.length){
+    _relPath = [..._relPath, name];
+    renderRelComposition();
+    renderRelCrumb();
+  }
+}
+
+/* ─── Treemap (squarified) ───────────────────────────────────── */
+function drawTreemapRel(node, host){
+  const W = 700, H = 460;
+  const items = node.children.slice().sort((a,b)=>b.value-a.value);
+  const cells = squarifyTreemap(items, 0, 0, W, H);
+  const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  const total = items.reduce((s,c)=>s+c.value, 0) || 1;
+  cells.forEach((c, i) => {
+    const fill = palette[i % palette.length];
+    const pct = (c.item.value/total)*100;
+    svg += `<g class="tm-cell">
+      <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
+            data-tt="${escAttr(c.item.name)}" data-tb="${escAttr(fmtNumber(c.item.value)+' · '+pct.toFixed(1)+'%')}"
+            onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
+            onclick="treemapClick('${escAttr(c.item.name)}')"/>`;
+    if(c.w > 60 && c.h > 30){
+      const flag = c.item.flag || '';
+      const short = c.item.name.length > 18 ? c.item.name.slice(0,17)+'…' : c.item.name;
+      svg += `<text class="tm-label" x="${(c.x+8).toFixed(1)}" y="${(c.y+18).toFixed(1)}" style="font-size:12px;font-weight:600">${flag} ${short}</text>`;
+      svg += `<text class="tm-label-sub" x="${(c.x+8).toFixed(1)}" y="${(c.y+32).toFixed(1)}" style="font-size:10px">${pct.toFixed(0)}%</text>`;
+    }
+    svg += `</g>`;
+  });
+  svg += `</svg>`;
+  host.innerHTML = svg;
+}
+function treemapClick(name){ sunburstClick(name); }   // même comportement
+
+// Treemap : algorithme « slice-and-dice » avec orientation alternée.
+// Simple, correct (surface = somme exacte des valeurs), suffisant pour Relations.
+function squarifyTreemap(items, x, y, w, h){
+  const out = [];
+  function place(arr, X, Y, W, H, horiz){
+    const total = arr.reduce((s,c)=>s+c.value, 0) || 1;
+    let off = 0;
+    for(const it of arr){
+      const frac = it.value / total;
+      if(horiz){
+        const cw = W * frac;
+        out.push({ x: X + off, y: Y, w: cw, h: H, item: it });
+        off += cw;
+      } else {
+        const ch = H * frac;
+        out.push({ x: X, y: Y + off, w: W, h: ch, item: it });
+        off += ch;
+      }
+    }
+  }
+  // Heuristique : si beaucoup d'items, on coupe en 2 « bandes » pour limiter
+  // les cellules très allongées. Sinon on coupe simplement le long du grand axe.
+  if(items.length <= 4){
+    place(items, x, y, w, h, w >= h);
+  } else {
+    // diviser en deux groupes équilibrés par somme
+    const sorted = items.slice().sort((a,b)=>b.value-a.value);
+    const total = sorted.reduce((s,c)=>s+c.value, 0);
+    let acc = 0; let split = 1;
+    for(let i = 0; i < sorted.length; i++){
+      acc += sorted[i].value;
+      if(acc >= total/2){ split = i + 1; break; }
+    }
+    const left = sorted.slice(0, split), right = sorted.slice(split);
+    const leftSum = left.reduce((s,c)=>s+c.value,0);
+    const horiz = w >= h;
+    if(horiz){
+      const cw = w * (leftSum / total);
+      place(left, x, y, cw, h, false);
+      if(right.length) place(right, x + cw, y, w - cw, h, false);
+    } else {
+      const ch = h * (leftSum / total);
+      place(left, x, y, w, ch, true);
+      if(right.length) place(right, x, y + ch, w, h - ch, true);
+    }
+  }
+  return out;
+}
+
+
+
 /* ─── RECHERCHE SUJET (⌘K) — pays multi-cochables, zones en 1 clic ─── */
 let _searchSel = 0, _searchItems = [];
 let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
-
 let _searchMode = 'subject';   // 'subject' | 'compareB'
 
 function openSearch(){
