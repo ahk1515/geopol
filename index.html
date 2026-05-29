@@ -1062,15 +1062,41 @@ function getIdentiteSeriesB(indicator){
 }
 
 // Stats mondiales pour un indicateur/année (percentiles, rangs) — paresseux.
+// Stats mondiales : pour chaque pays, on prend sa DERNIÈRE valeur non nulle/non zéro
+// jusqu'à l'année demandée. Sinon des pays mal couverts à l'année exacte
+// (ex. Nigeria population manquante en 2024) disparaissent et faussent l'échelle.
+// On exclut les projections futures (subcategory='projection' au-delà de l'année).
 function getWorldStats(indicator, year){
   const y = year ?? state.year;
   const k = indicator + '|' + y;
   if(cache.world.has(k)) return cache.world.get(k);
-  const r = safeExec(`SELECT country_iso3, value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND value IS NOT NULL`);
+  // Sous-requête : par pays, la dernière année <= y où la valeur est utilisable
+  // ET la subcategory n'est pas une projection future
+  const sql = `
+    SELECT i.country_iso3, i.value, i.year
+    FROM identite i
+    INNER JOIN (
+      SELECT country_iso3, MAX(year) AS max_year
+      FROM identite
+      WHERE indicator='${escapeSql(indicator)}'
+        AND year <= ${y}
+        AND value IS NOT NULL AND value != 0
+        AND (subcategory IS NULL OR subcategory != 'projection' OR year <= ${y})
+      GROUP BY country_iso3
+    ) latest ON i.country_iso3 = latest.country_iso3 AND i.year = latest.max_year
+    WHERE i.indicator='${escapeSql(indicator)}'
+      AND i.value IS NOT NULL AND i.value != 0
+  `;
+  const r = safeExec(sql);
   let pairs = [];
-  if(r.length) pairs = r[0].values
-    .filter(([iso]) => !REGIONAL_CODES.has(iso))
-    .map(([iso, v]) => ({ iso, v }));
+  if(r.length){
+    // Si plusieurs lignes pour le même iso/année (historique + projection), on prend une seule (la première rencontrée)
+    const seen = new Set();
+    pairs = r[0].values
+      .filter(([iso]) => !REGIONAL_CODES.has(iso))
+      .filter(([iso]) => { if(seen.has(iso)) return false; seen.add(iso); return true; })
+      .map(([iso, v, yr]) => ({ iso, v, year: yr }));
+  }
   const sorted = pairs.slice().sort((a,b) => a.v - b.v);
   const stats = { sorted, n: sorted.length };
   cache.world.set(k, stats);
@@ -1566,6 +1592,7 @@ function sparklineSvg(series, color){
 
 /* ─── ÉPINGLAGE PERSONNEL (localStorage) ──────────────────────── */
 const PIN_KEY = 'geopol_pins_synthese';
+const PIN_RADAR_KEY = 'geopol_pins_radar';
 const PIN_FLUX_PARTNER_KEY = 'geopol_pins_flux_partner_v2';   // _v2 = nouvelle structure (clés indicator|side)
 const PIN_FLUX_INFLUENCE_KEY = 'geopol_pins_flux_influence_v2';
 function loadPins(key){
@@ -1584,6 +1611,18 @@ function pinnedIdentiteIndicators(){
   }
   const def = ident.filter(c => c.epingle_synthese || c.radar);
   return (def.length ? def : ident.slice(0, 10)).slice(0, 12);
+}
+
+// Indicateurs du radar Puissance (choix indépendant de la Synthèse).
+function pinnedRadarIndicators(){
+  const ident = state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
+  const perso = loadPins(PIN_RADAR_KEY);
+  if(perso && perso.size){
+    return ident.filter(c => perso.has(c.indicator)).slice(0, 12);
+  }
+  // défaut : champ radar du config sinon 6 premiers
+  const def = ident.filter(c => c.radar);
+  return (def.length ? def : ident.slice(0, 6)).slice(0, 8);
 }
 
 // Entrées flux épinglées pour une colonne du panorama (Partenaire OU Influence).
@@ -1607,11 +1646,15 @@ let _pinDraft = null, _pinMode = 'identite';
 function openPinModal(mode){
   _pinMode = mode || 'identite';
   const isFlux = (mode === 'flux_partner' || mode === 'flux_influence');
+  const isRadar = (mode === 'radar');
   let currentSet, pool;
   if(isFlux){
     const column = (mode === 'flux_partner') ? 'partner' : 'influence';
     currentSet = new Set(pinnedFlowEntries(column).map(e => e.key));
     pool = flowEntriesPresent();
+  } else if(isRadar){
+    currentSet = new Set(pinnedRadarIndicators().map(c => c.indicator));
+    pool = state.indicators.filter(c => c.table === 'identite');
   } else {
     currentSet = new Set(pinnedIdentiteIndicators().map(c => c.indicator));
     pool = state.indicators.filter(c => c.table === 'identite');
@@ -1636,6 +1679,7 @@ function openPinModal(mode){
   }
   const titles = {
     identite: 'Indicateurs de la synthèse',
+    radar: 'Axes du radar (Puissance)',
     flux_partner: 'Flux affichés — Qui pèse pour le sujet',
     flux_influence: 'Flux affichés — Pour qui le sujet pèse'
   };
@@ -1657,17 +1701,23 @@ function updatePinCount(){
 function _pinStorageKey(){
   if(_pinMode === 'flux_partner') return PIN_FLUX_PARTNER_KEY;
   if(_pinMode === 'flux_influence') return PIN_FLUX_INFLUENCE_KEY;
+  if(_pinMode === 'radar') return PIN_RADAR_KEY;
   return PIN_KEY;
 }
 function applyPins(){
   savePins(_pinStorageKey(), _pinDraft);
   closePinModal();
-  renderSynthese();
+  // selon le mode, rafraîchir la bonne vue
+  if(_pinMode === 'radar' && state.view === 'puissance') renderPuissance();
+  else renderSynthese();
+  if(state.view === 'puissance') renderPuissance();
 }
 function resetPins(){
   try { localStorage.removeItem(_pinStorageKey()); } catch {}
   closePinModal();
-  renderSynthese();
+  if(_pinMode === 'radar' && state.view === 'puissance') renderPuissance();
+  else renderSynthese();
+  if(state.view === 'puissance') renderPuissance();
 }
 
 function concentrationClass(pct){
@@ -2122,7 +2172,7 @@ function renderPuMain(){
     <div class="pu-cells">
       <div class="top-row">
         <div class="pu-cell">
-          <div class="pu-cell-head"><span class="pu-cell-title">Radar percentilé</span><span class="meta" style="font-size:10px;color:var(--text3)">axes épinglés</span></div>
+          <div class="pu-cell-head"><span class="pu-cell-title">Radar percentilé</span><span style="display:flex;align-items:center;gap:8px"><span class="meta" style="font-size:10px;color:var(--text3)">axes choisis</span><button class="card-cog" onclick="openPinModal('radar')" title="Choisir les axes">⚙</button></span></div>
           <div class="pu-cell-body"><div class="pu-radar-wrap" id="puRadar"></div></div>
         </div>
         <div class="pu-cell">
@@ -2226,9 +2276,9 @@ function drawPuCurve(){
 function drawPuRadar(){
   const wrap = document.getElementById('puRadar');
   if(!wrap) return;
-  const axes = pinnedIdentiteIndicators().filter(c => c.presentInDb !== false);
+  const axes = pinnedRadarIndicators().filter(c => c.presentInDb !== false);
   if(axes.length < 3){
-    wrap.innerHTML = `<div class="radar-empty">Au moins 3 indicateurs épinglés requis (configurer dans Synthèse).</div>`;
+    wrap.innerHTML = `<div class="radar-empty">Au moins 3 indicateurs requis. <button onclick="openPinModal('radar')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">choisir les axes</button></div>`;
     return;
   }
   const W = 360, H = 320, cx = W/2, cy = H/2 + 4, R = Math.min(W,H)/2 - 38;
