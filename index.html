@@ -522,11 +522,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 /* ════════════════════════════════════════════════════════════════
    ONGLET RELATIONS
 ═════════════════════════════════════════════════════════════════ */
-.rel-head { display: flex; align-items: baseline; justify-content: space-between; padding: 4px 4px 12px; gap: 12px; flex-wrap: wrap; }
-.rel-head .name { font-family: var(--display); font-size: 22px; font-weight: 500; letter-spacing: -.01em; }
-.rel-head .controls { display: flex; align-items: center; gap: 6px; }
-
-/* segmented control (Partenaire / Influence + Sunburst / Treemap) */
+/* segmented control (réutilisé pour le sélecteur de référentiel) */
 .seg { display: inline-flex; background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 2px; gap: 2px; }
 .seg button {
   font-family: var(--mono); font-size: 10.5px; padding: 5px 10px; letter-spacing: .04em;
@@ -535,45 +531,16 @@ main { flex: 1; padding: 16px 18px 28px; }
 .seg button.on { background: var(--green); color: #fff; }
 .seg button:not(.on):hover { color: var(--text); background: var(--bg3); }
 
-/* Heatmap d'accueil */
-.rel-heat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
-.rel-heat-head { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: baseline; }
-.rel-heat-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text2); font-weight: 600; }
-.rel-heat-sub { font-size: 11px; color: var(--text3); }
-.rel-heat-body { padding: 14px 16px 18px; overflow-x: auto; }
-.heat-grid { display: grid; gap: 2px; }
-.heat-row { display: contents; }
-.heat-cell {
-  height: 28px; border-radius: 3px; display: flex; align-items: center; justify-content: center;
-  font-family: var(--mono); font-size: 9.5px; color: var(--text); cursor: pointer; transition: transform .12s, outline .12s;
-}
-.heat-cell:hover { transform: scale(1.05); outline: 2px solid var(--text); outline-offset: 1px; z-index: 2; position: relative; }
-.heat-cell.empty { background: var(--bg3); color: var(--text3); cursor: default; }
-.heat-cell.empty:hover { transform: none; outline: none; }
-.heat-colhead, .heat-rowhead {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .04em; color: var(--text3); text-transform: uppercase;
-  display: flex; align-items: center; padding: 0 4px;
-}
-.heat-colhead { justify-content: center; height: 28px; }
-.heat-rowhead { justify-content: flex-end; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-/* Sunburst / Treemap (composition) */
-.rel-comp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
-.rel-comp-head { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* Barre breadcrumb + sélecteur de référentiel (juste sous l'entête) */
+.rel-crumb-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 6px 4px 12px; flex-wrap: wrap; }
 .rel-crumb { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); flex-wrap: wrap; }
-.rel-crumb .step { padding: 2px 8px; border-radius: 4px; background: var(--bg3); cursor: pointer; color: var(--text2); font-family: var(--mono); font-size: 10px; }
+.rel-crumb .step { padding: 3px 9px; border-radius: 4px; background: var(--bg3); cursor: pointer; color: var(--text2); font-family: var(--mono); font-size: 10.5px; transition: all .1s; }
 .rel-crumb .step:hover { background: var(--green-d); color: var(--green); }
-.rel-crumb .step.current { background: var(--green); color: #fff; cursor: default; }
+.rel-crumb .step.current { background: var(--green); color: #fff; cursor: pointer; }
+.rel-crumb .step.current:hover { background: var(--green); opacity: .85; }
 .rel-crumb .sep { color: var(--text3); }
-.rel-comp-body { padding: 16px; min-height: 460px; display: flex; align-items: center; justify-content: center; }
-.rel-comp-body svg { display: block; max-width: 100%; height: auto; }
-
-/* tranches sunburst */
-.sb-slice { cursor: pointer; transition: opacity .15s; }
-.sb-slice:hover { opacity: .85; }
-.sb-label { font-family: var(--sans); font-size: 10px; fill: #fff; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
-.sb-center-title { font-family: var(--display); font-size: 14px; fill: var(--text); text-anchor: middle; }
-.sb-center-total { font-family: var(--mono); font-size: 11px; fill: var(--text2); text-anchor: middle; }
+.rel-dim-wrap { display: flex; align-items: center; gap: 8px; }
+.rel-filter-label { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); }
 
 /* cellules treemap */
 .tm-cell rect { cursor: pointer; transition: opacity .15s; }
@@ -581,27 +548,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .tm-label { font-family: var(--sans); fill: #fff; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
 .tm-label-sub { font-family: var(--mono); fill: rgba(255,255,255,.85); pointer-events: none; }
 
-.rel-empty { padding: 60px 20px; text-align: center; color: var(--text3); font-size: 12.5px; }
-
-/* Layout 2-cellules sous le sunburst */
-.rel-bottom { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 14px; }
-@media (max-width: 980px){ .rel-bottom { grid-template-columns: 1fr; } }
-
-/* Barre de filtre subcategory partagé */
-.rel-filter-bar { display: flex; align-items: center; gap: 8px; padding: 8px 4px 0; flex-wrap: wrap; min-height: 0; }
-.rel-filter-bar:empty { display: none; }
-.rel-filter-label { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-right: 2px; }
-.rel-filter-select {
-  font-family: var(--sans); font-size: 11px; padding: 4px 22px 4px 8px;
-  border: 1px solid var(--border); border-radius: 5px; background: var(--bg2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" fill="none" stroke="%23666" stroke-width="1.5"/></svg>') no-repeat right 6px center;
-  appearance: none; cursor: pointer; color: var(--text2); max-width: 240px;
-}
-.rel-filter-select:hover { border-color: var(--border2); }
-.rel-filter-clear {
-  font-size: 10.5px; padding: 4px 10px; border: 1px solid var(--orange-b); background: var(--orange-d);
-  color: var(--orange); border-radius: 5px; cursor: pointer; font-family: var(--mono); letter-spacing: .04em;
-}
-.rel-filter-clear:hover { background: var(--orange); color: #fff; }
+.rel-empty { padding: 50px 20px; text-align: center; color: var(--text3); font-size: 12.5px; }
 
 /* Aires empilées (évolution flux) */
 .rel-evo-wrap { width: 100%; }
@@ -1264,8 +1211,9 @@ function getFluxWorldMap(entry){
     const bil = filtered.filter(r => isBilateral(r));
     if(bil.length) filtered = bil;
   }
-  filtered = applySubFilter(filtered);
   filtered = filtered.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
+  // applique le drill cumulé (filtre partagé avec treemap et aires)
+  filtered = applyDrillFilter(filtered);
   const out = {};
   for(const r of filtered){
     out[r.partner] = (out[r.partner] || 0) + (r.value || 0);
@@ -1753,14 +1701,10 @@ function openPinModal(mode){
   _pinMode = mode || 'identite';
   const isFlux = (mode === 'flux_partner' || mode === 'flux_influence');
   const isRadar = (mode === 'radar');
-  const isRelHeatmap = (mode === 'rel_heatmap');
   let currentSet, pool;
   if(isFlux){
     const column = (mode === 'flux_partner') ? 'partner' : 'influence';
     currentSet = new Set(pinnedFlowEntries(column).map(e => e.key));
-    pool = flowEntriesPresent();
-  } else if(isRelHeatmap){
-    currentSet = new Set(pinnedHeatmapEntries().map(e => e.key));
     pool = flowEntriesPresent();
   } else if(isRadar){
     currentSet = new Set(pinnedRadarIndicators().map(c => c.indicator));
@@ -1778,7 +1722,7 @@ function openPinModal(mode){
     html += `<div class="pin-cat">${cat}</div>`;
     for(const x of byCat[cat]){
       // entrées-flux : id = clé indicator|side ; sinon id = indicator pur
-      const useFlowKey = isFlux || isRelHeatmap;
+      const useFlowKey = isFlux;
       const id = useFlowKey ? x.key : x.indicator;
       const txt = useFlowKey ? x.label_long : (x.label || x.indicator);
       const miss = (!useFlowKey && x.presentInDb === false) ? `<span class="miss">sans données</span>` : '';
@@ -1793,8 +1737,7 @@ function openPinModal(mode){
     identite: 'Indicateurs de la synthèse',
     radar: 'Axes du radar (Puissance)',
     flux_partner: 'Flux affichés — Qui pèse pour le sujet',
-    flux_influence: 'Flux affichés — Pour qui le sujet pèse',
-    rel_heatmap: 'Flux affichés dans la heatmap (Relations)'
+    flux_influence: 'Flux affichés — Pour qui le sujet pèse'
   };
   document.querySelector('#pinModal .pin-head .t').textContent = titles[mode] || titles.identite;
   document.getElementById('pinBody').innerHTML = html;
@@ -1815,14 +1758,13 @@ function _pinStorageKey(){
   if(_pinMode === 'flux_partner') return PIN_FLUX_PARTNER_KEY;
   if(_pinMode === 'flux_influence') return PIN_FLUX_INFLUENCE_KEY;
   if(_pinMode === 'radar') return PIN_RADAR_KEY;
-  if(_pinMode === 'rel_heatmap') return PIN_REL_HEATMAP_KEY;
   return PIN_KEY;
 }
 function applyPins(){
   savePins(_pinStorageKey(), _pinDraft);
   closePinModal();
   // rafraîchir la vue active selon le mode
-  if(_pinMode === 'radar' || _pinMode === 'rel_heatmap'){
+  if(_pinMode === 'radar'){
     refreshActiveView();
   } else {
     renderSynthese();
@@ -1832,7 +1774,7 @@ function applyPins(){
 function resetPins(){
   try { localStorage.removeItem(_pinStorageKey()); } catch {}
   closePinModal();
-  if(_pinMode === 'radar' || _pinMode === 'rel_heatmap'){
+  if(_pinMode === 'radar'){
     refreshActiveView();
   } else {
     renderSynthese();
@@ -2602,78 +2544,59 @@ function puMapValue(iso){
    Tout passe par les entrées flux (clé indicator|side) → libellés contextuels,
    sens correct, alias et commerce import/export gérés en amont.
 ═════════════════════════════════════════════════════════════════ */
+// État Relations refondu : pas de heatmap d'accueil, pas de sunburst.
+// Le treemap est la composition principale ; le référentiel (dimension d'analyse)
+// est commutable entre partenaire / sub1 / sub2 / sub3 selon ce qui est peuplé.
 let _relEntryKey = null;          // clé d'entrée flux active (ex. 'dette_exterieure|to')
-let _relMode = 'sunburst';        // 'sunburst' | 'treemap'
-let _relPath = [];                // breadcrumb du drill-down [nom_niv1, nom_niv2, ...]
-let _relSubFilter = null;         // filtre subcategory partagé : { level: 'sub1'|'sub2'|'sub3', value: '...' } | null
+let _relDim = 'partner';          // 'partner' | 'sub1' | 'sub2' | 'sub3' — dimension principale
+let _relPath = [];                // chemin de drill-down dans le treemap (= filtre cumulatif partagé)
+let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
 
-const PIN_REL_HEATMAP_KEY = 'geopol_pins_rel_heatmap_v1';   // entrées affichées dans la heatmap
-function pinnedHeatmapEntries(){
-  const all = flowEntriesPresent();
-  const perso = loadPins(PIN_REL_HEATMAP_KEY);
-  if(perso && perso.size) return all.filter(e => perso.has(e.key));
-  // défaut : sens 'to' de chaque indicateur (la moitié des entrées, lecture la plus naturelle)
-  return all.filter(e => e.side === 'to');
-}
-
-/* Filtre subcategory partagé entre composition / évolution / carte.
-   Collecte les valeurs disponibles pour chaque niveau (sub1/2/3) sur l'année courante.
-   Renvoie [{ level, label, options:[{value, count}] }] uniquement pour les niveaux peuplés. */
-function getRelSubLevels(){
+/* ─── Dimensions disponibles pour le référentiel d'analyse ────────
+   Pour un flux donné, on renvoie la liste des dimensions possibles
+   (partner + sub1/sub2/sub3 selon leur peuplement). _relDim choisit celle
+   qui est affichée dans le treemap et les aires empilées.
+─────────────────────────────────────────────────────────────── */
+function getRelDimensions(){
   const entry = getFlowEntryByKey(_relEntryKey);
-  if(!entry) return [];
+  if(!entry) return [{ key:'partner', label:'Partenaire' }];
   const rows = getFluxRows(entry);
-  const result = [];
+  const dims = [{ key:'partner', label:'Partenaire', count: new Set(rows.map(r => r.partner).filter(p => p && !p.startsWith('__'))).size }];
   const isDebt = isDebtIndicator(entry.indicator);
-  // pour la dette, sub1 est déjà filtré bilatéral → on l'omet
-  const levels = isDebt ? [['sub2','Catégorie 2'], ['sub3','Catégorie 3']] : [['sub1','Catégorie 1'], ['sub2','Catégorie 2'], ['sub3','Catégorie 3']];
-  for(const [lvl, lbl] of levels){
-    const valCounts = new Map();
-    for(const r of rows){
-      const v = r[lvl];
-      if(!v || String(v).trim() === '') continue;
-      valCounts.set(String(v), (valCounts.get(String(v)) || 0) + 1);
-    }
-    if(valCounts.size > 1){    // au moins 2 valeurs pour que le filtre ait du sens
-      result.push({ level: lvl, label: lbl, options: [...valCounts.entries()].map(([value, count]) => ({ value, count })).sort((a,b) => b.count - a.count) });
-    }
+  // pour la dette, sub1 = bilatérale (déjà filtré) → on l'omet
+  const subs = isDebt ? ['sub2','sub3'] : ['sub1','sub2','sub3'];
+  for(const lvl of subs){
+    const vals = new Set();
+    for(const r of rows){ const v = r[lvl]; if(v && String(v).trim() !== '') vals.add(String(v)); }
+    if(vals.size > 1) dims.push({ key: lvl, label: `Catégorie ${lvl.slice(-1)}`, count: vals.size });
   }
-  return result;
+  return dims;
 }
-function applySubFilter(rows){
-  if(!_relSubFilter) return rows;
-  const { level, value } = _relSubFilter;
-  return rows.filter(r => String(r[level] || '') === value);
-}
-function setRelSubFilter(level, value){
-  if(!level || !value) _relSubFilter = null;
-  else _relSubFilter = { level, value };
-  // re-rendre tout
-  renderRelComposition();
-  renderRelEvolution();
-  renderRelFluxMap();
-  // rafraichir la barre filtre
-  const bar = document.getElementById('relFilterBar');
-  if(bar) bar.innerHTML = buildRelFilterBar();
-}
-function buildRelFilterBar(){
-  const levels = getRelSubLevels();
-  if(!levels.length) return '';
-  let html = '<span class="rel-filter-label">Filtrer par :</span>';
-  for(const lvl of levels){
-    const isActive = _relSubFilter && _relSubFilter.level === lvl.level;
-    const activeValue = isActive ? _relSubFilter.value : '';
-    let options = `<option value="">Tout (${lvl.label})</option>`;
-    for(const o of lvl.options){
-      const sel = (activeValue === o.value) ? 'selected' : '';
-      options += `<option value="${escAttr(o.value)}" ${sel}>${o.value} (${o.count})</option>`;
-    }
-    html += `<select class="rel-filter-select" onchange="setRelSubFilter('${lvl.level}', this.value || null)" ${isActive ? 'style="border-color:var(--orange);color:var(--orange)"' : ''}>${options}</select>`;
+
+/* Le filtre actif = chemin de drill-down (_relPath) + dimension choisie.
+   À chaque drill, on enregistre (level, value) cumulé. Filtre toutes les vues. */
+function applyDrillFilter(rows){
+  for(const step of _relPath){
+    rows = rows.filter(r => String(r[step.level] || '') === step.value);
   }
-  if(_relSubFilter){
-    html += `<button class="rel-filter-clear" onclick="setRelSubFilter(null, null)">× réinitialiser</button>`;
-  }
-  return html;
+  return rows;
+}
+function setRelDim(dim){
+  _relDim = dim;
+  _relPath = [];   // on reset le drill quand on change de dimension
+  renderRelMain();
+  syncUrl();
+}
+function pushRelDrill(level, value){
+  // value est la clé brute (ISO3 pour partner, valeur subcategory sinon)
+  // on stocke aussi un label affichable pour le breadcrumb
+  const label = (level === 'partner') ? (partnerLabel(value) || value) : value;
+  _relPath = [..._relPath, { level, value, label }];
+  renderRelMain();
+}
+function setRelPathLength(len){
+  _relPath = _relPath.slice(0, len);
+  renderRelMain();
 }
 
 function renderRelations(){
@@ -2690,183 +2613,110 @@ function renderRelations(){
   if(_pendingFocus.flowEntryKey){
     _relEntryKey = _pendingFocus.flowEntryKey;
     _pendingFocus.flowEntryKey = null;
-    _relPath = [];
+    _relPath = []; _relDim = 'partner';
   }
-  // (compat ancien focus indicator+dir, plus utilisé mais on garde le code)
-  if(_pendingFocus.indicator && !_relEntryKey){
-    const side = (_pendingFocus.fluxDir === 'partner') ? 'to' : 'from';
-    _relEntryKey = _pendingFocus.indicator + '|' + side;
-    _pendingFocus.indicator = null; _pendingFocus.fluxDir = null;
-    _relPath = [];
-  }
-
+  // entrée flux par défaut si on arrive sans : première dispo
   if(!_relEntryKey){
-    // Vue heatmap d'accueil
-    root.innerHTML = `
-      <div class="rel-head">
-        <div>
-          <div class="name">Relations</div>
-          <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label} · cliquer une cellule pour explorer</div>
-        </div>
-        <div class="controls">
-          <button class="hbtn" onclick="openPinModal('rel_heatmap')" title="Choisir les flux affichés"><span>⚙</span> Flux</button>
-        </div>
-      </div>
-      <div id="relHeatHost"></div>`;
-    renderRelHeatmap();
-    return;
+    const all = flowEntriesPresent();
+    if(all.length) _relEntryKey = all[0].key;
   }
-
-  // Vue composition (un flux choisi)
-  const entry = getFlowEntryByKey(_relEntryKey);
-  if(!entry){ _relEntryKey = null; renderRelations(); return; }
+  // structure : nav indicateurs gauche + zone principale droite (comme Puissance)
   root.innerHTML = `
-    <div class="rel-head">
-      <div>
-        <div class="name">${entry.label_long}</div>
-        <div class="meta" style="font-size:11px;color:var(--text3);margin-top:2px">${state.subject.label}</div>
+    <div class="pu-layout">
+      <div class="pu-nav">
+        <div class="pu-nav-search"><input type="text" id="relSearch" placeholder="Filtrer un flux…" oninput="filterRelNav(this.value)"></div>
+        <div class="pu-nav-body" id="relNavBody"></div>
       </div>
-      <div class="controls">
-        <div class="seg">
-          <button class="${_relMode==='sunburst'?'on':''}" onclick="setRelMode('sunburst')">Sunburst</button>
-          <button class="${_relMode==='treemap'?'on':''}" onclick="setRelMode('treemap')">Treemap</button>
-        </div>
-        <button class="hbtn" onclick="leaveRelEntry()" title="Revenir à la heatmap">← Heatmap</button>
-      </div>
+      <div class="pu-main" id="relMain"></div>
+    </div>`;
+  renderRelNav('');
+  renderRelMain();
+}
+
+function renderRelNav(filter){
+  const body = document.getElementById('relNavBody');
+  const all = flowEntriesPresent();
+  const ql = (filter || '').trim().toLowerCase();
+  const byCat = {};
+  for(const e of all){
+    if(ql && !e.label_long.toLowerCase().includes(ql)) continue;
+    (byCat[e.category || 'autre'] ??= []).push(e);
+  }
+  let html = '';
+  for(const cat of Object.keys(byCat).sort()){
+    const collapsed = _relCatCollapsed[cat] && !ql ? 'collapsed' : '';
+    html += `<div class="pu-cat ${collapsed}" data-cat="${cat}">
+      <div class="pu-cat-head" onclick="toggleRelCat('${cat}')"><span class="caret">▼</span>${cat}</div>
+      <div class="pu-cat-list">`;
+    for(const e of byCat[cat]){
+      const active = e.key === _relEntryKey ? 'active' : '';
+      html += `<div class="pu-ind ${active}" onclick="selectRelEntry('${e.key.replace(/'/g,"\\'")}')">
+        <span>${e.label_long}</span>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+  body.innerHTML = html || `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Aucun flux</div>`;
+}
+function toggleRelCat(cat){ _relCatCollapsed[cat] = !_relCatCollapsed[cat]; renderRelNav(document.getElementById('relSearch')?.value || ''); }
+function filterRelNav(v){ renderRelNav(v); }
+function selectRelEntry(key){
+  _relEntryKey = key; _relPath = []; _relDim = 'partner';
+  renderRelNav(document.getElementById('relSearch')?.value || '');
+  renderRelMain();
+  syncUrl();
+}
+
+function renderRelMain(){
+  const main = document.getElementById('relMain');
+  const entry = getFlowEntryByKey(_relEntryKey);
+  if(!entry){ main.innerHTML = `<div class="rel-empty">Aucun flux disponible.</div>`; return; }
+  const dims = getRelDimensions();
+  // breadcrumb : flux + chemin de drill
+  let crumb = `<span class="step current" onclick="setRelPathLength(0)">${entry.label_long}</span>`;
+  for(let i = 0; i < _relPath.length; i++){
+    crumb += `<span class="sep">▸</span><span class="step" onclick="setRelPathLength(${i+1})">${_relPath[i].label || _relPath[i].value}</span>`;
+  }
+  // sélecteur de dimension (référentiel d'analyse)
+  let dimSelector = '';
+  if(dims.length > 1){
+    dimSelector = `<div class="seg">`;
+    for(const d of dims){
+      dimSelector += `<button class="${_relDim===d.key?'on':''}" onclick="setRelDim('${d.key}')">${d.label}</button>`;
+    }
+    dimSelector += `</div>`;
+  }
+  main.innerHTML = `
+    <div class="pu-head">
+      <span class="name">${entry.label_long}</span>
+      <span class="meta">${state.subject.label}</span>
     </div>
-    <div id="relFilterBar" class="rel-filter-bar">${buildRelFilterBar()}</div>
-    <div class="rel-comp-card">
-      <div class="rel-comp-head">
-        <span class="rel-heat-title">Composition · ${_relMode==='sunburst'?'Sunburst':'Treemap'}</span>
-        <div class="rel-crumb" id="relCrumb"></div>
-      </div>
-      <div class="rel-comp-body" id="relCompBody"></div>
-    </div>
-    <div class="rel-bottom">
-      <div class="rel-comp-card">
-        <div class="rel-comp-head">
-          <span class="rel-heat-title">Évolution · aires empilées</span>
-          <span class="rel-heat-sub">tous partenaires</span>
+    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}</div>
+    <div class="pu-cells">
+      <div class="top-row">
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">Composition · ${dimLabelOf(_relDim, dims)}</span><span class="meta" style="font-size:10px;color:var(--text3)">cliquer pour creuser</span></div>
+          <div class="pu-cell-body" id="relCompBody" style="min-height:340px"></div>
         </div>
-        <div class="rel-comp-body" style="min-height:auto" id="relEvoBody"></div>
-      </div>
-      <div class="rel-comp-card">
-        <div class="rel-comp-head">
-          <span class="rel-heat-title">Carte du flux</span>
-          <span class="rel-heat-sub">poids des partenaires</span>
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">Évolution · aires empilées</span><span class="meta" style="font-size:10px;color:var(--text3)">${dimLabelOf(_relDim, dims).toLowerCase()}</span></div>
+          <div class="pu-cell-body" id="relEvoBody" style="min-height:340px"></div>
         </div>
-        <div class="rel-comp-body" style="min-height:auto">
+      </div>
+      <div class="pu-cell">
+        <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">par pays partenaire</span></div>
+        <div class="pu-cell-body">
           <div id="relMapContainer"><svg id="relMap"></svg></div>
           <div class="rel-map-legend"><span>faible</span><span class="bar"></span><span>fort</span></div>
         </div>
       </div>
     </div>`;
-  renderRelCrumb();
   renderRelComposition();
   renderRelEvolution();
   renderRelFluxMap();
 }
+function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label: 'Partenaire' }).label; }
 
-/* ─── Heatmap d'accueil ───────────────────────────────────────── */
-function renderRelHeatmap(){
-  const host = document.getElementById('relHeatHost');
-  const entries = pinnedHeatmapEntries();
-  if(!entries.length){
-    host.innerHTML = `<div class="rel-empty">Aucun flux sélectionné. <button onclick="openPinModal('rel_heatmap')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">configurer</button></div>`;
-    return;
-  }
-  const rows = [];
-  for(const e of entries){
-    let rs = getFluxRows(e);
-    if(!rs.length) continue;
-    if(isDebtIndicator(e.indicator)){
-      const bil = rs.filter(r => isBilateral(r));
-      if(bil.length) rs = bil;
-    }
-    const byPartner = new Map();
-    let total = 0;
-    for(const r of rs){
-      if(r.partner && r.partner.startsWith('__')) continue;
-      const v = r.value || 0;
-      byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
-      total += v;
-    }
-    if(total <= 0) continue;
-    const top = [...byPartner.entries()].sort((a,b)=>b[1]-a[1]).slice(0, 5);
-    const partners = top.map(([code, v]) => ({ code, name: partnerLabel(code), flag: partnerFlag(code), pct: (v/total)*100 }));
-    rows.push({ entry: e, label: e.label_long, partners });
-  }
-  if(!rows.length){
-    host.innerHTML = `<div class="rel-empty">Pas de flux renseigné pour ce sujet.</div>`;
-    return;
-  }
-  const RANKS = [1, 2, 3, 4, 5];
-  const gridCols = `260px repeat(${RANKS.length}, 1fr)`;
-  let head = `<div class="heat-rowhead" style="visibility:hidden">flux</div>`;
-  for(const r of RANKS) head += `<div class="heat-colhead">${r}${r===1?'er':'e'}</div>`;
-  let body = '';
-  for(const row of rows){
-    body += `<div class="heat-rowhead" title="${row.label}">${row.label}</div>`;
-    for(let i = 0; i < RANKS.length; i++){
-      const p = row.partners[i];
-      if(!p){ body += `<div class="heat-cell empty">—</div>`; continue; }
-      const intensity = Math.min(100, p.pct) / 100;
-      const bg = mixColors('#eef5ee', '#0a6e4a', intensity);
-      const fg = intensity > 0.55 ? '#fff' : 'var(--text)';
-      body += `<div class="heat-cell" style="background:${bg};color:${fg}"
-                    onclick="enterRelEntry('${row.entry.key}')"
-                    data-tt="${escAttr(p.flag+' '+p.name)}" data-tb="${escAttr(row.label+' · '+p.pct.toFixed(0)+'%')}"
-                    onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()">
-        ${p.flag} ${p.pct.toFixed(0)}%
-      </div>`;
-    }
-  }
-  host.innerHTML = `<div class="rel-heat-card">
-    <div class="rel-heat-head">
-      <span class="rel-heat-title">Boussole des flux</span>
-      <span class="rel-heat-sub">${rows.length} flux affichés · cliquer une cellule pour creuser</span>
-    </div>
-    <div class="rel-heat-body">
-      <div class="heat-grid" style="grid-template-columns:${gridCols}">${head}${body}</div>
-    </div>
-  </div>`;
-}
-function mixColors(c1, c2, t){
-  const p1 = hexToRgb(c1), p2 = hexToRgb(c2);
-  if(!p1 || !p2) return c1;
-  const r = Math.round(p1.r + (p2.r-p1.r)*t);
-  const g = Math.round(p1.g + (p2.g-p1.g)*t);
-  const b = Math.round(p1.b + (p2.b-p1.b)*t);
-  return `rgb(${r},${g},${b})`;
-}
-function hexToRgb(h){
-  const m = h.replace('#','').match(/^([0-9a-f]{6})$/i);
-  if(!m) return null;
-  const n = parseInt(m[1],16);
-  return { r:(n>>16)&255, g:(n>>8)&255, b:n&255 };
-}
-
-function setRelMode(m){ _relMode = m; renderRelComposition(); }
-function enterRelEntry(key){ _relEntryKey = key; _relPath = []; _relSubFilter = null; renderRelations(); syncUrl(); }
-function leaveRelEntry(){ _relEntryKey = null; _relPath = []; _relSubFilter = null; renderRelations(); syncUrl(); }
-
-/* ─── Breadcrumb du drill-down ────────────────────────────────── */
-function renderRelCrumb(){
-  const el = document.getElementById('relCrumb');
-  if(!el) return;
-  const entry = getFlowEntryByKey(_relEntryKey);
-  let html = `<span class="step current" onclick="setRelPath([])">${entry?.label_long || ''}</span>`;
-  for(let i = 0; i < _relPath.length; i++){
-    html += `<span class="sep">▸</span><span class="step" onclick="setRelPath(${i+1})">${_relPath[i]}</span>`;
-  }
-  el.innerHTML = html;
-}
-function setRelPath(arg){
-  if(Array.isArray(arg)){ _relPath = arg; }
-  else { _relPath = _relPath.slice(0, arg); }
-  renderRelComposition();
-  renderRelCrumb();
-}
 
 /* ─── Composition : agrégation hiérarchique ─────────────────────
    Niveau 0 = subcategory_1 (partenaire bilatéral pour pays, ou catégorie)
@@ -2880,191 +2730,65 @@ function setRelPath(arg){
    Le treemap utilise les mêmes données mais à plat (ou drillable).
    Filtres : agrégats régionaux exclus, dette bilatérale uniquement, sentinelles __ écartées.
 ─────────────────────────────────────────────────────────────────────────────── */
-function buildHierarchyForFlux(){
+/* Agrégation pour les vues treemap + aires.
+   Renvoie un nœud { value, children: [...] } où chaque enfant est un bucket
+   de la dimension active (partenaire OU subcategory). Le drill cumulé
+   _relPath sert de filtre AVANT agrégation. */
+function buildFluxAggregation(){
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry) return null;
   let rows = getFluxRows(entry);
   if(!rows.length) return null;
-  // dette : bilatéral uniquement (cohérence Synthèse)
+  // dette : bilatéral uniquement
   if(isDebtIndicator(entry.indicator)){
     const bil = rows.filter(r => isBilateral(r));
     if(bil.length) rows = bil;
   }
-  // filtre subcategory partagé (palier 3)
-  rows = applySubFilter(rows);
   // exclure agrégats Banque Mondiale + sentinelles
   rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
-  if(!rows.length) return null;
+  // filtre cumulé issu du drill (_relPath)
+  rows = applyDrillFilter(rows);
+  if(!rows.length) return { value: 0, children: [] };
 
-  // Détermine quels niveaux subcategory sont effectivement renseignés.
-  const has1 = rows.some(r => r.sub1 && String(r.sub1).trim() !== '');
-  const has2 = rows.some(r => r.sub2 && String(r.sub2).trim() !== '');
-  const has3 = rows.some(r => r.sub3 && String(r.sub3).trim() !== '');
-  // Pour la dette : si on a filtré sur bilatérale, sub1 devient trivial → on l'omet
-  const skipSub1 = isDebtIndicator(entry.indicator);
-  const levels = [];
-  if(has1 && !skipSub1) levels.push('sub1');
-  if(has2) levels.push('sub2');
-  if(has3) levels.push('sub3');
-  levels.push('partner');   // partenaire toujours présent en dernier
-
-  function nodeKey(r, level){
-    if(level === 'partner') return r.partner;
-    return r[level] && String(r[level]).trim() !== '' ? String(r[level]) : '(non précisé)';
+  // Bucket selon la dimension active
+  const dim = _relDim;
+  function bucketKey(r){
+    if(dim === 'partner') return r.partner;
+    const v = r[dim];
+    return v && String(v).trim() !== '' ? String(v) : '(non précisé)';
   }
-  function nodeMeta(name, level, r){
-    if(level === 'partner') return { name: partnerLabel(name), code: name, flag: partnerFlag(name), isPartner: true };
-    return { name, isPartner: false };
+  function bucketMeta(key){
+    if(dim === 'partner'){
+      return { name: partnerLabel(key), code: key, flag: partnerFlag(key), isPartner: true, key };
+    }
+    return { name: key, isPartner: false, key };
   }
 
-  const root = { name: 'Total', value: 0, children: new Map() };
+  const map = new Map();
+  let total = 0;
   for(const r of rows){
     const v = r.value || 0;
     if(v <= 0) continue;
-    let node = root;
-    node.value += v;
-    for(const lvl of levels){
-      const k = nodeKey(r, lvl);
-      if(!node.children.has(k)){
-        const meta = nodeMeta(k, lvl, r);
-        node.children.set(k, { ...meta, value: 0, level: lvl, children: new Map() });
-      }
-      node = node.children.get(k);
-      node.value += v;
-    }
+    const k = bucketKey(r);
+    if(!map.has(k)) map.set(k, { ...bucketMeta(k), value: 0 });
+    map.get(k).value += v;
+    total += v;
   }
-  // matérialiser en arbre trié
-  function materialize(n){
-    const kids = [...n.children.values()].sort((a,b) => b.value - a.value).map(materialize);
-    return { ...n, children: kids };
-  }
-  return materialize(root);
+  const children = [...map.values()].sort((a,b) => b.value - a.value);
+  return { value: total, children, dim };
 }
 
 // Pour le treemap (drill-down classique), on descend dans l'arbre.
-function descendHierarchy(tree){
-  let node = tree;
-  for(const step of _relPath){
-    if(!node.children || !node.children.length) break;
-    const next = node.children.find(c => c.name === step);
-    if(!next) break;
-    node = next;
-  }
-  return node;
-}
-
 function renderRelComposition(){
   const body = document.getElementById('relCompBody');
   if(!body) return;
-  const tree = buildHierarchyForFlux();
-  if(!tree || !tree.children || !tree.children.length){
-    body.innerHTML = `<div class="rel-empty">Pas de flux renseigné pour ce sujet.</div>`;
+  const agg = buildFluxAggregation();
+  if(!agg || !agg.children.length){
+    body.innerHTML = `<div class="rel-empty">Pas de flux pour ce filtre.</div>`;
     return;
   }
-  if(_relMode === 'sunburst'){
-    // Sunburst : on passe l'arbre complet, tous les anneaux s'affichent d'un coup.
-    drawSunburst(tree, body);
-  } else {
-    // Treemap : drill-down classique sur _relPath
-    const node = descendHierarchy(tree);
-    if(!node.children || !node.children.length){
-      body.innerHTML = `<div class="rel-empty">Pas de sous-décomposition disponible à ce niveau.</div>`;
-      return;
-    }
-    drawTreemapRel(node, body);
-  }
+  drawTreemapRel(agg, body);
 }
-
-/* ─── Sunburst ───────────────────────────────────────────────── */
-/* ─── Sunburst multi-anneau ──────────────────────────────────────
-   Chaque anneau = un niveau de la hiérarchie (subcat1 / subcat2 / subcat3 / partenaire).
-   La profondeur est calculée à partir de l'arbre construit par buildHierarchyForFlux.
-   Chaque enfant reste contenu dans l'angle de son parent (radial layout standard).
-─────────────────────────────────────────────────────────────── */
-function drawSunburst(rootNode, host){
-  const W = 640, H = 520, cx = W/2, cy = H/2;
-  const maxRadius = Math.min(W,H)/2 - 30;
-  // profondeur réelle
-  function depth(n){ if(!n.children || !n.children.length) return 0; return 1 + Math.max(...n.children.map(depth)); }
-  const D = Math.max(1, depth(rootNode));
-  const r0 = maxRadius * 0.18;                          // rayon du cercle central (pour titre)
-  const ringW = (maxRadius - r0) / D;
-  const palette = ['#0a6e4a','#2d8556','#b45309','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#c2410c','#4f9e6a','#6fb486','#6a5d4e'];
-
-  function arcPath(R0, R1, A0, A1){
-    const x0 = cx + Math.cos(A0)*R1, y0 = cy + Math.sin(A0)*R1;
-    const x1 = cx + Math.cos(A1)*R1, y1 = cy + Math.sin(A1)*R1;
-    const x2 = cx + Math.cos(A1)*R0, y2 = cy + Math.sin(A1)*R0;
-    const x3 = cx + Math.cos(A0)*R0, y3 = cy + Math.sin(A0)*R0;
-    const large = (A1 - A0) > Math.PI ? 1 : 0;
-    return `M${x0.toFixed(1)},${y0.toFixed(1)} A${R1.toFixed(1)},${R1.toFixed(1)} 0 ${large} 1 ${x1.toFixed(1)},${y1.toFixed(1)} L${x2.toFixed(1)},${y2.toFixed(1)} A${R0.toFixed(1)},${R0.toFixed(1)} 0 ${large} 0 ${x3.toFixed(1)},${y3.toFixed(1)} Z`;
-  }
-  function tintColor(hex, t){
-    // mélange la couleur avec le blanc selon t (0 = couleur pure, 1 = blanc)
-    const m = hex.replace('#','').match(/^([0-9a-f]{6})$/i);
-    if(!m) return hex;
-    const n = parseInt(m[1],16);
-    const r = (n>>16)&255, g = (n>>8)&255, b = n&255;
-    const r2 = Math.round(r + (255-r)*t), g2 = Math.round(g + (255-g)*t), b2 = Math.round(b + (255-b)*t);
-    return `rgb(${r2},${g2},${b2})`;
-  }
-
-  const total = rootNode.children.reduce((s,c)=>s+c.value, 0) || 1;
-  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
-  let labels = '';
-
-  // Parcours DFS : à chaque enfant on attribue son arc dans l'angle hérité du parent.
-  function walk(node, depthLevel, angleStart, angleEnd, parentColor){
-    if(!node.children || !node.children.length) return;
-    const localTotal = node.children.reduce((s,c)=>s+c.value, 0) || 1;
-    let a = angleStart;
-    for(let i = 0; i < node.children.length; i++){
-      const child = node.children[i];
-      const span = (child.value / localTotal) * (angleEnd - angleStart);
-      const aEnd = a + span;
-      const R1 = r0 + (depthLevel + 1) * ringW;
-      const R0 = r0 + depthLevel * ringW;
-      // couleur : au 1er niveau on prend dans la palette par ordre ; aux niveaux suivants on éclaircit la couleur du parent
-      const baseColor = depthLevel === 0 ? palette[i % palette.length] : parentColor;
-      const fill = depthLevel === 0 ? baseColor : tintColor(baseColor, Math.min(0.6, depthLevel * 0.18));
-      const pct = (child.value / total) * 100;
-      const lblTitle = child.isPartner ? `${child.flag||''} ${child.name}` : child.name;
-      svg += `<path class="sb-slice" d="${arcPath(R0, R1, a, aEnd)}" fill="${fill}" stroke="#fff" stroke-width="1"
-                data-tt="${escAttr(lblTitle)}" data-tb="${escAttr(fmtNumber(child.value)+' · '+pct.toFixed(1)+'%')}"
-                onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
-      // label si la tranche est suffisamment large angulairement
-      const minAngle = 0.14;
-      if((aEnd - a) > minAngle){
-        const am = (a + aEnd) / 2;
-        const lr = (R0 + R1) / 2;
-        const lx = cx + Math.cos(am) * lr;
-        const ly = cy + Math.sin(am) * lr;
-        const isLight = depthLevel > 0;
-        const txtColor = isLight ? 'var(--text)' : '#fff';
-        const short = (child.name || '').length > 14 ? child.name.slice(0,13)+'…' : (child.name || '');
-        const flag = child.flag ? child.flag + ' ' : '';
-        labels += `<text class="sb-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" style="fill:${txtColor};font-size:10px">${flag}${short}</text>`;
-        if((aEnd - a) > 0.28){
-          labels += `<text class="sb-label" x="${lx.toFixed(1)}" y="${(ly+11).toFixed(1)}" text-anchor="middle" style="fill:${txtColor};font-size:9px;opacity:.85">${pct.toFixed(0)}%</text>`;
-        }
-      }
-      walk(child, depthLevel + 1, a, aEnd, baseColor);
-      a = aEnd;
-    }
-  }
-  walk(rootNode, 0, -Math.PI/2, -Math.PI/2 + 2*Math.PI, palette[0]);
-
-  // centre : libellé court de l'entrée + total
-  const entry = getFlowEntryByKey(_relEntryKey);
-  svg += `<circle cx="${cx}" cy="${cy}" r="${r0.toFixed(1)}" fill="var(--bg2)" stroke="var(--border)" stroke-width="1"/>`;
-  svg += `<text class="sb-center-title" x="${cx}" y="${cy-4}" text-anchor="middle">${entry?.label || ''}</text>`;
-  svg += `<text class="sb-center-total" x="${cx}" y="${cy+14}" text-anchor="middle">${fmtNumber(total, entry?.unit_display)} ${scaleSuffix(total, entry?.unit_display)}</text>`;
-  svg += labels;
-  svg += `</svg>`;
-  host.innerHTML = svg;
-}
-
-function sunburstClick(){ /* le sunburst multi-anneau ne descend pas — tout est visible */ }
 
 /* ─── Treemap (squarified) ───────────────────────────────────── */
 function drawTreemapRel(node, host){
@@ -3079,9 +2803,9 @@ function drawTreemapRel(node, host){
     const pct = (c.item.value/total)*100;
     svg += `<g class="tm-cell">
       <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
-            data-tt="${escAttr(c.item.name)}" data-tb="${escAttr(fmtNumber(c.item.value)+' · '+pct.toFixed(1)+'%')}"
+            data-tt="${escAttr((c.item.flag?c.item.flag+' ':'')+c.item.name)}" data-tb="${escAttr(fmtNumber(c.item.value)+' · '+pct.toFixed(1)+'%')}"
             onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
-            onclick="treemapClick('${escAttr(c.item.name)}')"/>`;
+            onclick="treemapClick('${escAttr(c.item.key)}')"/>`;
     if(c.w > 60 && c.h > 30){
       const flag = c.item.flag || '';
       const short = c.item.name.length > 18 ? c.item.name.slice(0,17)+'…' : c.item.name;
@@ -3094,14 +2818,8 @@ function drawTreemapRel(node, host){
   host.innerHTML = svg;
 }
 function treemapClick(name){
-  const tree = buildHierarchyForFlux();
-  const cur = descendHierarchy(tree);
-  const child = cur.children?.find(c => c.name === name);
-  if(child && child.children && child.children.length){
-    _relPath = [..._relPath, name];
-    renderRelComposition();
-    renderRelCrumb();
-  }
+  // Drill : on filtre sur (dimension active, valeur cliquée)
+  pushRelDrill(_relDim, name);
 }
 
 /* ─── Évolution : aires empilées par partenaire ─────────────────
@@ -3115,96 +2833,98 @@ function renderRelEvolution(){
   if(!entry){ body.innerHTML = ''; return; }
   let rows = getFluxRowsTimeline(entry);
   if(!rows.length){ body.innerHTML = `<div class="rel-empty">Pas de série temporelle disponible.</div>`; return; }
-  // filtres cohérents
+  // filtres cohérents (dette bilatéral, hors agrégats)
   if(isDebtIndicator(entry.indicator)){
     const bil = rows.filter(r => isBilateral(r));
     if(bil.length) rows = bil;
   }
-  // filtre subcategory partagé
-  rows = applySubFilter(rows);
   rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
+  // drill cumulé : applique tous les steps du chemin
+  rows = applyDrillFilter(rows);
   if(!rows.length){ body.innerHTML = `<div class="rel-empty">Pas de série temporelle utile.</div>`; return; }
-  // agrégation par (year, partner)
-  const byYearPartner = new Map();
-  const years = new Set(), partnersSet = new Set();
-  let totalPerPartner = new Map();
+
+  // bucket selon la dimension active
+  const dim = _relDim;
+  function bucketKey(r){
+    if(dim === 'partner') return r.partner;
+    const v = r[dim];
+    return v && String(v).trim() !== '' ? String(v) : '(non précisé)';
+  }
+  function bucketLabel(k){
+    return dim === 'partner' ? (partnerFlag(k) + ' ' + partnerLabel(k)) : k;
+  }
+
+  // agrégation par (year, bucket)
+  const byYearKey = new Map();
+  const years = new Set(), keysSet = new Set();
+  const totalPerKey = new Map();
   for(const r of rows){
-    years.add(r.year); partnersSet.add(r.partner);
-    const k = r.year + '|' + r.partner;
-    byYearPartner.set(k, (byYearPartner.get(k) || 0) + (r.value || 0));
-    totalPerPartner.set(r.partner, (totalPerPartner.get(r.partner) || 0) + (r.value || 0));
+    years.add(r.year);
+    const k = bucketKey(r);
+    keysSet.add(k);
+    const yk = r.year + '||' + k;
+    byYearKey.set(yk, (byYearKey.get(yk) || 0) + (r.value || 0));
+    totalPerKey.set(k, (totalPerKey.get(k) || 0) + (r.value || 0));
   }
   const yearList = [...years].sort((a,b) => a - b);
-  // tri partenaires par total décroissant (ordre d'empilage + ordre de la légende)
-  const partners = [...partnersSet].sort((a,b) => (totalPerPartner.get(b) - totalPerPartner.get(a)));
-  // palette stable
+  const keys = [...keysSet].sort((a,b) => totalPerKey.get(b) - totalPerKey.get(a));
   const palette = ['#0a6e4a','#2d8556','#b45309','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#c2410c','#4f9e6a','#6fb486','#6a5d4e','#8b3a62','#3b6b8c','#92723a','#5c8a5c','#a0826d','#7d6b8c','#6b8a7d'];
   const colorOf = (i) => palette[i % palette.length];
 
-  // dimensions
   const W = 560, H = 280, m = { t: 12, r: 16, b: 26, l: 56 };
-  // pour chaque année, total = somme des valeurs des partenaires
   const yearTotals = yearList.map(y => {
-    let s = 0; for(const p of partners) s += byYearPartner.get(y+'|'+p) || 0; return { y, s };
+    let s = 0; for(const k of keys) s += byYearKey.get(y+'||'+k) || 0; return { y, s };
   });
   const yMax = Math.max(...yearTotals.map(x => x.s), 1);
   const xScale = (y) => m.l + ((y - yearList[0]) / Math.max(1, yearList[yearList.length-1] - yearList[0])) * (W - m.l - m.r);
   const yScale = (v) => H - m.b - (v / yMax) * (H - m.t - m.b);
 
-  // construire les chemins d'aires empilées
-  // pour chaque partenaire, points haut/bas pour chaque année
+  // empilage
   const stacks = {};
   for(let yi = 0; yi < yearList.length; yi++){
     let acc = 0;
-    for(const p of partners){
-      const v = byYearPartner.get(yearList[yi]+'|'+p) || 0;
-      stacks[p] = stacks[p] || [];
-      stacks[p].push({ y: yearList[yi], y0: acc, y1: acc + v });
+    for(const k of keys){
+      const v = byYearKey.get(yearList[yi]+'||'+k) || 0;
+      stacks[k] = stacks[k] || [];
+      stacks[k].push({ y: yearList[yi], y0: acc, y1: acc + v });
       acc += v;
     }
   }
 
   let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
-  // ticks Y
   const cfg = state.indicators.find(c => c.indicator === entry.realIndicator) || entry;
+  // ticks Y
   for(let i = 0; i <= 3; i++){
     const v = (yMax * i) / 3;
     const yy = yScale(v).toFixed(1);
     svg += `<line class="evo-grid" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"/>`;
     svg += `<text class="evo-lbl" x="${m.l-6}" y="${(+yy+3).toFixed(1)}" text-anchor="end">${fmtNumber(v, cfg.unit_display)}</text>`;
   }
-  // ticks X (début, milieu, fin)
-  const xticks = [yearList[0], yearList[Math.floor(yearList.length/2)], yearList[yearList.length-1]];
+  // ticks X
+  const xticks = yearList.length >= 3 ? [yearList[0], yearList[Math.floor(yearList.length/2)], yearList[yearList.length-1]] : yearList;
   for(const t of xticks){
     svg += `<text class="evo-lbl" x="${xScale(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`;
   }
-  // aires par partenaire (du bas vers le haut)
-  partners.forEach((p, idx) => {
-    const pts = stacks[p];
+  // aires
+  keys.forEach((k, idx) => {
+    const pts = stacks[k];
     let dTop = '', dBot = '';
-    pts.forEach((pt, i) => {
-      const x = xScale(pt.y).toFixed(1);
-      dTop += (i === 0 ? 'M' : 'L') + x + ',' + yScale(pt.y1).toFixed(1) + ' ';
-    });
-    // tracer le bas en sens inverse
-    for(let i = pts.length - 1; i >= 0; i--){
-      const x = xScale(pts[i].y).toFixed(1);
-      dBot += 'L' + x + ',' + yScale(pts[i].y0).toFixed(1) + ' ';
-    }
+    pts.forEach((pt, i) => { dTop += (i===0?'M':'L') + xScale(pt.y).toFixed(1) + ',' + yScale(pt.y1).toFixed(1) + ' '; });
+    for(let i = pts.length - 1; i >= 0; i--){ dBot += 'L' + xScale(pts[i].y).toFixed(1) + ',' + yScale(pts[i].y0).toFixed(1) + ' '; }
     const fill = colorOf(idx);
-    const total = totalPerPartner.get(p) || 0;
+    const tot = totalPerKey.get(k) || 0;
     svg += `<path class="evo-area" d="${dTop} ${dBot} Z" fill="${fill}"
-              data-tt="${escAttr(partnerFlag(p) + ' ' + partnerLabel(p))}" data-tb="${escAttr('Total période · ' + fmtNumber(total, cfg.unit_display))}"
+              data-tt="${escAttr(bucketLabel(k))}" data-tb="${escAttr('Total période · ' + fmtNumber(tot, cfg.unit_display))}"
               onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
   });
   svg += `</svg>`;
 
-  // légende (avec petits drapeaux, scrollable si beaucoup de partenaires)
-  const TOP_LEGEND = 15;   // afficher les 15 plus gros pour ne pas saturer la légende
-  const legendItems = partners.slice(0, TOP_LEGEND).map((p, idx) => `
-    <span class="leg-item"><span class="leg-dot" style="background:${colorOf(idx)}"></span>${partnerFlag(p)} ${partnerLabel(p)}</span>
+  // légende
+  const TOP_LEGEND = 12;
+  const legendItems = keys.slice(0, TOP_LEGEND).map((k, idx) => `
+    <span class="leg-item"><span class="leg-dot" style="background:${colorOf(idx)}"></span>${bucketLabel(k)}</span>
   `).join('');
-  const more = partners.length > TOP_LEGEND ? `<span class="leg-item" style="color:var(--text3)">+${partners.length - TOP_LEGEND} autres</span>` : '';
+  const more = keys.length > TOP_LEGEND ? `<span class="leg-item" style="color:var(--text3)">+${keys.length - TOP_LEGEND} autres</span>` : '';
   body.innerHTML = `<div class="rel-evo-wrap">${svg}</div><div class="evo-legend">${legendItems}${more}</div>`;
 }
 
