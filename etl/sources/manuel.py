@@ -16,6 +16,7 @@
 # =============================================================
 
 import csv
+import gzip
 import sqlite3
 import sys
 import os
@@ -122,11 +123,22 @@ def parse_row_flux(row, line_no):
 # PARSING D'UN FICHIER
 # -------------------------------------------------------------
 
+def _open_text(filepath):
+    """
+    Ouvre un fichier en mode texte UTF-8 (avec BOM possible).
+    Détecte automatiquement les fichiers compressés .gz et les décompresse à la volée.
+    """
+    if filepath.lower().endswith(".gz"):
+        return gzip.open(filepath, mode="rt", encoding="utf-8-sig")
+    return open(filepath, encoding="utf-8-sig")
+
+
 def parse_file(filepath):
     """
-    Parse un fichier CSV et retourne (format, rows_valides, errors).
+    Parse un fichier CSV (ou CSV gzippé) et retourne (format, rows_valides, errors).
+    Le format est détecté via le header, l'extension .gz est gérée de manière transparente.
     """
-    with open(filepath, encoding="utf-8-sig") as f:
+    with _open_text(filepath) as f:
         reader = csv.DictReader(f)
         fmt = detect_format(reader.fieldnames or [])
 
@@ -221,9 +233,13 @@ def run():
         print(f"  ⏭️  Dossier {UPLOADS_DIR} absent — rien à traiter.")
         return 0
 
-    files = sorted(glob.glob(os.path.join(UPLOADS_DIR, "*.csv")))
+    # Ramasse les CSV (texte brut) ET les CSV gzippés (.csv.gz)
+    files = sorted(
+        glob.glob(os.path.join(UPLOADS_DIR, "*.csv"))
+        + glob.glob(os.path.join(UPLOADS_DIR, "*.csv.gz"))
+    )
     if not files:
-        print("  ⏭️  Aucun fichier CSV dans uploads/manuel/")
+        print("  ⏭️  Aucun fichier CSV (ou CSV.gz) dans uploads/manuel/")
         return 0
 
     print(f"  {len(files)} fichier(s) trouvé(s).")
