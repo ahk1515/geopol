@@ -1095,39 +1095,55 @@ function rankPercentile(indicator, value, year){
 // Flux d'un indicateur pour le sujet, dans un sens donné — paresseux.
 // dir: 'partner' (le sujet reçoit/émet, on regarde ses partenaires)
 //      'influence' (pour qui le sujet pèse).
-function getFluxRows(indicator, dir){
+// getFluxRows(entryOrIndicator, dir?)
+// - Si on passe une entrée flux (objet avec realIndicator+side), on l'utilise directement.
+// - Sinon, on garde la signature historique (indicator, dir='partner'|'influence').
+function getFluxRows(entryOrIndicator, dir){
   ensureIdentiteCache();
   const isos = currentIsos();
   if(!isos.length) return [];
-  const entry = cache.flux.get(indicator) || {};
-  if(entry[dir]) return entry[dir];
+
+  // Normaliser l'appel vers { realIndicator, subjectCol, partnerCol, cacheKey }
+  let realIndicator, subjectCol, partnerCol, cacheKey;
+  if(typeof entryOrIndicator === 'object' && entryOrIndicator && entryOrIndicator.realIndicator){
+    realIndicator = entryOrIndicator.realIndicator;
+    // Pour le commerce, le sens est figé par le parser (import => sujet=to, export => sujet=from).
+    if(realIndicator === 'import_commercial'){ subjectCol = 'country_to'; partnerCol = 'country_from'; }
+    else if(realIndicator === 'export_commercial'){ subjectCol = 'country_from'; partnerCol = 'country_to'; }
+    else {
+      subjectCol = (entryOrIndicator.side === 'to') ? 'country_to' : 'country_from';
+      partnerCol = (entryOrIndicator.side === 'to') ? 'country_from' : 'country_to';
+    }
+    cacheKey = entryOrIndicator.key;   // 'commerce|to', 'dette_exterieure|from', ...
+  } else {
+    // signature historique conservée
+    realIndicator = entryOrIndicator;
+    subjectCol = (dir === 'partner') ? 'country_to' : 'country_from';
+    partnerCol = (dir === 'partner') ? 'country_from' : 'country_to';
+    cacheKey = realIndicator + '|' + (dir || 'partner');
+  }
+
+  if(cache.flux.has(cacheKey)) return cache.flux.get(cacheKey);
 
   const inList = sqlList(isos);
-  // Convention de schéma : country_from = origine, country_to = destination.
-  // 'partner' : sujet côté country_to ; 'influence' : sujet côté country_from.
-  const subjectCol = (dir === 'partner') ? 'country_to' : 'country_from';
-  const partnerCol = (dir === 'partner') ? 'country_from' : 'country_to';
 
-  // Année des flux : l'année courante si elle a des données, sinon la dernière
-  // année de flux disponible pour ce sujet (les flux ne couvrent pas forcément
-  // les mêmes années que l'identité, ni les projections futures).
+  // Année des flux : l'année courante si elle a des données, sinon la dernière dispo pour le sujet.
   let y = state.year;
-  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND ${subjectCol} IN (${inList}) LIMIT 1`);
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${subjectCol} IN (${inList}) LIMIT 1`);
   if(!chk.length){
-    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(indicator)}' AND ${subjectCol} IN (${inList})`);
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${subjectCol} IN (${inList})`);
     if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
   }
 
   let rows = [];
   const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
   const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
-                      FROM flux WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                      FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y}
                       AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
                       AND ${partnerCol} NOT IN (${exclAgg})
                       GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
   if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v, fluxYear:y }));
-  entry[dir] = rows;
-  cache.flux.set(indicator, entry);
+  cache.flux.set(cacheKey, rows);
   return rows;
 }
 
@@ -1203,8 +1219,7 @@ function buildIndicatorRegistry(){
     const r = safeExec(`SELECT DISTINCT indicator FROM ${tbl}`);
     if(r.length) for(const [ind] of r[0].values) present.add(ind);
   }
-  // Déduplication : un même indicateur (même clé indicator+table) ne doit
-  // apparaître qu'une fois, même s'il est déclaré plusieurs fois dans config.json.
+  // Registre principal (identite + flux bruts), dédupliqué.
   const seen = new Set();
   state.indicators = (state.config || [])
     .filter(c => c.actif !== false)
@@ -1212,7 +1227,57 @@ function buildIndicatorRegistry(){
     .map(c => ({ ...c, presentInDb: present.has(c.indicator) }));
   const missing = state.indicators.filter(c => !c.presentInDb).map(c => c.indicator);
   if(missing.length) console.info('Indicateurs config sans données DB :', missing);
+
+  // ── Registre des ENTRÉES de flux (indicateur + sens) ──
+  // Chaque entrée est { key, indicator, side, label, label_long, realIndicator, presentInDb }
+  // - les alias (export_armement → transferts_armement) sont absorbés
+  // - import_commercial + export_commercial fusionnent en 'commerce' bidirectionnel
+  state.flowEntries = [];
+  const seenFlow = new Set();
+  const declaredFlows = state.indicators.filter(c => c.table === 'flux');
+
+  // 1) Indicateurs déclarés en config — on génère leurs entrées selon FLOW_DIRECTIONS
+  for(const c of declaredFlows){
+    let canonical = FLOW_INDICATOR_ALIASES[c.indicator] || c.indicator;
+    // import_commercial / export_commercial → tous deux mappés vers 'commerce'
+    if(canonical === 'import_commercial' || canonical === 'export_commercial') canonical = 'commerce';
+    if(seenFlow.has(canonical)) continue;
+    seenFlow.add(canonical);
+
+    const dirs = FLOW_DIRECTIONS[canonical];
+    const baseLabel = (canonical === 'commerce') ? 'Commerce' : (c.label || canonical);
+
+    if(!dirs){
+      // pas de métadonnée → entrée unique (sens 'to' par défaut)
+      state.flowEntries.push({
+        key: canonical + '|to', indicator: canonical, realIndicator: canonical, side: 'to',
+        label: baseLabel, label_long: baseLabel, category: c.category, unit_display: c.unit_display,
+        presentInDb: present.has(canonical)
+      });
+      continue;
+    }
+    for(const side of ['to','from']){
+      const d = dirs[side];
+      if(!d) continue;
+      const real = d.realIndicator || canonical;
+      state.flowEntries.push({
+        key: canonical + '|' + side,
+        indicator: canonical,
+        realIndicator: real,
+        side,
+        label: d.label,
+        label_long: `${baseLabel} — ${d.label}`,
+        category: c.category,
+        unit_display: c.unit_display,
+        presentInDb: present.has(real)
+      });
+    }
+  }
 }
+
+// Helpers pour les entrées flux.
+function getFlowEntryByKey(key){ return (state.flowEntries || []).find(e => e.key === key); }
+function flowEntriesPresent(){ return (state.flowEntries || []).filter(e => e.presentInDb); }
 
 function buildCountryList(){
   const r = safeExec(`SELECT DISTINCT country_iso3 FROM identite`);
@@ -1226,6 +1291,32 @@ function buildCountryList(){
 
 // Codes d'agrégats Banque Mondiale à exclure (repris de l'ancien set REGIONAL).
 const REGIONAL_CODES = new Set(['AFE','AFW','ARB','CEB','CSS','EAP','EAR','EAS','ECA','ECS','EMU','EUU','FCS','HIC','HPC','IBD','IBT','IDA','IDB','IDX','LAC','LCN','LDC','LIC','LMC','LMY','LTE','MEA','MIC','MNA','NAC','OED','OSS','PRE','PSS','PST','SAS','SSA','SSF','SST','TEA','TEC','TLA','TMN','TSA','TSS','UMC','WLD','INX','OEC']);
+
+/* ─── FLUX : libellés contextuels par sens + sources spéciales ────
+   Pour chaque indicateur de flux, les libellés des deux sens.
+   `to`   = sujet en country_to (récepteur du flux)
+   `from` = sujet en country_from (émetteur du flux)
+   Si une direction est absente : indicateur unidirectionnel.
+   `realTo` / `realFrom` : indicateur réellement requêté quand le
+   sens est ambigu en base (commerce = import OU export selon sens).
+─────────────────────────────────────────────────────────────── */
+const FLOW_DIRECTIONS = {
+  dette_exterieure:           { to: { label: 'Créanciers' }, from: { label: 'Débiteurs' } },
+  transferts_armement:        { to: { label: 'Fournisseurs d\'armement' }, from: { label: 'Bénéficiaires' } },
+  representation_diplomatique:{ to: { label: 'Représentations accueillies' }, from: { label: 'Représentations envoyées' } },
+  refugies:                   { to: { label: 'Pays d\'asile' }, from: { label: 'Pays d\'origine' } },
+  migrants:                   { to: { label: 'Destinations' }, from: { label: 'Origines' } },
+  etudiants_international:    { to: { label: 'Pays d\'accueil' }, from: { label: 'Pays d\'origine' } },
+  // commerce : indicateur logique unifié, en base = import_commercial OU export_commercial
+  commerce:                   {
+    to:   { label: 'Fournisseurs', realIndicator: 'import_commercial' },
+    from: { label: 'Clients',      realIndicator: 'export_commercial' }
+  },
+};
+// Indicateurs en doublon : alias technique → indicateur canonique
+const FLOW_INDICATOR_ALIASES = {
+  export_armement: 'transferts_armement',   // doublon dans config (faute)
+};
 
 // Année « présent » max : on ne démarre jamais sur une projection future.
 const CURRENT_YEAR = new Date().getFullYear();
@@ -1475,7 +1566,8 @@ function sparklineSvg(series, color){
 
 /* ─── ÉPINGLAGE PERSONNEL (localStorage) ──────────────────────── */
 const PIN_KEY = 'geopol_pins_synthese';
-const PIN_FLUX_KEY = 'geopol_pins_flux';
+const PIN_FLUX_PARTNER_KEY = 'geopol_pins_flux_partner_v2';   // _v2 = nouvelle structure (clés indicator|side)
+const PIN_FLUX_INFLUENCE_KEY = 'geopol_pins_flux_influence_v2';
 function loadPins(key){
   try { const j = localStorage.getItem(key); if(j) return new Set(JSON.parse(j)); } catch {}
   return null;
@@ -1493,59 +1585,87 @@ function pinnedIdentiteIndicators(){
   const def = ident.filter(c => c.epingle_synthese || c.radar);
   return (def.length ? def : ident.slice(0, 10)).slice(0, 12);
 }
-function pinnedFluxIndicators(){
-  const flux = state.indicators.filter(c => c.table === 'flux' && c.presentInDb !== false);
-  const perso = loadPins(PIN_FLUX_KEY);
+
+// Entrées flux épinglées pour une colonne du panorama (Partenaire OU Influence).
+// Renvoie des objets entrée flux complets {key, indicator, realIndicator, side, label, label_long, ...}.
+function pinnedFlowEntries(column){
+  const all = flowEntriesPresent();
+  const storageKey = (column === 'partner') ? PIN_FLUX_PARTNER_KEY : PIN_FLUX_INFLUENCE_KEY;
+  const perso = loadPins(storageKey);
   if(perso && perso.size){
-    return flux.filter(c => perso.has(c.indicator)).slice(0, 12);
+    return all.filter(e => perso.has(e.key)).slice(0, 12);
   }
-  return flux.slice(0, 10);
+  // défauts : par colonne, on prend un sens « naturel »
+  //  - partner = sens 'to' (qui pèse pour le sujet : ses créanciers, fournisseurs, accueils...)
+  //  - influence = sens 'from' (pour qui le sujet pèse : ses débiteurs, clients, originaires...)
+  const naturalSide = (column === 'partner') ? 'to' : 'from';
+  return all.filter(e => e.side === naturalSide).slice(0, 10);
 }
 
-/* ─── MODALE DE CONFIGURATION (identite OU flux) ──────────────── */
+/* ─── MODALES (identite / flux_partner / flux_influence) ──────── */
 let _pinDraft = null, _pinMode = 'identite';
 function openPinModal(mode){
   _pinMode = mode || 'identite';
-  const isFlux = _pinMode === 'flux';
-  const current = new Set((isFlux ? pinnedFluxIndicators() : pinnedIdentiteIndicators()).map(c => c.indicator));
-  _pinDraft = new Set(current);
-  const pool = state.indicators.filter(c => c.table === (isFlux ? 'flux' : 'identite'));
+  const isFlux = (mode === 'flux_partner' || mode === 'flux_influence');
+  let currentSet, pool;
+  if(isFlux){
+    const column = (mode === 'flux_partner') ? 'partner' : 'influence';
+    currentSet = new Set(pinnedFlowEntries(column).map(e => e.key));
+    pool = flowEntriesPresent();
+  } else {
+    currentSet = new Set(pinnedIdentiteIndicators().map(c => c.indicator));
+    pool = state.indicators.filter(c => c.table === 'identite');
+  }
+  _pinDraft = new Set(currentSet);
+  // grouper par catégorie ; pour les flux, regrouper les deux sens d'un même indicateur visuellement
   const byCat = {};
-  for(const c of pool){ (byCat[c.category || 'autre'] ??= []).push(c); }
+  for(const x of pool){ (byCat[x.category || 'autre'] ??= []).push(x); }
   let html = '';
   for(const cat of Object.keys(byCat).sort()){
     html += `<div class="pin-cat">${cat}</div>`;
-    for(const c of byCat[cat]){
-      const on = _pinDraft.has(c.indicator) ? 'on' : '';
-      const miss = c.presentInDb === false ? `<span class="miss">sans données</span>` : '';
-      html += `<div class="pin-item ${on}" data-ind="${c.indicator}" onclick="togglePin('${c.indicator}')">
-        <span class="pin-chk">${_pinDraft.has(c.indicator)?'✓':''}</span>
-        <span>${c.label || c.indicator}</span>${miss}
+    for(const x of byCat[cat]){
+      const id = isFlux ? x.key : x.indicator;
+      const txt = isFlux ? x.label_long : (x.label || x.indicator);
+      const miss = (!isFlux && x.presentInDb === false) ? `<span class="miss">sans données</span>` : '';
+      const on = _pinDraft.has(id) ? 'on' : '';
+      html += `<div class="pin-item ${on}" data-id="${id}" onclick="togglePin('${id.replace(/'/g,"\\'")}')">
+        <span class="pin-chk">${_pinDraft.has(id)?'✓':''}</span>
+        <span>${txt}</span>${miss}
       </div>`;
     }
   }
-  document.querySelector('#pinModal .pin-head .t').textContent = isFlux ? 'Flux affichés dans la synthèse' : 'Indicateurs de la synthèse';
+  const titles = {
+    identite: 'Indicateurs de la synthèse',
+    flux_partner: 'Flux affichés — Qui pèse pour le sujet',
+    flux_influence: 'Flux affichés — Pour qui le sujet pèse'
+  };
+  document.querySelector('#pinModal .pin-head .t').textContent = titles[mode] || titles.identite;
   document.getElementById('pinBody').innerHTML = html;
   updatePinCount();
   document.getElementById('pinModal').classList.add('open');
 }
 function closePinModal(){ document.getElementById('pinModal').classList.remove('open'); }
-function togglePin(ind){
-  if(_pinDraft.has(ind)) _pinDraft.delete(ind); else _pinDraft.add(ind);
-  const row = document.querySelector(`.pin-item[data-ind="${ind}"]`);
-  if(row){ row.classList.toggle('on', _pinDraft.has(ind)); row.querySelector('.pin-chk').textContent = _pinDraft.has(ind)?'✓':''; }
+function togglePin(id){
+  if(_pinDraft.has(id)) _pinDraft.delete(id); else _pinDraft.add(id);
+  const row = document.querySelector(`.pin-item[data-id="${CSS.escape(id)}"]`);
+  if(row){ row.classList.toggle('on', _pinDraft.has(id)); row.querySelector('.pin-chk').textContent = _pinDraft.has(id)?'✓':''; }
   updatePinCount();
 }
 function updatePinCount(){
   document.getElementById('pinCount').textContent = `${_pinDraft.size} sélectionné(s)`;
 }
+function _pinStorageKey(){
+  if(_pinMode === 'flux_partner') return PIN_FLUX_PARTNER_KEY;
+  if(_pinMode === 'flux_influence') return PIN_FLUX_INFLUENCE_KEY;
+  return PIN_KEY;
+}
 function applyPins(){
-  savePins(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY, _pinDraft);
+  savePins(_pinStorageKey(), _pinDraft);
   closePinModal();
   renderSynthese();
 }
 function resetPins(){
-  try { localStorage.removeItem(_pinMode === 'flux' ? PIN_FLUX_KEY : PIN_KEY); } catch {}
+  try { localStorage.removeItem(_pinStorageKey()); } catch {}
   closePinModal();
   renderSynthese();
 }
@@ -1740,10 +1860,11 @@ function renderSynthese(){
   }
   if(!kvRows) kvRows = `<div class="kv-empty">Aucune donnée identité pour ce sujet.</div>`;
 
-  // ── Colonne droite : panorama des flux ──
-  const fluxInds = pinnedFluxIndicators();
-  const partnersHtml = buildPanorama(fluxInds, 'partner');
-  const influenceHtml = buildPanorama(fluxInds, 'influence');
+  // ── Colonne droite : panorama des flux (2 colonnes indépendantes) ──
+  const partnerEntries = pinnedFlowEntries('partner');
+  const influenceEntries = pinnedFlowEntries('influence');
+  const partnersHtml = buildPanorama(partnerEntries);
+  const influenceHtml = buildPanorama(influenceEntries);
 
   root.innerHTML = `
     <div class="syn-grid">
@@ -1760,18 +1881,21 @@ function renderSynthese(){
       <div class="card">
         <div class="card-head">
           <span class="card-title">Profil relationnel</span>
-          <span style="display:flex;align-items:center;gap:8px">
-            <span class="card-sub">premier partenaire par flux</span>
-            <button class="card-cog" onclick="openPinModal('flux')" title="Choisir les flux">⚙</button>
-          </span>
+          <span class="card-sub">premier partenaire par flux</span>
         </div>
         <div class="card-body">
           <div class="flux-block">
-            <div class="flux-block-head"><span class="t">Grands partenaires</span><span class="h">qui pèse pour le sujet</span></div>
+            <div class="flux-block-head">
+              <span class="t">Qui pèse pour le sujet</span>
+              <span style="display:flex;align-items:center;gap:6px"><span class="h">${partnerEntries.length} flux</span><button class="card-cog" onclick="openPinModal('flux_partner')" title="Choisir les flux">⚙</button></span>
+            </div>
             ${partnersHtml}
           </div>
           <div class="flux-block">
-            <div class="flux-block-head"><span class="t">Zone d'influence</span><span class="h">pour qui le sujet pèse</span></div>
+            <div class="flux-block-head">
+              <span class="t">Pour qui le sujet pèse</span>
+              <span style="display:flex;align-items:center;gap:6px"><span class="h">${influenceEntries.length} flux</span><button class="card-cog" onclick="openPinModal('flux_influence')" title="Choisir les flux">⚙</button></span>
+            </div>
             ${influenceHtml}
           </div>
         </div>
@@ -1792,24 +1916,23 @@ function bindKvTips(){
   });
 }
 
-// Construit le panorama (un flux par ligne, top-1 + dépliage top-5).
-function buildPanorama(fluxInds, dir){
-  if(!fluxInds.length) return `<div class="pano-empty">Aucun indicateur de flux sélectionné.</div>`;
+// Construit le panorama à partir d'une liste d'entrées flux (clé indicator|side).
+// Chaque entrée porte son sens et son libellé contextuel propre.
+function buildPanorama(entries){
+  if(!entries.length) return `<div class="pano-empty">Aucun flux sélectionné. <button onclick="openPinModal('flux_partner')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">configurer</button></div>`;
   let html = '';
   let any = false;
-  for(const c of fluxInds){
-    let rows = getFluxRows(c.indicator, dir);
+  for(const e of entries){
+    let rows = getFluxRows(e);
     if(!rows.length) continue;
-    // Pour la dette : ne garder que le bilatéral (exclut multilatéral/privé,
-    // plus parlant en synthèse). Robuste aux variantes d'orthographe.
-    if(isDebtIndicator(c.indicator)){
+    if(isDebtIndicator(e.indicator)){
       const bil = rows.filter(r => isBilateral(r));
       if(bil.length) rows = bil;
     }
     const byPartner = new Map();
     let total = 0;
     for(const r of rows){
-      if(r.partner && r.partner.startsWith('__')) continue;  // ignore agrégats non-pays dans le panorama dette bilatérale
+      if(r.partner && r.partner.startsWith('__')) continue;
       const v = r.value || 0;
       byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
       total += v;
@@ -1820,8 +1943,8 @@ function buildPanorama(fluxInds, dir){
     const top = ranked[0];
     const pct = (top[1] / total) * 100;
     const cls = concentrationClass(pct);
-    const rowId = `pano_${dir}_${c.indicator}`.replace(/[^a-zA-Z0-9_]/g,'');
-    // top 5 (déplié au clic) — jauge normalisée sur le 1er du classement
+    const rowId = ('pano_' + e.key).replace(/[^a-zA-Z0-9_]/g,'_');
+    const visualClass = (e.side === 'to') ? 'partner' : 'influence';
     const maxPct = (ranked[0][1] / total) * 100 || 1;
     const top5 = ranked.slice(0, 5).map(([code, v]) => {
       const p = (v/total)*100;
@@ -1829,26 +1952,31 @@ function buildPanorama(fluxInds, dir){
       return `<div class="pano-sub">
         <span class="flag">${partnerFlag(code)}</span>
         <span class="nm">${partnerLabel(code)}</span>
-        <span class="bar"><span class="fill ${dir}" style="width:${w.toFixed(0)}%"></span></span>
+        <span class="bar"><span class="fill ${visualClass}" style="width:${w.toFixed(0)}%"></span></span>
         <span class="v">${p.toFixed(0)}%</span>
       </div>`;
     }).join('');
     html += `<div class="pano-wrap">
       <div class="pano-row" onclick="togglePano('${rowId}')">
-        <div class="pano-flux">${c.label || c.indicator}</div>
+        <div class="pano-flux" title="${e.label_long}">${e.label_long}</div>
         <div class="pano-partner"><span class="flag">${partnerFlag(top[0])}</span><span class="nm">${partnerLabel(top[0])}</span></div>
-        <div class="pano-bar"><div class="pano-fill ${dir} ${cls}" style="width:${Math.min(100,pct).toFixed(0)}%"></div></div>
+        <div class="pano-bar"><div class="pano-fill ${visualClass} ${cls}" style="width:${Math.min(100,pct).toFixed(0)}%"></div></div>
         <div class="pano-val">${pct.toFixed(0)}%</div>
         <div class="pano-caret" id="caret_${rowId}">▸</div>
       </div>
       <div class="pano-detail" id="${rowId}">
-        <div class="pano-detail-title">Top 5 · ${c.label||c.indicator}</div>
+        <div class="pano-detail-title">Top 5 · ${e.label_long}</div>
         ${top5}
-        <div class="pano-detail-link" onclick="event.stopPropagation();goToRelations('${c.indicator}','${dir}')">→ explorer dans Relations</div>
+        <div class="pano-detail-link" onclick="event.stopPropagation();goToRelationsEntry('${e.key}')">→ explorer dans Relations</div>
       </div>
     </div>`;
   }
   return any ? html : `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
+}
+function goToRelationsEntry(key){
+  // routage vers Relations sur cette entrée (sera lu par renderRelations)
+  _pendingFocus.flowEntryKey = key;
+  switchView('relations');
 }
 function togglePano(id){
   const el = document.getElementById(id);
@@ -2298,7 +2426,15 @@ function renderRelations(){
     return;
   }
   // focus venant d'une porte de Synthèse
-  if(_pendingFocus.indicator){
+  if(_pendingFocus.flowEntryKey){
+    const e = getFlowEntryByKey(_pendingFocus.flowEntryKey);
+    if(e){
+      _relIndicator = e.realIndicator;
+      _relDir = (e.side === 'to') ? 'partner' : 'influence';
+    }
+    _pendingFocus.flowEntryKey = null;
+    _relPath = [];
+  } else if(_pendingFocus.indicator){
     _relIndicator = _pendingFocus.indicator;
     _relDir = _pendingFocus.fluxDir || 'partner';
     _pendingFocus.indicator = null; _pendingFocus.fluxDir = null;
