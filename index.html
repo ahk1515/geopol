@@ -2835,8 +2835,33 @@ function drawTreemapRel(node, host){
   host.innerHTML = svg;
 }
 function treemapClick(name){
-  // Drill : on filtre sur (dimension active, valeur cliquée)
-  pushRelDrill(_relDim, name);
+  // Drill : filtre sur (dimension active, valeur cliquée) + bascule auto de référentiel.
+  // Règle : alternance partner ↔ catégorie. Sub1 par défaut, sinon première catégorie peuplée.
+  const dims = getRelDimensions();
+  const next = nextRelDim(_relDim, dims);
+  // pousser le filtre avec la dimension actuelle (avant bascule)
+  const level = _relDim;
+  const label = (level === 'partner') ? (partnerLabel(name) || name) : name;
+  _relPath = [..._relPath, { level, value: name, label }];
+  _relDim = next;
+  renderRelMain();
+  syncUrl();
+}
+
+// Règle d'alternance : si on est sur partner → on bascule vers la 1ère catégorie peuplée
+// (sub1 prioritaire, sinon sub2, sinon sub3). Si on est sur une catégorie → on revient à partner.
+function nextRelDim(currentDim, dims){
+  const available = dims.map(d => d.key);
+  if(currentDim === 'partner'){
+    // chercher la première catégorie peuplée dans l'ordre sub1 → sub2 → sub3
+    for(const sub of ['sub1', 'sub2', 'sub3']){
+      if(available.includes(sub)) return sub;
+    }
+    return 'partner';   // aucune catégorie peuplée, on reste sur partner
+  }
+  // sur une catégorie → retour à partner si dispo
+  if(available.includes('partner')) return 'partner';
+  return currentDim;
 }
 
 /* ─── Évolution : aires empilées par partenaire ─────────────────
@@ -2930,9 +2955,10 @@ function renderRelEvolution(){
     for(let i = pts.length - 1; i >= 0; i--){ dBot += 'L' + xScale(pts[i].y).toFixed(1) + ',' + yScale(pts[i].y0).toFixed(1) + ' '; }
     const fill = colorOf(idx);
     const tot = totalPerKey.get(k) || 0;
-    svg += `<path class="evo-area" d="${dTop} ${dBot} Z" fill="${fill}"
+    svg += `<path class="evo-area" d="${dTop} ${dBot} Z" fill="${fill}" style="cursor:pointer"
               data-tt="${escAttr(bucketLabel(k))}" data-tb="${escAttr('Total période · ' + fmtWithUnit(tot, cfg.unit_display))}"
-              onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
+              onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
+              onclick="treemapClick('${escAttr(k)}')"/>`;
   });
   svg += `</svg>`;
 
