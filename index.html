@@ -365,6 +365,19 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pano-detail-link { font-size: 10.5px; color: var(--green); cursor: pointer; margin-top: 8px; display: inline-block; font-weight: 500; }
 .pano-detail-link:hover { text-decoration: underline; }
 
+/* bloc ressources (Synthèse) */
+.res-block { margin-top: 14px; }
+.res-group { margin-bottom: 10px; }
+.res-group-head { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; padding: 0 2px; }
+.res-row { display: grid; grid-template-columns: 130px 1fr 50px; gap: 10px; align-items: center; padding: 5px 2px; font-size: 12px; }
+.res-name { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-name .sub { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-left: 4px; }
+.res-bar { height: 7px; background: var(--bg4); border-radius: 3px; overflow: hidden; position: relative; }
+.res-fill { height: 100%; background: var(--green); border-radius: 3px; opacity: .8; min-width: 2px; }
+.res-fill.reserves { background: var(--terra); }
+.res-pct { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; color: var(--text); }
+.res-empty { padding: 12px; text-align: center; color: var(--text3); font-size: 11.5px; font-style: italic; }
+
 /* hint sujet absent */
 .need-subject {
   border: 1.5px dashed var(--border2); border-radius: 12px;
@@ -1378,6 +1391,19 @@ function concentrationClass(pct){
 }
 
 /* ─── DIAGNOSTIC FLUX (temporaire — aide au calage du schéma) ──── */
+function diagProjections(){
+  console.group('%cDIAGNOSTIC PROJECTIONS', 'color:#b45309;font-weight:bold');
+  if(!state.subject){ console.log('Pas de sujet'); console.groupEnd(); return; }
+  const iso = state.subject.isos[0];
+  for(const ind of ['pib_par_hab','pib_usd','population']){
+    const r = safeExec(`SELECT year, value, subcategory FROM identite WHERE country_iso3='${escapeSql(iso)}' AND indicator='${escapeSql(ind)}' ORDER BY year`);
+    if(!r.length){ console.log(`[${ind}] aucune donnée`); continue; }
+    console.log(`[${ind}] ${iso} :`);
+    console.table(r[0].values.map(([y,v,s])=>({an:y, valeur:v, subcategory:s||'(null)'})));
+  }
+  console.groupEnd();
+}
+
 function diagFlux(){
   console.group('%cDIAGNOSTIC FLUX', 'color:#0a6e4a;font-weight:bold');
   const inds = safeExec(`SELECT DISTINCT indicator FROM flux`);
@@ -1400,6 +1426,85 @@ function diagFlux(){
     }
   }
   console.groupEnd();
+}
+
+/* ─── BLOC RESSOURCES (parts mondiales par type) ──────────────── */
+// Indicateurs _share suivis, groupés par thème.
+const RES_INDICATORS = [
+  { ind: 'energie_production_share', group: 'energie', label: 'Production énergie', cls: '' },
+  { ind: 'energie_reserves_share',   group: 'energie', label: 'Réserves énergie',   cls: 'reserves' },
+  { ind: 'mineraux_production_share', group: 'mineraux', label: 'Production minéraux', cls: '' },
+  { ind: 'mineraux_reserves_share',   group: 'mineraux', label: 'Réserves minéraux',   cls: 'reserves' },
+];
+const RES_NOTABILITY_THRESHOLD = 0.5;   // % minimum pour qu'une ressource soit "notable"
+
+// Récupère les parts mondiales par subcategory (petrole/gaz/charbon, cuivre/fer/...).
+// Pour un sujet multi-pays, on somme les parts (correct car déjà en %).
+function getResourceShares(){
+  const isos = currentIsos();
+  if(!isos.length) return [];
+  const inList = sqlList(isos);
+  const indList = RES_INDICATORS.map(r => `'${r.ind}'`).join(',');
+  // dernière année disponible pour chaque indicateur ressource
+  const r = safeExec(`
+    SELECT indicator, subcategory, year, SUM(value) AS share
+    FROM identite
+    WHERE country_iso3 IN (${inList})
+      AND indicator IN (${indList})
+      AND subcategory IS NOT NULL AND subcategory != ''
+      AND value IS NOT NULL AND value != 0
+    GROUP BY indicator, subcategory, year
+  `);
+  if(!r.length) return [];
+  // garde la valeur de la dernière année disponible pour chaque (indicator, subcategory)
+  const lastByKey = new Map();
+  for(const [ind, sub, y, val] of r[0].values){
+    const k = ind + '|' + sub;
+    const prev = lastByKey.get(k);
+    if(!prev || y > prev.year) lastByKey.set(k, { ind, sub, year: y, value: val });
+  }
+  // enrichir + filtrer par notabilité
+  const out = [];
+  for(const { ind, sub, year, value } of lastByKey.values()){
+    const meta = RES_INDICATORS.find(r => r.ind === ind);
+    if(!meta) continue;
+    if(value < RES_NOTABILITY_THRESHOLD) continue;
+    out.push({ ind, sub, year, value, group: meta.group, label: meta.label, cls: meta.cls });
+  }
+  // tri par valeur décroissante au sein de chaque ligne
+  out.sort((a,b) => b.value - a.value);
+  return out;
+}
+
+function buildResourcesBlock(){
+  const shares = getResourceShares();
+  if(!shares.length) return '';   // pas de bloc affiché si rien de notable
+  // grouper par theme (energie / mineraux)
+  const byGroup = { energie: [], mineraux: [] };
+  for(const s of shares) (byGroup[s.group] ??= []).push(s);
+  const labels = { energie: 'Énergie', mineraux: 'Minéraux & métaux' };
+  let html = '';
+  for(const grp of ['energie','mineraux']){
+    if(!byGroup[grp] || !byGroup[grp].length) continue;
+    let rows = '';
+    for(const s of byGroup[grp]){
+      const w = Math.min(100, s.value).toFixed(1);
+      const subLabel = s.sub.charAt(0).toUpperCase() + s.sub.slice(1).replace(/_/g,' ');
+      rows += `<div class="res-row">
+        <div class="res-name">${subLabel}<span class="sub">${s.label.includes('Réserves')?'réserves':'production'} · ${s.year}</span></div>
+        <div class="res-bar"><div class="res-fill ${s.cls}" style="width:${w}%"></div></div>
+        <div class="res-pct">${s.value.toFixed(1)}%</div>
+      </div>`;
+    }
+    html += `<div class="res-group"><div class="res-group-head">${labels[grp]}</div>${rows}</div>`;
+  }
+  return `<div class="card res-block">
+    <div class="card-head">
+      <span class="card-title">Atouts en ressources</span>
+      <span class="card-sub">part mondiale par type · seuil ${RES_NOTABILITY_THRESHOLD}%</span>
+    </div>
+    <div class="card-body">${html}</div>
+  </div>`;
 }
 
 function renderSynthese(){
@@ -1480,7 +1585,8 @@ function renderSynthese(){
           </div>
         </div>
       </div>
-    </div>`;
+    </div>
+    ${buildResourcesBlock()}`;
 
   bindKvTips();
 }
