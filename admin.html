@@ -2706,8 +2706,8 @@ function renderSubManuel() {
            onclick="document.getElementById('file-manuel').click()">
         <div class="dropzone-ico">📄</div>
         <div class="dropzone-t">Déposer un CSV (identite ou flux)</div>
-        <div class="dropzone-s">Format attendu : voir prompts ci-dessus · commit dans ${MANUEL_FOLDER}/</div>
-        <input type="file" id="file-manuel" style="display:none" accept=".csv"
+        <div class="dropzone-s">Format attendu : voir prompts ci-dessus · <code style="font-family:var(--mono)">.csv</code> ou <code style="font-family:var(--mono)">.csv.gz</code> · commit dans ${MANUEL_FOLDER}/</div>
+        <input type="file" id="file-manuel" style="display:none" accept=".csv,.csv.gz,.gz"
                onchange="onFilePicked(event,'manuel','manuel')">
       </div>
     </div>
@@ -2738,6 +2738,11 @@ function onFilePicked(e, mode, id) {
 }
 
 // ── Gestion de l'upload ──
+// Détection des types :
+//   .csv      → readAsText, validation, commit en texte
+//   .csv.gz   → readAsArrayBuffer, décompression en mémoire pour validation,
+//               commit du buffer compressé (gain de taille préservé)
+//   autre     → readAsBinaryString, commit sans validation
 async function handleFileUpload(file, mode, sourceId) {
   if (!Pilot.pat) { openAuthModal(); return; }
 
@@ -2746,17 +2751,39 @@ async function handleFileUpload(file, mode, sourceId) {
     return;
   }
 
-  // Lecture du contenu (toujours en texte pour CSV ; binaire pour xlsx)
-  const isCsv = file.name.toLowerCase().endsWith('.csv');
+  const name = file.name.toLowerCase();
+  const isGz  = name.endsWith('.gz');
+  const isCsv = name.endsWith('.csv') || name.endsWith('.csv.gz');
+
   const reader = new FileReader();
 
   reader.onload = async (e) => {
-    const content = e.target.result;
+    // content = ce qui sera commité (texte CSV ou binaire compressé)
+    // textForValidation = ce qui sera parsé en CSV (toujours du texte décompressé si applicable)
+    let content, textForValidation = null;
 
-    let conflictReport = null;
-    let parseReport   = null;
-    if (mode === 'manuel' && isCsv) {
-      parseReport    = parseCsvForValidation(content);
+    if (isGz) {
+      // buffer binaire à commiter tel quel (gain compression conservé)
+      content = e.target.result;
+      // décompression en mémoire pour validation, via DecompressionStream natif
+      if (isCsv) {
+        try {
+          textForValidation = await decompressGzipToText(content);
+        } catch(err) {
+          alert('Impossible de décompresser le .gz : ' + err.message);
+          return;
+        }
+      }
+    } else if (isCsv) {
+      content = e.target.result;            // texte
+      textForValidation = content;
+    } else {
+      content = e.target.result;            // binary string
+    }
+
+    let parseReport = null, conflictReport = null;
+    if (mode === 'manuel' && isCsv && textForValidation) {
+      parseReport    = parseCsvForValidation(textForValidation);
       conflictReport = parseReport.rows.length > 0 ? detectConflicts(parseReport) : null;
     }
 
@@ -2767,22 +2794,35 @@ async function handleFileUpload(file, mode, sourceId) {
       targetPath = `${src.folder}/${src.filename}`;
       displayName = src.label;
     } else {
-      // Manuel : préfixer par date + nom safe
+      // Manuel : préfixer par date + nom safe (conserve .csv.gz si applicable)
       const ts = new Date().toISOString().replace(/[-:]/g,'').replace('T','_').split('.')[0];
       const safe = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
       targetPath = `${MANUEL_FOLDER}/${ts}_${safe}`;
-      displayName = 'CSV manuel IA';
+      displayName = isGz ? 'CSV manuel IA (compressé)' : 'CSV manuel IA';
     }
 
     Imp.uploadCtx = {
       mode, sourceId, file, content, targetPath, displayName,
-      isCsv, parseReport, conflictReport,
+      isCsv, isGz, parseReport, conflictReport,
     };
     showUploadModal();
   };
 
-  if (isCsv) reader.readAsText(file, 'utf-8');
-  else       reader.readAsBinaryString(file);
+  if (isGz)        reader.readAsArrayBuffer(file);  // binaire compressé
+  else if (isCsv)  reader.readAsText(file, 'utf-8');
+  else             reader.readAsBinaryString(file);
+}
+
+// Décompresse un ArrayBuffer gzippé et retourne le texte UTF-8.
+// Utilise DecompressionStream (natif Chrome/Edge/Firefox/Safari depuis 2022).
+async function decompressGzipToText(arrayBuffer) {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error('Ce navigateur ne supporte pas DecompressionStream. Utilise Chrome/Firefox/Safari récent.');
+  }
+  const ds = new DecompressionStream('gzip');
+  const blob = new Blob([arrayBuffer]);
+  const decompressed = await new Response(blob.stream().pipeThrough(ds)).arrayBuffer();
+  return new TextDecoder('utf-8').decode(decompressed);
 }
 
 // ── Validation CSV manuel ──
@@ -2947,6 +2987,16 @@ function showUploadModal() {
   // Pour manuel CSV : afficher la validation
   if (ctx.mode === 'manuel' && ctx.isCsv && ctx.parseReport) {
     const pr = ctx.parseReport;
+    // Info compression : on signale que la validation a tourné sur la version décompressée
+    if (ctx.isGz) {
+      const ratio = ctx.file.size > 0 ? ((1 - ctx.file.size / new Blob([JSON.stringify(pr.rows)]).size) * 100) : 0;
+      bodyHtml += `
+        <div class="alert ai">
+          <span class="alert-ico">🗜️</span>
+          <div>Fichier <strong>compressé .gz</strong> détecté · ${(ctx.file.size/1024).toFixed(1)} Ko commités tels quels · décompression à la volée pour la validation</div>
+        </div>
+      `;
+    }
     if (!pr.format) {
       bodyHtml += `
         <div class="alert ar">
@@ -3062,10 +3112,21 @@ async function confirmUpload() {
       console.warn('ghReadFile check failed:', e);
     }
 
-    // Encoder en base64. Pour les CSV (texte UTF-8), passer par encodeURIComponent.
-    // Pour les binaires (xlsx), on a lu en readAsBinaryString.
+    // Encoder en base64.
+    // - CSV texte (UTF-8) : passer par encodeURIComponent pour préserver les caractères non-ASCII
+    // - .gz (ArrayBuffer) : convertir l'ArrayBuffer en chaîne d'octets bruts puis btoa
+    // - xlsx/binaire (binary string) : btoa direct
     let b64;
-    if (ctx.isCsv) {
+    if (ctx.isGz) {
+      const bytes = new Uint8Array(ctx.content);
+      // Découpage par chunks pour éviter "Maximum call stack" sur gros buffers
+      let bin = '';
+      const CHUNK = 0x8000;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+      }
+      b64 = btoa(bin);
+    } else if (ctx.isCsv) {
       b64 = btoa(unescape(encodeURIComponent(ctx.content)));
     } else {
       b64 = btoa(ctx.content);
