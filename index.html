@@ -156,6 +156,10 @@ header {
 .subject-chip.empty { background: var(--bg3); border-color: var(--border); color: var(--text3); font-style: italic; }
 .subject-chip .x { opacity: .5; font-size: 13px; line-height: 1; }
 .subject-chip .x:hover { opacity: 1; }
+/* chip du comparant B (orange, distinct du sujet A vert) */
+.subject-chip.b { background: var(--orange-d); border-color: var(--orange-b); color: var(--orange); }
+.subject-chip.b:hover { background: var(--orange-b); }
+.subject-chip.b.empty { background: var(--bg3); border: 1px dashed var(--border2); color: var(--text3); }
 
 .ctx-sep { width: 1px; height: 18px; background: var(--border); }
 
@@ -538,6 +542,11 @@ main { flex: 1; padding: 16px 18px 28px; }
   <div id="contextBar">
     <span class="ctx-label">Sujet</span>
     <div id="subjectSlot"></div>
+    <div id="compareBSlotWrap" style="display:none;align-items:center;gap:12px">
+      <span class="ctx-sep"></span>
+      <span class="ctx-label">Comparer à</span>
+      <div id="compareBSlot"></div>
+    </div>
     <span class="ctx-sep"></span>
     <span class="ctx-label">Année</span>
     <div id="yearSlot"></div>
@@ -846,6 +855,8 @@ const cache = {
   flux: new Map(),    // indicator -> { partner:{rows}, influence:{rows} } (à la demande)
   world: new Map(),   // "indicator|year" -> { sorted:[...], n } (stats mondiales, à la demande)
 };
+// Cache parallèle pour le comparant B (Puissance A vs B).
+const cacheB = { key: null, identite: null, projection: null };
 
 function subjectKey(isos){ return isos.slice().sort().join(','); }
 
@@ -933,6 +944,66 @@ function getIdentiteSeries(indicator){
     }
   }
   // tri global par année (au cas où historique et projection se chevauchent)
+  return out.sort((a,b) => a.year - b.year);
+}
+
+/* ─── CACHE POUR LE COMPARANT B (Puissance A vs B) ────────────── */
+function ensureIdentiteCacheB(){
+  if(!state.compareB || !state.compareB.isos.length){ cacheB.key = null; cacheB.identite = null; cacheB.projection = null; return false; }
+  const isos = state.compareB.isos;
+  const key = subjectKey(isos);
+  if(cacheB.key === key && cacheB.identite) return true;
+  cacheB.key = key; cacheB.identite = {}; cacheB.projection = {};
+  const inList = sqlList(isos);
+  const r = safeExec(`SELECT indicator, year, country_iso3, value, subcategory FROM identite WHERE country_iso3 IN (${inList})`);
+  if(!r.length) return true;
+  const tmpH = {}, tmpP = {};
+  for(const [ind, year, iso, val, sub] of r[0].values){
+    if(val == null) continue;
+    const bucket = (sub === 'projection') ? tmpP : tmpH;
+    (bucket[ind] ??= {});
+    (bucket[ind][year] ??= []).push(val);
+  }
+  function aggregate(tmp, target){
+    for(const ind in tmp){
+      const method = aggMethodFor(ind);
+      const byYear = {};
+      for(const y in tmp[ind]){
+        const arr = tmp[ind][y];
+        byYear[y] = (method === 'sum') ? arr.reduce((a,b)=>a+b,0) : arr.reduce((a,b)=>a+b,0) / arr.length;
+      }
+      target[ind] = byYear;
+    }
+  }
+  aggregate(tmpH, cacheB.identite);
+  aggregate(tmpP, cacheB.projection);
+  return true;
+}
+function getIdentiteValueB(indicator, year){
+  if(!ensureIdentiteCacheB()) return null;
+  const y = year ?? state.year;
+  const series = cacheB.identite?.[indicator]; if(!series) return null;
+  if(series[y] != null && series[y] !== 0) return series[y];
+  const ys = Object.keys(series).map(Number).filter(yy => yy <= y && series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  if(ys.length) return series[ys[0]];
+  const any = Object.keys(series).map(Number).filter(yy => series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
+  return any.length ? series[any[0]] : null;
+}
+function getIdentiteSeriesB(indicator){
+  if(!ensureIdentiteCacheB()) return [];
+  const out = [];
+  const h = cacheB.identite?.[indicator];
+  if(h){
+    for(const y of Object.keys(h).map(Number).sort((a,b)=>a-b)){
+      if(h[y] != null && h[y] !== 0) out.push({ year: y, value: h[y], projection: false });
+    }
+  }
+  const p = cacheB.projection?.[indicator];
+  if(p){
+    for(const y of Object.keys(p).map(Number).sort((a,b)=>a-b)){
+      if(p[y] != null && p[y] !== 0) out.push({ year: y, value: p[y], projection: true });
+    }
+  }
   return out.sort((a,b) => a.year - b.year);
 }
 
@@ -1152,7 +1223,33 @@ function switchView(v){
 /* ─── CONTEXTE (barre sujet + année) ──────────────────────────── */
 function renderContextBar(){
   renderSubjectSlot();
+  renderCompareBSlot();
   renderYearSlot();
+}
+// Slot B : visible uniquement en Puissance (le comparant n'a pas de sens sur les autres onglets).
+function renderCompareBSlot(){
+  const wrap = document.getElementById('compareBSlotWrap');
+  const slot = document.getElementById('compareBSlot');
+  if(state.view !== 'puissance'){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'inline-flex';
+  if(!state.compareB || !state.compareB.isos.length){
+    slot.innerHTML = `<span class="subject-chip b empty" onclick="openSearchForB()">+ ajouter un comparant</span>`;
+    return;
+  }
+  const b = state.compareB;
+  const flag = b.isos.length === 1 ? isoToFlag(b.isos[0]) : '⊞';
+  slot.innerHTML =
+    `<span class="subject-chip b" onclick="openSearchForB()">
+       <span class="flag">${flag}</span>${b.label}
+       ${b.isos.length>1 ? `<span style="font-family:var(--mono);font-size:10px;opacity:.6">${b.isos.length} pays</span>` : ''}
+       <span class="x" onclick="event.stopPropagation();clearCompareB()">×</span>
+     </span>`;
+}
+function clearCompareB(){
+  state.compareB = null;
+  renderContextBar();
+  refreshActiveView();
+  syncUrl();
 }
 function renderSubjectSlot(){
   const slot = document.getElementById('subjectSlot');
@@ -1821,10 +1918,24 @@ function renderPuMain(){
     const rp = rankPercentile(_puIndicator, val, realYear || state.year);
     if(rp) rankLine = `${ordinalFr(rp.rank)} / ${rp.total} mondial`;
   }
+  // valeur B et écart relatif (B vs A) si comparaison active
+  const hasB = state.compareB && state.compareB.isos.length > 0;
+  const valB = hasB ? getIdentiteValueB(_puIndicator, state.year) : null;
+  let cmpLine = '';
+  if(hasB && valB != null){
+    const bTxt = `${fmtNumber(valB, c.unit_display)} ${scaleSuffix(valB, c.unit_display)}`;
+    let delta = '';
+    if(val != null && val !== 0){
+      const ratio = (valB - val) / Math.abs(val) * 100;
+      const sign = ratio >= 0 ? '+' : '';
+      delta = ` <span style="color:var(--orange);font-weight:600">(${sign}${ratio.toFixed(0)}%)</span>`;
+    }
+    cmpLine = ` <span style="color:var(--orange);font-family:var(--mono);font-size:10px;letter-spacing:.05em;margin-left:8px">vs ${state.compareB.label} ${bTxt}${delta}</span>`;
+  }
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${c.label || c.indicator}</span>
-      <span class="meta">${val!=null ? fmtNumber(val, c.unit_display)+' '+scaleSuffix(val,c.unit_display) : '—'}${rankLine?' · '+rankLine:''} · ${realYear||'—'} · ${src||'n/d'}</span>
+      <span class="meta">${val!=null ? fmtNumber(val, c.unit_display)+' '+scaleSuffix(val,c.unit_display) : '—'}${rankLine?' · '+rankLine:''} · ${realYear||'—'} · ${src||'n/d'}${cmpLine}</span>
     </div>
     <div class="pu-cells">
       <div class="top-row">
@@ -1854,45 +1965,78 @@ function renderPuMain(){
 function drawPuCurve(){
   const wrap = document.getElementById('puCurve');
   if(!wrap) return;
-  const series = getIdentiteSeries(_puIndicator);
-  if(series.length < 2){ wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Série temporelle insuffisante</div>`; return; }
+  const seriesA = getIdentiteSeries(_puIndicator);
+  const hasB = state.compareB && state.compareB.isos.length > 0;
+  const seriesB = hasB ? getIdentiteSeriesB(_puIndicator) : [];
+  if(seriesA.length < 2 && seriesB.length < 2){
+    wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Série temporelle insuffisante</div>`;
+    return;
+  }
   const W = wrap.clientWidth || 600, H = 260, m = { t:14, r:16, b:24, l:48 };
-  const xs = series.map(d => d.year), ys = series.map(d => d.value);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  // échelle commune A ∪ B
+  const allYears = seriesA.concat(seriesB).map(d => d.year);
+  const allVals = seriesA.concat(seriesB).map(d => d.value);
+  const xMin = Math.min(...allYears), xMax = Math.max(...allYears);
+  const yMin = Math.min(...allVals), yMax = Math.max(...allVals);
   const yLo = yMin - (yMax-yMin)*0.08, yHi = yMax + (yMax-yMin)*0.08;
   const X = y => m.l + ((y - xMin)/((xMax-xMin)||1)) * (W - m.l - m.r);
   const Y = v => H - m.b - ((v - yLo)/((yHi-yLo)||1)) * (H - m.t - m.b);
-  // séparation propre historique vs projection (via le champ du cache)
-  const hist = series.filter(d => !d.projection);
-  const proj = series.filter(d => d.projection);
-  // raccord visuel : le 1er point de projection commence là où l'historique finit
-  const projWithJoin = (hist.length && proj.length) ? [hist[hist.length-1], ...proj] : proj;
-  const histPath = hist.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ');
-  const projPath = projWithJoin.length>1 ? projWithJoin.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ') : '';
-  const area = histPath ? histPath + ` L${X(hist[hist.length-1].year).toFixed(1)},${Y(yLo).toFixed(1)} L${X(hist[0].year).toFixed(1)},${Y(yLo).toFixed(1)} Z` : '';
-  // ticks Y (3)
+
+  function buildPathsFor(series){
+    const hist = series.filter(d => !d.projection);
+    const proj = series.filter(d => d.projection);
+    const projWithJoin = (hist.length && proj.length) ? [hist[hist.length-1], ...proj] : proj;
+    const histPath = hist.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ');
+    const projPath = projWithJoin.length>1 ? projWithJoin.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ') : '';
+    return { hist, proj, histPath, projPath };
+  }
+  const A = buildPathsFor(seriesA);
+  const B = hasB ? buildPathsFor(seriesB) : null;
+  // aire (uniquement pour A, par lisibilité)
+  const area = (A.histPath && A.hist.length) ? A.histPath + ` L${X(A.hist[A.hist.length-1].year).toFixed(1)},${Y(yLo).toFixed(1)} L${X(A.hist[0].year).toFixed(1)},${Y(yLo).toFixed(1)} Z` : '';
+
+  // ticks Y
   let gridY = '';
   const cfg = state.indicators.find(c=>c.indicator===_puIndicator);
-  for(let i=0;i<=3;i++){ const v = yLo + (yHi-yLo)*i/3; const yy = Y(v).toFixed(1); gridY += `<line class="curve-grid" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"/><text class="curve-lbl" x="${m.l-6}" y="${(+yy+3).toFixed(1)}" text-anchor="end">${fmtNumber(v, cfg?.unit_display)}</text>`; }
+  for(let i=0;i<=3;i++){
+    const v = yLo + (yHi-yLo)*i/3;
+    const yy = Y(v).toFixed(1);
+    gridY += `<line class="curve-grid" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"/><text class="curve-lbl" x="${m.l-6}" y="${(+yy+3).toFixed(1)}" text-anchor="end">${fmtNumber(v, cfg?.unit_display)}</text>`;
+  }
   // ticks X
   const xticks = [xMin, Math.round((xMin+xMax)/2), xMax];
   const labX = xticks.map(t => `<text class="curve-lbl" x="${X(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`).join('');
-  // séparateur visuel : début de la zone projection
+
+  // séparateur visuel projection (basé sur A)
   let projMark = '';
-  if(hist.length && proj.length){
-    const xp = X(proj[0].year).toFixed(1);
+  if(A.hist.length && A.proj.length){
+    const xp = X(A.proj[0].year).toFixed(1);
     projMark = `<line class="curve-grid" x1="${xp}" y1="${m.t}" x2="${xp}" y2="${H-m.b}" style="stroke:var(--orange);opacity:.4;stroke-dasharray:3 3"/><text class="curve-lbl" x="${xp}" y="${m.t+8}" text-anchor="middle" style="fill:var(--orange)">projection →</text>`;
   }
-  const last = hist[hist.length-1] || proj[proj.length-1];
+  const lastA = A.hist[A.hist.length-1] || A.proj[A.proj.length-1];
+  const lastB = B ? (B.hist[B.hist.length-1] || B.proj[B.proj.length-1]) : null;
+
+  // légende quand B actif
+  let legend = '';
+  if(hasB){
+    legend = `<g transform="translate(${m.l+6},${m.t-2})">
+      <line x1="0" y1="6" x2="14" y2="6" stroke="var(--green)" stroke-width="2"/><text x="18" y="9" class="curve-lbl" style="font-size:10px;fill:var(--text2)">${state.subject.label}</text>
+      <line x1="120" y1="6" x2="134" y2="6" stroke="var(--orange)" stroke-width="2" stroke-dasharray="4 3"/><text x="138" y="9" class="curve-lbl" style="font-size:10px;fill:var(--text2)">${state.compareB.label}</text>
+    </g>`;
+  }
+
   wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     ${gridY}
     ${area ? `<path class="curve-area" d="${area}"/>` : ''}
-    ${histPath ? `<path class="curve-line" d="${histPath}"/>` : ''}
-    ${projPath ? `<path class="curve-line curve-proj" d="${projPath}" style="stroke:var(--orange)"/>` : ''}
-    ${last ? `<circle class="curve-dot" cx="${X(last.year).toFixed(1)}" cy="${Y(last.value).toFixed(1)}" r="3"/>` : ''}
+    ${A.histPath ? `<path class="curve-line" d="${A.histPath}"/>` : ''}
+    ${A.projPath ? `<path class="curve-line curve-proj" d="${A.projPath}" style="stroke:var(--orange)"/>` : ''}
+    ${B && B.histPath ? `<path class="curve-line" d="${B.histPath}" style="stroke:var(--orange);stroke-dasharray:4 3"/>` : ''}
+    ${B && B.projPath ? `<path class="curve-line" d="${B.projPath}" style="stroke:var(--orange);stroke-dasharray:2 3;opacity:.6"/>` : ''}
+    ${lastA ? `<circle class="curve-dot" cx="${X(lastA.year).toFixed(1)}" cy="${Y(lastA.value).toFixed(1)}" r="3"/>` : ''}
+    ${lastB ? `<circle cx="${X(lastB.year).toFixed(1)}" cy="${Y(lastB.value).toFixed(1)}" r="3" fill="var(--orange)"/>` : ''}
     ${projMark}
     ${labX}
+    ${legend}
   </svg>`;
 }
 
@@ -1900,7 +2044,6 @@ function drawPuCurve(){
 function drawPuRadar(){
   const wrap = document.getElementById('puRadar');
   if(!wrap) return;
-  // axes du radar = indicateurs épinglés Synthèse (cohérence A/B et carte d'identité)
   const axes = pinnedIdentiteIndicators().filter(c => c.presentInDb !== false);
   if(axes.length < 3){
     wrap.innerHTML = `<div class="radar-empty">Au moins 3 indicateurs épinglés requis (configurer dans Synthèse).</div>`;
@@ -1908,62 +2051,75 @@ function drawPuRadar(){
   }
   const W = 360, H = 320, cx = W/2, cy = H/2 + 4, R = Math.min(W,H)/2 - 38;
   const N = axes.length;
-  const subjIsOne = state.subject.isos.length === 1;
-  // pour chaque axe : percentile (0..1) du sujet sur cet indicateur
   const year = state.year;
+  const hasB = state.compareB && state.compareB.isos.length > 0;
+  if(hasB) ensureIdentiteCacheB();
+  // points par axe : A et (option) B
   const pts = axes.map((ax, i) => {
     const angle = -Math.PI/2 + i * (2*Math.PI / N);
-    const val = getIdentiteValue(ax.indicator, year);
-    let pct = null;
-    if(val != null){
-      const rp = rankPercentile(ax.indicator, val, getValueYear(ax.indicator, year) || year);
-      if(rp) pct = rp.percentile;
+    const valA = getIdentiteValue(ax.indicator, year);
+    const rpA = valA != null ? rankPercentile(ax.indicator, valA, getValueYear(ax.indicator, year) || year) : null;
+    let pctB = null;
+    if(hasB){
+      const valB = getIdentiteValueB(ax.indicator, year);
+      if(valB != null){
+        const rpB = rankPercentile(ax.indicator, valB, year);
+        if(rpB) pctB = rpB.percentile;
+      }
     }
-    return { axis: ax, angle, val, pct };
+    return { axis: ax, angle, valA, pct: rpA?.percentile ?? null, pctB };
   });
 
   // axes (rayons)
   let axesSvg = '';
   for(const p of pts){
-    const x = cx + Math.cos(p.angle) * R;
-    const y = cy + Math.sin(p.angle) * R;
+    const x = cx + Math.cos(p.angle) * R, y = cy + Math.sin(p.angle) * R;
     axesSvg += `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
   }
-  // cercles concentriques (25/50/75/100%)
+  // cercles concentriques + médiane
   let gridSvg = '';
-  for(const f of [0.25, 0.5, 0.75, 1]){
-    gridSvg += `<circle class="radar-grid" cx="${cx}" cy="${cy}" r="${(R*f).toFixed(1)}"/>`;
-  }
-  // référent médiane mondiale (cercle pointillé à 50%) — toujours présent comme repère
+  for(const f of [0.25, 0.5, 0.75, 1]) gridSvg += `<circle class="radar-grid" cx="${cx}" cy="${cy}" r="${(R*f).toFixed(1)}"/>`;
   const medianRing = `<circle class="radar-median" cx="${cx}" cy="${cy}" r="${(R*0.5).toFixed(1)}"/>`;
-  // polygone du sujet
-  let poly = '';
-  const polyPts = pts.map(p => {
+
+  // polygone A
+  let polyA = '';
+  const polyPtsA = pts.map(p => {
     const r = (p.pct != null) ? R * p.pct : 0;
     return [cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r];
   });
-  if(polyPts.some(p => p[0] !== cx || p[1] !== cy)){
-    const d = polyPts.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
-    poly = `<path class="radar-poly" d="${d}"/>`;
+  if(polyPtsA.some(p => p[0] !== cx || p[1] !== cy)){
+    const d = polyPtsA.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
+    polyA = `<path class="radar-poly" d="${d}"/>`;
   }
+  // polygone B (orange) — par-dessus A en transparence
+  let polyB = '';
+  if(hasB){
+    const polyPtsB = pts.map(p => {
+      const r = (p.pctB != null) ? R * p.pctB : 0;
+      return [cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r];
+    });
+    if(polyPtsB.some(p => p[0] !== cx || p[1] !== cy)){
+      const d = polyPtsB.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
+      polyB = `<path d="${d}" fill="var(--orange)" fill-opacity=".12" stroke="var(--orange)" stroke-width="1.8" stroke-dasharray="4 3"/>`;
+    }
+  }
+
   // points + labels
   let dots = '', labels = '';
-  pts.forEach((p, i) => {
+  pts.forEach(p => {
     const isActive = p.axis.indicator === _puIndicator;
     if(p.pct != null){
       const r = R * p.pct;
-      const x = cx + Math.cos(p.angle)*r;
-      const y = cy + Math.sin(p.angle)*r;
-      dots += `<circle class="radar-pt ${isActive?'active':''}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3"/>`;
+      dots += `<circle class="radar-pt ${isActive?'active':''}" cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3"/>`;
     }
-    // label : un peu au-delà du cercle externe
+    if(hasB && p.pctB != null){
+      const r = R * p.pctB;
+      dots += `<circle cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3" fill="var(--orange)"/>`;
+    }
     const lx = cx + Math.cos(p.angle) * (R + 22);
     const ly = cy + Math.sin(p.angle) * (R + 22);
-    // alignement adaptatif selon la position angulaire
     const cosA = Math.cos(p.angle);
-    let anchor = 'middle';
-    if(cosA > 0.3) anchor = 'start';
-    else if(cosA < -0.3) anchor = 'end';
+    let anchor = 'middle'; if(cosA > 0.3) anchor = 'start'; else if(cosA < -0.3) anchor = 'end';
     const shortLbl = (p.axis.label || p.axis.indicator).length > 18
       ? (p.axis.label || p.axis.indicator).slice(0, 17) + '…'
       : (p.axis.label || p.axis.indicator);
@@ -1975,7 +2131,8 @@ function drawPuRadar(){
     ${gridSvg}
     ${axesSvg}
     ${medianRing}
-    ${poly}
+    ${polyA}
+    ${polyB}
     ${dots}
     ${labels}
   </svg>`;
@@ -2070,17 +2227,39 @@ function puMapValue(iso){
 let _searchSel = 0, _searchItems = [];
 let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
 
+let _searchMode = 'subject';   // 'subject' | 'compareB'
+
 function openSearch(){
+  _searchMode = 'subject';
   document.getElementById('searchOverlay').classList.add('open');
   _multiPick = [];
-  // pré-remplir avec le sujet courant s'il s'agit d'une sélection libre de pays
   if(state.subject && state.subject.isos.length > 1){
     _multiPick = state.subject.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
   }
   const inp = document.getElementById('searchInput');
   inp.value = ''; inp.focus();
+  inp.placeholder = 'Rechercher un pays ou une zone…';
   onSearchInput('');
   renderTray();
+}
+function openSearchForB(){
+  _searchMode = 'compareB';
+  document.getElementById('searchOverlay').classList.add('open');
+  _multiPick = [];
+  if(state.compareB && state.compareB.isos.length > 1){
+    _multiPick = state.compareB.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
+  }
+  const inp = document.getElementById('searchInput');
+  inp.value = ''; inp.focus();
+  inp.placeholder = 'Choisir un comparant…';
+  onSearchInput('');
+  renderTray();
+}
+function setCompareB(isos, label){
+  state.compareB = { isos: isos.slice(), label: label || detectZoneLabel(isos) };
+  renderContextBar();
+  refreshActiveView();
+  syncUrl();
 }
 function closeSearch(){ document.getElementById('searchOverlay').classList.remove('open'); }
 
@@ -2152,7 +2331,8 @@ function toggleCountry(i){
 
 function pickZone(i){
   const it = _searchItems[i]; if(!it || it.kind !== 'zone') return;
-  setSubject(it.isos, it.label);   // zone = sélection directe immédiate
+  if(_searchMode === 'compareB') setCompareB(it.isos, it.label);
+  else setSubject(it.isos, it.label);
   closeSearch();
 }
 
@@ -2177,7 +2357,9 @@ function removePick(iso){
 function validateMultiSelection(){
   if(!_multiPick.length) return;
   const isos = _multiPick.map(p => p.iso3);
-  setSubject(isos, detectZoneLabel(isos));   // label auto si ça correspond à une zone connue
+  const label = detectZoneLabel(isos);
+  if(_searchMode === 'compareB') setCompareB(isos, label);
+  else setSubject(isos, label);
   closeSearch();
 }
 
