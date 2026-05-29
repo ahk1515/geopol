@@ -17,6 +17,11 @@
 #   - Projections 2025-2030 taguées subcategory='projection'
 #   - Pour pib_usd et population : on n'importe que les projections (2025+)
 #     car les données historiques viennent déjà de la Banque Mondiale
+#   - Conversion d'échelle : WEO renvoie pib_usd en Billions et population
+#     en Millions ; on convertit en unités natives (USD et personnes) pour
+#     rester cohérent avec la Banque Mondiale. La colonne 'Scale' du fichier
+#     est lue dynamiquement, ce qui rend le parseur robuste si l'IMF change
+#     l'échelle d'un indicateur.
 # =============================================================
 
 import sqlite3
@@ -30,18 +35,31 @@ SOURCE = "FMI WEO"
 
 # -------------------------------------------------------------
 # INDICATEURS À IMPORTER
-# (code_weo, indicator_géopol, projections_only)
+# (code_weo, indicator_géopol, unit_native, projections_only)
+# unit_native : unité dans laquelle on STOCKE en base (après conversion d'échelle).
 # projections_only=True → on n'importe que les années > est_after
-# projections_only=False → on importe tout (dans les bornes ANNEE_DEBUT-ANNEE_FIN)
 # -------------------------------------------------------------
+# Pour pib_usd et population : unité native = USD et personnes (comme la Banque
+# Mondiale), parce qu'on n'importe que les projections et que l'historique
+# vient de la Banque Mondiale → l'unité stockée doit correspondre.
 WEO_INDICATORS = {
-    "LUR":          ("taux_chomage",        "%",    False),
-    "PCPIPCH":      ("inflation",           "%",    False),
-    "GGXWDG_NGDP":  ("dette_publique_pib",  "%",    False),
-    "BCA_NGDPD":    ("balance_courante_pib","%",    False),
-    "NGDP_RPCH":    ("croissance_pib",      "%",    False),
-    "NGDPD":        ("pib_usd",             "USD",  True),   # projections seulement
-    "LP":           ("population",          "M",    True),   # projections seulement
+    "LUR":          ("taux_chomage",          "%",         False),
+    "PCPIPCH":      ("inflation",             "%",         False),
+    "GGXWDG_NGDP":  ("dette_publique_pib",    "%",         False),
+    "BCA_NGDPD":    ("balance_courante_pib",  "%",         False),
+    "NGDP_RPCH":    ("croissance_pib",        "%",         False),
+    "NGDPD":        ("pib_usd",               "USD",       True),
+    "LP":           ("population",            "personnes", True),
+}
+
+# Échelles WEO → facteur multiplicatif pour passer en unité native (USD, personnes).
+# Lu dynamiquement depuis la colonne 'Scale' du fichier source.
+SCALE_FACTORS = {
+    "":          1,
+    "Units":     1,
+    "Thousands": 1_000,
+    "Millions":  1_000_000,
+    "Billions":  1_000_000_000,
 }
 
 # Codes ISO3 non standard dans WEO → ISO3 GÉOPOL
@@ -140,6 +158,7 @@ def run(filepath=None):
 
     total   = 0
     counts  = {ind: 0 for _, (ind, _, _) in WEO_INDICATORS.items()}
+    warnings_seen = set()   # pour ne logger qu'une fois par échelle inconnue
 
     for line in lines[1:]:
         parts = line.strip().split('\t')
@@ -150,12 +169,25 @@ def run(filepath=None):
         if weo_code not in WEO_INDICATORS:
             continue
 
-        indicator, unit, proj_only = WEO_INDICATORS[weo_code]
+        indicator, unit_native, proj_only = WEO_INDICATORS[weo_code]
 
         iso3 = parts[col_iso3].strip() if col_iso3 < len(parts) else ""
         iso3 = WEO_ISO3_MAP.get(iso3, iso3)
         if not iso3 or len(iso3) != 3:
             continue
+
+        # Échelle native déclarée par le fichier WEO pour cette ligne
+        # (vide pour les % et taux, "Billions" pour NGDPD, "Millions" pour LP, etc.)
+        scale_label = parts[col_scale].strip() if col_scale < len(parts) else ""
+        if scale_label not in SCALE_FACTORS:
+            # On ne stoppe pas : on stocke tel quel mais on signale (une seule fois)
+            key = (indicator, scale_label)
+            if key not in warnings_seen:
+                print(f"⚠️  Échelle inconnue pour {indicator} : '{scale_label}' (valeur non convertie)")
+                warnings_seen.add(key)
+            scale_factor = 1
+        else:
+            scale_factor = SCALE_FACTORS[scale_label]
 
         # Année à partir de laquelle les données sont des projections
         est_after_str = parts[col_est].strip() if col_est < len(parts) else ""
@@ -178,8 +210,11 @@ def run(filepath=None):
             if val is None:
                 continue
 
+            # Conversion d'échelle → unité native
+            val = val * scale_factor
+
             subcat = "projection" if is_projection else None
-            rows.append((iso3, indicator, year, val, unit, SOURCE, subcat))
+            rows.append((iso3, indicator, year, val, unit_native, SOURCE, subcat))
 
         if rows:
             conn.executemany("""
