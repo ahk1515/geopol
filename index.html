@@ -137,6 +137,8 @@ header {
   background: var(--bg2); border-bottom: 1px solid var(--border);
   padding: 9px 18px; display: flex; align-items: center; gap: 12px;
   flex-wrap: wrap; flex-shrink: 0;
+  position: sticky; top: 50px; z-index: 40;
+  box-shadow: 0 1px 0 var(--border);
 }
 .ctx-label {
   font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
@@ -164,6 +166,15 @@ header {
   font-family: var(--mono); font-size: 13px; font-weight: 600;
   color: var(--text); min-width: 36px; text-align: right;
 }
+/* menu déroulant d'année (Puissance / Relations) */
+.year-select {
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  padding: 4px 26px 4px 10px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" fill="none" stroke="%23666" stroke-width="1.5"/></svg>') no-repeat right 8px center;
+  appearance: none; cursor: pointer; color: var(--text);
+}
+.year-select:hover { border-color: var(--border2); }
+.year-select:focus { outline: none; border-color: var(--green); }
 
 /* ── Zone principale ─────────────────────────────────────────── */
 main { flex: 1; padding: 16px 18px 28px; }
@@ -824,33 +835,38 @@ function ensureIdentiteCache(){
 
   // reset cache pour ce nouveau sujet
   cache.key = key;
-  cache.identite = {};
+  cache.identite = {};        // indicator -> year -> valeur agrégée HISTORIQUE
+  cache.projection = {};      // indicator -> year -> valeur agrégée PROJECTION
   cache.flux.clear();
   cache.world.clear();
 
   const inList = sqlList(isos);
-  // une seule requête : toutes les valeurs identite du sujet
-  const r = safeExec(`SELECT indicator, year, country_iso3, value FROM identite WHERE country_iso3 IN (${inList})`);
+  // récupère SUBCATEGORY pour distinguer historique (NULL) vs projection ('projection')
+  const r = safeExec(`SELECT indicator, year, country_iso3, value, subcategory FROM identite WHERE country_iso3 IN (${inList})`);
   if(!r.length) return true;
 
-  // regroupement indicator -> year -> [valeurs par pays]
-  const tmp = {};
-  for(const [ind, year, iso, val] of r[0].values){
+  // regroupement séparé historique vs projection
+  const tmpH = {}, tmpP = {};
+  for(const [ind, year, iso, val, sub] of r[0].values){
     if(val == null) continue;
-    (tmp[ind] ??= {});
-    (tmp[ind][year] ??= []).push(val);
+    const bucket = (sub === 'projection') ? tmpP : tmpH;
+    (bucket[ind] ??= {});
+    (bucket[ind][year] ??= []).push(val);
   }
-  // agrégation selon la méthode déclarée dans config
-  for(const ind in tmp){
-    const method = aggMethodFor(ind);
-    const byYear = {};
-    for(const y in tmp[ind]){
-      const arr = tmp[ind][y];
-      if(method === 'sum') byYear[y] = arr.reduce((a,b)=>a+b, 0);
-      else byYear[y] = arr.reduce((a,b)=>a+b, 0) / arr.length;  // mean (simple ; pondération pop. à l'étape 5 si besoin)
+  function aggregate(tmp, target){
+    for(const ind in tmp){
+      const method = aggMethodFor(ind);
+      const byYear = {};
+      for(const y in tmp[ind]){
+        const arr = tmp[ind][y];
+        if(method === 'sum') byYear[y] = arr.reduce((a,b)=>a+b, 0);
+        else byYear[y] = arr.reduce((a,b)=>a+b, 0) / arr.length;
+      }
+      target[ind] = byYear;
     }
-    cache.identite[ind] = byYear;
   }
+  aggregate(tmpH, cache.identite);
+  aggregate(tmpP, cache.projection);
   return true;
 }
 
@@ -872,13 +888,24 @@ function getIdentiteValue(indicator, year){
 }
 
 // Série temporelle (valeurs non nulles/non zéro) pour courbes/sparklines.
+// Renvoie [{year, value, projection}], projection=true pour les valeurs WEO futures.
 function getIdentiteSeries(indicator){
   ensureIdentiteCache();
-  const series = cache.identite?.[indicator];
-  if(!series) return [];
-  return Object.keys(series).map(Number).sort((a,b)=>a-b)
-    .filter(y => series[y] != null && series[y] !== 0)
-    .map(y => ({ year: y, value: series[y] }));
+  const out = [];
+  const h = cache.identite?.[indicator];
+  if(h){
+    for(const y of Object.keys(h).map(Number).sort((a,b)=>a-b)){
+      if(h[y] != null && h[y] !== 0) out.push({ year: y, value: h[y], projection: false });
+    }
+  }
+  const p = cache.projection?.[indicator];
+  if(p){
+    for(const y of Object.keys(p).map(Number).sort((a,b)=>a-b)){
+      if(p[y] != null && p[y] !== 0) out.push({ year: y, value: p[y], projection: true });
+    }
+  }
+  // tri global par année (au cas où historique et projection se chevauchent)
+  return out.sort((a,b) => a.year - b.year);
 }
 
 // Stats mondiales pour un indicateur/année (percentiles, rangs) — paresseux.
@@ -1115,7 +1142,7 @@ function renderSubjectSlot(){
      </span>`;
 }
 // Année : en Synthèse on affiche juste la dernière année dispo (pas de curseur) ;
-// en Puissance/Relations on garde le curseur pour explorer le détail temporel.
+// en Puissance/Relations on garde un menu déroulant pour explorer le détail temporel.
 function renderYearSlot(){
   const slot = document.getElementById('yearSlot');
   if(state.view === 'synthese'){
@@ -1124,10 +1151,11 @@ function renderYearSlot(){
       <span style="font-size:10px;color:var(--text3);margin-left:6px">dernière donnée</span>`;
   } else {
     const mn = state.yearBounds.min, mx = state.yearBounds.max;
-    slot.innerHTML = `<div class="year-control">
-      <input type="range" id="yearSlider" min="${mn}" max="${mx}" value="${state.year}" step="1" oninput="onYearChange(this.value)">
-      <span class="year-out" id="yearOut">${state.year}</span>
-    </div>`;
+    let opts = '';
+    for(let y = mx; y >= mn; y--){
+      opts += `<option value="${y}" ${y===state.year?'selected':''}>${y}</option>`;
+    }
+    slot.innerHTML = `<select id="yearSelect" class="year-select" onchange="onYearChange(this.value)">${opts}</select>`;
   }
 }
 
@@ -1682,25 +1710,35 @@ function drawPuCurve(){
   const yLo = yMin - (yMax-yMin)*0.08, yHi = yMax + (yMax-yMin)*0.08;
   const X = y => m.l + ((y - xMin)/((xMax-xMin)||1)) * (W - m.l - m.r);
   const Y = v => H - m.b - ((v - yLo)/((yHi-yLo)||1)) * (H - m.t - m.b);
-  const curYear = new Date().getFullYear();
-  // séparer historique / projection
-  const histPath = series.filter(d=>d.year<=curYear).map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ');
-  const projPts = series.filter(d=>d.year>=curYear);
-  const projPath = projPts.length>1 ? projPts.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ') : '';
-  const area = histPath + ` L${X(Math.min(curYear,xMax)).toFixed(1)},${Y(yLo).toFixed(1)} L${X(xMin).toFixed(1)},${Y(yLo).toFixed(1)} Z`;
+  // séparation propre historique vs projection (via le champ du cache)
+  const hist = series.filter(d => !d.projection);
+  const proj = series.filter(d => d.projection);
+  // raccord visuel : le 1er point de projection commence là où l'historique finit
+  const projWithJoin = (hist.length && proj.length) ? [hist[hist.length-1], ...proj] : proj;
+  const histPath = hist.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ');
+  const projPath = projWithJoin.length>1 ? projWithJoin.map((d,i)=>(i===0?'M':'L')+X(d.year).toFixed(1)+','+Y(d.value).toFixed(1)).join(' ') : '';
+  const area = histPath ? histPath + ` L${X(hist[hist.length-1].year).toFixed(1)},${Y(yLo).toFixed(1)} L${X(hist[0].year).toFixed(1)},${Y(yLo).toFixed(1)} Z` : '';
   // ticks Y (3)
   let gridY = '';
-  for(let i=0;i<=3;i++){ const v = yLo + (yHi-yLo)*i/3; const yy = Y(v).toFixed(1); gridY += `<line class="curve-grid" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"/><text class="curve-lbl" x="${m.l-6}" y="${(+yy+3).toFixed(1)}" text-anchor="end">${fmtNumber(v, state.indicators.find(c=>c.indicator===_puIndicator)?.unit_display)}</text>`; }
-  // ticks X (début, milieu, fin)
+  const cfg = state.indicators.find(c=>c.indicator===_puIndicator);
+  for(let i=0;i<=3;i++){ const v = yLo + (yHi-yLo)*i/3; const yy = Y(v).toFixed(1); gridY += `<line class="curve-grid" x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}"/><text class="curve-lbl" x="${m.l-6}" y="${(+yy+3).toFixed(1)}" text-anchor="end">${fmtNumber(v, cfg?.unit_display)}</text>`; }
+  // ticks X
   const xticks = [xMin, Math.round((xMin+xMax)/2), xMax];
-  let labX = xticks.map(t => `<text class="curve-lbl" x="${X(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`).join('');
-  const last = series[series.length-1];
+  const labX = xticks.map(t => `<text class="curve-lbl" x="${X(t).toFixed(1)}" y="${H-8}" text-anchor="middle">${t}</text>`).join('');
+  // séparateur visuel : début de la zone projection
+  let projMark = '';
+  if(hist.length && proj.length){
+    const xp = X(proj[0].year).toFixed(1);
+    projMark = `<line class="curve-grid" x1="${xp}" y1="${m.t}" x2="${xp}" y2="${H-m.b}" style="stroke:var(--orange);opacity:.4;stroke-dasharray:3 3"/><text class="curve-lbl" x="${xp}" y="${m.t+8}" text-anchor="middle" style="fill:var(--orange)">projection →</text>`;
+  }
+  const last = hist[hist.length-1] || proj[proj.length-1];
   wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     ${gridY}
-    <path class="curve-area" d="${area}"/>
-    <path class="curve-line" d="${histPath}"/>
-    ${projPath?`<path class="curve-line curve-proj" d="${projPath}"/>`:''}
-    <circle class="curve-dot" cx="${X(last.year).toFixed(1)}" cy="${Y(last.value).toFixed(1)}" r="3"/>
+    ${area ? `<path class="curve-area" d="${area}"/>` : ''}
+    ${histPath ? `<path class="curve-line" d="${histPath}"/>` : ''}
+    ${projPath ? `<path class="curve-line curve-proj" d="${projPath}" style="stroke:var(--orange)"/>` : ''}
+    ${last ? `<circle class="curve-dot" cx="${X(last.year).toFixed(1)}" cy="${Y(last.value).toFixed(1)}" r="3"/>` : ''}
+    ${projMark}
     ${labX}
   </svg>`;
 }
