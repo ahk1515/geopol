@@ -1130,6 +1130,7 @@ function ensureIdentiteCache(){
   cache.flux.clear();
   cache.world.clear();
   _fluxTimelineCache.clear();
+  _fluxPartnerTotalsCache.clear();
 
   const inList = sqlList(isos);
   // récupère SUBCATEGORY pour distinguer historique (NULL) vs projection ('projection')
@@ -1403,6 +1404,55 @@ function getFluxRowsTimeline(entry){
 }
 
 // Pour la carte mondiale d'un flux : valeur agrégée par pays partenaire sur l'année courante.
+// Pour chaque partenaire du sujet, son TOTAL MONDIAL sur ce flux à l'année courante.
+// Utile pour la colonne « Pour qui le sujet pèse » (Synthèse colonne 2) et Relations sens influence.
+// Le partenaire envoie/reçoit du flux à de nombreux pays — on somme sur tous SAUF le sujet.
+// Renvoie { ISO3: total_monde, ... }
+const _fluxPartnerTotalsCache = new Map();
+function getFluxPartnerWorldTotals(entry){
+  ensureIdentiteCache();
+  const isos = currentIsos();
+  if(!isos.length) return {};
+  // sens "influence" : on regarde le total mondial du partenaire dans la direction inverse du sens du sujet
+  // ex. transferts_armement|to : sujet=country_to, partenaire=country_from (exportateurs)
+  // Pour avoir le poids du sujet chez chaque exportateur, on compare le volume sujet/partner
+  // au volume total exporté par ce partenaire (somme sur tous les destinataires hors sujet)
+  // → on regarde où ce partenaire apparaît comme country_from dans CETTE direction
+  let realIndicator, partnerCol, otherCol;
+  realIndicator = entry.realIndicator;
+  if(realIndicator === 'import_commercial'){ partnerCol = 'country_from'; otherCol = 'country_to'; }
+  else if(realIndicator === 'export_commercial'){ partnerCol = 'country_to'; otherCol = 'country_from'; }
+  else {
+    partnerCol = (entry.side === 'to') ? 'country_from' : 'country_to';
+    otherCol = (entry.side === 'to') ? 'country_to' : 'country_from';
+  }
+  // utilise la même année que getFluxRows pour la cohérence
+  let y = state.year;
+  const inList = sqlList(isos);
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${otherCol} IN (${inList}) LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${otherCol} IN (${inList})`);
+    if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+  }
+  const cacheKey = entry.key + '|PWT|' + subjectKey(isos) + '|' + y;
+  if(_fluxPartnerTotalsCache.has(cacheKey)) return _fluxPartnerTotalsCache.get(cacheKey);
+
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  // Pour chaque partenaire, somme sur TOUS ses partenaires (autres pays récipiendaires hors agrégats régionaux et sentinelles).
+  // On exclut volontairement les sentinelles __ et les zones agrégées du dénominateur, sinon le total est gonflé.
+  const r = safeExec(`SELECT ${partnerCol} AS partner, SUM(value) AS total
+                      FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y}
+                      AND ${partnerCol} NOT IN (${exclAgg})
+                      AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                      AND ${otherCol} NOT IN (${exclAgg})
+                      AND ${otherCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                      GROUP BY ${partnerCol}`);
+  const out = {};
+  if(r.length) for(const [p, t] of r[0].values){ out[p] = t || 0; }
+  _fluxPartnerTotalsCache.set(cacheKey, out);
+  return out;
+}
+
 function getFluxWorldMap(entry){
   const rows = getFluxRows(entry);
   if(!rows.length) return {};
@@ -1422,7 +1472,7 @@ function getFluxWorldMap(entry){
 }
 
 // Invalide le cache quand l'année change (les valeurs annuelles dépendent de l'année).
-function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); _fluxTimelineCache.clear(); }
+function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); _fluxTimelineCache.clear(); _fluxPartnerTotalsCache.clear(); }
 
 /* ─── UI : helpers chargement ─────────────────────────────────── */
 function setLoadingMsg(msg, pct){
@@ -2382,6 +2432,7 @@ function bindKvTips(){
 // Chaque entrée porte son sens et son libellé contextuel propre.
 function buildPanorama(entries, columnId){
   const colSuffix = columnId || 'panorama';
+  const isInfluence = (columnId === 'influence');
   if(!entries.length) return `<div class="pano-empty">Aucun flux sélectionné. <button onclick="openPinModal('flux_${colSuffix==='partner'?'partner':'influence'}')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">configurer</button></div>`;
   let html = '';
   let any = false;
@@ -2392,25 +2443,48 @@ function buildPanorama(entries, columnId){
       const bil = rows.filter(r => isBilateral(r));
       if(bil.length) rows = bil;
     }
-    const byPartner = new Map();
-    let total = 0;
+    // Volume du sujet pour chaque partenaire (= dénominateur de la colonne 1)
+    const subjectByPartner = new Map();
+    let subjectTotal = 0;
     for(const r of rows){
       if(r.partner && r.partner.startsWith('__')) continue;
       const v = r.value || 0;
-      byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
-      total += v;
+      subjectByPartner.set(r.partner, (subjectByPartner.get(r.partner) || 0) + v);
+      subjectTotal += v;
     }
-    if(total <= 0) continue;
+    if(subjectTotal <= 0) continue;
     any = true;
-    const ranked = [...byPartner.entries()].sort((a,b) => b[1]-a[1]);
+
+    let ranked;        // [[code, pct, volume], ...] trié décroissant par pct
+    if(isInfluence){
+      // COLONNE 2 — POUR QUI LE SUJET PÈSE
+      // Pour chaque partenaire, on calcule (volume sujet vers ce partenaire) / (total mondial de ce partenaire)
+      // Le tri se fait par pct décroissant (pays où le sujet pèse le plus relativement).
+      const worldTotals = getFluxPartnerWorldTotals(e);
+      const enriched = [];
+      for(const [code, v] of subjectByPartner.entries()){
+        const wt = worldTotals[code] || 0;
+        if(wt <= 0) continue;   // partenaire sans volume mondial → on ne peut pas calculer
+        const pct = (v / wt) * 100;
+        enriched.push([code, pct, v]);
+      }
+      ranked = enriched.sort((a,b) => b[1] - a[1]);
+    } else {
+      // COLONNE 1 — QUI PÈSE POUR LE SUJET (calcul historique)
+      // Pour chaque partenaire, sa part dans le total du sujet.
+      ranked = [...subjectByPartner.entries()]
+        .map(([code, v]) => [code, (v/subjectTotal)*100, v])
+        .sort((a,b) => b[1] - a[1]);
+    }
+    if(!ranked.length) continue;
+
     const top = ranked[0];
-    const pct = (top[1] / total) * 100;
+    const pct = top[1];
     const cls = concentrationClass(pct);
     const rowId = ('pano_' + colSuffix + '_' + e.key).replace(/[^a-zA-Z0-9_]/g,'_');
-    const visualClass = (e.side === 'to') ? 'partner' : 'influence';
-    const maxPct = (ranked[0][1] / total) * 100 || 1;
-    const top5 = ranked.slice(0, 5).map(([code, v]) => {
-      const p = (v/total)*100;
+    const visualClass = isInfluence ? 'influence' : 'partner';
+    const maxPct = ranked[0][1] || 1;
+    const top5 = ranked.slice(0, 5).map(([code, p]) => {
       const w = Math.max(2, (p / maxPct) * 100);
       return `<div class="pano-sub">
         <span class="flag">${partnerFlag(code)}</span>
@@ -2879,6 +2953,7 @@ let _relEntryKey = null;          // clé d'entrée flux active (ex. 'dette_exte
 let _relDim = 'partner';          // 'partner' | 'sub1' | 'sub2' | 'sub3' — dimension principale
 let _relPath = [];                // chemin de drill-down dans le treemap (= filtre cumulatif partagé)
 let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
+let _relMetric = 'volume';        // 'volume' | 'influence' — métrique d'affichage
 
 /* ─── Dimensions disponibles pour le référentiel d'analyse ────────
    Pour un flux donné, on renvoie la liste des dimensions possibles
@@ -3014,25 +3089,42 @@ function renderRelMain(){
     }
     dimSelector += `</div>`;
   }
+  // sélecteur de métrique (volume vs influence) — uniquement quand dim=partner
+  let metricSelector = '';
+  if(_relDim === 'partner'){
+    metricSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
+      <span class="rel-filter-label">Mesure</span>
+      <div class="seg">
+        <button class="${_relMetric==='volume'?'on':''}" onclick="setRelMetric('volume')" title="Part du sujet vers chaque partenaire">Volume</button>
+        <button class="${_relMetric==='influence'?'on':''}" onclick="setRelMetric('influence')" title="Poids du sujet chez chaque partenaire">Influence</button>
+      </div>
+    </div>`;
+  } else {
+    // sur une catégorie, force la métrique à 'volume' pour éviter incohérence
+    if(_relMetric !== 'volume') _relMetric = 'volume';
+  }
+  // sous-titres dynamiques selon la métrique
+  const metricLabel = _relMetric === 'influence' ? 'influence chez les partenaires' : 'volume du sujet';
+  const mapSubtitle = (_relDim === 'partner' && _relMetric === 'influence') ? 'poids du sujet par pays' : 'par pays partenaire';
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${entry.label_long}</span>
       <span class="meta">${state.subject.label}</span>
     </div>
-    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}</div>
+    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}${metricSelector}</div>
     <div class="pu-cells">
       <div class="top-row">
         <div class="pu-cell">
-          <div class="pu-cell-head"><span class="pu-cell-title">Composition · ${dimLabelOf(_relDim, dims)}</span><span class="meta" style="font-size:10px;color:var(--text3)">cliquer pour creuser</span></div>
+          <div class="pu-cell-head"><span class="pu-cell-title">Composition · ${dimLabelOf(_relDim, dims)}</span><span class="meta" style="font-size:10px;color:var(--text3)">${metricLabel}</span></div>
           <div class="pu-cell-body" id="relCompBody" style="min-height:340px"></div>
         </div>
         <div class="pu-cell">
-          <div class="pu-cell-head"><span class="pu-cell-title">Évolution · aires empilées</span><span class="meta" style="font-size:10px;color:var(--text3)">${dimLabelOf(_relDim, dims).toLowerCase()}</span></div>
+          <div class="pu-cell-head"><span class="pu-cell-title">Évolution · aires empilées</span><span class="meta" style="font-size:10px;color:var(--text3)">${metricLabel}</span></div>
           <div class="pu-cell-body" id="relEvoBody" style="min-height:340px"></div>
         </div>
       </div>
       <div class="pu-cell">
-        <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">par pays partenaire</span></div>
+        <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">${mapSubtitle}</span></div>
         <div class="pu-cell-body">
           <div id="relMapContainer"><svg id="relMap"></svg></div>
           <div class="rel-map-legend"><span>faible</span><span class="bar"></span><span>fort</span></div>
@@ -3043,6 +3135,7 @@ function renderRelMain(){
   renderRelEvolution();
   renderRelFluxMap();
 }
+function setRelMetric(m){ _relMetric = m; renderRelMain(); syncUrl(); }
 function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label: 'Partenaire' }).label; }
 
 
@@ -3076,7 +3169,7 @@ function buildFluxAggregation(){
   rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   // filtre cumulé issu du drill (_relPath)
   rows = applyDrillFilter(rows);
-  if(!rows.length) return { value: 0, children: [] };
+  if(!rows.length) return { value: 0, children: [], dim: _relDim, metric: _relMetric };
 
   // Bucket selon la dimension active
   const dim = _relDim;
@@ -3092,18 +3185,40 @@ function buildFluxAggregation(){
     return { name: key, isPartner: false, key };
   }
 
+  // Première agrégation par bucket : volume du sujet
   const map = new Map();
-  let total = 0;
+  let totalVolume = 0;
   for(const r of rows){
     const v = r.value || 0;
     if(v <= 0) continue;
     const k = bucketKey(r);
-    if(!map.has(k)) map.set(k, { ...bucketMeta(k), value: 0 });
-    map.get(k).value += v;
-    total += v;
+    if(!map.has(k)) map.set(k, { ...bucketMeta(k), volume: 0 });
+    map.get(k).volume += v;
+    totalVolume += v;
   }
-  const children = [...map.values()].sort((a,b) => b.value - a.value);
-  return { value: total, children, dim };
+
+  // En mode 'influence' avec dim=partner, on remplace la valeur par le poids relatif du sujet
+  // chez chaque partenaire = volume_sujet / volume_mondial_du_partenaire (en %).
+  const isInfluence = (_relMetric === 'influence' && dim === 'partner');
+  let children;
+  if(isInfluence){
+    const worldTotals = getFluxPartnerWorldTotals(entry);
+    const enriched = [];
+    for(const node of map.values()){
+      const wt = worldTotals[node.key] || 0;
+      if(wt <= 0) continue;   // pas de données mondiales → on ne peut pas calculer l'influence
+      const pct = (node.volume / wt) * 100;
+      // value = pct (sert au treemap et aux infobulles) ; on garde volume pour l'info brut
+      enriched.push({ ...node, value: pct, volume: node.volume, worldTotal: wt });
+    }
+    children = enriched.sort((a,b) => b.value - a.value);
+    return { value: 100, children, dim, metric: 'influence' };  // value=100 sans signification physique
+  } else {
+    // mode volume classique : la valeur affichée EST le volume
+    for(const node of map.values()){ node.value = node.volume; }
+    children = [...map.values()].sort((a,b) => b.value - a.value);
+    return { value: totalVolume, children, dim, metric: 'volume' };
+  }
 }
 
 // Pour le treemap (drill-down classique), on descend dans l'arbre.
@@ -3126,21 +3241,34 @@ function drawTreemapRel(node, host){
   const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
   let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
   const total = items.reduce((s,c)=>s+c.value, 0) || 1;
+  const isInfluence = (node.metric === 'influence');
+  const entry = getFlowEntryByKey(_relEntryKey);
+  const cfg = state.indicators.find(cc => cc.indicator === entry?.realIndicator) || entry;
   cells.forEach((c, i) => {
     const fill = palette[i % palette.length];
-    const pct = (c.item.value/total)*100;
-    const entry = getFlowEntryByKey(_relEntryKey);
-    const cfg = state.indicators.find(c => c.indicator === entry?.realIndicator) || entry;
+    // En mode influence : item.value EST le pourcentage (poids du sujet chez ce partenaire).
+    // L'infobulle indique alors : "X% du marché total · volume Y M USD"
+    // En mode volume : item.value EST le volume. L'infobulle indique : "Y M USD · X% du sujet"
+    let tipBody;
+    if(isInfluence){
+      const volumeStr = fmtWithUnit(c.item.volume, cfg?.unit_display);
+      tipBody = `${c.item.value.toFixed(1)}% du total mondial · volume ${volumeStr}`;
+    } else {
+      const pct = (c.item.value/total)*100;
+      tipBody = `${fmtWithUnit(c.item.value, cfg?.unit_display)} · ${pct.toFixed(1)}%`;
+    }
     svg += `<g class="tm-cell">
       <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
-            data-tt="${escAttr((c.item.flag?c.item.flag+' ':'')+c.item.name)}" data-tb="${escAttr(fmtWithUnit(c.item.value, cfg?.unit_display)+' · '+pct.toFixed(1)+'%')}"
+            data-tt="${escAttr((c.item.flag?c.item.flag+' ':'')+c.item.name)}" data-tb="${escAttr(tipBody)}"
             onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
             onclick="treemapClick('${escAttr(c.item.key)}')"/>`;
     if(c.w > 60 && c.h > 30){
       const flag = c.item.flag || '';
       const short = c.item.name.length > 18 ? c.item.name.slice(0,17)+'…' : c.item.name;
+      // label secondaire : en influence on affiche le pct du marché mondial, en volume on affiche la part du sujet
+      const subValue = isInfluence ? (c.item.value.toFixed(0) + '%') : ((c.item.value/total*100).toFixed(0) + '%');
       svg += `<text class="tm-label" x="${(c.x+8).toFixed(1)}" y="${(c.y+18).toFixed(1)}" style="font-size:12px;font-weight:600">${flag} ${short}</text>`;
-      svg += `<text class="tm-label-sub" x="${(c.x+8).toFixed(1)}" y="${(c.y+32).toFixed(1)}" style="font-size:10px">${pct.toFixed(0)}%</text>`;
+      svg += `<text class="tm-label-sub" x="${(c.x+8).toFixed(1)}" y="${(c.y+32).toFixed(1)}" style="font-size:10px">${subValue}</text>`;
     }
     svg += `</g>`;
   });
@@ -3186,6 +3314,13 @@ function renderRelEvolution(){
   if(!body) return;
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ body.innerHTML = ''; return; }
+  // En mode influence avec dim=partner, les aires empilées n'ont pas de sens additif
+  // (chaque partenaire a son propre dénominateur mondial). On le signale et on bascule l'aperçu temporel
+  // sur le volume du sujet (cohérent avec le treemap en mode volume), pour ne pas masquer l'information.
+  if(_relMetric === 'influence' && _relDim === 'partner'){
+    body.innerHTML = `<div class="rel-empty">L'évolution en aires empilées n'est pertinente qu'en mode <b>Volume</b>.<br><span style="opacity:.7">Bascule en haut pour la voir.</span></div>`;
+    return;
+  }
   let rows = getFluxRowsTimeline(entry);
   if(!rows.length){ body.innerHTML = `<div class="rel-empty">Pas de série temporelle disponible.</div>`; return; }
   // filtres cohérents (dette bilatéral, hors agrégats)
@@ -3315,7 +3450,22 @@ async function renderRelFluxMap(){
 
   // valeurs par partenaire (déjà filtrées : bilatéral pour la dette, hors agrégats)
   const byPartner = getFluxWorldMap(entry);
-  const sorted = Object.entries(byPartner).map(([iso,v]) => ({iso,v})).sort((a,b)=>a.v-b.v);
+  const isInfluence = (_relMetric === 'influence');
+  // En mode influence on calcule pour chaque partenaire : (volume sujet → partenaire) / (total mondial du partenaire)
+  // = poids du sujet chez ce partenaire (en %).
+  let displayByIso;
+  let worldTotals = null;
+  if(isInfluence){
+    worldTotals = getFluxPartnerWorldTotals(entry);
+    displayByIso = {};
+    for(const [iso, v] of Object.entries(byPartner)){
+      const wt = worldTotals[iso] || 0;
+      if(wt > 0) displayByIso[iso] = (v / wt) * 100;
+    }
+  } else {
+    displayByIso = byPartner;
+  }
+  const sorted = Object.entries(displayByIso).map(([iso,v]) => ({iso,v})).sort((a,b)=>a.v-b.v);
   const n = sorted.length;
   const palette = ['#f5e6dc','#ecc8a8','#d4956f','#b66a3a','#9c4a1f','#7c2d12','#5c1c08','#3d0f04'];
   const colorByIso = {};
@@ -3324,8 +3474,8 @@ async function renderRelFluxMap(){
     const idx = Math.min(palette.length-1, Math.floor(q * palette.length));
     colorByIso[sorted[i].iso] = palette[idx];
   }
-  // somme totale pour les %
-  const total = sorted.reduce((s,c)=>s+c.v, 0) || 1;
+  // somme totale pour les % (mode volume seulement)
+  const total = isInfluence ? null : (sorted.reduce((s,c)=>s+c.v, 0) || 1);
 
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country')
@@ -3336,10 +3486,23 @@ async function renderRelFluxMap(){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--orange)').attr('stroke-width', 1);
       const v = byPartner[iso] || 0;
-      const pct = total ? (v/total)*100 : 0;
       const cfg = state.indicators.find(c => c.indicator === entry.realIndicator) || entry;
-      if(v > 0) showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, `${fmtWithUnit(v, cfg.unit_display)} · ${pct.toFixed(1)}%`);
-      else showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, 'pas de flux');
+      let body;
+      if(v <= 0){
+        body = 'pas de flux';
+      } else if(isInfluence){
+        const wt = worldTotals[iso] || 0;
+        if(wt > 0){
+          const influencePct = (v / wt) * 100;
+          body = `${influencePct.toFixed(1)}% du total mondial · volume ${fmtWithUnit(v, cfg.unit_display)}`;
+        } else {
+          body = `volume ${fmtWithUnit(v, cfg.unit_display)} · pas de total mondial`;
+        }
+      } else {
+        const pct = total ? (v/total)*100 : 0;
+        body = `${fmtWithUnit(v, cfg.unit_display)} · ${pct.toFixed(1)}%`;
+      }
+      showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, body);
     })
     .on('mousemove', moveTip)
     .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width', 0.4); hideTip(); })
