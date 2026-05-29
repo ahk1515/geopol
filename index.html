@@ -1804,6 +1804,119 @@ function concentrationClass(pct){
 }
 
 /* ─── DIAGNOSTIC FLUX (temporaire — aide au calage du schéma) ──── */
+/* DIAGNOSTIC D'AUDIT GLOBAL
+   Parcourt toute la table identite et signale tout indicateur où plusieurs
+   sources, unités ou ordres de grandeur cohabitent.
+   Usage console : diagUnits()  ou  diagUnits('pib_usd')  pour un seul indicateur
+   Options :
+     - sans argument : audit complet (peut être long, 30-60 sec sur grosses bases)
+     - avec un indicateur : audit ciblé immédiat
+*/
+function diagUnits(targetIndicator){
+  console.group('%cAUDIT UNITÉS / SOURCES / ÉCHELLES', 'color:#b45309;font-weight:bold');
+  // 1. Lister tous les indicateurs présents en base (table identite)
+  const indSql = targetIndicator
+    ? `SELECT DISTINCT indicator FROM identite WHERE indicator='${escapeSql(targetIndicator)}'`
+    : `SELECT DISTINCT indicator FROM identite ORDER BY indicator`;
+  const indRes = safeExec(indSql);
+  if(!indRes.length){ console.log('Aucun indicateur en base.'); console.groupEnd(); return; }
+  const indicators = indRes[0].values.map(v => v[0]);
+  console.log(`%c${indicators.length} indicateurs à auditer`, 'color:#666');
+
+  // 2. Pour chaque indicateur, agréger par source : nb lignes, unités, médiane, min/max
+  const alerts = [];
+  for(const ind of indicators){
+    const r = safeExec(`
+      SELECT source, unit, subcategory, COUNT(*) AS n,
+             MIN(value) AS vmin, MAX(value) AS vmax, AVG(value) AS vavg
+      FROM identite
+      WHERE indicator='${escapeSql(ind)}' AND value IS NOT NULL AND value != 0
+      GROUP BY source, unit, subcategory
+    `);
+    if(!r.length || !r[0].values.length) continue;
+    const groups = r[0].values.map(([source, unit, subcat, n, vmin, vmax, vavg]) => ({
+      source: source || '(null)',
+      unit: unit || '(null)',
+      subcat: subcat || '(historique)',
+      n, vmin, vmax, vavg
+    }));
+
+    // Sources distinctes pour cet indicateur
+    const sources = [...new Set(groups.map(g => g.source))];
+    const units = [...new Set(groups.map(g => g.unit))];
+
+    // Médiane robuste pour comparer les ordres de grandeur
+    // (on prend AVG car la médiane SQL n'est pas dispo simplement ; AVG suffit pour détecter facteur 1000+)
+    function magnitude(v){ if(!v || v === 0) return 0; return Math.floor(Math.log10(Math.abs(v))); }
+
+    const flags = [];
+    // 2a. Plusieurs unités déclarées pour le même indicateur → alerte
+    if(units.length > 1){
+      flags.push({type:'unités multiples', detail: units.join(' / ')});
+    }
+    // 2b. Plusieurs sources avec ordres de grandeur incompatibles (facteur > 1000)
+    if(sources.length > 1){
+      const bySource = {};
+      for(const g of groups){
+        if(!bySource[g.source]) bySource[g.source] = [];
+        bySource[g.source].push(g.vavg);
+      }
+      const avgPerSource = Object.entries(bySource).map(([s, arr]) => {
+        const m = arr.reduce((a,b) => a + Math.abs(b), 0) / arr.length;
+        return { source: s, avg: m, mag: magnitude(m) };
+      });
+      const mags = avgPerSource.map(x => x.mag);
+      const spread = Math.max(...mags) - Math.min(...mags);
+      if(spread >= 3){  // facteur 1000 ou plus
+        flags.push({
+          type: 'ordres de grandeur incompatibles entre sources',
+          detail: avgPerSource.map(x => `${x.source}≈10^${x.mag}`).join(' vs ')
+        });
+      }
+    }
+    // 2c. Historique vs projection : ordre de grandeur incompatible
+    const hist = groups.filter(g => g.subcat === '(historique)');
+    const proj = groups.filter(g => g.subcat === 'projection');
+    if(hist.length && proj.length){
+      const histAvg = hist.reduce((s,g) => s + Math.abs(g.vavg), 0) / hist.length;
+      const projAvg = proj.reduce((s,g) => s + Math.abs(g.vavg), 0) / proj.length;
+      const spread = Math.abs(magnitude(histAvg) - magnitude(projAvg));
+      if(spread >= 3){
+        flags.push({
+          type: 'historique vs projection : facteur 1000+',
+          detail: `historique≈10^${magnitude(histAvg)} vs projection≈10^${magnitude(projAvg)}`
+        });
+      }
+    }
+
+    if(flags.length){
+      alerts.push({ indicator: ind, sources, units, flags, groups });
+    }
+  }
+
+  // 3. Affichage
+  if(!alerts.length){
+    console.log('%c✓ Aucune anomalie détectée', 'color:#0a6e4a;font-weight:bold');
+    console.groupEnd(); return;
+  }
+  console.log(`%c⚠ ${alerts.length} indicateur(s) à vérifier`, 'color:#b45309;font-weight:bold;font-size:13px');
+  for(const a of alerts){
+    console.group(`%c${a.indicator}`, 'color:#b45309;font-weight:bold');
+    for(const f of a.flags) console.log(`  · ${f.type} → ${f.detail}`);
+    console.log('  Détail par source/unité/subcategory :');
+    console.table(a.groups.map(g => ({
+      source: g.source, unit: g.unit, subcategory: g.subcat,
+      lignes: g.n,
+      moyenne: g.vavg?.toExponential(2),
+      min: g.vmin?.toExponential(2),
+      max: g.vmax?.toExponential(2)
+    })));
+    console.groupEnd();
+  }
+  console.log('\n%cRappel : pour creuser un indicateur précis, diagUnits("nom_indicateur")', 'color:#666;font-style:italic');
+  console.groupEnd();
+}
+
 function diagProjections(){
   console.group('%cDIAGNOSTIC PROJECTIONS', 'color:#b45309;font-weight:bold');
   if(!state.subject){ console.log('Pas de sujet'); console.groupEnd(); return; }
