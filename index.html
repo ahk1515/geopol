@@ -293,7 +293,7 @@ main { flex: 1; padding: 16px 18px 28px; }
   box-shadow: var(--shadow); overflow: hidden;
 }
 .card-head {
-  display: flex; align-items: baseline; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   padding: 13px 16px; border-bottom: 1px solid var(--border);
 }
 .card-title {
@@ -497,7 +497,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .radar-lbl.active { fill: var(--orange); font-weight: 600; }
 .radar-empty { padding: 30px; text-align: center; color: var(--text3); font-size: 12px; }
 .pu-cell { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
-.pu-cell-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid var(--border); }
+.pu-cell-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); }
 .pu-cell-title { font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text2); font-weight: 600; }
 .pu-cell-body { padding: 14px 16px; }
 
@@ -867,6 +867,18 @@ const COUNTRY_REF = {
   ZWE:{name:'Zimbabwe',flag:'🇿🇼',continent:'Afrique'},
 };
 
+// Cache global de la topologie mondiale (chargée 1 fois pour toutes les cartes).
+let _worldTopoCache = null;
+let _worldTopoPromise = null;
+async function loadWorldTopology(){
+  if(_worldTopoCache) return _worldTopoCache;
+  if(_worldTopoPromise) return _worldTopoPromise;
+  _worldTopoPromise = d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(w => { _worldTopoCache = w; return w; })
+    .catch(e => { _worldTopoPromise = null; throw e; });
+  return _worldTopoPromise;
+}
+
 // Table code numérique (topojson world-atlas) → ISO3, reprise de l'ancien index.
 const ISO_NUM_TO_3={4:'AFG',8:'ALB',12:'DZA',24:'AGO',32:'ARG',36:'AUS',40:'AUT',50:'BGD',56:'BEL',64:'BTN',68:'BOL',76:'BRA',100:'BGR',116:'KHM',120:'CMR',124:'CAN',144:'LKA',152:'CHL',156:'CHN',170:'COL',180:'COD',188:'CRI',192:'CUB',208:'DNK',218:'ECU',818:'EGY',246:'FIN',250:'FRA',266:'GAB',288:'GHA',300:'GRC',320:'GTM',340:'HND',348:'HUN',356:'IND',360:'IDN',364:'IRN',368:'IRQ',372:'IRL',376:'ISR',380:'ITA',388:'JAM',392:'JPN',400:'JOR',398:'KAZ',404:'KEN',410:'KOR',414:'KWT',418:'LAO',422:'LBN',434:'LBY',484:'MEX',504:'MAR',508:'MOZ',516:'NAM',524:'NPL',528:'NLD',554:'NZL',558:'NIC',566:'NGA',578:'NOR',586:'PAK',591:'PAN',604:'PER',608:'PHL',616:'POL',620:'PRT',634:'QAT',642:'ROU',643:'RUS',682:'SAU',686:'SEN',706:'SOM',710:'ZAF',724:'ESP',729:'SDN',752:'SWE',756:'CHE',760:'SYR',764:'THA',788:'TUN',792:'TUR',800:'UGA',804:'UKR',784:'ARE',826:'GBR',840:'USA',858:'URY',862:'VEN',704:'VNM',887:'YEM',894:'ZMB',716:'ZWE',694:'SLE',231:'ETH',222:'SLV',630:'PRI',262:'DJI',178:'COG',226:'GNQ',454:'MWI',748:'SWZ',426:'LSO',72:'BWA',646:'RWA',108:'BDI',270:'GMB',324:'GIN',624:'GNB',768:'TGO',204:'BEN',466:'MLI',562:'NER',854:'BFA',148:'TCD',140:'CAF',232:'ERI',728:'SSD',275:'PSE',512:'OMN',48:'BHR',598:'PNG',242:'FJI',548:'VUT',90:'SLB',203:'CZE',703:'SVK',705:'SVN',196:'CYP',470:'MLT',688:'SRB',191:'HRV',70:'BIH',807:'MKD',499:'MNE',112:'BLR',428:'LVA',440:'LTU',233:'EST',498:'MDA',268:'GEO',51:'ARM',31:'AZE',795:'TKM',860:'UZB',762:'TJK',417:'KGZ',496:'MNG',702:'SGP',458:'MYS',96:'BRN',332:'HTI',214:'DOM',780:'TTO',84:'BLZ',600:'PRY',740:'SUR',328:'GUY',44:'BHS',52:'BRB'};
 
@@ -970,6 +982,7 @@ function ensureIdentiteCache(){
   cache.projection = {};      // indicator -> year -> valeur agrégée PROJECTION
   cache.flux.clear();
   cache.world.clear();
+  _fluxTimelineCache.clear();
 
   const inList = sqlList(isos);
   // récupère SUBCATEGORY pour distinguer historique (NULL) vs projection ('projection')
@@ -1261,7 +1274,7 @@ function getFluxWorldMap(entry){
 }
 
 // Invalide le cache quand l'année change (les valeurs annuelles dépendent de l'année).
-function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); }
+function invalidateYearScoped(){ cache.flux.clear(); cache.world.clear(); _fluxTimelineCache.clear(); }
 
 /* ─── UI : helpers chargement ─────────────────────────────────── */
 function setLoadingMsg(msg, pct){
@@ -2518,11 +2531,8 @@ async function buildPuMap(){
   svg.on('dblclick.zoom', () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity));
 
   let world;
-  if(puMapState.world){ world = puMapState.world; }
-  else {
-    try { world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'); puMapState.world = world; }
-    catch(e){ svgEl.innerHTML = `<rect width="${W}" height="${H}" fill="#dce8f0"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#888" style="font:12px var(--mono)">Carte indisponible (réseau)</text>`; return; }
-  }
+  try { world = await loadWorldTopology(); }
+  catch(e){ svgEl.innerHTML = `<rect width="${W}" height="${H}" fill="#dce8f0"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#888" style="font:12px var(--mono)">Carte indisponible (réseau)</text>`; return; }
   const features = topojson.feature(world, world.objects.countries).features;
   puMapState = { ...puMapState, svg, g, path, proj, zoom, features, ready:true };
 
@@ -3221,12 +3231,10 @@ async function renderRelFluxMap(){
   svg.call(zoom);
   svg.on('dblclick.zoom', () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity));
 
-  // récupérer la topologie (cache local)
-  let world = relMapState.world || puMapState?.world;
-  if(!world){
-    try { world = await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'); relMapState.world = world; }
-    catch { svgEl.innerHTML = `<rect width="${W}" height="${H}" fill="#dce8f0"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#888">Carte indisponible</text>`; return; }
-  }
+  // récupérer la topologie (cache global partagé avec Puissance)
+  let world;
+  try { world = await loadWorldTopology(); }
+  catch { svgEl.innerHTML = `<rect width="${W}" height="${H}" fill="#dce8f0"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#888">Carte indisponible</text>`; return; }
   const features = topojson.feature(world, world.objects.countries).features;
 
   // valeurs par partenaire (déjà filtrées : bilatéral pour la dette, hors agrégats)
