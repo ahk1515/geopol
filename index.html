@@ -665,153 +665,343 @@ main { flex: 1; padding: 16px 18px 28px; }
 
 /* ─── RÉFÉRENTIEL PAYS (repris de l'app actuelle) ─────────────── */
 const COUNTRY_REF = {
-  AFG:{name:'Afghanistan',flag:'🇦🇫',continent:'Asie'},
-  ALB:{name:'Albanie',flag:'🇦🇱',continent:'Europe'},
-  DZA:{name:'Algérie',flag:'🇩🇿',continent:'Afrique'},
-  AGO:{name:'Angola',flag:'🇦🇴',continent:'Afrique'},
-  ARG:{name:'Argentine',flag:'🇦🇷',continent:'Amériques'},
-  AUS:{name:'Australie',flag:'🇦🇺',continent:'Océanie'},
-  AUT:{name:'Autriche',flag:'🇦🇹',continent:'Europe'},
-  AZE:{name:'Azerbaïdjan',flag:'🇦🇿',continent:'Asie'},
-  BGD:{name:'Bangladesh',flag:'🇧🇩',continent:'Asie'},
-  BLR:{name:'Biélorussie',flag:'🇧🇾',continent:'Europe'},
-  BEL:{name:'Belgique',flag:'🇧🇪',continent:'Europe'},
-  BEN:{name:'Bénin',flag:'🇧🇯',continent:'Afrique'},
-  BOL:{name:'Bolivie',flag:'🇧🇴',continent:'Amériques'},
-  BIH:{name:'Bosnie-Herzégovine',flag:'🇧🇦',continent:'Europe'},
-  BWA:{name:'Botswana',flag:'🇧🇼',continent:'Afrique'},
-  BRA:{name:'Brésil',flag:'🇧🇷',continent:'Amériques'},
-  BFA:{name:'Burkina Faso',flag:'🇧🇫',continent:'Afrique'},
-  BDI:{name:'Burundi',flag:'🇧🇮',continent:'Afrique'},
-  KHM:{name:'Cambodge',flag:'🇰🇭',continent:'Asie'},
-  CMR:{name:'Cameroun',flag:'🇨🇲',continent:'Afrique'},
-  CAN:{name:'Canada',flag:'🇨🇦',continent:'Amériques'},
-  CAF:{name:'République centrafricaine',flag:'🇨🇫',continent:'Afrique'},
-  TCD:{name:'Tchad',flag:'🇹🇩',continent:'Afrique'},
-  CHL:{name:'Chili',flag:'🇨🇱',continent:'Amériques'},
-  CHN:{name:'Chine',flag:'🇨🇳',continent:'Asie'},
-  COL:{name:'Colombie',flag:'🇨🇴',continent:'Amériques'},
-  COD:{name:'RD Congo',flag:'🇨🇩',continent:'Afrique'},
-  COG:{name:'Congo',flag:'🇨🇬',continent:'Afrique'},
-  CRI:{name:'Costa Rica',flag:'🇨🇷',continent:'Amériques'},
-  HRV:{name:'Croatie',flag:'🇭🇷',continent:'Europe'},
-  CUB:{name:'Cuba',flag:'🇨🇺',continent:'Amériques'},
-  CZE:{name:'Tchéquie',flag:'🇨🇿',continent:'Europe'},
-  DNK:{name:'Danemark',flag:'🇩🇰',continent:'Europe'},
-  DJI:{name:'Djibouti',flag:'🇩🇯',continent:'Afrique'},
-  DOM:{name:'Rép. dominicaine',flag:'🇩🇴',continent:'Amériques'},
-  ECU:{name:'Équateur',flag:'🇪🇨',continent:'Amériques'},
-  EGY:{name:'Égypte',flag:'🇪🇬',continent:'Afrique'},
-  SLV:{name:'Salvador',flag:'🇸🇻',continent:'Amériques'},
-  ERI:{name:'Érythrée',flag:'🇪🇷',continent:'Afrique'},
-  EST:{name:'Estonie',flag:'🇪🇪',continent:'Europe'},
-  ETH:{name:'Éthiopie',flag:'🇪🇹',continent:'Afrique'},
-  FIN:{name:'Finlande',flag:'🇫🇮',continent:'Europe'},
-  FRA:{name:'France',flag:'🇫🇷',continent:'Europe'},
-  GAB:{name:'Gabon',flag:'🇬🇦',continent:'Afrique'},
-  GEO:{name:'Géorgie',flag:'🇬🇪',continent:'Asie'},
-  DEU:{name:'Allemagne',flag:'🇩🇪',continent:'Europe'},
-  GHA:{name:'Ghana',flag:'🇬🇭',continent:'Afrique'},
-  GRC:{name:'Grèce',flag:'🇬🇷',continent:'Europe'},
-  GTM:{name:'Guatemala',flag:'🇬🇹',continent:'Amériques'},
-  GIN:{name:'Guinée',flag:'🇬🇳',continent:'Afrique'},
-  GNQ:{name:'Guinée équatoriale',flag:'🇬🇶',continent:'Afrique'},
-  HTI:{name:'Haïti',flag:'🇭🇹',continent:'Amériques'},
-  HND:{name:'Honduras',flag:'🇭🇳',continent:'Amériques'},
-  HUN:{name:'Hongrie',flag:'🇭🇺',continent:'Europe'},
-  IND:{name:'Inde',flag:'🇮🇳',continent:'Asie'},
-  IDN:{name:'Indonésie',flag:'🇮🇩',continent:'Asie'},
-  IRN:{name:'Iran',flag:'🇮🇷',continent:'Asie'},
-  IRQ:{name:'Irak',flag:'🇮🇶',continent:'Asie'},
-  IRL:{name:'Irlande',flag:'🇮🇪',continent:'Europe'},
-  ISR:{name:'Israël',flag:'🇮🇱',continent:'Asie'},
-  ITA:{name:'Italie',flag:'🇮🇹',continent:'Europe'},
-  JAM:{name:'Jamaïque',flag:'🇯🇲',continent:'Amériques'},
-  JPN:{name:'Japon',flag:'🇯🇵',continent:'Asie'},
-  JOR:{name:'Jordanie',flag:'🇯🇴',continent:'Asie'},
-  KAZ:{name:'Kazakhstan',flag:'🇰🇿',continent:'Asie'},
-  KEN:{name:'Kenya',flag:'🇰🇪',continent:'Afrique'},
-  PRK:{name:'Corée du Nord',flag:'🇰🇵',continent:'Asie'},
-  KOR:{name:'Corée du Sud',flag:'🇰🇷',continent:'Asie'},
-  KWT:{name:'Koweït',flag:'🇰🇼',continent:'Asie'},
-  KGZ:{name:'Kirghizistan',flag:'🇰🇬',continent:'Asie'},
-  LAO:{name:'Laos',flag:'🇱🇦',continent:'Asie'},
-  LVA:{name:'Lettonie',flag:'🇱🇻',continent:'Europe'},
-  LBN:{name:'Liban',flag:'🇱🇧',continent:'Asie'},
-  LBY:{name:'Libye',flag:'🇱🇾',continent:'Afrique'},
-  LTU:{name:'Lituanie',flag:'🇱🇹',continent:'Europe'},
-  LSO:{name:'Lesotho',flag:'🇱🇸',continent:'Afrique'},
-  LBR:{name:'Libéria',flag:'🇱🇷',continent:'Afrique'},
-  MKD:{name:'Macédoine du Nord',flag:'🇲🇰',continent:'Europe'},
-  MWI:{name:'Malawi',flag:'🇲🇼',continent:'Afrique'},
-  MYS:{name:'Malaisie',flag:'🇲🇾',continent:'Asie'},
-  MLI:{name:'Mali',flag:'🇲🇱',continent:'Afrique'},
-  MAR:{name:'Maroc',flag:'🇲🇦',continent:'Afrique'},
-  MEX:{name:'Mexique',flag:'🇲🇽',continent:'Amériques'},
-  MDA:{name:'Moldavie',flag:'🇲🇩',continent:'Europe'},
-  MNG:{name:'Mongolie',flag:'🇲🇳',continent:'Asie'},
-  MNE:{name:'Monténégro',flag:'🇲🇪',continent:'Europe'},
-  MOZ:{name:'Mozambique',flag:'🇲🇿',continent:'Afrique'},
-  MMR:{name:'Myanmar',flag:'🇲🇲',continent:'Asie'},
-  NAM:{name:'Namibie',flag:'🇳🇦',continent:'Afrique'},
-  NPL:{name:'Népal',flag:'🇳🇵',continent:'Asie'},
-  NLD:{name:'Pays-Bas',flag:'🇳🇱',continent:'Europe'},
-  NZL:{name:'Nouvelle-Zélande',flag:'🇳🇿',continent:'Océanie'},
-  NIC:{name:'Nicaragua',flag:'🇳🇮',continent:'Amériques'},
-  NER:{name:'Niger',flag:'🇳🇪',continent:'Afrique'},
-  NGA:{name:'Nigéria',flag:'🇳🇬',continent:'Afrique'},
-  NOR:{name:'Norvège',flag:'🇳🇴',continent:'Europe'},
-  OMN:{name:'Oman',flag:'🇴🇲',continent:'Asie'},
-  PAK:{name:'Pakistan',flag:'🇵🇰',continent:'Asie'},
-  PAN:{name:'Panama',flag:'🇵🇦',continent:'Amériques'},
-  PRY:{name:'Paraguay',flag:'🇵🇾',continent:'Amériques'},
-  PER:{name:'Pérou',flag:'🇵🇪',continent:'Amériques'},
-  PHL:{name:'Philippines',flag:'🇵🇭',continent:'Asie'},
-  POL:{name:'Pologne',flag:'🇵🇱',continent:'Europe'},
-  PRT:{name:'Portugal',flag:'🇵🇹',continent:'Europe'},
-  QAT:{name:'Qatar',flag:'🇶🇦',continent:'Asie'},
-  ROU:{name:'Roumanie',flag:'🇷🇴',continent:'Europe'},
-  RUS:{name:'Russie',flag:'🇷🇺',continent:'Europe'},
-  RWA:{name:'Rwanda',flag:'🇷🇼',continent:'Afrique'},
-  SAU:{name:'Arabie Saoudite',flag:'🇸🇦',continent:'Asie'},
-  SEN:{name:'Sénégal',flag:'🇸🇳',continent:'Afrique'},
-  SRB:{name:'Serbie',flag:'🇷🇸',continent:'Europe'},
-  SLE:{name:'Sierra Leone',flag:'🇸🇱',continent:'Afrique'},
-  SGP:{name:'Singapour',flag:'🇸🇬',continent:'Asie'},
-  SVK:{name:'Slovaquie',flag:'🇸🇰',continent:'Europe'},
-  SVN:{name:'Slovénie',flag:'🇸🇮',continent:'Europe'},
-  SOM:{name:'Somalie',flag:'🇸🇴',continent:'Afrique'},
-  ZAF:{name:'Afrique du Sud',flag:'🇿🇦',continent:'Afrique'},
-  SSD:{name:'Soudan du Sud',flag:'🇸🇸',continent:'Afrique'},
-  ESP:{name:'Espagne',flag:'🇪🇸',continent:'Europe'},
-  LKA:{name:'Sri Lanka',flag:'🇱🇰',continent:'Asie'},
-  SDN:{name:'Soudan',flag:'🇸🇩',continent:'Afrique'},
-  SUR:{name:'Suriname',flag:'🇸🇷',continent:'Amériques'},
-  SWZ:{name:'Eswatini',flag:'🇸🇿',continent:'Afrique'},
-  SWE:{name:'Suède',flag:'🇸🇪',continent:'Europe'},
-  CHE:{name:'Suisse',flag:'🇨🇭',continent:'Europe'},
-  SYR:{name:'Syrie',flag:'🇸🇾',continent:'Asie'},
-  TWN:{name:'Taïwan',flag:'🇹🇼',continent:'Asie'},
-  TJK:{name:'Tadjikistan',flag:'🇹🇯',continent:'Asie'},
-  TZA:{name:'Tanzanie',flag:'🇹🇿',continent:'Afrique'},
-  THA:{name:'Thaïlande',flag:'🇹🇭',continent:'Asie'},
-  TGO:{name:'Togo',flag:'🇹🇬',continent:'Afrique'},
-  TTO:{name:'Trinité-et-Tobago',flag:'🇹🇹',continent:'Amériques'},
-  TUN:{name:'Tunisie',flag:'🇹🇳',continent:'Afrique'},
-  TUR:{name:'Türkiye',flag:'🇹🇷',continent:'Asie'},
-  TKM:{name:'Turkménistan',flag:'🇹🇲',continent:'Asie'},
-  UGA:{name:'Ouganda',flag:'🇺🇬',continent:'Afrique'},
-  UKR:{name:'Ukraine',flag:'🇺🇦',continent:'Europe'},
-  ARE:{name:'Émirats arabes unis',flag:'🇦🇪',continent:'Asie'},
-  GBR:{name:'Royaume-Uni',flag:'🇬🇧',continent:'Europe'},
-  USA:{name:'États-Unis',flag:'🇺🇸',continent:'Amériques'},
-  URY:{name:'Uruguay',flag:'🇺🇾',continent:'Amériques'},
-  UZB:{name:'Ouzbékistan',flag:'🇺🇿',continent:'Asie'},
-  VEN:{name:'Venezuela',flag:'🇻🇪',continent:'Amériques'},
-  VNM:{name:'Viêt Nam',flag:'🇻🇳',continent:'Asie'},
-  YEM:{name:'Yémen',flag:'🇾🇪',continent:'Asie'},
-  ZMB:{name:'Zambie',flag:'🇿🇲',continent:'Afrique'},
-  ZWE:{name:'Zimbabwe',flag:'🇿🇼',continent:'Afrique'},
+
+  AFG:{name:'Afghanistan',flag:'🇦🇫',continent:'Asie',num:4},
+
+  ALB:{name:'Albanie',flag:'🇦🇱',continent:'Europe',num:8},
+
+  DZA:{name:'Algérie',flag:'🇩🇿',continent:'Afrique',num:12},
+
+  AGO:{name:'Angola',flag:'🇦🇴',continent:'Afrique',num:24},
+
+  ARG:{name:'Argentine',flag:'🇦🇷',continent:'Amériques',num:32},
+
+  AUS:{name:'Australie',flag:'🇦🇺',continent:'Océanie',num:36},
+
+  AUT:{name:'Autriche',flag:'🇦🇹',continent:'Europe',num:40},
+
+  AZE:{name:'Azerbaïdjan',flag:'🇦🇿',continent:'Asie',num:31},
+
+  BGD:{name:'Bangladesh',flag:'🇧🇩',continent:'Asie',num:50},
+
+  BLR:{name:'Biélorussie',flag:'🇧🇾',continent:'Europe',num:112},
+
+  BEL:{name:'Belgique',flag:'🇧🇪',continent:'Europe',num:56},
+
+  BEN:{name:'Bénin',flag:'🇧🇯',continent:'Afrique',num:204},
+
+  BOL:{name:'Bolivie',flag:'🇧🇴',continent:'Amériques',num:68},
+
+  BIH:{name:'Bosnie-Herzégovine',flag:'🇧🇦',continent:'Europe',num:70},
+
+  BWA:{name:'Botswana',flag:'🇧🇼',continent:'Afrique',num:72},
+
+  BRA:{name:'Brésil',flag:'🇧🇷',continent:'Amériques',num:76},
+
+  BFA:{name:'Burkina Faso',flag:'🇧🇫',continent:'Afrique',num:854},
+
+  BDI:{name:'Burundi',flag:'🇧🇮',continent:'Afrique',num:108},
+
+  KHM:{name:'Cambodge',flag:'🇰🇭',continent:'Asie',num:116},
+
+  CMR:{name:'Cameroun',flag:'🇨🇲',continent:'Afrique',num:120},
+
+  CAN:{name:'Canada',flag:'🇨🇦',continent:'Amériques',num:124},
+
+  CAF:{name:'République centrafricaine',flag:'🇨🇫',continent:'Afrique',num:140},
+
+  TCD:{name:'Tchad',flag:'🇹🇩',continent:'Afrique',num:148},
+
+  CHL:{name:'Chili',flag:'🇨🇱',continent:'Amériques',num:152},
+
+  CHN:{name:'Chine',flag:'🇨🇳',continent:'Asie',num:156},
+
+  COL:{name:'Colombie',flag:'🇨🇴',continent:'Amériques',num:170},
+
+  COD:{name:'RD Congo',flag:'🇨🇩',continent:'Afrique',num:180},
+
+  COG:{name:'Congo',flag:'🇨🇬',continent:'Afrique',num:178},
+
+  CRI:{name:'Costa Rica',flag:'🇨🇷',continent:'Amériques',num:188},
+
+  HRV:{name:'Croatie',flag:'🇭🇷',continent:'Europe',num:191},
+
+  CUB:{name:'Cuba',flag:'🇨🇺',continent:'Amériques',num:192},
+
+  CZE:{name:'Tchéquie',flag:'🇨🇿',continent:'Europe',num:203},
+
+  DNK:{name:'Danemark',flag:'🇩🇰',continent:'Europe',num:208},
+
+  DJI:{name:'Djibouti',flag:'🇩🇯',continent:'Afrique',num:262},
+
+  DOM:{name:'Rép. dominicaine',flag:'🇩🇴',continent:'Amériques',num:214},
+
+  ECU:{name:'Équateur',flag:'🇪🇨',continent:'Amériques',num:218},
+
+  EGY:{name:'Égypte',flag:'🇪🇬',continent:'Afrique',num:818},
+
+  SLV:{name:'Salvador',flag:'🇸🇻',continent:'Amériques',num:222},
+
+  ERI:{name:'Érythrée',flag:'🇪🇷',continent:'Afrique',num:232},
+
+  EST:{name:'Estonie',flag:'🇪🇪',continent:'Europe',num:233},
+
+  ETH:{name:'Éthiopie',flag:'🇪🇹',continent:'Afrique',num:231},
+
+  FIN:{name:'Finlande',flag:'🇫🇮',continent:'Europe',num:246},
+
+  FRA:{name:'France',flag:'🇫🇷',continent:'Europe',num:250},
+
+  GAB:{name:'Gabon',flag:'🇬🇦',continent:'Afrique',num:266},
+
+  GEO:{name:'Géorgie',flag:'🇬🇪',continent:'Asie',num:268},
+
+  DEU:{name:'Allemagne',flag:'🇩🇪',continent:'Europe',num:276},
+
+  GHA:{name:'Ghana',flag:'🇬🇭',continent:'Afrique',num:288},
+
+  GRC:{name:'Grèce',flag:'🇬🇷',continent:'Europe',num:300},
+
+  GTM:{name:'Guatemala',flag:'🇬🇹',continent:'Amériques',num:320},
+
+  GIN:{name:'Guinée',flag:'🇬🇳',continent:'Afrique',num:324},
+
+  GNQ:{name:'Guinée équatoriale',flag:'🇬🇶',continent:'Afrique',num:226},
+
+  HTI:{name:'Haïti',flag:'🇭🇹',continent:'Amériques',num:332},
+
+  HND:{name:'Honduras',flag:'🇭🇳',continent:'Amériques',num:340},
+
+  HUN:{name:'Hongrie',flag:'🇭🇺',continent:'Europe',num:348},
+
+  IND:{name:'Inde',flag:'🇮🇳',continent:'Asie',num:356},
+
+  IDN:{name:'Indonésie',flag:'🇮🇩',continent:'Asie',num:360},
+
+  IRN:{name:'Iran',flag:'🇮🇷',continent:'Asie',num:364},
+
+  IRQ:{name:'Irak',flag:'🇮🇶',continent:'Asie',num:368},
+
+  IRL:{name:'Irlande',flag:'🇮🇪',continent:'Europe',num:372},
+
+  ISR:{name:'Israël',flag:'🇮🇱',continent:'Asie',num:376},
+
+  ITA:{name:'Italie',flag:'🇮🇹',continent:'Europe',num:380},
+
+  JAM:{name:'Jamaïque',flag:'🇯🇲',continent:'Amériques',num:388},
+
+  JPN:{name:'Japon',flag:'🇯🇵',continent:'Asie',num:392},
+
+  JOR:{name:'Jordanie',flag:'🇯🇴',continent:'Asie',num:400},
+
+  KAZ:{name:'Kazakhstan',flag:'🇰🇿',continent:'Asie',num:398},
+
+  KEN:{name:'Kenya',flag:'🇰🇪',continent:'Afrique',num:404},
+
+  PRK:{name:'Corée du Nord',flag:'🇰🇵',continent:'Asie',num:408},
+
+  KOR:{name:'Corée du Sud',flag:'🇰🇷',continent:'Asie',num:410},
+
+  KWT:{name:'Koweït',flag:'🇰🇼',continent:'Asie',num:414},
+
+  KGZ:{name:'Kirghizistan',flag:'🇰🇬',continent:'Asie',num:417},
+
+  LAO:{name:'Laos',flag:'🇱🇦',continent:'Asie',num:418},
+
+  LVA:{name:'Lettonie',flag:'🇱🇻',continent:'Europe',num:428},
+
+  LBN:{name:'Liban',flag:'🇱🇧',continent:'Asie',num:422},
+
+  LBY:{name:'Libye',flag:'🇱🇾',continent:'Afrique',num:434},
+
+  LTU:{name:'Lituanie',flag:'🇱🇹',continent:'Europe',num:440},
+
+  LSO:{name:'Lesotho',flag:'🇱🇸',continent:'Afrique',num:426},
+
+  LBR:{name:'Libéria',flag:'🇱🇷',continent:'Afrique',num:430},
+
+  MKD:{name:'Macédoine du Nord',flag:'🇲🇰',continent:'Europe',num:807},
+
+  MWI:{name:'Malawi',flag:'🇲🇼',continent:'Afrique',num:454},
+
+  MYS:{name:'Malaisie',flag:'🇲🇾',continent:'Asie',num:458},
+
+  MLI:{name:'Mali',flag:'🇲🇱',continent:'Afrique',num:466},
+
+  MAR:{name:'Maroc',flag:'🇲🇦',continent:'Afrique',num:504},
+
+  MEX:{name:'Mexique',flag:'🇲🇽',continent:'Amériques',num:484},
+
+  MDA:{name:'Moldavie',flag:'🇲🇩',continent:'Europe',num:498},
+
+  MNG:{name:'Mongolie',flag:'🇲🇳',continent:'Asie',num:496},
+
+  MNE:{name:'Monténégro',flag:'🇲🇪',continent:'Europe',num:499},
+
+  MOZ:{name:'Mozambique',flag:'🇲🇿',continent:'Afrique',num:508},
+
+  MMR:{name:'Myanmar',flag:'🇲🇲',continent:'Asie',num:104},
+
+  NAM:{name:'Namibie',flag:'🇳🇦',continent:'Afrique',num:516},
+
+  NPL:{name:'Népal',flag:'🇳🇵',continent:'Asie',num:524},
+
+  NLD:{name:'Pays-Bas',flag:'🇳🇱',continent:'Europe',num:528},
+
+  NZL:{name:'Nouvelle-Zélande',flag:'🇳🇿',continent:'Océanie',num:554},
+
+  NIC:{name:'Nicaragua',flag:'🇳🇮',continent:'Amériques',num:558},
+
+  NER:{name:'Niger',flag:'🇳🇪',continent:'Afrique',num:562},
+
+  NGA:{name:'Nigéria',flag:'🇳🇬',continent:'Afrique',num:566},
+
+  NOR:{name:'Norvège',flag:'🇳🇴',continent:'Europe',num:578},
+
+  OMN:{name:'Oman',flag:'🇴🇲',continent:'Asie',num:512},
+
+  PAK:{name:'Pakistan',flag:'🇵🇰',continent:'Asie',num:586},
+
+  PAN:{name:'Panama',flag:'🇵🇦',continent:'Amériques',num:591},
+
+  PRY:{name:'Paraguay',flag:'🇵🇾',continent:'Amériques',num:600},
+
+  PER:{name:'Pérou',flag:'🇵🇪',continent:'Amériques',num:604},
+
+  PHL:{name:'Philippines',flag:'🇵🇭',continent:'Asie',num:608},
+
+  POL:{name:'Pologne',flag:'🇵🇱',continent:'Europe',num:616},
+
+  PRT:{name:'Portugal',flag:'🇵🇹',continent:'Europe',num:620},
+
+  QAT:{name:'Qatar',flag:'🇶🇦',continent:'Asie',num:634},
+
+  ROU:{name:'Roumanie',flag:'🇷🇴',continent:'Europe',num:642},
+
+  RUS:{name:'Russie',flag:'🇷🇺',continent:'Europe',num:643},
+
+  RWA:{name:'Rwanda',flag:'🇷🇼',continent:'Afrique',num:646},
+
+  SAU:{name:'Arabie Saoudite',flag:'🇸🇦',continent:'Asie',num:682},
+
+  SEN:{name:'Sénégal',flag:'🇸🇳',continent:'Afrique',num:686},
+
+  SRB:{name:'Serbie',flag:'🇷🇸',continent:'Europe',num:688},
+
+  SLE:{name:'Sierra Leone',flag:'🇸🇱',continent:'Afrique',num:694},
+
+  SGP:{name:'Singapour',flag:'🇸🇬',continent:'Asie',num:702},
+
+  SVK:{name:'Slovaquie',flag:'🇸🇰',continent:'Europe',num:703},
+
+  SVN:{name:'Slovénie',flag:'🇸🇮',continent:'Europe',num:705},
+
+  SOM:{name:'Somalie',flag:'🇸🇴',continent:'Afrique',num:706},
+
+  ZAF:{name:'Afrique du Sud',flag:'🇿🇦',continent:'Afrique',num:710},
+
+  SSD:{name:'Soudan du Sud',flag:'🇸🇸',continent:'Afrique',num:728},
+
+  ESP:{name:'Espagne',flag:'🇪🇸',continent:'Europe',num:724},
+
+  LKA:{name:'Sri Lanka',flag:'🇱🇰',continent:'Asie',num:144},
+
+  SDN:{name:'Soudan',flag:'🇸🇩',continent:'Afrique',num:729},
+
+  SUR:{name:'Suriname',flag:'🇸🇷',continent:'Amériques',num:740},
+
+  SWZ:{name:'Eswatini',flag:'🇸🇿',continent:'Afrique',num:748},
+
+  SWE:{name:'Suède',flag:'🇸🇪',continent:'Europe',num:752},
+
+  CHE:{name:'Suisse',flag:'🇨🇭',continent:'Europe',num:756},
+
+  SYR:{name:'Syrie',flag:'🇸🇾',continent:'Asie',num:760},
+
+  TWN:{name:'Taïwan',flag:'🇹🇼',continent:'Asie',num:158},
+
+  TJK:{name:'Tadjikistan',flag:'🇹🇯',continent:'Asie',num:762},
+
+  TZA:{name:'Tanzanie',flag:'🇹🇿',continent:'Afrique',num:834},
+
+  THA:{name:'Thaïlande',flag:'🇹🇭',continent:'Asie',num:764},
+
+  TGO:{name:'Togo',flag:'🇹🇬',continent:'Afrique',num:768},
+
+  TTO:{name:'Trinité-et-Tobago',flag:'🇹🇹',continent:'Amériques',num:780},
+
+  TUN:{name:'Tunisie',flag:'🇹🇳',continent:'Afrique',num:788},
+
+  TUR:{name:'Türkiye',flag:'🇹🇷',continent:'Asie',num:792},
+
+  TKM:{name:'Turkménistan',flag:'🇹🇲',continent:'Asie',num:795},
+
+  UGA:{name:'Ouganda',flag:'🇺🇬',continent:'Afrique',num:800},
+
+  UKR:{name:'Ukraine',flag:'🇺🇦',continent:'Europe',num:804},
+
+  ARE:{name:'Émirats arabes unis',flag:'🇦🇪',continent:'Asie',num:784},
+
+  GBR:{name:'Royaume-Uni',flag:'🇬🇧',continent:'Europe',num:826},
+
+  USA:{name:'États-Unis',flag:'🇺🇸',continent:'Amériques',num:840},
+
+  URY:{name:'Uruguay',flag:'🇺🇾',continent:'Amériques',num:858},
+
+  UZB:{name:'Ouzbékistan',flag:'🇺🇿',continent:'Asie',num:860},
+
+  VEN:{name:'Venezuela',flag:'🇻🇪',continent:'Amériques',num:862},
+
+  VNM:{name:'Viêt Nam',flag:'🇻🇳',continent:'Asie',num:704},
+
+  YEM:{name:'Yémen',flag:'🇾🇪',continent:'Asie',num:887},
+
+  ZMB:{name:'Zambie',flag:'🇿🇲',continent:'Afrique',num:894},
+
+  ZWE:{name:'Zimbabwe',flag:'🇿🇼',continent:'Afrique',num:716},
+  AND:{name:'Andorre',flag:'🇦🇩',continent:'Europe',num:20},
+  ATG:{name:'Antigua-et-Barbuda',flag:'🇦🇬',continent:'Amériques',num:28},
+  BHS:{name:'Bahamas',flag:'🇧🇸',continent:'Amériques',num:44},
+  BLZ:{name:'Belize',flag:'🇧🇿',continent:'Amériques',num:84},
+  BRB:{name:'Barbade',flag:'🇧🇧',continent:'Amériques',num:52},
+  BRN:{name:'Brunei',flag:'🇧🇳',continent:'Asie',num:96},
+  BTN:{name:'Bhoutan',flag:'🇧🇹',continent:'Asie',num:64},
+  CIV:{name:"Côte d'Ivoire",flag:'🇨🇮',continent:'Afrique',num:384},
+  COM:{name:'Comores',flag:'🇰🇲',continent:'Afrique',num:174},
+  CPV:{name:'Cap-Vert',flag:'🇨🇻',continent:'Afrique',num:132},
+  CYP:{name:'Chypre',flag:'🇨🇾',continent:'Europe',num:196},
+  DMA:{name:'Dominique',flag:'🇩🇲',continent:'Amériques',num:212},
+  FJI:{name:'Fidji',flag:'🇫🇯',continent:'Océanie',num:242},
+  FSM:{name:'Micronésie',flag:'🇫🇲',continent:'Océanie',num:583},
+  GRD:{name:'Grenade',flag:'🇬🇩',continent:'Amériques',num:308},
+  GRL:{name:'Groenland',flag:'🇬🇱',continent:'Amériques',num:304},
+  GUY:{name:'Guyana',flag:'🇬🇾',continent:'Amériques',num:328},
+  ISL:{name:'Islande',flag:'🇮🇸',continent:'Europe',num:352},
+  KIR:{name:'Kiribati',flag:'🇰🇮',continent:'Océanie',num:296},
+  KNA:{name:'Saint-Kitts-et-Nevis',flag:'🇰🇳',continent:'Amériques',num:659},
+  LCA:{name:'Sainte-Lucie',flag:'🇱🇨',continent:'Amériques',num:662},
+  LIE:{name:'Liechtenstein',flag:'🇱🇮',continent:'Europe',num:438},
+  LUX:{name:'Luxembourg',flag:'🇱🇺',continent:'Europe',num:442},
+  MCO:{name:'Monaco',flag:'🇲🇨',continent:'Europe',num:492},
+  MDV:{name:'Maldives',flag:'🇲🇻',continent:'Asie',num:462},
+  MHL:{name:'Îles Marshall',flag:'🇲🇭',continent:'Océanie',num:584},
+  MLT:{name:'Malte',flag:'🇲🇹',continent:'Europe',num:470},
+  MRT:{name:'Mauritanie',flag:'🇲🇷',continent:'Afrique',num:478},
+  MUS:{name:'Maurice',flag:'🇲🇺',continent:'Afrique',num:480},
+  NRU:{name:'Nauru',flag:'🇳🇷',continent:'Océanie',num:520},
+  PLW:{name:'Palaos',flag:'🇵🇼',continent:'Océanie',num:585},
+  PNG:{name:'Papouasie-Nouvelle-Guinée',flag:'🇵🇬',continent:'Océanie',num:598},
+  SLB:{name:'Îles Salomon',flag:'🇸🇧',continent:'Océanie',num:90},
+  SMR:{name:'Saint-Marin',flag:'🇸🇲',continent:'Europe',num:674},
+  STP:{name:'Sao Tomé-et-Principe',flag:'🇸🇹',continent:'Afrique',num:678},
+  SYC:{name:'Seychelles',flag:'🇸🇨',continent:'Afrique',num:690},
+  TLS:{name:'Timor oriental',flag:'🇹🇱',continent:'Asie',num:626},
+  TON:{name:'Tonga',flag:'🇹🇴',continent:'Océanie',num:776},
+  TUV:{name:'Tuvalu',flag:'🇹🇻',continent:'Océanie',num:798},
+  VAT:{name:'Vatican',flag:'🇻🇦',continent:'Europe',num:336},
+  VCT:{name:'Saint-Vincent-et-les-Grenadines',flag:'🇻🇨',continent:'Amériques',num:670},
+  VUT:{name:'Vanuatu',flag:'🇻🇺',continent:'Océanie',num:548},
+  WSM:{name:'Samoa',flag:'🇼🇸',continent:'Océanie',num:882},
 };
 
 // Cache global de la topologie mondiale (chargée 1 fois pour toutes les cartes).
@@ -826,9 +1016,18 @@ async function loadWorldTopology(){
   return _worldTopoPromise;
 }
 
-// Table code numérique (topojson world-atlas) → ISO3, reprise de l'ancien index.
-const ISO_NUM_TO_3={4:'AFG',8:'ALB',10:'ATA',12:'DZA',16:'ASM',20:'AND',24:'AGO',28:'ATG',31:'AZE',32:'ARG',36:'AUS',40:'AUT',44:'BHS',48:'BHR',50:'BGD',51:'ARM',52:'BRB',56:'BEL',60:'BMU',64:'BTN',68:'BOL',70:'BIH',72:'BWA',74:'BVT',76:'BRA',84:'BLZ',86:'IOT',90:'SLB',92:'VGB',96:'BRN',100:'BGR',104:'MMR',108:'BDI',112:'BLR',116:'KHM',120:'CMR',124:'CAN',132:'CPV',136:'CYM',140:'CAF',144:'LKA',148:'TCD',152:'CHL',156:'CHN',158:'TWN',162:'CXR',166:'CCK',170:'COL',174:'COM',175:'MYT',178:'COG',180:'COD',184:'COK',188:'CRI',191:'HRV',192:'CUB',196:'CYP',203:'CZE',204:'BEN',208:'DNK',212:'DMA',214:'DOM',218:'ECU',222:'SLV',226:'GNQ',231:'ETH',232:'ERI',233:'EST',234:'FRO',238:'FLK',239:'SGS',242:'FJI',246:'FIN',248:'ALA',250:'FRA',254:'GUF',258:'PYF',260:'ATF',262:'DJI',266:'GAB',268:'GEO',270:'GMB',275:'PSE',276:'DEU',288:'GHA',292:'GIB',296:'KIR',300:'GRC',304:'GRL',308:'GRD',312:'GLP',316:'GUM',320:'GTM',324:'GIN',328:'GUY',332:'HTI',334:'HMD',336:'VAT',340:'HND',344:'HKG',348:'HUN',352:'ISL',356:'IND',360:'IDN',364:'IRN',368:'IRQ',372:'IRL',376:'ISR',380:'ITA',384:'CIV',388:'JAM',392:'JPN',398:'KAZ',400:'JOR',404:'KEN',408:'PRK',410:'KOR',414:'KWT',417:'KGZ',418:'LAO',422:'LBN',426:'LSO',428:'LVA',430:'LBR',434:'LBY',438:'LIE',440:'LTU',442:'LUX',446:'MAC',450:'MDG',454:'MWI',458:'MYS',462:'MDV',466:'MLI',470:'MLT',474:'MTQ',478:'MRT',480:'MUS',484:'MEX',492:'MCO',496:'MNG',498:'MDA',499:'MNE',500:'MSR',504:'MAR',508:'MOZ',512:'OMN',516:'NAM',520:'NRU',524:'NPL',528:'NLD',531:'CUW',533:'ABW',534:'SXM',535:'BES',540:'NCL',548:'VUT',554:'NZL',558:'NIC',562:'NER',566:'NGA',570:'NIU',574:'NFK',578:'NOR',580:'MNP',581:'UMI',583:'FSM',584:'MHL',585:'PLW',586:'PAK',591:'PAN',598:'PNG',600:'PRY',604:'PER',608:'PHL',612:'PCN',616:'POL',620:'PRT',624:'GNB',626:'TLS',630:'PRI',634:'QAT',638:'REU',642:'ROU',643:'RUS',646:'RWA',652:'BLM',654:'SHN',659:'KNA',660:'AIA',662:'LCA',663:'MAF',666:'SPM',670:'VCT',674:'SMR',678:'STP',682:'SAU',686:'SEN',688:'SRB',690:'SYC',694:'SLE',702:'SGP',703:'SVK',704:'VNM',705:'SVN',706:'SOM',710:'ZAF',716:'ZWE',724:'ESP',728:'SSD',729:'SDN',732:'ESH',740:'SUR',744:'SJM',748:'SWZ',752:'SWE',756:'CHE',760:'SYR',762:'TJK',764:'THA',768:'TGO',772:'TKL',776:'TON',780:'TTO',784:'ARE',788:'TUN',792:'TUR',795:'TKM',796:'TCA',798:'TUV',800:'UGA',804:'UKR',807:'MKD',818:'EGY',826:'GBR',831:'GGY',832:'JEY',833:'IMN',834:'TZA',840:'USA',850:'VIR',854:'BFA',858:'URY',860:'UZB',862:'VEN',876:'WLF',882:'WSM',887:'YEM',894:'ZMB'};
-// Total : 249 cod,895:'XKX'};
+// Helper : code numérique du topojson → ISO3, dérivé de COUNTRY_REF (source unique).
+// Pré-calculé une seule fois au chargement pour éviter une boucle à chaque pays.
+const _NUM_TO_ISO3 = (() => {
+  const m = {};
+  for(const iso3 in COUNTRY_REF){
+    const num = COUNTRY_REF[iso3].num;
+    if(num) m[num] = iso3;
+  }
+  return m;
+})();
+function numToIso3(num){ return _NUM_TO_ISO3[+num] || null; }
+
 
 function isoToFlag(iso3){ return COUNTRY_REF[iso3]?.flag || '🏳️'; }
 function isoToName(iso3){ return COUNTRY_REF[iso3]?.name || iso3; }
@@ -2613,10 +2812,10 @@ async function buildPuMap(){
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country')
     .attr('d', path)
-    .attr('data-iso3', d => ISO_NUM_TO_3[+d.id] || '')
-    .style('fill', d => { const iso = ISO_NUM_TO_3[+d.id]; return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
+    .attr('data-iso3', d => numToIso3(+d.id) || '')
+    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
     .on('mouseover', function(ev,d){
-      const iso = ISO_NUM_TO_3[+d.id]; if(!iso) return;
+      const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
       const v = puMapValue(iso);
       const name = isoToName(iso);
@@ -2625,7 +2824,7 @@ async function buildPuMap(){
     })
     .on('mousemove', moveTip)
     .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
-    .on('click', function(ev,d){ const iso = ISO_NUM_TO_3[+d.id]; if(iso) setSubject([iso], isoToName(iso)); });
+    .on('click', function(ev,d){ const iso = numToIso3(+d.id); if(iso) setSubject([iso], isoToName(iso)); });
 
   // surligner le(s) pays du sujet
   const subjSet = new Set(currentIsos());
@@ -3131,10 +3330,10 @@ async function renderRelFluxMap(){
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country')
     .attr('d', path)
-    .attr('data-iso3', d => ISO_NUM_TO_3[+d.id] || '')
-    .style('fill', d => { const iso = ISO_NUM_TO_3[+d.id]; return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
+    .attr('data-iso3', d => numToIso3(+d.id) || '')
+    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
     .on('mouseover', function(ev, d){
-      const iso = ISO_NUM_TO_3[+d.id]; if(!iso) return;
+      const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--orange)').attr('stroke-width', 1);
       const v = byPartner[iso] || 0;
       const pct = total ? (v/total)*100 : 0;
@@ -3145,7 +3344,7 @@ async function renderRelFluxMap(){
     .on('mousemove', moveTip)
     .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width', 0.4); hideTip(); })
     .on('click', function(ev, d){
-      const iso = ISO_NUM_TO_3[+d.id]; if(iso) setSubject([iso], isoToName(iso));
+      const iso = numToIso3(+d.id); if(iso) setSubject([iso], isoToName(iso));
     });
 
   // surligner le(s) pays du sujet
