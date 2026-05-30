@@ -3665,7 +3665,7 @@ function drawTreemapRel(node, host){
     let tipBody;
     if(isInfluence){
       const volumeStr = fmtWithUnit(c.item.volume, cfg?.unit_display);
-      tipBody = `${c.item.value.toFixed(1)}% du total mondial · volume ${volumeStr}`;
+      tipBody = `${c.item.value.toFixed(1)}% chez ce partenaire · volume ${volumeStr}`;
     } else {
       const pct = (c.item.value/total)*100;
       tipBody = `${fmtWithUnit(c.item.value, cfg?.unit_display)} · ${pct.toFixed(1)}%`;
@@ -3945,7 +3945,7 @@ function renderInfluenceTimeline(host, entry){
     // points
     for(const pt of s.points){
       svg += `<circle cx="${xScale(pt.year).toFixed(1)}" cy="${yScale(pt.pct).toFixed(1)}" r="${isPinned ? 4 : 2.5}" fill="${color}" opacity="${opacity}"
-                onmouseenter="showTip2(event, '${escAttr((s.flag?s.flag+' ':'')+s.name+' · '+pt.year)}', '${escAttr(pt.pct.toFixed(1)+'% du marché mondial')}')"
+                onmouseenter="showTip2(event, '${escAttr((s.flag?s.flag+' ':'')+s.name+' · '+pt.year)}', '${escAttr(pt.pct.toFixed(1)+'% chez ce partenaire')}')"
                 onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
     }
     // étiquette à droite : nom + dernier pct
@@ -3973,11 +3973,11 @@ function renderInfluenceTimeline(host, entry){
     statsBlock = `
       <div class="inf-tl-stats">
         <div class="inf-tl-stat">
-          <div class="inf-tl-stat-k">${first.year} → ${last.year}</div>
+          <div class="inf-tl-stat-k">Part chez ce partenaire</div>
           <div class="inf-tl-stat-v">${first.pct.toFixed(1)}% → ${last.pct.toFixed(1)}%</div>
         </div>
         <div class="inf-tl-stat">
-          <div class="inf-tl-stat-k">Variation</div>
+          <div class="inf-tl-stat-k">Variation ${first.year} → ${last.year}</div>
           <div class="inf-tl-stat-v" style="color:${colorVar}">${sign}${variation.toFixed(1)} pt</div>
         </div>
         <div class="inf-tl-stat">
@@ -4068,9 +4068,9 @@ async function renderRelFluxMap(){
         const wt = worldTotals[iso] || 0;
         if(wt > 0){
           const influencePct = (v / wt) * 100;
-          body = `${influencePct.toFixed(1)}% du total mondial · volume ${fmtWithUnit(v, cfg.unit_display)}`;
+          body = `${influencePct.toFixed(1)}% chez ce partenaire · volume ${fmtWithUnit(v, cfg.unit_display)}`;
         } else {
-          body = `volume ${fmtWithUnit(v, cfg.unit_display)} · pas de total mondial`;
+          body = `volume ${fmtWithUnit(v, cfg.unit_display)} · part chez ce partenaire indisponible`;
         }
       } else {
         // Mode Volume : on a stocké le pct du sujet dans displayByIso
