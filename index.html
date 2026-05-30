@@ -4220,7 +4220,10 @@ function drawTreemapRel(node, host){
   const items = node.children.slice().sort((a,b)=>b.value-a.value);
   const cells = squarifyTreemap(items, 0, 0, W, H);
   const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
-  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  // SVG responsive : viewBox fixe pour préserver les coords du squarify,
+  // mais width: 100% et height auto permettent de s'adapter à la largeur du conteneur.
+  // preserveAspectRatio par défaut (xMidYMid meet) conserve le ratio sans rognage.
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;max-width:${W}px;display:block">`;
   const total = items.reduce((s,c)=>s+c.value, 0) || 1;
   const isInfluence = (node.metric === 'influence');
   const entry = getFlowEntryByKey(_relEntryKey);
@@ -4495,7 +4498,7 @@ function renderInfluenceTimeline(host, entry){
 
   // Palette : orange pour le pays épinglé, autres en bleus/verts atténués
   const palette = ['#0a6e4a', '#1d4ed8', '#5b6b8c', '#7a8b6c', '#a08654', '#8a6d4e'];
-  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="background:transparent">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;max-width:${W}px;display:block;background:transparent">`;
 
   // Axes
   // Y ticks (5 graduations)
