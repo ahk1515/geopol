@@ -3190,7 +3190,11 @@ function renderRelMain(){
   }
   // sous-titres dynamiques selon la métrique
   const metricLabel = _relMetric === 'influence' ? 'influence chez les partenaires' : 'volume du sujet';
-  const mapSubtitle = (_relDim === 'partner' && _relMetric === 'influence') ? 'poids du sujet par pays' : 'par pays partenaire';
+  const mapSubtitle = (_relDim === 'partner' && _relMetric === 'influence')
+    ? 'poids du sujet chez chaque partenaire (%)'
+    : 'part de chaque partenaire dans le total du sujet (%)';
+  const legendLeft = (_relDim === 'partner' && _relMetric === 'influence') ? 'sujet peu présent' : 'faible part';
+  const legendRight = (_relDim === 'partner' && _relMetric === 'influence') ? 'sujet dominant' : 'forte part';
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${entry.label_long}</span>
@@ -3212,7 +3216,7 @@ function renderRelMain(){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">${mapSubtitle}</span></div>
         <div class="pu-cell-body">
           <div id="relMapContainer"><svg id="relMap"></svg></div>
-          <div class="rel-map-legend"><span>faible</span><span class="bar"></span><span>fort</span></div>
+          <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span></div>
         </div>
       </div>
     </div>`;
@@ -3754,19 +3758,24 @@ async function renderRelFluxMap(){
   // valeurs par partenaire (déjà filtrées : bilatéral pour la dette, hors agrégats)
   const byPartner = getFluxWorldMap(entry);
   const isInfluence = (_relMetric === 'influence');
-  // En mode influence on calcule pour chaque partenaire : (volume sujet → partenaire) / (total mondial du partenaire)
-  // = poids du sujet chez ce partenaire (en %).
-  let displayByIso;
+  // Quel que soit le mode, on colore la carte par UN POURCENTAGE pour rester lisible :
+  //   - Volume    : part dans le total du sujet (cohérent avec le treemap)
+  //   - Influence : poids du sujet chez chaque partenaire (% de son marché mondial)
+  // Le volume absolu reste affiché en infobulle, à titre informatif.
+  let displayByIso = {};
   let worldTotals = null;
   if(isInfluence){
     worldTotals = getFluxPartnerWorldTotals(entry);
-    displayByIso = {};
     for(const [iso, v] of Object.entries(byPartner)){
       const wt = worldTotals[iso] || 0;
       if(wt > 0) displayByIso[iso] = (v / wt) * 100;
     }
   } else {
-    displayByIso = byPartner;
+    // Volume mode : % dans le total du sujet
+    const subjectTotal = Object.values(byPartner).reduce((s,v) => s + (v || 0), 0) || 1;
+    for(const [iso, v] of Object.entries(byPartner)){
+      if(v > 0) displayByIso[iso] = (v / subjectTotal) * 100;
+    }
   }
   const sorted = Object.entries(displayByIso).map(([iso,v]) => ({iso,v})).sort((a,b)=>a.v-b.v);
   const n = sorted.length;
@@ -3777,8 +3786,6 @@ async function renderRelFluxMap(){
     const idx = Math.min(palette.length-1, Math.floor(q * palette.length));
     colorByIso[sorted[i].iso] = palette[idx];
   }
-  // somme totale pour les % (mode volume seulement)
-  const total = isInfluence ? null : (sorted.reduce((s,c)=>s+c.v, 0) || 1);
 
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country')
@@ -3802,8 +3809,9 @@ async function renderRelFluxMap(){
           body = `volume ${fmtWithUnit(v, cfg.unit_display)} · pas de total mondial`;
         }
       } else {
-        const pct = total ? (v/total)*100 : 0;
-        body = `${fmtWithUnit(v, cfg.unit_display)} · ${pct.toFixed(1)}%`;
+        // Mode Volume : on a stocké le pct du sujet dans displayByIso
+        const pct = displayByIso[iso] || 0;
+        body = `${pct.toFixed(1)}% du sujet · volume ${fmtWithUnit(v, cfg.unit_display)}`;
       }
       showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, body);
     })
