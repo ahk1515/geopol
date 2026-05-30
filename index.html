@@ -1923,6 +1923,13 @@ const FLOW_DIRECTIONS = {
     to:   { label: 'Fournisseurs', realIndicator: 'import_commercial' },
     from: { label: 'Clients',      realIndicator: 'export_commercial' }
   },
+  // commerce de ressources naturelles (resourcetrade.earth) : même logique que commerce, mais un seul indicateur
+  // 'to' = sujet importateur (ses fournisseurs en country_from)
+  // 'from' = sujet exportateur (ses clients en country_to)
+  commerce_ressources:        {
+    to:   { label: 'Importations' },
+    from: { label: 'Exportations' }
+  },
 };
 // Indicateurs en doublon : alias technique → indicateur canonique
 const FLOW_INDICATOR_ALIASES = {
