@@ -479,6 +479,42 @@ main { flex: 1; padding: 16px 18px 28px; }
 #globalTip .tt { font-family: var(--mono); font-size: 9px; opacity: .65; text-transform: uppercase; letter-spacing: .06em; }
 #globalTip b { color: #fff; }
 
+/* Système d'aide contextuelle : icône (ⓘ) discrète + popover au clic */
+.help-tip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--bg3); color: var(--text3);
+  font-size: 9px; font-family: var(--sans); font-weight: 700;
+  cursor: help; margin-left: 4px; user-select: none;
+  transition: all .12s; vertical-align: middle;
+}
+.help-tip:hover { background: var(--green); color: #fff; }
+.help-tip.active { background: var(--green); color: #fff; }
+#helpPopover {
+  position: fixed; z-index: 250; display: none;
+  background: var(--bg2); color: var(--text);
+  border: 1px solid var(--border2); border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.18);
+  max-width: 360px; padding: 14px 16px;
+  font-family: var(--sans); font-size: 12.5px; line-height: 1.55;
+}
+#helpPopover.open { display: block; }
+#helpPopover .help-title {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--green); margin-bottom: 8px;
+}
+#helpPopover .help-body p { margin: 0 0 8px; color: var(--text); }
+#helpPopover .help-body p:last-child { margin-bottom: 0; }
+#helpPopover .help-body strong { color: var(--text); font-weight: 600; }
+#helpPopover .help-body em { color: var(--text2); font-style: normal; font-family: var(--mono); font-size: 11px; }
+#helpPopover .help-close {
+  position: absolute; top: 6px; right: 8px;
+  background: none; border: none; color: var(--text3);
+  font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 6px;
+}
+#helpPopover .help-close:hover { color: var(--text); }
+
 /* modale de configuration des indicateurs épinglés */
 #pinModal {
   position: fixed; inset: 0; z-index: 160; display: none;
@@ -798,7 +834,7 @@ main { flex: 1; padding: 16px 18px 28px; }
     <div id="subjectSlot"></div>
     <div id="compareBSlotWrap" style="display:none;align-items:center;gap:12px">
       <span class="ctx-sep"></span>
-      <span class="ctx-label">Comparer à</span>
+      <span class="ctx-label">Comparer à<span class="help-tip" onclick="event.stopPropagation();showHelp('comparaison_ab', this)" title="Aide" role="button">ⓘ</span></span>
       <div id="compareBSlot"></div>
     </div>
     <span class="ctx-sep"></span>
@@ -859,6 +895,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 
 <!-- ░░ INFOBULLE GLOBALE ░░ -->
 <div id="globalTip"></div>
+<div id="helpPopover" role="dialog" aria-label="Aide contextuelle"></div>
 
 <script id="appScript">
 /* ════════════════════════════════════════════════════════════════
@@ -2170,6 +2207,110 @@ function showTip2(ev, title, body){
   moveTip(ev);
 }
 
+/* ─── SYSTÈME D'AIDE CONTEXTUELLE ──────────────────────────────────
+   Petites icônes (ⓘ) cliquables à côté des éléments ambigus.
+   Le clic ouvre un popover stable avec une explication en prose.
+   Click ailleurs / Échap ferme.
+*/
+const HELP_TEXTS = {
+  volume_vs_influence: {
+    title: 'Volume vs Influence',
+    body: `<p><strong>Volume</strong> : pour chaque partenaire, sa part dans le total du sujet. La somme des pourcentages fait 100%. Idéal pour répondre à <em>« qui sont les plus gros partenaires du sujet »</em>.</p>
+    <p><strong>Influence</strong> : pour chaque partenaire, le poids du sujet dans son propre marché. Chaque pourcentage a son propre dénominateur — la somme ne fait pas 100%. Idéal pour répondre à <em>« chez qui le sujet pèse le plus relativement »</em>.</p>
+    <p>Exemple : les USA fournissent 60% des armes à la France (Volume) mais la France ne représente que 4% des exports d'armes américains (Influence).</p>`
+  },
+  somme_vs_moyenne: {
+    title: 'Σ (Somme) vs x̄ (Moyenne)',
+    body: `<p><strong>Σ Somme</strong> : cumule toutes les transactions de la plage. Lit le total sur 5 ans : <em>« 200 Mrd USD échangés au total 2020-2024 »</em>.</p>
+    <p><strong>x̄ Moyenne annuelle</strong> : divise la somme par le nombre d'années. Lit le rythme : <em>« 40 Mrd USD/an en moyenne »</em>.</p>
+    <p>Les ratios entre partenaires restent identiques entre les deux modes — seule l'amplitude change. Utilise la moyenne pour comparer des périodes de durées différentes.</p>`
+  },
+  panorama_col1: {
+    title: 'Qui pèse pour le sujet',
+    body: `<p>Pour chaque flux, on regarde les principaux partenaires <strong>du point de vue du sujet</strong>.</p>
+    <p>Le 1<sup>er</sup> partenaire est celui qui occupe la plus grande part du flux dans le total du sujet : <em>« USA = 60% des armes importées par la France »</em>.</p>
+    <p>Tri par % décroissant. Le dénominateur est le total du sujet sur ce flux.</p>`
+  },
+  panorama_col2: {
+    title: 'Pour qui le sujet pèse',
+    body: `<p>Pour chaque flux, on regarde les pays <strong>où le sujet pèse le plus relativement</strong>, vu du point de vue de chaque partenaire.</p>
+    <p>Le 1<sup>er</sup> partenaire est celui dont le sujet occupe la plus grande part de SON propre marché : <em>« la France représente 80% des armes importées par le Mali »</em>.</p>
+    <p>Tri par % décroissant. Chaque partenaire a son propre dénominateur (son total mondial sur ce flux).</p>`
+  },
+  ressources_seuil: {
+    title: 'Seuil de notabilité',
+    body: `<p>Une ressource n'apparaît dans le bloc Atouts que si la part mondiale du sujet dépasse ce seuil.</p>
+    <p><strong>1%</strong> : inclusif, montre toutes les contributions notables.<br>
+    <strong>3%</strong> : équilibré, signature stratégique du pays (défaut).<br>
+    <strong>5%</strong> : sélectif, ne garde que les positions dominantes.</p>
+    <p>Réglage sauvegardé entre sessions.</p>`
+  },
+  comparaison_ab: {
+    title: 'Comparaison A vs B',
+    body: `<p>Le sujet A est celui de la barre de contexte (en haut). Le sujet B est défini ici, indépendamment.</p>
+    <p>Sur le radar, B apparaît en polygone orange pointillé superposé à A en vert. Sur la courbe, les deux séries sont superposées avec écart relatif en % dans l'entête.</p>
+    <p>La carte reste sur A seul (lisibilité). Le bloc Composition montre les deux pays en barres groupées par sub1.</p>`
+  },
+  filtre_zone: {
+    title: 'Filtre Partenaires',
+    body: `<p>Restreint l'analyse à une zone géographique ou une organisation. Tous les calculs (treemap, courbe, carte) sont recalculés sur ce sous-ensemble.</p>
+    <p>Exemple : France filtrée sur Afrique → l'Égypte qui faisait 1% du flux global passe à 30% du flux France-Afrique. Lecture nettement plus pertinente pour analyser une zone.</p>
+    <p>Les pays hors zone apparaissent grisés sur la carte.</p>`
+  },
+  filtre_periode: {
+    title: 'Plage temporelle',
+    body: `<p>Bouton <strong>Plage…</strong> : active une fenêtre d'années (par défaut les 5 dernières disponibles). Tu peux ensuite ajuster min et max.</p>
+    <p>En mode plage, les vues ponctuelles (treemap, carte) agrègent sur la période (cumul ou moyenne via Σ/x̄). Les vues temporelles (courbes, aires) zooment sur la fenêtre.</p>
+    <p>Bouton <strong>×</strong> : revient à l'année courante unique.</p>`
+  },
+};
+let _helpOpenKey = null;
+function showHelp(key, anchorEl){
+  const data = HELP_TEXTS[key];
+  if(!data) return;
+  // Fermer si déjà ouvert sur la même clé (toggle)
+  if(_helpOpenKey === key){ closeHelp(); return; }
+  const pop = document.getElementById('helpPopover');
+  pop.innerHTML = `<button class="help-close" onclick="closeHelp()" aria-label="Fermer">×</button>
+    <div class="help-title">${data.title}</div>
+    <div class="help-body">${data.body}</div>`;
+  pop.classList.add('open');
+  _helpOpenKey = key;
+  // Marquer l'icône active
+  document.querySelectorAll('.help-tip.active').forEach(el => el.classList.remove('active'));
+  if(anchorEl) anchorEl.classList.add('active');
+  // Positionner près de l'ancre, clampé à la fenêtre
+  if(anchorEl){
+    const rect = anchorEl.getBoundingClientRect();
+    const popRect = pop.getBoundingClientRect();
+    let left = rect.right + 8;
+    let top = rect.top - 4;
+    if(left + popRect.width > window.innerWidth - 10){
+      left = Math.max(10, rect.left - popRect.width - 8);
+    }
+    if(top + popRect.height > window.innerHeight - 10){
+      top = Math.max(10, window.innerHeight - popRect.height - 10);
+    }
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+}
+function closeHelp(){
+  const pop = document.getElementById('helpPopover');
+  pop.classList.remove('open');
+  _helpOpenKey = null;
+  document.querySelectorAll('.help-tip.active').forEach(el => el.classList.remove('active'));
+}
+// Fermeture au clic ailleurs / Échap
+document.addEventListener('click', e => {
+  if(_helpOpenKey && !e.target.closest('.help-tip') && !e.target.closest('#helpPopover')) closeHelp();
+});
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && _helpOpenKey) closeHelp(); });
+// Helper pour générer le HTML d'une icône d'aide
+function helpIco(key){
+  return `<span class="help-tip" onclick="event.stopPropagation();showHelp('${key}', this)" title="Aide" role="button">ⓘ</span>`;
+}
+
 // Sparkline SVG (forme de la série, sans axes).
 function sparklineSvg(series, color){
   if(!series || series.length < 2) return '';
@@ -2770,7 +2911,7 @@ function buildResourcesBlock(){
   }
   return `<div class="card res-block">
     <div class="card-head">
-      <span class="card-title">Atouts en ressources</span>
+      <span class="card-title">Atouts en ressources${helpIco('ressources_seuil')}</span>
       <span style="display:flex;align-items:center;gap:8px">
         <span class="card-sub">part mondiale par type · seuil ${threshold}%</span>
         <button class="card-cog" onclick="openResThresholdModal()" title="Régler le seuil de notabilité">⚙</button>
@@ -2874,14 +3015,14 @@ function renderSynthese(){
         <div class="card-body">
           <div class="flux-block">
             <div class="flux-block-head">
-              <span class="t">Qui pèse pour le sujet</span>
+              <span class="t">Qui pèse pour le sujet${helpIco('panorama_col1')}</span>
               <span style="display:flex;align-items:center;gap:6px"><span class="h">${partnerEntries.length} flux</span><button class="card-cog" onclick="openPinModal('flux_partner')" title="Choisir les flux">⚙</button></span>
             </div>
             ${partnersHtml}
           </div>
           <div class="flux-block">
             <div class="flux-block-head">
-              <span class="t">Pour qui le sujet pèse</span>
+              <span class="t">Pour qui le sujet pèse${helpIco('panorama_col2')}</span>
               <span style="display:flex;align-items:center;gap:6px"><span class="h">${influenceEntries.length} flux</span><button class="card-cog" onclick="openPinModal('flux_influence')" title="Choisir les flux">⚙</button></span>
             </div>
             ${influenceHtml}
@@ -3794,7 +3935,7 @@ function renderRelMain(){
   let metricSelector = '';
   if(_relDim === 'partner'){
     metricSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
-      <span class="rel-filter-label">Mesure</span>
+      <span class="rel-filter-label">Mesure${helpIco('volume_vs_influence')}</span>
       <div class="seg">
         <button class="${_relMetric==='volume'?'on':''}" onclick="setRelMetric('volume')" title="Part du sujet vers chaque partenaire">Volume</button>
         <button class="${_relMetric==='influence'?'on':''}" onclick="setRelMetric('influence')" title="Poids du sujet chez chaque partenaire">Influence</button>
@@ -3827,7 +3968,7 @@ function renderRelMain(){
     zoneOpts += `</optgroup>`;
   }
   const zoneSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
-    <span class="rel-filter-label">Partenaires</span>
+    <span class="rel-filter-label">Partenaires${helpIco('filtre_zone')}</span>
     <select class="rel-zone-select" onchange="setRelZoneFilter(this.value)">${zoneOpts}</select>
   </div>`;
   // sélecteur de plage temporelle : 2 selects (min, max) + bascule somme/moyenne si plage active
@@ -3849,7 +3990,7 @@ function renderRelMain(){
       const nYears = curMax - curMin + 1;
       const aggLabel = _relYearAggMode === 'avg' ? `Moy/an` : `Somme`;
       yearRangeSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
-        <span class="rel-filter-label">Période</span>
+        <span class="rel-filter-label">Période${helpIco('somme_vs_moyenne')}</span>
         <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(+this.value, ${curMax})">${optsMin}</select>
         <span style="color:var(--text3);font-family:var(--mono);font-size:11px">→</span>
         <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(${curMin}, +this.value)">${optsMax}</select>
@@ -3863,7 +4004,7 @@ function renderRelMain(){
       // Mode ponctuel : un seul bouton compact pour activer la plage (initialisée sur les 5 dernières années)
       const yStart = Math.max(yAvMin, yAvMax - 4);
       yearRangeSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
-        <span class="rel-filter-label">Période</span>
+        <span class="rel-filter-label">Période${helpIco('filtre_periode')}</span>
         <button class="rel-range-toggle" onclick="setRelYearRange(${yStart}, ${yAvMax})" title="Activer une plage d'années">Plage…</button>
       </div>`;
     }
