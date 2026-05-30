@@ -657,6 +657,33 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-zone-select:hover { border-color: var(--green); }
 .rel-zone-select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
 
+.rel-range-toggle {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .12s;
+}
+.rel-range-toggle:hover { border-color: var(--green); color: var(--green); }
+.rel-range-clear {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--text3);
+  cursor: pointer;
+  margin-left: 2px;
+  transition: all .12s;
+}
+.rel-range-clear:hover { background: var(--orange-d); border-color: var(--orange); color: var(--orange); }
+
 /* cellules treemap */
 .tm-cell rect { cursor: pointer; transition: opacity .15s; }
 .tm-cell rect:hover { opacity: .85; }
@@ -1505,27 +1532,49 @@ function getFluxRows(entryOrIndicator, dir){
     partnerCol = (dir === 'partner') ? 'country_from' : 'country_to';
     cacheKey = realIndicator + '|' + (dir || 'partner');
   }
+  // Inclure la fenêtre temporelle dans la cacheKey pour éviter de servir une ancienne agrégation
+  const tWin = (_relYearRange ? `R${_relYearRange[0]}-${_relYearRange[1]}-${_relYearAggMode}` : `Y${state.year}`);
+  cacheKey = cacheKey + '|' + tWin;
 
   if(cache.flux.has(cacheKey)) return cache.flux.get(cacheKey);
 
   const inList = sqlList(isos);
 
-  // Année des flux : l'année courante si elle a des données, sinon la dernière dispo pour le sujet.
-  let y = state.year;
-  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${subjectCol} IN (${inList}) LIMIT 1`);
-  if(!chk.length){
-    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${subjectCol} IN (${inList})`);
-    if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
-  }
-
-  let rows = [];
+  // Détermination de la fenêtre temporelle :
+  //   - Si _relYearRange = [yMin, yMax] : on agrège sur la plage (somme par défaut, /N si mode avg)
+  //   - Sinon (mode ponctuel) : année courante, avec fallback sur la dernière dispo
+  const useRange = (_relYearRange && _relYearRange.length === 2);
   const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
-  const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
-                      FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y}
-                      AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
-                      AND ${partnerCol} NOT IN (${exclAgg})
-                      GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
-  if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v, fluxYear:y }));
+  let rows = [];
+
+  if(useRange){
+    const [yMin, yMax] = _relYearRange;
+    const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                        FROM flux WHERE indicator='${escapeSql(realIndicator)}'
+                        AND year >= ${yMin} AND year <= ${yMax}
+                        AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
+                        AND ${partnerCol} NOT IN (${exclAgg})
+                        GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
+    if(r.length){
+      const nYears = yMax - yMin + 1;
+      const divider = (_relYearAggMode === 'avg' && nYears > 0) ? nYears : 1;
+      rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value: v / divider, fluxYear:`${yMin}-${yMax}` }));
+    }
+  } else {
+    // Mode ponctuel : année courante avec fallback sur la dernière dispo
+    let y = state.year;
+    const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${subjectCol} IN (${inList}) LIMIT 1`);
+    if(!chk.length){
+      const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${subjectCol} IN (${inList})`);
+      if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    }
+    const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                        FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y}
+                        AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
+                        AND ${partnerCol} NOT IN (${exclAgg})
+                        GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
+    if(r.length) rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value:v, fluxYear:y }));
+  }
   cache.flux.set(cacheKey, rows);
   return rows;
 }
@@ -1584,29 +1633,42 @@ function getFluxPartnerWorldTotals(entry){
     partnerCol = (entry.side === 'to') ? 'country_from' : 'country_to';
     otherCol = (entry.side === 'to') ? 'country_to' : 'country_from';
   }
-  // utilise la même année que getFluxRows pour la cohérence
-  let y = state.year;
+  // Fenêtre temporelle alignée avec getFluxRows : plage si _relYearRange, sinon année courante (avec fallback)
+  const useRange = (_relYearRange && _relYearRange.length === 2);
   const inList = sqlList(isos);
-  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${otherCol} IN (${inList}) LIMIT 1`);
-  if(!chk.length){
-    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${otherCol} IN (${inList})`);
-    if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  let yClause, cacheKey;
+  if(useRange){
+    const [yMin, yMax] = _relYearRange;
+    yClause = `year >= ${yMin} AND year <= ${yMax}`;
+    cacheKey = entry.key + '|PWT|' + subjectKey(isos) + '|R' + yMin + '-' + yMax + '-' + _relYearAggMode;
+  } else {
+    let y = state.year;
+    const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${otherCol} IN (${inList}) LIMIT 1`);
+    if(!chk.length){
+      const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${otherCol} IN (${inList})`);
+      if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    }
+    yClause = `year = ${y}`;
+    cacheKey = entry.key + '|PWT|' + subjectKey(isos) + '|Y' + y;
   }
-  const cacheKey = entry.key + '|PWT|' + subjectKey(isos) + '|' + y;
   if(_fluxPartnerTotalsCache.has(cacheKey)) return _fluxPartnerTotalsCache.get(cacheKey);
 
-  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
   // Pour chaque partenaire, somme sur TOUS ses partenaires (autres pays récipiendaires hors agrégats régionaux et sentinelles).
   // On exclut volontairement les sentinelles __ et les zones agrégées du dénominateur, sinon le total est gonflé.
   const r = safeExec(`SELECT ${partnerCol} AS partner, SUM(value) AS total
-                      FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y}
+                      FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${yClause}
                       AND ${partnerCol} NOT IN (${exclAgg})
                       AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
                       AND ${otherCol} NOT IN (${exclAgg})
                       AND ${otherCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
                       GROUP BY ${partnerCol}`);
   const out = {};
-  if(r.length) for(const [p, t] of r[0].values){ out[p] = t || 0; }
+  if(r.length){
+    const nYears = useRange ? (_relYearRange[1] - _relYearRange[0] + 1) : 1;
+    const divider = (useRange && _relYearAggMode === 'avg' && nYears > 0) ? nYears : 1;
+    for(const [p, t] of r[0].values){ out[p] = (t || 0) / divider; }
+  }
   _fluxPartnerTotalsCache.set(cacheKey, out);
   return out;
 }
@@ -3464,6 +3526,8 @@ let _relMetric = 'volume';        // 'volume' | 'influence' — métrique d'affi
 let _relInfluencePinned = null;   // en mode Influence, ISO3 du partenaire sélectionné pour zoom courbe
 let _relZoneFilter = null;        // zone_id (zone géo ou organisation) qui filtre les partenaires affichés, null = monde entier
 let _relZonePartnersCache = null; // cache des ISO3 inclus dans la zone active (invalidé à chaque changement de filtre)
+let _relYearRange = null;         // [yMin, yMax] inclusif, ou null = utiliser state.year ponctuel
+let _relYearAggMode = 'sum';      // 'sum' (cumul sur la plage) | 'avg' (moyenne annuelle)
 
 // Liste des zones disponibles, mise en cache. Retourne [{zone_id, zone_nom, n_pays}].
 // Trié par catégorie (GEO_ d'abord par nombre de pays décroissant, puis organisations alphabétique).
@@ -3516,6 +3580,49 @@ function filterByZoneFilter(rows){
   const set = getZoneFilterIsos();
   if(!set) return rows;
   return rows.filter(r => set.has(r.partner));
+}
+
+// Plage [yMin, yMax] des années disponibles pour l'entrée flux active dans la DB
+// (toutes années confondues, indépendamment du sujet). Cache léger.
+const _fluxYearsAvailableCache = new Map();
+function getFluxYearsAvailable(entry){
+  if(!entry) return null;
+  if(_fluxYearsAvailableCache.has(entry.key)) return _fluxYearsAvailableCache.get(entry.key);
+  const r = safeExec(`SELECT MIN(year), MAX(year) FROM flux WHERE indicator='${escapeSql(entry.realIndicator)}'`);
+  if(!r.length){ _fluxYearsAvailableCache.set(entry.key, null); return null; }
+  const [yMin, yMax] = r[0].values[0];
+  if(yMin == null || yMax == null){ _fluxYearsAvailableCache.set(entry.key, null); return null; }
+  const res = [yMin, yMax];
+  _fluxYearsAvailableCache.set(entry.key, res);
+  return res;
+}
+
+// Setter de plage : reset les caches dépendants
+function setRelYearRange(yMin, yMax){
+  // Valider que yMin <= yMax
+  if(yMin > yMax){ const tmp = yMin; yMin = yMax; yMax = tmp; }
+  _relYearRange = [yMin, yMax];
+  cache.flux.clear();   // les valeurs agrégées dépendent de la plage
+  _fluxPartnerTotalsCache.clear();
+  _relInfluencePinned = null;
+  renderRelMain();
+  syncUrl();
+}
+function clearRelYearRange(){
+  _relYearRange = null;
+  cache.flux.clear();
+  _fluxPartnerTotalsCache.clear();
+  _relInfluencePinned = null;
+  renderRelMain();
+  syncUrl();
+}
+function setRelYearAggMode(mode){
+  if(mode !== 'sum' && mode !== 'avg') return;
+  _relYearAggMode = mode;
+  cache.flux.clear();
+  _fluxPartnerTotalsCache.clear();
+  renderRelMain();
+  syncUrl();
 }
 
 /* ─── Dimensions disponibles pour le référentiel d'analyse ────────
@@ -3692,6 +3799,44 @@ function renderRelMain(){
     <span class="rel-filter-label">Partenaires</span>
     <select class="rel-zone-select" onchange="setRelZoneFilter(this.value)">${zoneOpts}</select>
   </div>`;
+  // sélecteur de plage temporelle : 2 selects (min, max) + bascule somme/moyenne si plage active
+  const yearsAvail = getFluxYearsAvailable(entry);
+  let yearRangeSelector = '';
+  if(yearsAvail){
+    const [yAvMin, yAvMax] = yearsAvail;
+    const useRange = (_relYearRange && _relYearRange.length === 2);
+    const curMin = useRange ? _relYearRange[0] : yAvMax;   // mode ponctuel : on aligne tout sur yAvMax
+    const curMax = useRange ? _relYearRange[1] : yAvMax;
+    let optsMin = '', optsMax = '';
+    for(let y = yAvMin; y <= yAvMax; y++){
+      optsMin += `<option value="${y}"${y===curMin?' selected':''}>${y}</option>`;
+      optsMax += `<option value="${y}"${y===curMax?' selected':''}>${y}</option>`;
+    }
+    // Mode ponctuel : on affiche une icône claire + bouton "plage"
+    // Mode plage : on affiche les deux selects + bouton "réinitialiser" + bascule somme/moyenne
+    if(useRange){
+      const nYears = curMax - curMin + 1;
+      const aggLabel = _relYearAggMode === 'avg' ? `Moy/an` : `Somme`;
+      yearRangeSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
+        <span class="rel-filter-label">Période</span>
+        <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(+this.value, ${curMax})">${optsMin}</select>
+        <span style="color:var(--text3);font-family:var(--mono);font-size:11px">→</span>
+        <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(${curMin}, +this.value)">${optsMax}</select>
+        <div class="seg" style="margin-left:4px">
+          <button class="${_relYearAggMode==='sum'?'on':''}" onclick="setRelYearAggMode('sum')" title="Cumul sur la période">Σ</button>
+          <button class="${_relYearAggMode==='avg'?'on':''}" onclick="setRelYearAggMode('avg')" title="Moyenne annuelle">x̄</button>
+        </div>
+        <button class="rel-range-clear" onclick="clearRelYearRange()" title="Revenir à une année">×</button>
+      </div>`;
+    } else {
+      // Mode ponctuel : un seul bouton compact pour activer la plage (initialisée sur les 5 dernières années)
+      const yStart = Math.max(yAvMin, yAvMax - 4);
+      yearRangeSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
+        <span class="rel-filter-label">Période</span>
+        <button class="rel-range-toggle" onclick="setRelYearRange(${yStart}, ${yAvMax})" title="Activer une plage d'années">Plage…</button>
+      </div>`;
+    }
+  }
   // sous-titres dynamiques selon la métrique
   const metricLabel = _relMetric === 'influence' ? 'influence chez les partenaires' : 'volume du sujet';
   const mapSubtitle = (_relDim === 'partner' && _relMetric === 'influence')
@@ -3699,25 +3844,34 @@ function renderRelMain(){
     : 'part de chaque partenaire dans le total du sujet (%)';
   const legendLeft = (_relDim === 'partner' && _relMetric === 'influence') ? 'sujet peu présent' : 'faible part';
   const legendRight = (_relDim === 'partner' && _relMetric === 'influence') ? 'sujet dominant' : 'forte part';
+  // suffixe période pour les libellés
+  let periodSuffix;
+  if(_relYearRange){
+    const [yMin, yMax] = _relYearRange;
+    const agg = _relYearAggMode === 'avg' ? ' (moy/an)' : ' (cumul)';
+    periodSuffix = `${yMin}-${yMax}${agg}`;
+  } else {
+    periodSuffix = state.year;
+  }
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${entry.label_long}</span>
       <span class="meta">${state.subject.label}</span>
     </div>
-    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}${metricSelector}${zoneSelector}</div>
+    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}${metricSelector}${zoneSelector}${yearRangeSelector}</div>
     <div class="pu-cells">
       <div class="top-row">
         <div class="pu-cell">
-          <div class="pu-cell-head"><span class="pu-cell-title">Composition · ${dimLabelOf(_relDim, dims)}</span><span class="meta" style="font-size:10px;color:var(--text3)">${metricLabel}</span></div>
+          <div class="pu-cell-head"><span class="pu-cell-title">Composition · ${dimLabelOf(_relDim, dims)}</span><span class="meta" style="font-size:10px;color:var(--text3)">${metricLabel} · ${periodSuffix}</span></div>
           <div class="pu-cell-body" id="relCompBody" style="min-height:340px"></div>
         </div>
         <div class="pu-cell">
-          <div class="pu-cell-head"><span class="pu-cell-title">Évolution · aires empilées</span><span class="meta" style="font-size:10px;color:var(--text3)">${metricLabel}</span></div>
+          <div class="pu-cell-head"><span class="pu-cell-title">Évolution · aires empilées</span><span class="meta" style="font-size:10px;color:var(--text3)">${metricLabel}${_relYearRange ? ' · zoom '+_relYearRange[0]+'-'+_relYearRange[1] : ''}</span></div>
           <div class="pu-cell-body" id="relEvoBody" style="min-height:340px"></div>
         </div>
       </div>
       <div class="pu-cell">
-        <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">${mapSubtitle}</span></div>
+        <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">${mapSubtitle} · ${periodSuffix}</span></div>
         <div class="pu-cell-body">
           <div id="relMapContainer"><svg id="relMap"></svg></div>
           <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span></div>
@@ -3986,6 +4140,11 @@ function renderRelEvolution(){
   rows = applyDrillFilter(rows);
   // filtre zone active
   rows = filterByZoneFilter(rows);
+  // zoom temporel si plage active (les viz temporelles restent par année, mais bornées)
+  if(_relYearRange){
+    const [yMin, yMax] = _relYearRange;
+    rows = rows.filter(r => r.year >= yMin && r.year <= yMax);
+  }
   if(!rows.length){ body.innerHTML = `<div class="rel-empty">Pas de série temporelle utile.</div>`; return; }
 
   // bucket selon la dimension active
@@ -4091,6 +4250,11 @@ function renderInfluenceTimeline(host, entry){
   subjectRows = subjectRows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   subjectRows = applyDrillFilter(subjectRows);
   subjectRows = filterByZoneFilter(subjectRows);
+  // zoom temporel si plage active
+  if(_relYearRange){
+    const [yMin, yMax] = _relYearRange;
+    subjectRows = subjectRows.filter(r => r.year >= yMin && r.year <= yMax);
+  }
   if(!subjectRows.length){ host.innerHTML = `<div class="rel-empty">Pas de série temporelle utile.</div>`; return; }
 
   const worldTotalsTL = getFluxPartnerWorldTotalsTimeline(entry);
