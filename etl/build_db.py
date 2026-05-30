@@ -34,47 +34,36 @@ R2_BUCKET        = os.environ.get("R2_BUCKET", "geopol-db")
 R2_PUBLIC_URL    = os.environ.get("R2_PUBLIC_URL")  # URL pub R2
 
 # -------------------------------------------------------------
-# SOURCES AUTOMATIQUES (purgeable sans risque)
-# -------------------------------------------------------------
-# Données re-téléchargeables depuis les API → éligibles à la purge
-# des années hors bornes configurées dans etl_config.json.
-# Les sources manuelles et semi-auto ne sont jamais purgées.
-# ⚠️  Si tu ajoutes une nouvelle source automatique, ajoute-la ici.
-SOURCES_AUTOMATIQUES = [
-    "Banque Mondiale",
-    "Banque Mondiale IDS",
-    "OWID",
-    "UNHCR",
-]
-
-
-# -------------------------------------------------------------
 # PURGE DONNÉES HORS BORNES
 # -------------------------------------------------------------
+# Note : la purge agit globalement sur toutes les sources.
+# C'est sûr parce que les CSV sources (manuels et semi-auto) restent
+# archivés dans le repo GitHub : à chaque run de l'ETL, les fichiers
+# sont relus et les lignes ≥ ANNEE_DEBUT sont réinjectées.
+# Modifier ANNEE_DEBUT dans etl_config.json suffit à élargir ou réduire
+# la fenêtre temporelle de la DB sans perte de données pérenne.
 
 def purge_hors_bornes():
     """
-    Supprime les lignes des sources automatiques antérieures à ANNEE_DEBUT.
-    Les sources manuelles et semi-auto ne sont jamais touchées.
-    Pas de purge sur ANNEE_FIN : protège les projections manuelles (> 2024).
+    Supprime toutes les lignes antérieures à ANNEE_DEBUT, dans identite et flux,
+    quelle que soit la source.
+    Pas de purge sur ANNEE_FIN : préserve les projections (> année courante).
     """
     conn = sqlite3.connect(PATH_DB)
 
-    placeholders = ",".join("?" * len(SOURCES_AUTOMATIQUES))
-
     res_identite = conn.execute(
-        f"DELETE FROM identite WHERE year < ? AND source IN ({placeholders})",
-        [ANNEE_DEBUT] + SOURCES_AUTOMATIQUES,
+        "DELETE FROM identite WHERE year < ?",
+        [ANNEE_DEBUT],
     )
     res_flux = conn.execute(
-        f"DELETE FROM flux WHERE year < ? AND source IN ({placeholders})",
-        [ANNEE_DEBUT] + SOURCES_AUTOMATIQUES,
+        "DELETE FROM flux WHERE year < ?",
+        [ANNEE_DEBUT],
     )
     conn.commit()
     conn.close()
 
     nb = res_identite.rowcount + res_flux.rowcount
-    print(f"  {nb} lignes supprimées (avant {ANNEE_DEBUT}, sources auto uniquement)")
+    print(f"  {nb} lignes supprimées (avant {ANNEE_DEBUT}, toutes sources)")
     return nb
 
 
