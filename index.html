@@ -643,6 +643,19 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-crumb .sep { color: var(--text3); }
 .rel-dim-wrap { display: flex; align-items: center; gap: 8px; }
 .rel-filter-label { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); }
+.rel-zone-select {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-family: var(--sans);
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  max-width: 200px;
+}
+.rel-zone-select:hover { border-color: var(--green); }
+.rel-zone-select:focus { outline: 2px solid var(--green); outline-offset: 1px; }
 
 /* cellules treemap */
 .tm-cell rect { cursor: pointer; transition: opacity .15s; }
@@ -3449,6 +3462,61 @@ let _relPath = [];                // chemin de drill-down dans le treemap (= fil
 let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
 let _relMetric = 'volume';        // 'volume' | 'influence' — métrique d'affichage
 let _relInfluencePinned = null;   // en mode Influence, ISO3 du partenaire sélectionné pour zoom courbe
+let _relZoneFilter = null;        // zone_id (zone géo ou organisation) qui filtre les partenaires affichés, null = monde entier
+let _relZonePartnersCache = null; // cache des ISO3 inclus dans la zone active (invalidé à chaque changement de filtre)
+
+// Liste des zones disponibles, mise en cache. Retourne [{zone_id, zone_nom, n_pays}].
+// Trié par catégorie (GEO_ d'abord par nombre de pays décroissant, puis organisations alphabétique).
+let _allZonesCache = null;
+function getAllZones(){
+  if(_allZonesCache) return _allZonesCache;
+  const r = safeExec(`SELECT zone_id, zone_nom, COUNT(country_iso3) AS n
+                      FROM zones GROUP BY zone_id, zone_nom`);
+  if(!r.length){ _allZonesCache = []; return _allZonesCache; }
+  const zones = r[0].values.map(([id, nom, n]) => ({
+    zone_id: id,
+    zone_nom: nom,
+    n_pays: n,
+    isGeo: id.startsWith('GEO_'),
+  }));
+  // GEO d'abord (continents par taille), puis organisations alphabétique
+  zones.sort((a,b) => {
+    if(a.isGeo !== b.isGeo) return a.isGeo ? -1 : 1;
+    if(a.isGeo) return b.n_pays - a.n_pays;
+    return a.zone_nom.localeCompare(b.zone_nom);
+  });
+  _allZonesCache = zones;
+  return zones;
+}
+
+// Renvoie le Set des ISO3 inclus dans la zone active (filtre Relations).
+// Renvoie null si pas de filtre (toutes les partenaires).
+function getZoneFilterIsos(){
+  if(!_relZoneFilter) return null;
+  if(_relZonePartnersCache) return _relZonePartnersCache;
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_relZoneFilter)}'`);
+  if(!r.length){ _relZonePartnersCache = new Set(); return _relZonePartnersCache; }
+  _relZonePartnersCache = new Set(r[0].values.map(row => row[0]));
+  return _relZonePartnersCache;
+}
+
+// Setter qui invalide cache + ré-rend Relations
+function setRelZoneFilter(zoneId){
+  _relZoneFilter = (zoneId === '' || zoneId === 'null') ? null : zoneId;
+  _relZonePartnersCache = null;
+  _relPath = [];  // reset drill-down quand on change de zone (cohérence visuelle)
+  _relInfluencePinned = null;  // reset sélection pin influence aussi
+  renderRelMain();
+  syncUrl();
+}
+
+// Filtre une liste de rows {partner, ...} par la zone active.
+// Si pas de zone, retourne tel quel.
+function filterByZoneFilter(rows){
+  const set = getZoneFilterIsos();
+  if(!set) return rows;
+  return rows.filter(r => set.has(r.partner));
+}
 
 /* ─── Dimensions disponibles pour le référentiel d'analyse ────────
    Pour un flux donné, on renvoie la liste des dimensions possibles
@@ -3598,6 +3666,32 @@ function renderRelMain(){
     // sur une catégorie, force la métrique à 'volume' pour éviter incohérence
     if(_relMetric !== 'volume') _relMetric = 'volume';
   }
+  // sélecteur de zone partenaires — toujours visible (puissant filtre transversal)
+  // Liste groupée : Monde (sans filtre) puis continents (GEO_) puis organisations
+  const zones = getAllZones();
+  let zoneOpts = `<option value="">🌍 Monde entier</option>`;
+  const geoZones = zones.filter(z => z.isGeo);
+  const orgZones = zones.filter(z => !z.isGeo);
+  if(geoZones.length){
+    zoneOpts += `<optgroup label="Zones géographiques">`;
+    for(const z of geoZones){
+      const sel = (_relZoneFilter === z.zone_id) ? ' selected' : '';
+      zoneOpts += `<option value="${escAttr(z.zone_id)}"${sel}>${escAttr(z.zone_nom)} (${z.n_pays})</option>`;
+    }
+    zoneOpts += `</optgroup>`;
+  }
+  if(orgZones.length){
+    zoneOpts += `<optgroup label="Organisations">`;
+    for(const z of orgZones){
+      const sel = (_relZoneFilter === z.zone_id) ? ' selected' : '';
+      zoneOpts += `<option value="${escAttr(z.zone_id)}"${sel}>${escAttr(z.zone_nom)} (${z.n_pays})</option>`;
+    }
+    zoneOpts += `</optgroup>`;
+  }
+  const zoneSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
+    <span class="rel-filter-label">Partenaires</span>
+    <select class="rel-zone-select" onchange="setRelZoneFilter(this.value)">${zoneOpts}</select>
+  </div>`;
   // sous-titres dynamiques selon la métrique
   const metricLabel = _relMetric === 'influence' ? 'influence chez les partenaires' : 'volume du sujet';
   const mapSubtitle = (_relDim === 'partner' && _relMetric === 'influence')
@@ -3610,7 +3704,7 @@ function renderRelMain(){
       <span class="name">${entry.label_long}</span>
       <span class="meta">${state.subject.label}</span>
     </div>
-    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}${metricSelector}</div>
+    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}${metricSelector}${zoneSelector}</div>
     <div class="pu-cells">
       <div class="top-row">
         <div class="pu-cell">
@@ -3668,6 +3762,8 @@ function buildFluxAggregation(){
   rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   // filtre cumulé issu du drill (_relPath)
   rows = applyDrillFilter(rows);
+  // filtre zone active (si zone choisie, ne garder que les partenaires inclus)
+  rows = filterByZoneFilter(rows);
   if(!rows.length) return { value: 0, children: [], dim: _relDim, metric: _relMetric };
 
   // Bucket selon la dimension active
@@ -3888,6 +3984,8 @@ function renderRelEvolution(){
   rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   // drill cumulé : applique tous les steps du chemin
   rows = applyDrillFilter(rows);
+  // filtre zone active
+  rows = filterByZoneFilter(rows);
   if(!rows.length){ body.innerHTML = `<div class="rel-empty">Pas de série temporelle utile.</div>`; return; }
 
   // bucket selon la dimension active
@@ -3992,6 +4090,7 @@ function renderInfluenceTimeline(host, entry){
   }
   subjectRows = subjectRows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   subjectRows = applyDrillFilter(subjectRows);
+  subjectRows = filterByZoneFilter(subjectRows);
   if(!subjectRows.length){ host.innerHTML = `<div class="rel-empty">Pas de série temporelle utile.</div>`; return; }
 
   const worldTotalsTL = getFluxPartnerWorldTotalsTimeline(entry);
@@ -4166,10 +4265,19 @@ async function renderRelFluxMap(){
   const features = topojson.feature(world, world.objects.countries).features;
 
   // valeurs par partenaire (déjà filtrées : bilatéral pour la dette, hors agrégats)
-  const byPartner = getFluxWorldMap(entry);
+  let byPartner = getFluxWorldMap(entry);
+  // appliquer le filtre zone : ne garder que les partenaires inclus dans la zone active
+  const zoneSet = getZoneFilterIsos();
+  if(zoneSet){
+    const filtered = {};
+    for(const [iso, v] of Object.entries(byPartner)){
+      if(zoneSet.has(iso)) filtered[iso] = v;
+    }
+    byPartner = filtered;
+  }
   const isInfluence = (_relMetric === 'influence');
   // Quel que soit le mode, on colore la carte par UN POURCENTAGE pour rester lisible :
-  //   - Volume    : part dans le total du sujet (cohérent avec le treemap)
+  //   - Volume    : part dans le total du sujet (recalculé sur la zone filtrée si filtre actif)
   //   - Influence : poids du sujet chez chaque partenaire (% de son marché mondial)
   // Le volume absolu reste affiché en infobulle, à titre informatif.
   let displayByIso = {};
@@ -4181,7 +4289,7 @@ async function renderRelFluxMap(){
       if(wt > 0) displayByIso[iso] = (v / wt) * 100;
     }
   } else {
-    // Volume mode : % dans le total du sujet
+    // Volume mode : % dans le total (du sujet, ou de la zone si filtre actif)
     const subjectTotal = Object.values(byPartner).reduce((s,v) => s + (v || 0), 0) || 1;
     for(const [iso, v] of Object.entries(byPartner)){
       if(v > 0) displayByIso[iso] = (v / subjectTotal) * 100;
@@ -4201,14 +4309,23 @@ async function renderRelFluxMap(){
     .attr('class','map-country')
     .attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
-    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
+    .style('fill', d => {
+      const iso = numToIso3(+d.id);
+      if(!iso) return '#eef2ee';
+      // Hors zone : grisé plus marqué (signal visuel "hors périmètre")
+      if(zoneSet && !zoneSet.has(iso)) return '#dde4dd';
+      // Dans zone (ou pas de filtre) avec data : couleur normale ; sans data : neutre
+      return colorByIso[iso] || '#eef2ee';
+    })
     .on('mouseover', function(ev, d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--orange)').attr('stroke-width', 1);
       const v = byPartner[iso] || 0;
       const cfg = state.indicators.find(c => c.indicator === entry.realIndicator) || entry;
       let body;
-      if(v <= 0){
+      if(zoneSet && !zoneSet.has(iso)){
+        body = 'hors zone sélectionnée';
+      } else if(v <= 0){
         body = 'pas de flux';
       } else if(isInfluence){
         const wt = worldTotals[iso] || 0;
