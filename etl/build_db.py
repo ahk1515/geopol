@@ -373,19 +373,13 @@ def run(sources_status=None):
     print("BUILD — Assemblage final et upload R2")
     print("=" * 60)
 
-    # 1. Vérification taille
-    print("\n→ Vérification taille DB")
-    size_mb, size_status = check_db_size()
-    print(f"  Taille : {size_mb:.1f} Mo — statut : {size_status}")
+    # 1. Taille initiale (info seulement, pas de blocage)
+    print("\n→ Taille DB avant traitement")
+    size_mb_initial, _ = check_db_size()
+    print(f"  Taille initiale : {size_mb_initial:.1f} Mo")
 
-    if size_status == "error":
-        print(f"  ❌ DB trop volumineuse ({size_mb:.1f} Mo > {DB_SIZE_ALERT_MB} Mo)")
-        print("     Réduis l'antériorité dans admin.html avant de continuer.")
-        sys.exit(1)
-    elif size_status == "warning":
-        print(f"  ⚠️  Attention : DB approche la limite ({size_mb:.1f} Mo)")
-
-    # 2. Purge données hors bornes (sources auto uniquement)
+    # 2. Purge données hors bornes (toutes sources)
+    # Cette étape est ESSENTIELLE pour réduire la taille avant le contrôle.
     print("\n→ Purge données hors bornes")
     purge_hors_bornes()
 
@@ -393,21 +387,34 @@ def run(sources_status=None):
     print("\n→ Construction table zones")
     build_zones()
 
-    # 3. Optimisation
+    # 4. Optimisation (index + VACUUM)
+    # VACUUM libère l'espace des lignes supprimées par la purge.
     print("\n→ Optimisation DB")
     optimize_db()
 
-    # Taille post-optimisation
-    size_mb_post = os.path.getsize(PATH_DB) / (1024 * 1024)
-    print(f"  Taille après optimisation : {size_mb_post:.1f} Mo")
+    # 5. Vérification taille APRÈS purge + VACUUM
+    # C'est seulement maintenant qu'on doit décider d'avorter ou non.
+    print("\n→ Vérification taille DB après traitement")
+    size_mb, size_status = check_db_size()
+    print(f"  Taille finale : {size_mb:.1f} Mo — statut : {size_status}")
+    print(f"  Gain : {size_mb_initial - size_mb:.1f} Mo")
 
-    # 3. Statistiques
+    if size_status == "error":
+        print(f"  ❌ DB toujours trop volumineuse après purge ({size_mb:.1f} Mo > {DB_SIZE_ALERT_MB} Mo)")
+        print("     Réduis ANNEE_DEBUT dans etl_config.json pour purger davantage.")
+        sys.exit(1)
+    elif size_status == "warning":
+        print(f"  ⚠️  Attention : DB approche la limite ({size_mb:.1f} Mo)")
+
+    size_mb_post = size_mb  # utilisé plus bas dans status.json
+
+    # 6. Statistiques
     print("\n→ Statistiques DB")
     stats = get_db_stats()
     for k, v in stats.items():
         print(f"  {k} : {v}")
 
-    # 4. Upload DB vers R2
+    # 7. Upload DB vers R2
     print("\n→ Upload DB vers R2")
     if not all([R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_KEY]):
         print("  ⚠️  Secrets R2 manquants — upload ignoré (mode local)")
