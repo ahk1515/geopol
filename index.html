@@ -381,6 +381,33 @@ main { flex: 1; padding: 16px 18px 28px; }
 .res-fill.reserves { background: var(--terra); }
 .res-pct { font-family: var(--mono); font-size: 11px; font-weight: 600; text-align: right; color: var(--text); }
 .res-empty { padding: 12px; text-align: center; color: var(--text3); font-size: 11.5px; font-style: italic; }
+.res-empty .link-btn { background: none; border: none; color: var(--green); text-decoration: underline; cursor: pointer; font-size: inherit; font-family: inherit; padding: 0; }
+
+/* Modal de réglage du seuil de notabilité ressources */
+.seuil-overlay {
+  position: fixed; inset: 0; z-index: 160; display: none;
+  background: rgba(26,28,34,.3); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center;
+}
+.seuil-overlay.open { display: flex; }
+.seuil-box {
+  width: min(420px, 92vw); background: var(--bg2);
+  border: 1px solid var(--border2); border-radius: 14px; overflow: hidden;
+  display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.seuil-body { padding: 16px 18px 18px; }
+.seuil-help { margin: 0 0 14px; font-size: 12px; color: var(--text2); line-height: 1.5; }
+.seuil-opts { display: flex; flex-direction: column; gap: 8px; }
+.seuil-opt {
+  display: flex; align-items: baseline; gap: 14px; padding: 12px 14px; cursor: pointer;
+  border: 1.5px solid var(--border); border-radius: 8px; background: var(--bg);
+  font-family: var(--sans); font-size: 13px; text-align: left; transition: all .12s;
+}
+.seuil-opt:hover { border-color: var(--green); background: var(--bg3); }
+.seuil-opt.on { border-color: var(--green); background: rgba(10,110,74,.08); }
+.seuil-opt .v { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--text); min-width: 36px; }
+.seuil-opt .lbl { color: var(--text2); font-size: 12px; }
+.seuil-opt.on .lbl { color: var(--green); font-weight: 600; }
 
 /* hint sujet absent */
 .need-subject {
@@ -2343,7 +2370,50 @@ const RES_INDICATORS = [
   { ind: 'mineraux_production_share', group: 'mineraux', label: 'Production minéraux', cls: '' },
   { ind: 'mineraux_reserves_share',   group: 'mineraux', label: 'Réserves minéraux',   cls: 'reserves' },
 ];
-const RES_NOTABILITY_THRESHOLD = 0.5;   // % minimum pour qu'une ressource soit "notable"
+// Seuil paramétrable : 1% (inclusif), 3% (équilibré, défaut), 5% (sélectif)
+// Stocké en localStorage pour persister entre les sessions, par utilisateur.
+const RES_THRESHOLD_KEY = 'geopol_res_threshold';
+const RES_THRESHOLD_OPTIONS = [1, 3, 5];
+function getResThreshold(){
+  const v = parseFloat(localStorage.getItem(RES_THRESHOLD_KEY));
+  return (RES_THRESHOLD_OPTIONS.includes(v)) ? v : 3;  // défaut : 3%
+}
+function setResThreshold(v){
+  if(!RES_THRESHOLD_OPTIONS.includes(v)) return;
+  localStorage.setItem(RES_THRESHOLD_KEY, String(v));
+  renderSynthese();
+}
+// Libellés français pour les sub-catégories de ressources qui méritent une correction (accents, sigles).
+// Si une sub n'est pas dans ce dictionnaire, fallback : majuscule initiale + _ remplacés par espaces.
+const RES_SUB_LABELS = {
+  // Minéraux (USGS MCS)
+  'pgm': 'Platinoïdes (PGM)',
+  'etain': 'Étain',
+  'molybdene': 'Molybdène',
+  'tungstene': 'Tungstène',
+  'manganese': 'Manganèse',
+  'terres_rares': 'Terres rares',
+  // Énergie (Energy Institute) — couvre les libellés courants
+  'petrole': 'Pétrole',
+  'oil': 'Pétrole',
+  'gas': 'Gaz naturel',
+  'gaz': 'Gaz naturel',
+  'coal': 'Charbon',
+  'charbon': 'Charbon',
+  'nuclear': 'Nucléaire',
+  'nucleaire': 'Nucléaire',
+  'hydro': 'Hydroélectricité',
+  'hydroelectricite': 'Hydroélectricité',
+  'renewables': 'Renouvelables',
+  'renouvelables': 'Renouvelables',
+  'solar': 'Solaire',
+  'wind': 'Éolien',
+};
+function prettySubLabel(sub){
+  const key = String(sub || '').toLowerCase();
+  if(RES_SUB_LABELS[key]) return RES_SUB_LABELS[key];
+  return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+}
 
 // Récupère les parts mondiales par subcategory (petrole/gaz/charbon, cuivre/fer/...).
 // Pour un sujet multi-pays, on somme les parts (correct car déjà en %).
@@ -2371,11 +2441,12 @@ function getResourceShares(){
     if(!prev || y > prev.year) lastByKey.set(k, { ind, sub, year: y, value: val });
   }
   // enrichir + filtrer par notabilité
+  const threshold = getResThreshold();
   const out = [];
   for(const { ind, sub, year, value } of lastByKey.values()){
     const meta = RES_INDICATORS.find(r => r.ind === ind);
     if(!meta) continue;
-    if(value < RES_NOTABILITY_THRESHOLD) continue;
+    if(value < threshold) continue;
     out.push({ ind, sub, year, value, group: meta.group, label: meta.label, cls: meta.cls });
   }
   // tri par valeur décroissante au sein de chaque ligne
@@ -2385,33 +2456,67 @@ function getResourceShares(){
 
 function buildResourcesBlock(){
   const shares = getResourceShares();
-  if(!shares.length) return '';   // pas de bloc affiché si rien de notable
+  const threshold = getResThreshold();
   // grouper par theme (energie / mineraux)
   const byGroup = { energie: [], mineraux: [] };
   for(const s of shares) (byGroup[s.group] ??= []).push(s);
   const labels = { energie: 'Énergie', mineraux: 'Minéraux & métaux' };
-  let html = '';
+  let bodyHtml = '';
+  let hasContent = false;
   for(const grp of ['energie','mineraux']){
     if(!byGroup[grp] || !byGroup[grp].length) continue;
+    hasContent = true;
     let rows = '';
     for(const s of byGroup[grp]){
       const w = Math.min(100, s.value).toFixed(1);
-      const subLabel = s.sub.charAt(0).toUpperCase() + s.sub.slice(1).replace(/_/g,' ');
+      const subLabel = prettySubLabel(s.sub);
       rows += `<div class="res-row">
         <div class="res-name">${subLabel}<span class="sub">${s.label.includes('Réserves')?'réserves':'production'} · ${s.year}</span></div>
         <div class="res-bar"><div class="res-fill ${s.cls}" style="width:${w}%"></div></div>
         <div class="res-pct">${s.value.toFixed(1)}%</div>
       </div>`;
     }
-    html += `<div class="res-group"><div class="res-group-head">${labels[grp]}</div>${rows}</div>`;
+    bodyHtml += `<div class="res-group"><div class="res-group-head">${labels[grp]}</div>${rows}</div>`;
+  }
+  if(!hasContent){
+    bodyHtml = `<div class="res-empty">Aucune ressource ≥ ${threshold}% mondial pour ce sujet. <button class="link-btn" onclick="openResThresholdModal()">ajuster le seuil</button></div>`;
   }
   return `<div class="card res-block">
     <div class="card-head">
       <span class="card-title">Atouts en ressources</span>
-      <span class="card-sub">part mondiale par type · seuil ${RES_NOTABILITY_THRESHOLD}%</span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <span class="card-sub">part mondiale par type · seuil ${threshold}%</span>
+        <button class="card-cog" onclick="openResThresholdModal()" title="Régler le seuil de notabilité">⚙</button>
+      </span>
     </div>
-    <div class="card-body">${html}</div>
+    <div class="card-body">${bodyHtml}</div>
   </div>`;
+}
+
+// Petite modal pour régler le seuil de notabilité.
+function openResThresholdModal(){
+  const current = getResThreshold();
+  const opts = RES_THRESHOLD_OPTIONS.map(v => `
+    <button class="seuil-opt ${v===current?'on':''}" onclick="setResThreshold(${v});closeResThresholdModal()">
+      <span class="v">${v}%</span>
+      <span class="lbl">${v===1?'Inclusif':v===3?'Équilibré (défaut)':'Sélectif'}</span>
+    </button>`).join('');
+  const html = `<div id="resThresholdModal" class="seuil-overlay open" onclick="if(event.target===this)closeResThresholdModal()">
+    <div class="seuil-box">
+      <div class="pin-head">
+        <span class="t">Seuil de notabilité</span>
+        <span class="x" onclick="closeResThresholdModal()">×</span>
+      </div>
+      <div class="seuil-body">
+        <p class="seuil-help">Une ressource n'apparaît dans les Atouts que si sa part mondiale dépasse ce seuil.</p>
+        <div class="seuil-opts">${opts}</div>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+function closeResThresholdModal(){
+  document.getElementById('resThresholdModal')?.remove();
 }
 
 function renderSynthese(){
