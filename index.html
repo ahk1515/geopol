@@ -383,6 +383,40 @@ main { flex: 1; padding: 16px 18px 28px; }
 .res-empty { padding: 12px; text-align: center; color: var(--text3); font-size: 11.5px; font-style: italic; }
 .res-empty .link-btn { background: none; border: none; color: var(--green); text-decoration: underline; cursor: pointer; font-size: inherit; font-family: inherit; padding: 0; }
 
+/* Section commerce de ressources (resourcetrade.earth) */
+.res-trade { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 14px; }
+.trade-year { font-family: var(--mono); color: var(--text3); font-weight: 400; font-size: 9px; }
+.trade-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 70px;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 2px;
+  font-size: 12px;
+  border-bottom: 1px dashed transparent;
+}
+.trade-row:not(:last-child) { border-bottom-color: var(--border); }
+.trade-name { color: var(--text2); }
+.trade-bars { display: flex; flex-direction: column; gap: 3px; }
+.trade-bar-line {
+  display: grid;
+  grid-template-columns: 38px 1fr 56px;
+  align-items: center;
+  gap: 6px;
+}
+.trade-bar-key { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+.trade-bar-track { background: var(--bg4); height: 7px; border-radius: 3px; overflow: hidden; position: relative; }
+.trade-bar-fill { height: 100%; border-radius: 3px; min-width: 2px; opacity: .85; }
+.trade-bar-fill.imp { background: var(--terra); }
+.trade-bar-fill.exp { background: var(--green); }
+.trade-bar-val { font-family: var(--mono); font-size: 10.5px; color: var(--text); text-align: right; }
+.trade-balance {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; text-align: right;
+  padding: 4px 6px; border-radius: 4px;
+}
+.trade-balance.positive { color: var(--green); background: rgba(10,110,74,.08); }
+.trade-balance.negative { color: var(--terra); background: rgba(180,83,9,.08); }
+
 /* Modal de réglage du seuil de notabilité ressources */
 .seuil-overlay {
   position: fixed; inset: 0; z-index: 160; display: none;
@@ -545,6 +579,47 @@ main { flex: 1; padding: 16px 18px 28px; }
 .map-country { stroke: var(--border); stroke-width: .4px; cursor: pointer; transition: fill-opacity .15s; }
 .pu-map-legend { display: flex; align-items: center; gap: 8px; padding: 10px 4px 0; font-size: 10px; color: var(--text3); }
 .pu-map-legend .bar { height: 8px; width: 120px; border-radius: 3px; background: linear-gradient(to right, #e8f0e8, #9ec9a8, #4f9e6a, #0a6e4a, #064e34); }
+
+/* Composition par sub1 (Puissance, indicateurs ressources) */
+.compo-wrap { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; }
+.compo-row {
+  display: grid;
+  grid-template-columns: 180px 1fr 110px;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+.compo-row-compare {
+  grid-template-columns: 180px 1fr;
+  align-items: start;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.compo-row-compare:last-child { border-bottom: none; }
+.compo-name { font-size: 12.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.compo-bars { display: flex; flex-direction: column; gap: 4px; }
+.compo-bar-line {
+  display: grid;
+  grid-template-columns: 90px 1fr 110px;
+  align-items: center;
+  gap: 8px;
+}
+.compo-bar-key {
+  font-family: var(--mono); font-size: 10px; color: var(--green);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.compo-bar-key.b { color: var(--orange); }
+.compo-bar-track {
+  background: var(--bg3); border-radius: 2px; height: 12px; overflow: hidden; position: relative;
+}
+.compo-bar-fill { height: 100%; border-radius: 2px; transition: width .25s ease; }
+.compo-bar-fill.a { background: var(--green); }
+.compo-bar-fill.b { background: var(--orange); }
+.compo-bar-val { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text); text-align: right; }
+.compo-hidden {
+  font-size: 10.5px; color: var(--text3); font-style: italic;
+  padding: 8px 4px 2px; text-align: center;
+}
 
 /* ════════════════════════════════════════════════════════════════
    ONGLET RELATIONS
@@ -2454,6 +2529,67 @@ function getResourceShares(){
   return out;
 }
 
+// Récupère import + export de ressources par catégorie (subcategory_1) pour le sujet.
+// Stratégie : prendre la dernière année disponible globalement pour commerce_ressources.
+// Renvoie [{ category, label, import, export, year }, ...] trié par max(import,export) décroissant.
+function getResourceTradeByCategory(){
+  const isos = currentIsos();
+  if(!isos.length) return [];
+  const inList = sqlList(isos);
+  // dernière année disponible
+  const yr = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='commerce_ressources'`);
+  const lastYear = (yr.length && yr[0].values[0][0]) || null;
+  if(!lastYear) return [];
+  // Import : le sujet est country_to (il reçoit la marchandise)
+  const imp = safeExec(`SELECT subcategory_1, SUM(value) AS v
+                        FROM flux
+                        WHERE indicator='commerce_ressources'
+                          AND country_to IN (${inList})
+                          AND year = ${lastYear}
+                          AND subcategory_1 IS NOT NULL AND subcategory_1 != ''
+                          AND value IS NOT NULL AND value != 0
+                        GROUP BY subcategory_1`);
+  // Export : le sujet est country_from
+  const exp = safeExec(`SELECT subcategory_1, SUM(value) AS v
+                        FROM flux
+                        WHERE indicator='commerce_ressources'
+                          AND country_from IN (${inList})
+                          AND year = ${lastYear}
+                          AND subcategory_1 IS NOT NULL AND subcategory_1 != ''
+                          AND value IS NOT NULL AND value != 0
+                        GROUP BY subcategory_1`);
+  // Fusion par catégorie
+  const map = new Map();
+  if(imp.length) for(const [cat, v] of imp[0].values){ if(!map.has(cat)) map.set(cat, {import:0, export:0}); map.get(cat).import = v; }
+  if(exp.length) for(const [cat, v] of exp[0].values){ if(!map.has(cat)) map.set(cat, {import:0, export:0}); map.get(cat).export = v; }
+  if(map.size === 0) return [];
+  const out = [];
+  for(const [category, vals] of map){
+    out.push({
+      category,
+      label: prettyTradeCategory(category),
+      import: vals.import || 0,
+      export: vals.export || 0,
+      year: lastYear,
+    });
+  }
+  out.sort((a,b) => Math.max(b.import, b.export) - Math.max(a.import, a.export));
+  return out;
+}
+
+// Libellé français pour les catégories de commerce_ressources (subcategory_1 de resourcetrade.earth)
+const TRADE_CAT_LABELS = {
+  'Agricultural products': 'Agricoles',
+  'Metals and minerals': 'Métaux & minéraux',
+  'Fossil fuels': 'Combustibles fossiles',
+  'Forestry products': 'Bois & forêt',
+  'Fertilizers': 'Engrais',
+  'Pearls and gemstones': 'Pierres & métaux précieux',
+};
+function prettyTradeCategory(cat){
+  return TRADE_CAT_LABELS[cat] || cat;
+}
+
 function buildResourcesBlock(){
   const shares = getResourceShares();
   const threshold = getResThreshold();
@@ -2478,6 +2614,51 @@ function buildResourcesBlock(){
     }
     bodyHtml += `<div class="res-group"><div class="res-group-head">${labels[grp]}</div>${rows}</div>`;
   }
+
+  // Section Commerce de ressources (depuis resourcetrade.earth)
+  const trade = getResourceTradeByCategory();
+  if(trade.length){
+    hasContent = true;
+    const maxAll = Math.max(...trade.flatMap(t => [t.import, t.export])) || 1;
+    const year = trade[0].year;
+    // Format USD : convertir en Mrd USD (les valeurs sont stockées en USD pur)
+    const fmtUSD = (v) => {
+      if(v >= 1e9) return (v/1e9).toFixed(1) + ' Mrd';
+      if(v >= 1e6) return (v/1e6).toFixed(0) + ' M';
+      if(v >= 1e3) return (v/1e3).toFixed(0) + ' k';
+      return v.toFixed(0);
+    };
+    let rows = '';
+    for(const t of trade){
+      const wImp = (t.import / maxAll) * 100;
+      const wExp = (t.export / maxAll) * 100;
+      // Balance : excédent (export > import) en vert, déficit en orange
+      const balance = t.export - t.import;
+      const balanceClass = balance >= 0 ? 'positive' : 'negative';
+      const balanceSign = balance >= 0 ? '+' : '−';
+      rows += `<div class="trade-row">
+        <div class="trade-name">${t.label}</div>
+        <div class="trade-bars">
+          <div class="trade-bar-line">
+            <span class="trade-bar-key">import</span>
+            <span class="trade-bar-track"><span class="trade-bar-fill imp" style="width:${wImp.toFixed(1)}%"></span></span>
+            <span class="trade-bar-val">${fmtUSD(t.import)}</span>
+          </div>
+          <div class="trade-bar-line">
+            <span class="trade-bar-key">export</span>
+            <span class="trade-bar-track"><span class="trade-bar-fill exp" style="width:${wExp.toFixed(1)}%"></span></span>
+            <span class="trade-bar-val">${fmtUSD(t.export)}</span>
+          </div>
+        </div>
+        <div class="trade-balance ${balanceClass}" title="Balance ${t.label.toLowerCase()} : ${balanceSign} ${fmtUSD(Math.abs(balance))} USD">${balanceSign}${fmtUSD(Math.abs(balance))}</div>
+      </div>`;
+    }
+    bodyHtml += `<div class="res-group res-trade">
+      <div class="res-group-head">Commerce de ressources <span class="trade-year">· ${year}</span></div>
+      ${rows}
+    </div>`;
+  }
+
   if(!hasContent){
     bodyHtml = `<div class="res-empty">Aucune ressource ≥ ${threshold}% mondial pour ce sujet. <button class="link-btn" onclick="openResThresholdModal()">ajuster le seuil</button></div>`;
   }
@@ -2814,6 +2995,129 @@ function selectPuIndicator(ind){
 }
 
 // Zone principale : entête + cellules (courbe en haut, carte en bas).
+/* ─── COMPOSITION PAR SUB1 (étape B — ressources) ───────────────
+   Pour les indicateurs ressources (production / réserves énergétiques et minérales),
+   éclate la valeur globale par type (sub1). Affichage en bar chart horizontal trié,
+   en mode comparaison A vs B avec barres groupées si compareB est actif.
+*/
+// Indicateurs concernés : valeurs absolues éclatées par sub1.
+// Les *_share sont volontairement absents : ils sont déjà éclatés dans le bloc Atouts de Synthèse.
+const PU_COMPO_INDICATORS = new Set([
+  'energie_production', 'energie_reserves',
+  'mineraux_production', 'mineraux_reserves',
+]);
+
+// Renvoie { sub1: value, ... } pour un indicateur, un ensemble d'isos et une année donnée.
+// Fallback année : dernière année <= y avec données, par sub1 indépendamment.
+function getCompoBySub1(indicator, isos, year){
+  if(!isos || !isos.length) return {};
+  const inList = sqlList(isos);
+  const y = year ?? state.year;
+  // Stratégie : récupérer TOUTES les années pour la dimension sub1 (sans borne sup),
+  // puis pour chaque sub1 prendre la valeur de l'année <= y la plus récente possible,
+  // avec fallback sur la dernière année disponible si rien <= y.
+  // Cela évite que le bloc soit vide quand les seules données disponibles sont plus récentes que state.year.
+  const r = safeExec(`SELECT subcategory, year, SUM(value) AS v
+                      FROM identite
+                      WHERE country_iso3 IN (${inList})
+                        AND indicator = '${escapeSql(indicator)}'
+                        AND subcategory IS NOT NULL AND subcategory != ''
+                        AND value IS NOT NULL AND value != 0
+                      GROUP BY subcategory, year`);
+  if(!r.length) return {};
+  // Indexer { sub → [(year, value), ...] }
+  const bySub = new Map();
+  for(const [sub, yy, v] of r[0].values){
+    if(!bySub.has(sub)) bySub.set(sub, []);
+    bySub.get(sub).push({ year: yy, value: v });
+  }
+  // Pour chaque sub : préférer la valeur d'année <= y, sinon prendre la plus récente toutes années confondues
+  const out = {};
+  for(const [sub, points] of bySub){
+    const leq = points.filter(p => p.year <= y).sort((a,b) => b.year - a.year);
+    const chosen = leq.length ? leq[0] : points.sort((a,b) => b.year - a.year)[0];
+    if(chosen) out[sub] = chosen.value;
+  }
+  return out;
+}
+
+function buildCompoBlock(indicator){
+  if(!PU_COMPO_INDICATORS.has(indicator)) return '';
+  const cfg = state.indicators.find(c => c.indicator === indicator);
+  if(!cfg) return '';
+  const isosA = currentIsos();
+  const hasB = state.compareB && state.compareB.isos.length > 0;
+  const isosB = hasB ? state.compareB.isos : null;
+
+  const dataA = getCompoBySub1(indicator, isosA, state.year);
+  const dataB = hasB ? getCompoBySub1(indicator, isosB, state.year) : {};
+
+  // Union des sub1, triées par max(A,B) décroissant
+  const allSubs = new Set([...Object.keys(dataA), ...Object.keys(dataB)]);
+  if(allSubs.size === 0) return '';
+  const items = [...allSubs].map(sub => ({
+    sub,
+    label: prettySubLabel(sub),
+    a: dataA[sub] || 0,
+    b: dataB[sub] || 0,
+  })).sort((x,y) => Math.max(y.a, y.b) - Math.max(x.a, x.b));
+
+  const TOP = 10;
+  const visible = items.slice(0, TOP);
+  const hidden = items.slice(TOP);
+  const maxVal = Math.max(...visible.flatMap(it => [it.a, it.b])) || 1;
+
+  // Rendu : une ligne par sub. Si hasB, deux barres empilées verticalement dans la ligne (A vert, B orange).
+  let rows = '';
+  for(const it of visible){
+    const wA = Math.max(2, (it.a / maxVal) * 100);
+    const wB = hasB ? Math.max(it.b > 0 ? 2 : 0, (it.b / maxVal) * 100) : 0;
+    const aStr = it.a > 0 ? `${fmtNumber(it.a, cfg.unit_display)} ${scaleSuffix(it.a, cfg.unit_display)}` : '—';
+    const bStr = it.b > 0 ? `${fmtNumber(it.b, cfg.unit_display)} ${scaleSuffix(it.b, cfg.unit_display)}` : '—';
+    if(hasB){
+      rows += `<div class="compo-row compo-row-compare">
+        <div class="compo-name">${it.label}</div>
+        <div class="compo-bars">
+          <div class="compo-bar-line">
+            <span class="compo-bar-key">${state.subject.label}</span>
+            <span class="compo-bar-track"><span class="compo-bar-fill a" style="width:${wA.toFixed(1)}%"></span></span>
+            <span class="compo-bar-val">${aStr}</span>
+          </div>
+          <div class="compo-bar-line">
+            <span class="compo-bar-key b">${state.compareB.label}</span>
+            <span class="compo-bar-track"><span class="compo-bar-fill b" style="width:${wB.toFixed(1)}%"></span></span>
+            <span class="compo-bar-val">${bStr}</span>
+          </div>
+        </div>
+      </div>`;
+    } else {
+      rows += `<div class="compo-row">
+        <div class="compo-name">${it.label}</div>
+        <div class="compo-bar-track"><div class="compo-bar-fill a" style="width:${wA.toFixed(1)}%"></div></div>
+        <div class="compo-bar-val">${aStr}</div>
+      </div>`;
+    }
+  }
+  let hiddenLine = '';
+  if(hidden.length){
+    const sumHiddenA = hidden.reduce((s,it) => s + it.a, 0);
+    const sumHiddenB = hidden.reduce((s,it) => s + it.b, 0);
+    const list = hidden.map(it => it.label).join(', ');
+    const aStr = sumHiddenA > 0 ? `${fmtNumber(sumHiddenA, cfg.unit_display)} ${scaleSuffix(sumHiddenA, cfg.unit_display)}` : '';
+    const bStr = hasB && sumHiddenB > 0 ? ` · ${state.compareB.label} ${fmtNumber(sumHiddenB, cfg.unit_display)} ${scaleSuffix(sumHiddenB, cfg.unit_display)}` : '';
+    hiddenLine = `<div class="compo-hidden" title="${escAttr(list)}">+ ${hidden.length} autres types · ${aStr}${bStr}</div>`;
+  }
+  return `<div class="pu-cell">
+    <div class="pu-cell-head">
+      <span class="pu-cell-title">Composition par type</span>
+      <span class="meta" style="font-size:10px;color:var(--text3)">${cfg.unit_display || cfg.unit || ''} · ${state.year}</span>
+    </div>
+    <div class="pu-cell-body">
+      <div class="compo-wrap">${rows}${hiddenLine}</div>
+    </div>
+  </div>`;
+}
+
 function renderPuMain(){
   const main = document.getElementById('puMain');
   const c = state.indicators.find(x => x.indicator === _puIndicator);
@@ -2863,6 +3167,7 @@ function renderPuMain(){
           <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span></div>
         </div>
       </div>
+      ${buildCompoBlock(_puIndicator)}
     </div>`;
   drawPuRadar();
   drawPuCurve();
@@ -3506,7 +3811,7 @@ function drawTreemapRel(node, host){
     let tipBody;
     if(isInfluence){
       const volumeStr = fmtWithUnit(c.item.volume, cfg?.unit_display);
-      tipBody = `${c.item.value.toFixed(1)}% du total mondial · volume ${volumeStr}`;
+      tipBody = `${c.item.value.toFixed(1)}% chez ce partenaire · volume ${volumeStr}`;
     } else {
       const pct = (c.item.value/total)*100;
       tipBody = `${fmtWithUnit(c.item.value, cfg?.unit_display)} · ${pct.toFixed(1)}%`;
@@ -3786,7 +4091,7 @@ function renderInfluenceTimeline(host, entry){
     // points
     for(const pt of s.points){
       svg += `<circle cx="${xScale(pt.year).toFixed(1)}" cy="${yScale(pt.pct).toFixed(1)}" r="${isPinned ? 4 : 2.5}" fill="${color}" opacity="${opacity}"
-                onmouseenter="showTip2(event, '${escAttr((s.flag?s.flag+' ':'')+s.name+' · '+pt.year)}', '${escAttr(pt.pct.toFixed(1)+'% du marché mondial')}')"
+                onmouseenter="showTip2(event, '${escAttr((s.flag?s.flag+' ':'')+s.name+' · '+pt.year)}', '${escAttr(pt.pct.toFixed(1)+'% chez ce partenaire')}')"
                 onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
     }
     // étiquette à droite : nom + dernier pct
@@ -3814,11 +4119,11 @@ function renderInfluenceTimeline(host, entry){
     statsBlock = `
       <div class="inf-tl-stats">
         <div class="inf-tl-stat">
-          <div class="inf-tl-stat-k">${first.year} → ${last.year}</div>
+          <div class="inf-tl-stat-k">Part chez ce partenaire</div>
           <div class="inf-tl-stat-v">${first.pct.toFixed(1)}% → ${last.pct.toFixed(1)}%</div>
         </div>
         <div class="inf-tl-stat">
-          <div class="inf-tl-stat-k">Variation</div>
+          <div class="inf-tl-stat-k">Variation ${first.year} → ${last.year}</div>
           <div class="inf-tl-stat-v" style="color:${colorVar}">${sign}${variation.toFixed(1)} pt</div>
         </div>
         <div class="inf-tl-stat">
@@ -3909,9 +4214,9 @@ async function renderRelFluxMap(){
         const wt = worldTotals[iso] || 0;
         if(wt > 0){
           const influencePct = (v / wt) * 100;
-          body = `${influencePct.toFixed(1)}% du total mondial · volume ${fmtWithUnit(v, cfg.unit_display)}`;
+          body = `${influencePct.toFixed(1)}% chez ce partenaire · volume ${fmtWithUnit(v, cfg.unit_display)}`;
         } else {
-          body = `volume ${fmtWithUnit(v, cfg.unit_display)} · pas de total mondial`;
+          body = `volume ${fmtWithUnit(v, cfg.unit_display)} · part chez ce partenaire indisponible`;
         }
       } else {
         // Mode Volume : on a stocké le pct du sujet dans displayByIso
