@@ -383,12 +383,28 @@ main { flex: 1; padding: 16px 18px 28px; }
 .res-empty { padding: 12px; text-align: center; color: var(--text3); font-size: 11.5px; font-style: italic; }
 .res-empty .link-btn { background: none; border: none; color: var(--green); text-decoration: underline; cursor: pointer; font-size: inherit; font-family: inherit; padding: 0; }
 
-/* Section commerce de ressources (resourcetrade.earth) */
+/* Section commerce de ressources (resourcetrade.earth) — tableau 3 colonnes */
 .res-trade { border-top: 1px solid var(--border); padding-top: 10px; margin-top: 14px; }
 .trade-year { font-family: var(--mono); color: var(--text3); font-weight: 400; font-size: 9px; }
+.trade-thead {
+  display: grid;
+  grid-template-columns: 130px 1fr 1fr;
+  gap: 10px;
+  padding: 6px 2px 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.trade-th-cat { }
+.trade-th {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text3); display: flex; align-items: center; gap: 5px;
+}
+.trade-th-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; }
+.trade-th-dot.imp { background: var(--terra); }
+.trade-th-dot.exp { background: var(--green); }
 .trade-row {
   display: grid;
-  grid-template-columns: 130px 1fr 70px;
+  grid-template-columns: 130px 1fr 1fr;
   gap: 10px;
   align-items: center;
   padding: 6px 2px;
@@ -396,26 +412,15 @@ main { flex: 1; padding: 16px 18px 28px; }
   border-bottom: 1px dashed transparent;
 }
 .trade-row:not(:last-child) { border-bottom-color: var(--border); }
-.trade-name { color: var(--text2); }
-.trade-bars { display: flex; flex-direction: column; gap: 3px; }
-.trade-bar-line {
-  display: grid;
-  grid-template-columns: 38px 1fr 56px;
-  align-items: center;
-  gap: 6px;
-}
-.trade-bar-key { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
-.trade-bar-track { background: var(--bg4); height: 7px; border-radius: 3px; overflow: hidden; position: relative; }
-.trade-bar-fill { height: 100%; border-radius: 3px; min-width: 2px; opacity: .85; }
-.trade-bar-fill.imp { background: var(--terra); }
-.trade-bar-fill.exp { background: var(--green); }
-.trade-bar-val { font-family: var(--mono); font-size: 10.5px; color: var(--text); text-align: right; }
-.trade-balance {
-  font-family: var(--mono); font-size: 11px; font-weight: 700; text-align: right;
-  padding: 4px 6px; border-radius: 4px;
-}
-.trade-balance.positive { color: var(--green); background: rgba(10,110,74,.08); }
-.trade-balance.negative { color: var(--terra); background: rgba(180,83,9,.08); }
+.trade-row:hover { background: rgba(180,83,9,0.03); }
+.trade-name { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trade-cell { display: grid; grid-template-columns: 1fr 60px; gap: 6px; align-items: center; }
+.trade-cell.empty { text-align: center; color: var(--text3); font-family: var(--mono); font-size: 10px; }
+.trade-cell-bar { background: #e2dcce; height: 8px; border-radius: 3px; overflow: hidden; position: relative; }
+.trade-cell-fill { height: 100%; border-radius: 3px; min-width: 3px; }
+.trade-cell-fill.imp { background: var(--terra); }
+.trade-cell-fill.exp { background: var(--green); }
+.trade-cell-val { font-family: var(--mono); font-size: 10.5px; color: var(--text); text-align: right; font-weight: 600; }
 
 /* Modal de réglage du seuil de notabilité ressources */
 .seuil-overlay {
@@ -519,11 +524,15 @@ main { flex: 1; padding: 16px 18px 28px; }
 @media (max-width: 860px){ .pu-layout { grid-template-columns: 1fr; } }
 
 /* navigateur d'indicateurs */
-.pu-nav { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.pu-nav {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden;
+  position: sticky; top: 12px; max-height: calc(100vh - 24px);
+  display: flex; flex-direction: column;
+}
 .pu-nav-search { padding: 10px; border-bottom: 1px solid var(--border); }
 .pu-nav-search input { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 7px; font-family: var(--sans); font-size: 12px; background: var(--bg); outline: none; }
 .pu-nav-search input:focus { border-color: var(--green); }
-.pu-nav-body { max-height: 62vh; overflow-y: auto; padding: 4px 0 8px; }
+.pu-nav-body { flex: 1; overflow-y: auto; padding: 4px 0 8px; }
 .pu-cat { }
 .pu-cat-head { display: flex; align-items: center; gap: 6px; padding: 8px 12px 4px; cursor: pointer; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); }
 .pu-cat-head:hover { color: var(--text2); }
@@ -633,8 +642,16 @@ main { flex: 1; padding: 16px 18px 28px; }
 .seg button.on { background: var(--green); color: #fff; }
 .seg button:not(.on):hover { color: var(--text); background: var(--bg3); }
 
-/* Barre breadcrumb + sélecteur de référentiel (juste sous l'entête) */
-.rel-crumb-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 6px 4px 12px; flex-wrap: wrap; }
+/* Barre breadcrumb + sélecteur de référentiel (juste sous l'entête).
+   Sticky : reste visible quand l'utilisateur scrolle dans Relations. */
+.rel-crumb-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 8px 10px; flex-wrap: wrap;
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  margin: 0 -10px 12px;
+}
 .rel-crumb { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text3); flex-wrap: wrap; }
 .rel-crumb .step { padding: 3px 9px; border-radius: 4px; background: var(--bg3); cursor: pointer; color: var(--text2); font-family: var(--mono); font-size: 10.5px; transition: all .1s; }
 .rel-crumb .step:hover { background: var(--green-d); color: var(--green); }
@@ -693,7 +710,11 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-empty { padding: 50px 20px; text-align: center; color: var(--text3); font-size: 12.5px; }
 
 /* Barres horizontales d'influence (panel gauche mode Influence) */
-.inf-bars { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; }
+.inf-bars { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; max-height: 440px; overflow-y: auto; }
+.inf-bars::-webkit-scrollbar { width: 8px; }
+.inf-bars::-webkit-scrollbar-track { background: transparent; }
+.inf-bars::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+.inf-bars::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 .inf-bar-row {
   display: grid;
   grid-template-columns: 160px 1fr 52px;
@@ -2703,33 +2724,36 @@ function buildResourcesBlock(){
       if(v >= 1e3) return (v/1e3).toFixed(0) + ' k';
       return v.toFixed(0);
     };
+    // En-tête tableau : 3 colonnes (catégorie / import / export)
+    const header = `<div class="trade-thead">
+      <div class="trade-th-cat"></div>
+      <div class="trade-th"><span class="trade-th-dot imp"></span>Import</div>
+      <div class="trade-th"><span class="trade-th-dot exp"></span>Export</div>
+    </div>`;
     let rows = '';
     for(const t of trade){
       const wImp = (t.import / maxAll) * 100;
       const wExp = (t.export / maxAll) * 100;
-      // Balance : excédent (export > import) en vert, déficit en orange
+      // Cellule renvoie '—' si valeur nulle (utile : on voit que la catégorie existe mais pas de flux dans ce sens)
+      const cellImp = t.import > 0
+        ? `<div class="trade-cell"><div class="trade-cell-bar"><div class="trade-cell-fill imp" style="width:${wImp.toFixed(1)}%"></div></div><div class="trade-cell-val">${fmtUSD(t.import)}</div></div>`
+        : `<div class="trade-cell empty">—</div>`;
+      const cellExp = t.export > 0
+        ? `<div class="trade-cell"><div class="trade-cell-bar"><div class="trade-cell-fill exp" style="width:${wExp.toFixed(1)}%"></div></div><div class="trade-cell-val">${fmtUSD(t.export)}</div></div>`
+        : `<div class="trade-cell empty">—</div>`;
+      // Balance utile en infobulle pour ne pas perdre l'info synthétique
       const balance = t.export - t.import;
-      const balanceClass = balance >= 0 ? 'positive' : 'negative';
       const balanceSign = balance >= 0 ? '+' : '−';
-      rows += `<div class="trade-row">
+      const tipBalance = `Balance ${t.label.toLowerCase()} : ${balanceSign}${fmtUSD(Math.abs(balance))} USD`;
+      rows += `<div class="trade-row" title="${escAttr(tipBalance)}">
         <div class="trade-name">${t.label}</div>
-        <div class="trade-bars">
-          <div class="trade-bar-line">
-            <span class="trade-bar-key">import</span>
-            <span class="trade-bar-track"><span class="trade-bar-fill imp" style="width:${wImp.toFixed(1)}%"></span></span>
-            <span class="trade-bar-val">${fmtUSD(t.import)}</span>
-          </div>
-          <div class="trade-bar-line">
-            <span class="trade-bar-key">export</span>
-            <span class="trade-bar-track"><span class="trade-bar-fill exp" style="width:${wExp.toFixed(1)}%"></span></span>
-            <span class="trade-bar-val">${fmtUSD(t.export)}</span>
-          </div>
-        </div>
-        <div class="trade-balance ${balanceClass}" title="Balance ${t.label.toLowerCase()} : ${balanceSign} ${fmtUSD(Math.abs(balance))} USD">${balanceSign}${fmtUSD(Math.abs(balance))}</div>
+        ${cellImp}
+        ${cellExp}
       </div>`;
     }
     bodyHtml += `<div class="res-group res-trade">
       <div class="res-group-head">Commerce de ressources <span class="trade-year">· ${year}</span></div>
+      ${header}
       ${rows}
     </div>`;
   }
