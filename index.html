@@ -1566,7 +1566,7 @@ function rankPercentile(indicator, value, year){
 // getFluxRows(entryOrIndicator, dir?)
 // - Si on passe une entrée flux (objet avec realIndicator+side), on l'utilise directement.
 // - Sinon, on garde la signature historique (indicator, dir='partner'|'influence').
-function getFluxRows(entryOrIndicator, dir){
+function getFluxRows(entryOrIndicator, dir, options){
   ensureIdentiteCache();
   const isos = currentIsos();
   if(!isos.length) return [];
@@ -1590,23 +1590,45 @@ function getFluxRows(entryOrIndicator, dir){
     partnerCol = (dir === 'partner') ? 'country_from' : 'country_to';
     cacheKey = realIndicator + '|' + (dir || 'partner');
   }
-  // Inclure la fenêtre temporelle dans la cacheKey pour éviter de servir une ancienne agrégation
-  const tWin = (_relYearRange ? `R${_relYearRange[0]}-${_relYearRange[1]}-${_relYearAggMode}` : `Y${state.year}`);
+  // Détermination de la fenêtre temporelle (par ordre de priorité) :
+  //   1. options.punctualYear : force une année unique (cas Synthèse, indépendant de l'état Relations)
+  //   2. options.yearRange : force une plage [yMin, yMax]
+  //   3. Sinon : lit l'état global Relations (_relYearRange si plage, sinon state.year)
+  // Important : Synthèse passe punctualYear pour ne PAS être affectée par l'état Relations.
+  const opts = options || {};
+  let useRange, yWindow;
+  if(opts.yearRange && opts.yearRange.length === 2){
+    useRange = true;
+    yWindow = opts.yearRange;
+  } else if(opts.punctualYear != null){
+    useRange = false;
+    yWindow = opts.punctualYear;
+  } else if(_relYearRange && _relYearRange.length === 2){
+    useRange = true;
+    yWindow = _relYearRange;
+  } else {
+    useRange = false;
+    yWindow = state.year;
+  }
+  // Cache key inclut la fenêtre temporelle pour éviter pollution entre contextes
+  let tWin;
+  if(useRange){
+    // Mode 'avg' uniquement pertinent quand on lit l'état Relations (pas si forcé via options)
+    const aggForKey = (opts.yearRange ? 'sum' : _relYearAggMode);
+    tWin = `R${yWindow[0]}-${yWindow[1]}-${aggForKey}`;
+  } else {
+    tWin = `Y${yWindow}`;
+  }
   cacheKey = cacheKey + '|' + tWin;
 
   if(cache.flux.has(cacheKey)) return cache.flux.get(cacheKey);
 
   const inList = sqlList(isos);
-
-  // Détermination de la fenêtre temporelle :
-  //   - Si _relYearRange = [yMin, yMax] : on agrège sur la plage (somme par défaut, /N si mode avg)
-  //   - Sinon (mode ponctuel) : année courante, avec fallback sur la dernière dispo
-  const useRange = (_relYearRange && _relYearRange.length === 2);
   const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
   let rows = [];
 
   if(useRange){
-    const [yMin, yMax] = _relYearRange;
+    const [yMin, yMax] = yWindow;
     const r = safeExec(`SELECT ${partnerCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
                         FROM flux WHERE indicator='${escapeSql(realIndicator)}'
                         AND year >= ${yMin} AND year <= ${yMax}
@@ -1614,13 +1636,15 @@ function getFluxRows(entryOrIndicator, dir){
                         AND ${partnerCol} NOT IN (${exclAgg})
                         GROUP BY ${partnerCol}, subcategory_1, subcategory_2, subcategory_3`);
     if(r.length){
+      // Division par N années seulement si lecture état Relations en mode 'avg' (pas si forcé via options)
+      const useAvg = (!opts.yearRange && _relYearAggMode === 'avg');
       const nYears = yMax - yMin + 1;
-      const divider = (_relYearAggMode === 'avg' && nYears > 0) ? nYears : 1;
+      const divider = (useAvg && nYears > 0) ? nYears : 1;
       rows = r[0].values.map(([p,s1,s2,s3,v]) => ({ partner:p, sub1:s1, sub2:s2, sub3:s3, value: v / divider, fluxYear:`${yMin}-${yMax}` }));
     }
   } else {
-    // Mode ponctuel : année courante avec fallback sur la dernière dispo
-    let y = state.year;
+    // Mode ponctuel : année forcée ou courante, avec fallback sur la dernière dispo
+    let y = yWindow;
     const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${subjectCol} IN (${inList}) LIMIT 1`);
     if(!chk.length){
       const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${subjectCol} IN (${inList})`);
@@ -1674,7 +1698,7 @@ function getFluxRowsTimeline(entry){
 // Le partenaire envoie/reçoit du flux à de nombreux pays — on somme sur tous SAUF le sujet.
 // Renvoie { ISO3: total_monde, ... }
 const _fluxPartnerTotalsCache = new Map();
-function getFluxPartnerWorldTotals(entry){
+function getFluxPartnerWorldTotals(entry, options){
   ensureIdentiteCache();
   const isos = currentIsos();
   if(!isos.length) return {};
@@ -1691,17 +1715,39 @@ function getFluxPartnerWorldTotals(entry){
     partnerCol = (entry.side === 'to') ? 'country_from' : 'country_to';
     otherCol = (entry.side === 'to') ? 'country_to' : 'country_from';
   }
-  // Fenêtre temporelle alignée avec getFluxRows : plage si _relYearRange, sinon année courante (avec fallback)
-  const useRange = (_relYearRange && _relYearRange.length === 2);
+  // Détermination de la fenêtre temporelle.
+  // - options.punctualYear : force une année unique (cas Synthèse, indépendant de l'état Relations)
+  // - options.yearRange : force une plage [yMin, yMax]
+  // - sinon : lit l'état global Relations (_relYearRange si plage, sinon state.year)
+  // Important : on doit utiliser l'option explicite SANS aller chercher _relYearRange
+  // pour ne pas polluer Synthèse avec un état Relations actif.
+  const opts = options || {};
+  let useRange, yClauseRange = null, yPunctual = null;
+  if(opts.yearRange && opts.yearRange.length === 2){
+    useRange = true;
+    yClauseRange = opts.yearRange;
+  } else if(opts.punctualYear != null){
+    useRange = false;
+    yPunctual = opts.punctualYear;
+  } else if(_relYearRange && _relYearRange.length === 2){
+    useRange = true;
+    yClauseRange = _relYearRange;
+  } else {
+    useRange = false;
+    yPunctual = state.year;
+  }
   const inList = sqlList(isos);
   const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
   let yClause, cacheKey;
   if(useRange){
-    const [yMin, yMax] = _relYearRange;
+    const [yMin, yMax] = yClauseRange;
     yClause = `year >= ${yMin} AND year <= ${yMax}`;
-    cacheKey = entry.key + '|PWT|' + subjectKey(isos) + '|R' + yMin + '-' + yMax + '-' + _relYearAggMode;
+    // mode 'avg' uniquement pertinent quand on lit _relYearRange (cas Relations) ; pour forcé via options, on garde 'sum'
+    const aggForKey = (opts.yearRange ? 'sum' : _relYearAggMode);
+    cacheKey = entry.key + '|PWT|' + subjectKey(isos) + '|R' + yMin + '-' + yMax + '-' + aggForKey;
   } else {
-    let y = state.year;
+    let y = yPunctual;
+    // Fallback : si pas de données pour cette année, prendre la plus récente disponible
     const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} AND ${otherCol} IN (${inList}) LIMIT 1`);
     if(!chk.length){
       const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${otherCol} IN (${inList})`);
@@ -1723,8 +1769,10 @@ function getFluxPartnerWorldTotals(entry){
                       GROUP BY ${partnerCol}`);
   const out = {};
   if(r.length){
-    const nYears = useRange ? (_relYearRange[1] - _relYearRange[0] + 1) : 1;
-    const divider = (useRange && _relYearAggMode === 'avg' && nYears > 0) ? nYears : 1;
+    // Division par N années seulement si on est en mode 'avg' ET qu'on lit l'état Relations (pas si forcé via options)
+    const useAvg = (useRange && !opts.yearRange && _relYearAggMode === 'avg');
+    const nYears = useRange ? (yClauseRange[1] - yClauseRange[0] + 1) : 1;
+    const divider = (useAvg && nYears > 0) ? nYears : 1;
     for(const [p, t] of r[0].values){ out[p] = (t || 0) / divider; }
   }
   _fluxPartnerTotalsCache.set(cacheKey, out);
@@ -3054,17 +3102,24 @@ function buildPanorama(entries, columnId){
   let html = '';
   let any = false;
   for(const e of entries){
-    let rows = getFluxRows(e);
+    // IMPORTANT : on force punctualYear=state.year pour que Synthèse soit indépendante
+    // de l'état Relations (filtres zone, plage temporelle, etc.). Sans ce paramètre,
+    // si l'utilisateur a une plage active dans Relations, Synthèse afficherait des % pollués.
+    const punctualOpts = { punctualYear: state.year };
+    let rows = getFluxRows(e, null, punctualOpts);
     if(!rows.length) continue;
     if(isDebtIndicator(e.indicator)){
       const bil = rows.filter(r => isBilateral(r));
       if(bil.length) rows = bil;
     }
     // Volume du sujet pour chaque partenaire (= dénominateur de la colonne 1)
+    // On exclut : sentinelles __ ET agrégats régionaux Banque Mondiale (cohérence avec Relations)
     const subjectByPartner = new Map();
     let subjectTotal = 0;
     for(const r of rows){
-      if(r.partner && r.partner.startsWith('__')) continue;
+      if(!r.partner) continue;
+      if(r.partner.startsWith('__')) continue;
+      if(REGIONAL_CODES.has(r.partner)) continue;
       const v = r.value || 0;
       subjectByPartner.set(r.partner, (subjectByPartner.get(r.partner) || 0) + v);
       subjectTotal += v;
@@ -3077,7 +3132,8 @@ function buildPanorama(entries, columnId){
       // COLONNE 2 — POUR QUI LE SUJET PÈSE
       // Pour chaque partenaire, on calcule (volume sujet vers ce partenaire) / (total mondial de ce partenaire)
       // Le tri se fait par pct décroissant (pays où le sujet pèse le plus relativement).
-      const worldTotals = getFluxPartnerWorldTotals(e);
+      // On force aussi punctualYear pour ne pas être pollué par l'état Relations.
+      const worldTotals = getFluxPartnerWorldTotals(e, punctualOpts);
       const enriched = [];
       for(const [code, v] of subjectByPartner.entries()){
         const wt = worldTotals[code] || 0;
