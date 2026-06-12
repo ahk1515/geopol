@@ -737,6 +737,105 @@ main { flex: 1; padding: 16px 18px 28px; }
 }
 .rel-range-clear:hover { background: var(--orange-d); border-color: var(--orange); color: var(--orange); }
 
+/* ═════ ONGLET CROISÉ ═════ */
+.cross-layout {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 920px){ .cross-layout { grid-template-columns: 1fr; } }
+.cross-nav {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: var(--shadow); overflow: hidden;
+  position: sticky; top: 12px; max-height: calc(100vh - 24px);
+  display: flex; flex-direction: column;
+}
+.cross-nav-head {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text2); font-weight: 600;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+.cross-nav .cross-cat:last-of-type { padding-bottom: 10px; }
+.cross-cat { padding: 8px 0 0; }
+.cross-cat-head {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text3); padding: 4px 14px;
+}
+.cross-flux-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; cursor: pointer; font-size: 12px; color: var(--text2);
+  transition: background .12s;
+}
+.cross-flux-item:hover { background: rgba(10,110,74,.05); color: var(--text); }
+.cross-flux-item.on { background: rgba(10,110,74,.08); color: var(--green); font-weight: 600; }
+.cross-flux-item input[type=checkbox] { accent-color: var(--green); cursor: pointer; }
+.cross-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cross-filter-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 8px 10px;
+  position: sticky; top: 0; z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.cross-counter-wrap { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.cross-counter {
+  font-family: var(--mono); font-size: 11px; color: var(--text3);
+  padding: 4px 10px; background: var(--bg3); border-radius: 12px;
+  transition: all .25s;
+}
+.cross-counter.limit-hit { background: var(--orange); color: #fff; }
+.cross-clear-btn {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; font-size: 11px; color: var(--text3); cursor: pointer;
+  transition: all .12s;
+}
+.cross-clear-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+/* Grille des tuiles */
+.cross-grid { display: grid; gap: 10px; }
+.cross-grid.g1 { grid-template-columns: 1fr; }
+.cross-grid.g2 { grid-template-columns: 1fr 1fr; }
+.cross-grid.g4 { grid-template-columns: 1fr 1fr; }
+.cross-grid.g6 { grid-template-columns: 1fr 1fr 1fr; }
+.cross-grid.g9 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 920px){
+  .cross-grid.g2, .cross-grid.g4, .cross-grid.g6, .cross-grid.g9 { grid-template-columns: 1fr; }
+}
+
+.cross-tile {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  overflow: hidden; box-shadow: var(--shadow);
+  min-height: 280px; display: flex; flex-direction: column;
+}
+.cross-tile-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; border-bottom: 1px solid var(--border); gap: 8px;
+}
+.cross-tile-title {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cross-tile-seg { font-size: 10px; }
+.cross-tile-seg button { padding: 3px 8px; font-size: 12px; }
+.cross-tile-body { padding: 10px 12px; flex: 1; min-height: 0; }
+.cross-tile-foot {
+  padding: 6px 12px 4px;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  text-align: right;
+}
+.cross-tile-empty, .cross-tile-loading {
+  padding: 30px 12px; text-align: center;
+  color: var(--text3); font-size: 11px; font-style: italic;
+}
+
+.cross-empty {
+  padding: 60px 20px; text-align: center;
+  background: var(--bg2); border: 1px dashed var(--border); border-radius: 8px;
+}
+.cross-empty .empty-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.cross-empty .empty-sub { font-size: 12px; color: var(--text3); }
+
 /* cellules treemap */
 .tm-cell rect { cursor: pointer; transition: opacity .15s; }
 .tm-cell rect:hover { opacity: .85; }
@@ -821,6 +920,7 @@ main { flex: 1; padding: 16px 18px 28px; }
       <button class="tab active" data-view="synthese">Synthèse</button>
       <button class="tab" data-view="puissance">Puissance</button>
       <button class="tab" data-view="relations">Relations</button>
+      <button class="tab" data-view="croise">Croisé</button>
     </nav>
     <div class="header-spacer"></div>
     <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
@@ -855,6 +955,10 @@ main { flex: 1; padding: 16px 18px 28px; }
     <section class="view" id="view-relations">
       <div id="relationsContent"></div>
     </section>
+
+    <section class="view" id="view-croise">
+      <div id="croiseContent"></div>
+    </section>
   </main>
 </div>
 
@@ -886,6 +990,8 @@ main { flex: 1; padding: 16px 18px 28px; }
     </div>
     <div class="pin-body" id="pinBody"></div>
     <div class="pin-foot">
+      <button class="reset" onclick="selectAllPins()">Tout sélectionner</button>
+      <button class="reset" onclick="deselectAllPins()">Tout désélectionner</button>
       <button class="reset" onclick="resetPins()">Réinitialiser</button>
       <span class="count" id="pinCount"></span>
       <button onclick="applyPins()">Appliquer</button>
@@ -2161,6 +2267,7 @@ function refreshActiveView(){
   if(state.view === 'synthese') renderSynthese();
   else if(state.view === 'puissance') renderPuissance();
   else if(state.view === 'relations') renderRelations();
+  else if(state.view === 'croise') renderCroise();
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2496,6 +2603,35 @@ function togglePin(id){
 }
 function updatePinCount(){
   document.getElementById('pinCount').textContent = `${_pinDraft.size} sélectionné(s)`;
+}
+// Sélectionne TOUS les éléments visibles dans le modal courant.
+// Réutilise les data-id des rows pour rester synchrone avec ce qui est affiché.
+function selectAllPins(){
+  const rows = document.querySelectorAll('#pinBody .pin-item');
+  for(const row of rows){
+    const id = row.dataset.id;
+    if(id && !_pinDraft.has(id)){
+      _pinDraft.add(id);
+      row.classList.add('on');
+      const chk = row.querySelector('.pin-chk');
+      if(chk) chk.textContent = '✓';
+    }
+  }
+  updatePinCount();
+}
+// Désélectionne tout (vide le draft + reset visuel).
+function deselectAllPins(){
+  const rows = document.querySelectorAll('#pinBody .pin-item');
+  for(const row of rows){
+    const id = row.dataset.id;
+    if(id && _pinDraft.has(id)){
+      _pinDraft.delete(id);
+      row.classList.remove('on');
+      const chk = row.querySelector('.pin-chk');
+      if(chk) chk.textContent = '';
+    }
+  }
+  updatePinCount();
 }
 function _pinStorageKey(){
   if(_pinMode === 'flux_partner') return PIN_FLUX_PARTNER_KEY;
@@ -4802,6 +4938,406 @@ function squarifyTreemap(items, x, y, w, h){
 
 
 
+/* ════════════════════════════════════════════════════════════════
+   ONGLET CROISÉ — vues multi-flux synchronisées
+   ─────────────────────────────────────────────────────────────────
+   Objectif : afficher jusqu'à 9 vues simultanées (cartes ou treemaps),
+   chacune représentant un flux différent, avec filtres communs (Volume/Influence,
+   zone partenaires, période). Permet de comparer plusieurs angles d'un même sujet.
+   Pour l'étape 1 : pas de synchronisation hover (sera ajoutée en étape 2).
+═════════════════════════════════════════════════════════════════ */
+
+// ─── État (séparé de Relations pour indépendance des filtres) ───
+const CROSS_MAX_TILES = 9;
+const CROSS_STORAGE_KEY = 'geopol_cross_selected';
+const CROSS_VIEW_TYPE_KEY = 'geopol_cross_view_types';
+// Sélection par défaut au premier chargement : 4 flux représentatifs
+const CROSS_DEFAULT_KEYS = [
+  'commerce|to',                  // Importations commerciales
+  'commerce|from',                // Exportations commerciales
+  'transferts_armement|to',       // Armement reçu
+  'commerce_ressources|to',       // Importations ressources
+];
+let _crossSelected = null;        // Set<flowEntryKey>, lazy load
+let _crossViewType = null;        // Map<flowEntryKey, 'carte'|'treemap'>, lazy
+let _crossMetric = 'volume';      // 'volume' | 'influence' — commun à toutes les tuiles
+let _crossZoneFilter = null;      // zone_id ou null
+let _crossYearRange = null;       // [yMin, yMax] ou null = ponctuel
+let _crossYearAggMode = 'sum';    // 'sum' | 'avg'
+
+function _loadCrossState(){
+  if(_crossSelected) return;
+  try {
+    const raw = localStorage.getItem(CROSS_STORAGE_KEY);
+    if(raw){
+      const arr = JSON.parse(raw);
+      if(Array.isArray(arr)) _crossSelected = new Set(arr.slice(0, CROSS_MAX_TILES));
+    }
+  } catch {}
+  if(!_crossSelected) _crossSelected = new Set(CROSS_DEFAULT_KEYS);
+
+  try {
+    const raw = localStorage.getItem(CROSS_VIEW_TYPE_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      _crossViewType = new Map(Object.entries(obj));
+    }
+  } catch {}
+  if(!_crossViewType) _crossViewType = new Map();
+}
+function _saveCrossState(){
+  try { localStorage.setItem(CROSS_STORAGE_KEY, JSON.stringify([..._crossSelected])); } catch {}
+  try {
+    const obj = {};
+    for(const [k, v] of _crossViewType) obj[k] = v;
+    localStorage.setItem(CROSS_VIEW_TYPE_KEY, JSON.stringify(obj));
+  } catch {}
+}
+
+// Type de vue pour une tuile donnée. Par défaut : carte.
+function _crossGetViewType(key){ return _crossViewType.get(key) || 'carte'; }
+function _crossSetViewType(key, type){
+  _crossViewType.set(key, type);
+  _saveCrossState();
+  _renderCrossTile(key);   // ne re-rend QUE cette tuile (pas tout)
+}
+
+// Toggle d'un flux dans la sélection. Respecte la limite CROSS_MAX_TILES.
+function _crossToggleFlux(key){
+  if(_crossSelected.has(key)){
+    _crossSelected.delete(key);
+  } else {
+    if(_crossSelected.size >= CROSS_MAX_TILES){
+      // Pas d'ajout : signaler par une mise en évidence brève du bandeau de comptage
+      const cnt = document.getElementById('crossCounter');
+      if(cnt){ cnt.classList.add('limit-hit'); setTimeout(() => cnt.classList.remove('limit-hit'), 600); }
+      return;
+    }
+    _crossSelected.add(key);
+  }
+  _saveCrossState();
+  renderCroise();
+}
+function _crossDeselectAll(){
+  _crossSelected.clear();
+  _saveCrossState();
+  renderCroise();
+}
+
+// Setters des filtres communs (vidage cache car les helpers réutilisent _relYearRange, voir note plus bas)
+function setCrossMetric(m){ _crossMetric = m; renderCroise(); }
+function setCrossZoneFilter(zoneId){
+  _crossZoneFilter = (zoneId === '' || zoneId === 'null') ? null : zoneId;
+  renderCroise();
+}
+
+// ─── Rendu principal ───
+function renderCroise(){
+  _loadCrossState();
+  const host = document.getElementById('croiseContent');
+  if(!host) return;
+
+  if(!state.subject || !state.subject.isos.length){
+    host.innerHTML = `<div class="empty-state">
+      <div class="empty-title">Choisis d'abord un sujet</div>
+      <div class="empty-sub">Clique sur ⌕ Rechercher en haut pour sélectionner un pays ou une zone.</div>
+    </div>`;
+    return;
+  }
+
+  // 1. Construire la nav latérale : toutes les entrées flux disponibles
+  const allEntries = flowEntriesPresent().filter(e => e.presentInDb !== false);
+  // Grouper par catégorie d'indicateur (lit config.json)
+  const byCat = new Map();
+  for(const e of allEntries){
+    const cfg = state.indicators.find(c => c.indicator === e.realIndicator);
+    const cat = cfg?.category || 'autres';
+    if(!byCat.has(cat)) byCat.set(cat, []);
+    byCat.get(cat).push(e);
+  }
+  const catLabels = {
+    commerce: 'Commerce', armement: 'Armement', finance: 'Finance',
+    migration: 'Migrations', education: 'Éducation', diplomatie: 'Diplomatie',
+    autres: 'Autres',
+  };
+  let navHtml = '';
+  for(const [cat, entries] of byCat){
+    const catLab = catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
+    let items = '';
+    for(const e of entries){
+      const checked = _crossSelected.has(e.key);
+      items += `<label class="cross-flux-item ${checked?'on':''}">
+        <input type="checkbox" ${checked?'checked':''} onchange="_crossToggleFlux('${escAttr(e.key)}')">
+        <span>${escapeHtml(e.label_long || e.label || e.key)}</span>
+      </label>`;
+    }
+    navHtml += `<div class="cross-cat">
+      <div class="cross-cat-head">${catLab}</div>
+      ${items}
+    </div>`;
+  }
+
+  // 2. Construire la barre de filtres communs (Mesure / Partenaires / Période)
+  const zones = getAllZones();
+  let zoneOpts = `<option value="">🌍 Monde entier</option>`;
+  const geoZones = zones.filter(z => z.isGeo);
+  const orgZones = zones.filter(z => !z.isGeo);
+  if(geoZones.length){
+    zoneOpts += `<optgroup label="Zones géographiques">`;
+    for(const z of geoZones){
+      const sel = (_crossZoneFilter === z.zone_id) ? ' selected' : '';
+      zoneOpts += `<option value="${escAttr(z.zone_id)}"${sel}>${escAttr(z.zone_nom)} (${z.n_pays})</option>`;
+    }
+    zoneOpts += `</optgroup>`;
+  }
+  if(orgZones.length){
+    zoneOpts += `<optgroup label="Organisations">`;
+    for(const z of orgZones){
+      const sel = (_crossZoneFilter === z.zone_id) ? ' selected' : '';
+      zoneOpts += `<option value="${escAttr(z.zone_id)}"${sel}>${escAttr(z.zone_nom)} (${z.n_pays})</option>`;
+    }
+    zoneOpts += `</optgroup>`;
+  }
+
+  const filtersHtml = `
+    <div class="cross-filter-bar">
+      <div class="rel-dim-wrap">
+        <span class="rel-filter-label">Mesure${helpIco('volume_vs_influence')}</span>
+        <div class="seg">
+          <button class="${_crossMetric==='volume'?'on':''}" onclick="setCrossMetric('volume')">Volume</button>
+          <button class="${_crossMetric==='influence'?'on':''}" onclick="setCrossMetric('influence')">Influence</button>
+        </div>
+      </div>
+      <div class="rel-dim-wrap">
+        <span class="rel-filter-label">Partenaires${helpIco('filtre_zone')}</span>
+        <select class="rel-zone-select" onchange="setCrossZoneFilter(this.value)">${zoneOpts}</select>
+      </div>
+      <div class="cross-counter-wrap">
+        <span id="crossCounter" class="cross-counter">${_crossSelected.size}/${CROSS_MAX_TILES} vues</span>
+        <button class="cross-clear-btn" onclick="_crossDeselectAll()">Tout désélectionner</button>
+      </div>
+    </div>`;
+
+  // 3. Grille de tuiles
+  let gridHtml = '';
+  const selectedKeys = [..._crossSelected];
+  if(!selectedKeys.length){
+    gridHtml = `<div class="cross-empty">
+      <div class="empty-title">Aucun flux sélectionné</div>
+      <div class="empty-sub">Coche des flux dans la barre de gauche pour les afficher ici.</div>
+    </div>`;
+  } else {
+    // Classe de grille adaptative selon nombre de tuiles
+    const n = selectedKeys.length;
+    const gridClass = n === 1 ? 'g1' : (n === 2 ? 'g2' : (n <= 4 ? 'g4' : (n <= 6 ? 'g6' : 'g9')));
+    gridHtml = `<div class="cross-grid ${gridClass}" id="crossGrid">`;
+    for(const key of selectedKeys){
+      gridHtml += `<div class="cross-tile" id="crossTile-${escAttr(key.replace(/[|]/g,'_'))}" data-key="${escAttr(key)}"></div>`;
+    }
+    gridHtml += `</div>`;
+  }
+
+  // 4. Layout final
+  host.innerHTML = `
+    <div class="cross-layout">
+      <aside class="cross-nav" id="crossNav">
+        <div class="cross-nav-head">Indicateurs de flux</div>
+        ${navHtml}
+      </aside>
+      <main class="cross-main">
+        ${filtersHtml}
+        ${gridHtml}
+      </main>
+    </div>`;
+
+  // 5. Rendu effectif des tuiles (asynchrone : chaque tuile en parallèle)
+  for(const key of selectedKeys) _renderCrossTile(key);
+}
+
+// Rendu d'UNE seule tuile (utilisé au render initial et au changement de type)
+function _renderCrossTile(key){
+  const tileId = 'crossTile-' + key.replace(/[|]/g, '_');
+  const host = document.getElementById(tileId);
+  if(!host) return;
+  const entry = getFlowEntryByKey(key);
+  if(!entry){
+    host.innerHTML = `<div class="cross-tile-empty">Flux inconnu</div>`;
+    return;
+  }
+  const viewType = _crossGetViewType(key);
+  const label = entry.label_long || entry.label || key;
+  // Header de tuile : titre + toggle carte/treemap
+  let html = `<div class="cross-tile-head">
+    <span class="cross-tile-title">${escapeHtml(label)}</span>
+    <div class="seg cross-tile-seg">
+      <button class="${viewType==='carte'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','carte')" title="Carte">🗺</button>
+      <button class="${viewType==='treemap'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','treemap')" title="Treemap">▦</button>
+    </div>
+  </div>
+  <div class="cross-tile-body" id="${tileId}-body"></div>`;
+  host.innerHTML = html;
+
+  const body = document.getElementById(tileId + '-body');
+  if(!body) return;
+
+  // Récupérer les rows pour ce flux (avec les filtres communs Croisé)
+  // IMPORTANT : Croisé doit utiliser punctualYear=state.year pour ne PAS hériter de l'état Relations
+  // Si Croisé acquiert ses propres filtres temporels, on les passera ici. Pour l'étape 1, mode ponctuel.
+  const opts = _crossYearRange ? { yearRange: _crossYearRange } : { punctualYear: state.year };
+  let rows = getFluxRows(entry, null, opts);
+  if(isDebtIndicator(entry.indicator)){
+    const bil = rows.filter(r => isBilateral(r));
+    if(bil.length) rows = bil;
+  }
+  rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
+  // Appliquer filtre zone
+  if(_crossZoneFilter){
+    const zoneSet = (function(){
+      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
+      if(!r.length) return new Set();
+      return new Set(r[0].values.map(row => row[0]));
+    })();
+    rows = rows.filter(r => zoneSet.has(r.partner));
+  }
+  if(!rows.length){
+    body.innerHTML = `<div class="cross-tile-empty">Pas de données pour ce flux</div>`;
+    return;
+  }
+
+  // Agréger volume par partenaire
+  const byPartner = new Map();
+  for(const r of rows){
+    const v = r.value || 0;
+    if(v <= 0) continue;
+    byPartner.set(r.partner, (byPartner.get(r.partner) || 0) + v);
+  }
+  if(!byPartner.size){
+    body.innerHTML = `<div class="cross-tile-empty">Pas de volume</div>`;
+    return;
+  }
+
+  // En mode Influence : transformer en % chez chaque partenaire
+  let displayMap;   // partner → value à afficher (% ou volume selon mode)
+  const isInfluence = (_crossMetric === 'influence');
+  if(isInfluence){
+    const worldTotals = getFluxPartnerWorldTotals(entry, opts);
+    displayMap = new Map();
+    for(const [p, v] of byPartner){
+      const wt = worldTotals[p] || 0;
+      if(wt > 0) displayMap.set(p, (v/wt) * 100);
+    }
+  } else {
+    // Volume : on garde le pct dans le total du sujet
+    const total = [...byPartner.values()].reduce((a,b)=>a+b, 0) || 1;
+    displayMap = new Map();
+    for(const [p, v] of byPartner) displayMap.set(p, (v/total) * 100);
+  }
+  if(!displayMap.size){
+    body.innerHTML = `<div class="cross-tile-empty">Pas de calcul possible</div>`;
+    return;
+  }
+
+  // Dessin selon type de vue
+  if(viewType === 'treemap'){
+    _crossDrawTreemap(body, displayMap, byPartner, entry);
+  } else {
+    _crossDrawMap(body, displayMap, byPartner, entry);
+  }
+}
+
+// Treemap mini-version pour tuile Croisé : top 12 partenaires + agrégat "autres"
+function _crossDrawTreemap(host, displayMap, volumeMap, entry){
+  const items = [...displayMap.entries()].map(([p, pct]) => ({
+    partner: p, pct, volume: volumeMap.get(p) || 0,
+    name: partnerLabel(p), flag: partnerFlag(p),
+  })).sort((a,b) => b.pct - a.pct);
+  const TOP = 12;
+  const top = items.slice(0, TOP);
+  const others = items.slice(TOP);
+  let nodes = top.map(it => ({ name: (it.flag||'') + ' ' + it.name, value: it.pct, key: it.partner, volume: it.volume }));
+  if(others.length){
+    const sumPct = others.reduce((s,it) => s + it.pct, 0);
+    const sumVol = others.reduce((s,it) => s + it.volume, 0);
+    nodes.push({ name: `+ ${others.length} autres`, value: sumPct, key: '__others__', volume: sumVol, isOthers: true });
+  }
+  // Algo squarify existant (700×460 mais on adapte ici à la taille du conteneur)
+  const W = 360, H = 220;
+  const placed = squarifyTreemap(nodes, 0, 0, W, H);
+  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">`;
+  // Palette par valeur (du clair au foncé orange terra)
+  const max = Math.max(...placed.map(p => p.item.value));
+  for(const p of placed){
+    const ratio = p.item.value / max;
+    const palette = ['#f5e6dc','#ecc8a8','#d4956f','#b66a3a','#9c4a1f','#7c2d12'];
+    const idx = Math.min(palette.length - 1, Math.floor(ratio * palette.length));
+    const color = p.item.isOthers ? '#cfc8b6' : palette[idx];
+    const showLabel = p.w > 50 && p.h > 22;
+    svg += `<g>
+      <rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${color}" stroke="#fff" stroke-width="1"/>
+      ${showLabel ? `<text x="${p.x + 4}" y="${p.y + 12}" font-family="var(--sans)" font-size="9" font-weight="600" fill="#fff" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">${escapeHtml(p.item.name).slice(0, 18)}</text>` : ''}
+      ${showLabel && p.h > 36 ? `<text x="${p.x + 4}" y="${p.y + 24}" font-family="var(--mono)" font-size="8" fill="rgba(255,255,255,.85)">${p.item.value.toFixed(1)}%</text>` : ''}
+    </g>`;
+  }
+  svg += `</svg>`;
+  // Footer : info sur le total / nombre de partenaires
+  const totalVol = [...volumeMap.values()].reduce((s,v) => s+v, 0);
+  const fmtV = fmtWithUnit(totalVol, cfg?.unit_display);
+  svg += `<div class="cross-tile-foot">${displayMap.size} partenaires · ${fmtV}</div>`;
+  host.innerHTML = svg;
+}
+
+// Carte mini-version pour tuile Croisé : projection mondiale + filtre zone visualisé
+async function _crossDrawMap(host, displayMap, volumeMap, entry){
+  host.innerHTML = `<div class="cross-tile-loading">Chargement carte…</div>`;
+  try {
+    const world = await loadWorldTopology();
+    const features = topojson.feature(world, world.objects.countries).features;
+    const W = 360, H = 220;
+    // Échelle quantile sur displayMap
+    const values = [...displayMap.entries()].map(([iso, v]) => ({iso, v})).sort((a,b)=>a.v-b.v);
+    const palette = ['#f5e6dc','#ecc8a8','#d4956f','#b66a3a','#9c4a1f','#7c2d12','#5c1c08'];
+    const colorByIso = {};
+    const n = values.length;
+    for(let i = 0; i < n; i++){
+      const q = i / Math.max(1, n - 1);
+      const idx = Math.min(palette.length - 1, Math.floor(q * palette.length));
+      colorByIso[values[i].iso] = palette[idx];
+    }
+    const projection = d3.geoNaturalEarth1().fitSize([W, H], { type: 'Sphere' });
+    const path = d3.geoPath().projection(projection);
+    // Pays hors zone : grisés si filtre zone actif
+    let zoneSet = null;
+    if(_crossZoneFilter){
+      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
+      if(r.length) zoneSet = new Set(r[0].values.map(row => row[0]));
+    }
+    let pathsHtml = '';
+    for(const f of features){
+      const iso = numToIso3(+f.id);
+      let fill;
+      if(!iso) fill = '#eef2ee';
+      else if(zoneSet && !zoneSet.has(iso)) fill = '#dde4dd';
+      else fill = colorByIso[iso] || '#eef2ee';
+      const d = path(f);
+      if(!d) continue;
+      pathsHtml += `<path d="${d}" fill="${fill}" stroke="#fff" stroke-width="0.3"></path>`;
+    }
+    const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
+    const totalVol = [...volumeMap.values()].reduce((s,v) => s+v, 0);
+    const fmtV = fmtWithUnit(totalVol, cfg?.unit_display);
+    host.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
+        ${pathsHtml}
+      </svg>
+      <div class="cross-tile-foot">${displayMap.size} partenaires · ${fmtV}</div>`;
+  } catch (e) {
+    host.innerHTML = `<div class="cross-tile-empty">Carte indisponible (${e.message || 'erreur'})</div>`;
+  }
+}
+
+
+
 /* ─── RECHERCHE SUJET (⌘K) — pays multi-cochables, zones en 1 clic ─── */
 let _searchSel = 0, _searchItems = [];
 let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
@@ -4995,7 +5531,7 @@ function applyUrlState(){
   }
 }
 function switchViewSilent(v){
-  if(!['synthese','puissance','relations'].includes(v)) return;
+  if(!['synthese','puissance','relations','croise'].includes(v)) return;
   state.view = v;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
