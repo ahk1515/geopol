@@ -4965,6 +4965,12 @@ let _crossZoneFilter = null;      // zone_id ou null
 let _crossYearRange = null;       // [yMin, yMax] ou null = ponctuel
 let _crossYearAggMode = 'sum';    // 'sum' | 'avg'
 
+// État hover : ISO3 du pays survolé. Synchronise toutes les tuiles.
+let _crossHoverIso = null;
+// Cache : pour chaque tuile, displayMap (ISO → pct) + volumeMap (ISO → volume) + entry
+// Permet au tooltip multi-flux de récupérer les valeurs sans recalculer.
+const _crossTileData = new Map();   // key (flowEntryKey) → { displayMap, volumeMap, entry }
+
 function _loadCrossState(){
   if(_crossSelected) return;
   try {
@@ -5024,6 +5030,91 @@ function _crossDeselectAll(){
   renderCroise();
 }
 
+// ─── Hover synchronisé ──────────────────────────────────────────
+// Quand un pays est survolé dans n'importe quelle tuile, toutes les tuiles
+// mettent en évidence ce même pays + un tooltip multi-flux apparaît.
+
+// Met à jour visuellement TOUTES les tuiles en fonction de iso.
+// - Cartes : path correspondant en stroke orange épais ; les autres en stroke normal
+// - Treemaps : cellule correspondante avec opacity 1 ; les autres opacity 0.35
+function _crossApplyHoverHighlight(iso){
+  for(const key of _crossSelected){
+    const tileId = 'crossTile-' + key.replace(/[|]/g, '_');
+    const body = document.getElementById(tileId + '-body');
+    if(!body) continue;
+    // Cartes (SVG path[data-iso3])
+    const paths = body.querySelectorAll('path[data-iso3]');
+    paths.forEach(p => {
+      const piso = p.getAttribute('data-iso3');
+      if(iso && piso === iso){
+        p.setAttribute('stroke', '#b45309');
+        p.setAttribute('stroke-width', '1.5');
+      } else {
+        p.setAttribute('stroke', '#fff');
+        p.setAttribute('stroke-width', '0.3');
+      }
+    });
+    // Treemaps (g[data-iso3])
+    const groups = body.querySelectorAll('g[data-iso3]');
+    groups.forEach(g => {
+      const piso = g.getAttribute('data-iso3');
+      if(!iso) g.style.opacity = '1';
+      else if(piso === iso) g.style.opacity = '1';
+      else g.style.opacity = '0.35';
+    });
+  }
+}
+
+// Tooltip multi-flux : valeurs du pays dans CHAQUE tuile affichée.
+function _crossShowTooltip(ev, iso){
+  if(!iso) return;
+  const lines = [];
+  for(const key of _crossSelected){
+    const data = _crossTileData.get(key);
+    if(!data) continue;
+    const { displayMap, volumeMap, entry } = data;
+    const pct = displayMap.get(iso);
+    const vol = volumeMap.get(iso);
+    if(pct == null && vol == null) continue;
+    const labelShort = (entry.label_long || entry.label || key).slice(0, 32);
+    const pctStr = pct != null ? `<b>${pct.toFixed(1)}%</b>` : '—';
+    const volStr = vol != null ? `<span style="opacity:.65">${_crossFmtVol(vol)}</span>` : '';
+    lines.push(`<div style="display:flex;justify-content:space-between;gap:14px;font-size:10px;line-height:1.6;padding:1px 0">
+      <span style="opacity:.85">${labelShort}</span>
+      <span>${pctStr} ${volStr}</span>
+    </div>`);
+  }
+  if(!lines.length) return;
+  const title = (isoToFlag(iso) || '') + ' ' + (isoToName(iso) || iso);
+  const tip = document.getElementById('globalTip');
+  tip.innerHTML = `<div style="margin-bottom:6px;font-size:11px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:4px"><b>${title}</b></div>${lines.join('')}`;
+  // Élargir tooltip pour multi-flux
+  tip.style.maxWidth = '280px';
+  tip.style.display = 'block';
+  moveTip(ev);
+}
+function _crossFmtVol(v){
+  if(v >= 1e9) return (v/1e9).toFixed(1) + ' Mrd';
+  if(v >= 1e6) return (v/1e6).toFixed(0) + ' M';
+  if(v >= 1e3) return (v/1e3).toFixed(0) + ' k';
+  return v.toFixed(0);
+}
+function _crossHoverEnter(iso, ev){
+  if(!iso) return;
+  _crossHoverIso = iso;
+  _crossApplyHoverHighlight(iso);
+  _crossShowTooltip(ev, iso);
+}
+function _crossHoverMove(ev){ moveTip(ev); }
+function _crossHoverLeave(){
+  _crossHoverIso = null;
+  _crossApplyHoverHighlight(null);
+  hideTip();
+  // Reset tooltip width pour ne pas affecter les autres tooltips
+  const tip = document.getElementById('globalTip');
+  if(tip) tip.style.maxWidth = '';
+}
+
 // Setters des filtres communs (vidage cache car les helpers réutilisent _relYearRange, voir note plus bas)
 function setCrossMetric(m){ _crossMetric = m; renderCroise(); }
 function setCrossZoneFilter(zoneId){
@@ -5034,6 +5125,9 @@ function setCrossZoneFilter(zoneId){
 // ─── Rendu principal ───
 function renderCroise(){
   _loadCrossState();
+  // Purger le cache hover : les données vont être recalculées et restockées par chaque tuile
+  _crossTileData.clear();
+  _crossHoverIso = null;
   const host = document.getElementById('croiseContent');
   if(!host) return;
 
@@ -5237,6 +5331,9 @@ function _renderCrossTile(key){
     return;
   }
 
+  // Stocker dans le cache hover pour permettre le tooltip multi-flux sans recalcul
+  _crossTileData.set(key, { displayMap, volumeMap: byPartner, entry });
+
   // Dessin selon type de vue
   if(viewType === 'treemap'){
     _crossDrawTreemap(body, displayMap, byPartner, entry);
@@ -5273,10 +5370,17 @@ function _crossDrawTreemap(host, displayMap, volumeMap, entry){
     const idx = Math.min(palette.length - 1, Math.floor(ratio * palette.length));
     const color = p.item.isOthers ? '#cfc8b6' : palette[idx];
     const showLabel = p.w > 50 && p.h > 22;
-    svg += `<g>
+    // data-iso3 sur le <g> pour permettre la sync hover. Pas pour "autres".
+    const isoAttr = p.item.isOthers ? '' : ` data-iso3="${escAttr(p.item.key)}"`;
+    const cursor = p.item.isOthers ? '' : ' style="cursor:pointer"';
+    const events = p.item.isOthers ? '' :
+      ` onmouseenter="_crossHoverEnter('${escAttr(p.item.key)}', event)"
+        onmousemove="_crossHoverMove(event)"
+        onmouseleave="_crossHoverLeave()"`;
+    svg += `<g${isoAttr}${cursor}${events}>
       <rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${color}" stroke="#fff" stroke-width="1"/>
-      ${showLabel ? `<text x="${p.x + 4}" y="${p.y + 12}" font-family="var(--sans)" font-size="9" font-weight="600" fill="#fff" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">${escAttr(p.item.name).slice(0, 18)}</text>` : ''}
-      ${showLabel && p.h > 36 ? `<text x="${p.x + 4}" y="${p.y + 24}" font-family="var(--mono)" font-size="8" fill="rgba(255,255,255,.85)">${p.item.value.toFixed(1)}%</text>` : ''}
+      ${showLabel ? `<text x="${p.x + 4}" y="${p.y + 12}" font-family="var(--sans)" font-size="9" font-weight="600" fill="#fff" style="text-shadow:0 1px 2px rgba(0,0,0,.3);pointer-events:none">${escAttr(p.item.name).slice(0, 18)}</text>` : ''}
+      ${showLabel && p.h > 36 ? `<text x="${p.x + 4}" y="${p.y + 24}" font-family="var(--mono)" font-size="8" fill="rgba(255,255,255,.85)" style="pointer-events:none">${p.item.value.toFixed(1)}%</text>` : ''}
     </g>`;
   }
   svg += `</svg>`;
@@ -5321,7 +5425,18 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
       else fill = colorByIso[iso] || '#eef2ee';
       const d = path(f);
       if(!d) continue;
-      pathsHtml += `<path d="${d}" fill="${fill}" stroke="#fff" stroke-width="0.3"></path>`;
+      // data-iso3 et events hover seulement sur pays identifiés (pas eaux/Antarctique non-mappés)
+      // On garde aussi les pays hors zone (grisés) : pas de hover dessus puisqu'ils n'ont pas de valeur
+      const hasData = iso && displayMap.has(iso);
+      if(hasData){
+        pathsHtml += `<path d="${d}" fill="${fill}" stroke="#fff" stroke-width="0.3"
+          data-iso3="${escAttr(iso)}" style="cursor:pointer"
+          onmouseenter="_crossHoverEnter('${escAttr(iso)}', event)"
+          onmousemove="_crossHoverMove(event)"
+          onmouseleave="_crossHoverLeave()"></path>`;
+      } else {
+        pathsHtml += `<path d="${d}" fill="${fill}" stroke="#fff" stroke-width="0.3"></path>`;
+      }
     }
     const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
     const totalVol = [...volumeMap.values()].reduce((s,v) => s+v, 0);
