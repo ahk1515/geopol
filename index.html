@@ -5068,7 +5068,7 @@ function renderCroise(){
       const checked = _crossSelected.has(e.key);
       items += `<label class="cross-flux-item ${checked?'on':''}">
         <input type="checkbox" ${checked?'checked':''} onchange="_crossToggleFlux('${escAttr(e.key)}')">
-        <span>${escapeHtml(e.label_long || e.label || e.key)}</span>
+        <span>${escAttr(e.label_long || e.label || e.key)}</span>
       </label>`;
     }
     navHtml += `<div class="cross-cat">
@@ -5168,7 +5168,7 @@ function _renderCrossTile(key){
   const label = entry.label_long || entry.label || key;
   // Header de tuile : titre + toggle carte/treemap
   let html = `<div class="cross-tile-head">
-    <span class="cross-tile-title">${escapeHtml(label)}</span>
+    <span class="cross-tile-title">${escAttr(label)}</span>
     <div class="seg cross-tile-seg">
       <button class="${viewType==='carte'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','carte')" title="Carte">🗺</button>
       <button class="${viewType==='treemap'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','treemap')" title="Treemap">▦</button>
@@ -5275,7 +5275,7 @@ function _crossDrawTreemap(host, displayMap, volumeMap, entry){
     const showLabel = p.w > 50 && p.h > 22;
     svg += `<g>
       <rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${color}" stroke="#fff" stroke-width="1"/>
-      ${showLabel ? `<text x="${p.x + 4}" y="${p.y + 12}" font-family="var(--sans)" font-size="9" font-weight="600" fill="#fff" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">${escapeHtml(p.item.name).slice(0, 18)}</text>` : ''}
+      ${showLabel ? `<text x="${p.x + 4}" y="${p.y + 12}" font-family="var(--sans)" font-size="9" font-weight="600" fill="#fff" style="text-shadow:0 1px 2px rgba(0,0,0,.3)">${escAttr(p.item.name).slice(0, 18)}</text>` : ''}
       ${showLabel && p.h > 36 ? `<text x="${p.x + 4}" y="${p.y + 24}" font-family="var(--mono)" font-size="8" fill="rgba(255,255,255,.85)">${p.item.value.toFixed(1)}%</text>` : ''}
     </g>`;
   }
