@@ -31,13 +31,13 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Restore Comtrade checkpoint
+      - name: Restore WITS checkpoint
         uses: actions/cache@v4
         with:
-          path: etl/comtrade_checkpoint.json
-          key: comtrade-checkpoint-${{ github.run_id }}
+          path: etl/wits_checkpoint.json
+          key: wits-checkpoint-${{ github.run_id }}
           restore-keys: |
-            comtrade-checkpoint-
+            wits-checkpoint-
 
       - name: Download existing DB from R2
         env:
@@ -72,15 +72,14 @@ jobs:
           R2_SECRET_KEY:    ${{ secrets.R2_SECRET_KEY }}
           R2_BUCKET:        ${{ secrets.R2_BUCKET }}
           R2_PUBLIC_URL:    ${{ secrets.R2_PUBLIC_URL }}
-          COMTRADE_API_KEY: ${{ secrets.COMTRADE_API_KEY }}
         run: python run_etl.py
 
-      - name: Save Comtrade checkpoint
+      - name: Save WITS checkpoint
         if: always()
         uses: actions/cache@v4
         with:
-          path: etl/comtrade_checkpoint.json
-          key: comtrade-checkpoint-${{ github.run_id }}
+          path: etl/wits_checkpoint.json
+          key: wits-checkpoint-${{ github.run_id }}
 
       - name: Summary
         if: always()
