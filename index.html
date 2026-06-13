@@ -792,6 +792,20 @@ main { flex: 1; padding: 16px 18px 28px; }
 }
 .cross-clear-btn:hover { border-color: var(--orange); color: var(--orange); }
 
+.cross-presets {
+  display: flex; align-items: center; gap: 4px;
+  padding-left: 8px; border-left: 1px solid var(--border);
+}
+.cross-preset-btn {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 9px; font-size: 11px; font-family: var(--sans);
+  color: var(--text2); cursor: pointer; transition: all .12s;
+}
+.cross-preset-btn:hover {
+  border-color: var(--green); color: var(--green);
+  background: rgba(10,110,74,.05);
+}
+
 /* Grille des tuiles */
 .cross-grid { display: grid; gap: 10px; }
 .cross-grid.g1 { grid-template-columns: 1fr; }
@@ -4958,6 +4972,24 @@ const CROSS_DEFAULT_KEYS = [
   'transferts_armement|to',       // Armement reçu
   'commerce_ressources|to',       // Importations ressources
 ];
+
+// Préselections thématiques : profils prédéfinis pour explorer rapidement.
+// Chaque clé donne un nom affiché + la liste des flux à activer.
+const CROSS_PRESETS = {
+  defaut:   { label: 'Défaut',    keys: CROSS_DEFAULT_KEYS },
+  commerce: { label: 'Commerce',  keys: ['commerce|to', 'commerce|from', 'commerce_ressources|to', 'commerce_ressources|from'] },
+  militaire:{ label: 'Militaire', keys: ['transferts_armement|to', 'transferts_armement|from'] },
+  financier:{ label: 'Financier', keys: ['dette_exterieure|to', 'dette_exterieure|from'] },
+  humain:   { label: 'Humain',    keys: ['refugies|to', 'refugies|from', 'migrants|to', 'migrants|from'] },
+};
+function _crossApplyPreset(presetKey){
+  const preset = CROSS_PRESETS[presetKey];
+  if(!preset) return;
+  _crossSelected = new Set(preset.keys.slice(0, CROSS_MAX_TILES));
+  _saveCrossState();
+  renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
+}
 let _crossSelected = null;        // Set<flowEntryKey>, lazy load
 let _crossViewType = null;        // Map<flowEntryKey, 'carte'|'treemap'>, lazy
 let _crossMetric = 'volume';      // 'volume' | 'influence' — commun à toutes les tuiles
@@ -5023,11 +5055,13 @@ function _crossToggleFlux(key){
   }
   _saveCrossState();
   renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
 }
 function _crossDeselectAll(){
   _crossSelected.clear();
   _saveCrossState();
   renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
 }
 
 // ─── Hover synchronisé ──────────────────────────────────────────
@@ -5065,31 +5099,25 @@ function _crossApplyHoverHighlight(iso){
   }
 }
 
-// Tooltip multi-flux : valeurs du pays dans CHAQUE tuile affichée.
-function _crossShowTooltip(ev, iso){
+// Tooltip simple : valeur du pays UNIQUEMENT pour le flux de la tuile survolée
+// (pas un récap multi-flux — moins de bruit visuel, le highlight sur les autres tuiles
+// suffit à montrer où se positionne le pays dans les autres flux).
+function _crossShowTooltip(ev, iso, hoveredKey){
   if(!iso) return;
-  const lines = [];
-  for(const key of _crossSelected){
-    const data = _crossTileData.get(key);
-    if(!data) continue;
-    const { displayMap, volumeMap, entry } = data;
-    const pct = displayMap.get(iso);
-    const vol = volumeMap.get(iso);
-    if(pct == null && vol == null) continue;
-    const labelShort = (entry.label_long || entry.label || key).slice(0, 32);
-    const pctStr = pct != null ? `<b>${pct.toFixed(1)}%</b>` : '—';
-    const volStr = vol != null ? `<span style="opacity:.65">${_crossFmtVol(vol)}</span>` : '';
-    lines.push(`<div style="display:flex;justify-content:space-between;gap:14px;font-size:10px;line-height:1.6;padding:1px 0">
-      <span style="opacity:.85">${labelShort}</span>
-      <span>${pctStr} ${volStr}</span>
-    </div>`);
-  }
-  if(!lines.length) return;
+  const data = _crossTileData.get(hoveredKey);
+  if(!data) return;
+  const { displayMap, volumeMap, entry } = data;
+  const pct = displayMap.get(iso);
+  const vol = volumeMap.get(iso);
+  const label = entry.label_long || entry.label || hoveredKey;
   const title = (isoToFlag(iso) || '') + ' ' + (isoToName(iso) || iso);
+  const valStr = (pct != null) ? `<b style="font-size:14px">${pct.toFixed(1)}%</b>` : '<b style="font-size:14px">—</b>';
+  const volStr = (vol != null) ? `<span style="opacity:.65;font-size:10px">${_crossFmtVol(vol)}</span>` : '';
   const tip = document.getElementById('globalTip');
-  tip.innerHTML = `<div style="margin-bottom:6px;font-size:11px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:4px"><b>${title}</b></div>${lines.join('')}`;
-  // Élargir tooltip pour multi-flux
-  tip.style.maxWidth = '280px';
+  tip.innerHTML = `<div style="font-size:11px;margin-bottom:3px"><b>${title}</b></div>
+    <div style="font-size:9px;opacity:.7;font-family:var(--mono);letter-spacing:.04em;margin-bottom:4px">${escAttr(label).toUpperCase().slice(0,40)}</div>
+    <div style="display:flex;align-items:baseline;gap:10px">${valStr} ${volStr}</div>`;
+  tip.style.maxWidth = '220px';
   tip.style.display = 'block';
   moveTip(ev);
 }
@@ -5099,11 +5127,12 @@ function _crossFmtVol(v){
   if(v >= 1e3) return (v/1e3).toFixed(0) + ' k';
   return v.toFixed(0);
 }
-function _crossHoverEnter(iso, ev){
+// Setter d'état hover : highlight propage à TOUTES les tuiles, tooltip de la tuile survolée seulement
+function _crossHoverEnter(iso, ev, hoveredKey){
   if(!iso) return;
   _crossHoverIso = iso;
   _crossApplyHoverHighlight(iso);
-  _crossShowTooltip(ev, iso);
+  _crossShowTooltip(ev, iso, hoveredKey);
 }
 function _crossHoverMove(ev){ moveTip(ev); }
 function _crossHoverLeave(){
@@ -5116,10 +5145,11 @@ function _crossHoverLeave(){
 }
 
 // Setters des filtres communs (vidage cache car les helpers réutilisent _relYearRange, voir note plus bas)
-function setCrossMetric(m){ _crossMetric = m; renderCroise(); }
+function setCrossMetric(m){ _crossMetric = m; renderCroise(); if(typeof syncUrl === 'function') syncUrl(); }
 function setCrossZoneFilter(zoneId){
   _crossZoneFilter = (zoneId === '' || zoneId === 'null') ? null : zoneId;
   renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
 }
 
 // ─── Rendu principal ───
@@ -5193,6 +5223,14 @@ function renderCroise(){
     zoneOpts += `</optgroup>`;
   }
 
+  // Préselections thématiques : un bouton par profil pour appliquer rapidement
+  let presetsHtml = '<div class="cross-presets">';
+  presetsHtml += '<span class="rel-filter-label" style="margin-right:4px">Profils</span>';
+  for(const [pkey, p] of Object.entries(CROSS_PRESETS)){
+    presetsHtml += `<button class="cross-preset-btn" onclick="_crossApplyPreset('${escAttr(pkey)}')" title="Appliquer le profil ${p.label}">${p.label}</button>`;
+  }
+  presetsHtml += '</div>';
+
   const filtersHtml = `
     <div class="cross-filter-bar">
       <div class="rel-dim-wrap">
@@ -5206,6 +5244,7 @@ function renderCroise(){
         <span class="rel-filter-label">Partenaires${helpIco('filtre_zone')}</span>
         <select class="rel-zone-select" onchange="setCrossZoneFilter(this.value)">${zoneOpts}</select>
       </div>
+      ${presetsHtml}
       <div class="cross-counter-wrap">
         <span id="crossCounter" class="cross-counter">${_crossSelected.size}/${CROSS_MAX_TILES} vues</span>
         <button class="cross-clear-btn" onclick="_crossDeselectAll()">Tout désélectionner</button>
@@ -5374,7 +5413,7 @@ function _crossDrawTreemap(host, displayMap, volumeMap, entry){
     const isoAttr = p.item.isOthers ? '' : ` data-iso3="${escAttr(p.item.key)}"`;
     const cursor = p.item.isOthers ? '' : ' style="cursor:pointer"';
     const events = p.item.isOthers ? '' :
-      ` onmouseenter="_crossHoverEnter('${escAttr(p.item.key)}', event)"
+      ` onmouseenter="_crossHoverEnter('${escAttr(p.item.key)}', event, '${escAttr(entry.key)}')"
         onmousemove="_crossHoverMove(event)"
         onmouseleave="_crossHoverLeave()"`;
     svg += `<g${isoAttr}${cursor}${events}>
@@ -5408,14 +5447,30 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
       const idx = Math.min(palette.length - 1, Math.floor(q * palette.length));
       colorByIso[values[i].iso] = palette[idx];
     }
-    const projection = d3.geoNaturalEarth1().fitSize([W, H], { type: 'Sphere' });
-    const path = d3.geoPath().projection(projection);
-    // Pays hors zone : grisés si filtre zone actif
+    // Calculer le zoneSet AVANT la projection, pour pouvoir zoomer dessus si filtre actif
     let zoneSet = null;
     if(_crossZoneFilter){
       const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
       if(r.length) zoneSet = new Set(r[0].values.map(row => row[0]));
     }
+    // Projection : fitSize sur la zone si filtre actif (option B : tous les pays restent dessinés,
+    // mais le viewBox cadre sur la zone). Sinon, projection mondiale.
+    let projection;
+    if(zoneSet && zoneSet.size > 0){
+      const zoneFeatures = features.filter(f => {
+        const iso = numToIso3(+f.id);
+        return iso && zoneSet.has(iso);
+      });
+      if(zoneFeatures.length > 0){
+        const zoneCollection = { type: 'FeatureCollection', features: zoneFeatures };
+        projection = d3.geoNaturalEarth1().fitSize([W, H], zoneCollection);
+      } else {
+        projection = d3.geoNaturalEarth1().fitSize([W, H], { type: 'Sphere' });
+      }
+    } else {
+      projection = d3.geoNaturalEarth1().fitSize([W, H], { type: 'Sphere' });
+    }
+    const path = d3.geoPath().projection(projection);
     let pathsHtml = '';
     for(const f of features){
       const iso = numToIso3(+f.id);
@@ -5431,7 +5486,7 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
       if(hasData){
         pathsHtml += `<path d="${d}" fill="${fill}" stroke="#fff" stroke-width="0.3"
           data-iso3="${escAttr(iso)}" style="cursor:pointer"
-          onmouseenter="_crossHoverEnter('${escAttr(iso)}', event)"
+          onmouseenter="_crossHoverEnter('${escAttr(iso)}', event, '${escAttr(entry.key)}')"
           onmousemove="_crossHoverMove(event)"
           onmouseleave="_crossHoverLeave()"></path>`;
       } else {
@@ -5442,7 +5497,7 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
     const totalVol = [...volumeMap.values()].reduce((s,v) => s+v, 0);
     const fmtV = fmtWithUnit(totalVol, cfg?.unit_display);
     host.innerHTML = `
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block;overflow:hidden">
         ${pathsHtml}
       </svg>
       <div class="cross-tile-foot">${displayMap.size} partenaires · ${fmtV}</div>`;
@@ -5622,6 +5677,15 @@ function syncUrl(){
   if(state.compareB) p.set('b', state.compareB.isos.join(','));
   p.set('y', state.year);
   p.set('tab', state.view);
+  // État Croisé : seulement si l'utilisateur l'a personnalisé (différent du défaut)
+  if(_crossSelected && _crossSelected.size > 0){
+    const def = new Set(CROSS_DEFAULT_KEYS);
+    const curr = [..._crossSelected];
+    const isDefault = curr.length === def.size && curr.every(k => def.has(k));
+    if(!isDefault) p.set('cs', curr.join(','));
+  }
+  if(_crossMetric && _crossMetric !== 'volume') p.set('cm', _crossMetric);
+  if(_crossZoneFilter) p.set('cz', _crossZoneFilter);
   history.replaceState(null, '', '#' + p.toString());
 }
 function applyUrlState(){
@@ -5644,6 +5708,15 @@ function applyUrlState(){
     const isos = p.get('b').split(',').filter(Boolean);
     if(isos.length) state.compareB = { isos, label: detectZoneLabel(isos) };
   }
+  // État Croisé depuis l'URL (prioritaire sur localStorage si présent)
+  if(p.get('cs')){
+    const keys = p.get('cs').split(',').filter(Boolean).slice(0, CROSS_MAX_TILES);
+    if(keys.length){ _crossSelected = new Set(keys); }
+  }
+  if(p.get('cm') && ['volume','influence'].includes(p.get('cm'))){
+    _crossMetric = p.get('cm');
+  }
+  if(p.get('cz')) _crossZoneFilter = p.get('cz');
 }
 function switchViewSilent(v){
   if(!['synthese','puissance','relations','croise'].includes(v)) return;
