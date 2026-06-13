@@ -908,6 +908,22 @@ main { flex: 1; padding: 16px 18px 28px; }
 }
 #crossTilePeriodPopover .ctp-apply:hover { background: var(--green-d); }
 
+/* Légende compacte sous les aires empilées / courbes superposées */
+.cross-area-legend {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 12px 0;
+  font-size: 9px; color: var(--text2);
+}
+.cross-area-legend-item {
+  display: flex; align-items: center; gap: 4px;
+  white-space: nowrap;
+}
+.cross-area-legend-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 2px;
+}
+.cross-area-legend-more {
+  color: var(--text3); font-family: var(--mono); font-style: italic;
+}
+
 /* Grille des tuiles */
 .cross-grid { display: grid; gap: 10px; }
 .cross-grid.g1 { grid-template-columns: 1fr; }
@@ -5329,7 +5345,29 @@ function _crossGetViewType(key){ return _crossViewType.get(key) || 'carte'; }
 function _crossSetViewType(key, type){
   _crossViewType.set(key, type);
   _saveCrossState();
-  _renderCrossTile(key);   // ne re-rend QUE cette tuile (pas tout)
+  // Cas spécial : si on passe en 'aires' et qu'aucune plage n'est active (ni globale ni tuile),
+  // on active automatiquement une plage par défaut sur cette tuile (5 dernières années en cumul).
+  // Les aires sans plage n'ont aucun sens.
+  if(type === 'aires'){
+    const period = _crossGetTilePeriod(key);
+    if(!period.range){
+      const entry = getFlowEntryByKey(key);
+      if(entry){
+        const isos = state.subject.isos;
+        const inList = sqlList(isos);
+        let yAvMin = 2000, yAvMax = state.year;
+        const yr = safeExec(`SELECT MIN(year), MAX(year) FROM flux WHERE indicator='${escapeSql(entry.realIndicator)}' AND (country_to IN (${inList}) OR country_from IN (${inList}))`);
+        if(yr.length && yr[0].values[0][0] != null){
+          yAvMin = yr[0].values[0][0];
+          yAvMax = yr[0].values[0][1];
+        }
+        const yStart = Math.max(yAvMin, yAvMax - 4);
+        _crossSetTilePeriod(key, [yStart, yAvMax], 'sum');
+        return;   // _crossSetTilePeriod appelle déjà _renderCrossTile
+      }
+    }
+  }
+  _renderCrossTile(key);
 }
 
 // Toggle d'un flux dans la sélection. Respecte la limite CROSS_MAX_TILES.
@@ -5679,13 +5717,16 @@ function _renderCrossTile(key){
     ? `<button class="cross-period-clear" onclick="_crossClearTileOverride('${escAttr(key)}')" title="Revenir à la période globale">×</button>`
     : `<span class="cross-period-hint">global</span>`;
 
-  // Header de tuile : titre + toggle carte/treemap
-  // Bandeau période : visible, cliquable pour ouvrir le popover
+  // Header de tuile : titre + toggle carte/treemap/aires
+  // Le bouton aires est toujours actif : un clic activera auto une plage si pas déjà active
+  // (voir _crossSetViewType pour la logique d'auto-application de plage)
+  const airesLabel = (_crossMetric === 'influence') ? 'Courbes superposées' : 'Aires empilées';
   let html = `<div class="cross-tile-head">
     <span class="cross-tile-title">${escAttr(label)}</span>
     <div class="seg cross-tile-seg">
       <button class="${viewType==='carte'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','carte')" title="Carte">🗺</button>
       <button class="${viewType==='treemap'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','treemap')" title="Treemap">▦</button>
+      <button class="${viewType==='aires'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','aires')" title="${airesLabel}">📈</button>
     </div>
   </div>
   <div class="cross-tile-period${overrideClass}" onclick="_crossOpenPeriodPopover(event, '${escAttr(key)}')" title="Cliquer pour modifier la période">
@@ -5782,6 +5823,15 @@ function _renderCrossTile(key){
   // Dessin selon type de vue
   if(viewType === 'treemap'){
     _crossDrawTreemap(body, displayMap, byPartner, entry);
+  } else if(viewType === 'aires'){
+    // Aires empilées (Volume) ou courbes superposées (Influence) sur la période active.
+    // Nécessite une plage : si pas de plage active, fallback en carte (sécurité, normalement
+    // _crossSetViewType a auto-appliqué une plage en passant en 'aires').
+    if(!period.range){
+      _crossDrawMap(body, displayMap, byPartner, entry);
+    } else {
+      _crossDrawAreaOrCurves(body, entry, period, key);
+    }
   } else {
     _crossDrawMap(body, displayMap, byPartner, entry);
   }
@@ -5906,6 +5956,287 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
   } catch (e) {
     host.innerHTML = `<div class="cross-tile-empty">Carte indisponible (${e.message || 'erreur'})</div>`;
   }
+}
+
+/* ─── Aires empilées (Volume) / Courbes superposées (Influence) ────────
+   Affiche l'évolution dans le temps des partenaires d'un flux.
+   - Volume : aires empilées additives, top adaptatif (6 si concentré, 8 défaut, 12 si dispersé) + "autres"
+   - Influence : courbes superposées (% chez chaque partenaire, pas d'empilement car non additif), top 6
+   Sync hover : le pays survolé reste à pleine opacité, les autres atténuées.
+*/
+function _crossDrawAreaOrCurves(host, entry, period, key){
+  const isInfluence = (_crossMetric === 'influence');
+  const [yMin, yMax] = period.range;
+  const isos = state.subject.isos;
+  const inList = sqlList(isos);
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const realInd = entry.realIndicator;
+  // Colonnes selon le sens du flux
+  let subjectCol, partnerCol;
+  if(realInd === 'import_commercial'){ subjectCol = 'country_to'; partnerCol = 'country_from'; }
+  else if(realInd === 'export_commercial'){ subjectCol = 'country_from'; partnerCol = 'country_to'; }
+  else {
+    subjectCol = (entry.side === 'to') ? 'country_to' : 'country_from';
+    partnerCol = (entry.side === 'to') ? 'country_from' : 'country_to';
+  }
+
+  // Récupérer la série temporelle : par année et par partenaire
+  const r = safeExec(`SELECT year, ${partnerCol} AS partner, SUM(value) AS v
+                      FROM flux WHERE indicator='${escapeSql(realInd)}'
+                      AND year >= ${yMin} AND year <= ${yMax}
+                      AND ${subjectCol} IN (${inList}) AND ${partnerCol} NOT IN (${inList})
+                      AND ${partnerCol} NOT IN (${exclAgg})
+                      AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                      GROUP BY year, ${partnerCol}`);
+  if(!r.length || !r[0].values.length){
+    host.innerHTML = `<div class="cross-tile-empty">Pas de données temporelles</div>`;
+    return;
+  }
+
+  // Filtre zone : appliquer si actif
+  let zoneSet = null;
+  if(_crossZoneFilter){
+    const z = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
+    if(z.length) zoneSet = new Set(z[0].values.map(row => row[0]));
+  }
+
+  // Structurer : data[year][partner] = volume
+  const dataByYear = new Map();   // year → Map<partner, vol>
+  const totalByPartner = new Map();
+  const years = [];
+  for(const [yr, p, v] of r[0].values){
+    if(zoneSet && !zoneSet.has(p)) continue;
+    if(!dataByYear.has(yr)){ dataByYear.set(yr, new Map()); years.push(yr); }
+    dataByYear.get(yr).set(p, (dataByYear.get(yr).get(p) || 0) + (v || 0));
+    totalByPartner.set(p, (totalByPartner.get(p) || 0) + (v || 0));
+  }
+  years.sort((a,b) => a - b);
+  if(years.length < 2){
+    host.innerHTML = `<div class="cross-tile-empty">Plage trop courte pour évolution</div>`;
+    return;
+  }
+
+  // Calcul du top adaptatif en mode Volume
+  // (en mode Influence on prend top 6 fixe puisque pas de notion d'agrégation "autres" qui ait du sens)
+  const sortedPartners = [...totalByPartner.entries()].sort((a,b) => b[1] - a[1]);
+  const grandTotal = sortedPartners.reduce((s, [,v]) => s + v, 0) || 1;
+  let topN;
+  if(isInfluence){
+    topN = 6;
+  } else {
+    // Adaptatif Volume : viser ~80% couverture, entre 6 et 12 partenaires
+    let cum = 0, n = 0;
+    for(const [, v] of sortedPartners){
+      cum += v; n++;
+      if(cum / grandTotal >= 0.80) break;
+    }
+    topN = Math.min(12, Math.max(6, n));
+    if(topN > sortedPartners.length) topN = sortedPartners.length;
+  }
+  const topPartners = sortedPartners.slice(0, topN).map(([p]) => p);
+  const otherPartners = sortedPartners.slice(topN).map(([p]) => p);
+
+  // Préparation des séries pour rendu
+  // En Volume : pour chaque année, on calcule la valeur de chaque top + "autres"
+  // En Influence : pour chaque année, on calcule volume_partenaire / world_total_partenaire(year)
+  const W = 360, H = 220, M = { top: 10, right: 5, bottom: 20, left: 30 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const xScale = (y) => M.left + ((y - years[0]) / (years[years.length-1] - years[0])) * innerW;
+
+  // Calcul des valeurs par année et par partenaire affiché
+  // displayKeys = liste ordonnée des partenaires + 'autres' éventuellement
+  const displayKeys = [...topPartners];
+  if(!isInfluence && otherPartners.length > 0) displayKeys.push('__others__');
+
+  // valuesByKey : key → Array<{year, val}>
+  const valuesByKey = new Map();
+  for(const k of displayKeys) valuesByKey.set(k, []);
+
+  if(isInfluence){
+    // Influence : on a besoin du total mondial par partenaire et par année pour normaliser.
+    // Une requête : pour chaque (year, top_partner), récupérer SUM(value) sur tous les destinataires hors agrégats
+    const topList = topPartners.map(p => `'${escapeSql(p)}'`).join(',');
+    if(topList){
+      const wt = safeExec(`SELECT year, ${partnerCol} AS partner, SUM(value) AS total
+                           FROM flux WHERE indicator='${escapeSql(realInd)}'
+                           AND year >= ${yMin} AND year <= ${yMax}
+                           AND ${partnerCol} IN (${topList})
+                           AND ${partnerCol} NOT IN (${exclAgg})
+                           AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                           AND ${subjectCol} NOT IN (${exclAgg})
+                           AND ${subjectCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                           GROUP BY year, ${partnerCol}`);
+      const worldTotals = new Map();   // "year|partner" → total
+      if(wt.length){
+        for(const [yr, p, t] of wt[0].values) worldTotals.set(yr + '|' + p, t);
+      }
+      for(const yr of years){
+        const dy = dataByYear.get(yr) || new Map();
+        for(const p of topPartners){
+          const v = dy.get(p) || 0;
+          const wtVal = worldTotals.get(yr + '|' + p) || 0;
+          const pct = wtVal > 0 ? (v / wtVal) * 100 : 0;
+          valuesByKey.get(p).push({ year: yr, val: pct });
+        }
+      }
+    }
+  } else {
+    // Volume : pour chaque année, valeurs absolues + agrégat "autres"
+    for(const yr of years){
+      const dy = dataByYear.get(yr) || new Map();
+      for(const p of topPartners){
+        valuesByKey.get(p).push({ year: yr, val: dy.get(p) || 0 });
+      }
+      if(otherPartners.length > 0){
+        let othersSum = 0;
+        for(const op of otherPartners) othersSum += (dy.get(op) || 0);
+        valuesByKey.get('__others__').push({ year: yr, val: othersSum });
+      }
+    }
+  }
+
+  // Calculer l'échelle Y
+  let yMaxScale;
+  if(isInfluence){
+    // En influence : max parmi les % observés
+    let mv = 0;
+    for(const arr of valuesByKey.values()) for(const pt of arr) if(pt.val > mv) mv = pt.val;
+    yMaxScale = Math.max(10, Math.ceil(mv * 1.1));
+  } else {
+    // En volume : max de la somme empilée par année
+    let mv = 0;
+    for(const yr of years){
+      let s = 0;
+      for(const k of displayKeys){
+        const arr = valuesByKey.get(k);
+        const pt = arr.find(p => p.year === yr);
+        if(pt) s += pt.val;
+      }
+      if(s > mv) mv = s;
+    }
+    yMaxScale = mv * 1.05;
+  }
+  const yScale = (v) => M.top + innerH - (v / yMaxScale) * innerH;
+
+  // Palette : utiliser CROSS_PALETTE mais en l'élargissant pour avoir 8-12 couleurs lisibles
+  // On prend des nuances vert/orange/bleu pour différencier visuellement les partenaires
+  const seriesPalette = [
+    '#0a6e4a', '#b45309', '#1d4ed8', '#5b6b8c', '#7a8b6c',
+    '#a08654', '#8a6d4e', '#7c2d12', '#3b5249', '#6b5b73',
+    '#854d0e', '#475569',
+  ];
+
+  // Construction du SVG
+  let svgInner = '';
+
+  // Axes
+  // X : graduations années (max 5 graduations pour la lisibilité)
+  const tickCount = Math.min(5, years.length);
+  const tickStep = Math.max(1, Math.floor((years.length - 1) / (tickCount - 1)));
+  let xAxisHtml = '';
+  for(let i = 0; i < years.length; i += tickStep){
+    const yr = years[i];
+    xAxisHtml += `<text x="${xScale(yr)}" y="${H - 5}" text-anchor="middle" font-family="var(--mono)" font-size="8" fill="var(--text3)">${yr}</text>`;
+  }
+  // Y : 3 graduations
+  let yAxisHtml = '';
+  for(let i = 0; i <= 3; i++){
+    const v = (yMaxScale / 3) * i;
+    const y = yScale(v);
+    yAxisHtml += `<line x1="${M.left}" y1="${y}" x2="${W - M.right}" y2="${y}" stroke="#eee" stroke-width="0.5"/>`;
+    yAxisHtml += `<text x="${M.left - 4}" y="${y + 3}" text-anchor="end" font-family="var(--mono)" font-size="8" fill="var(--text3)">${isInfluence ? v.toFixed(0) + '%' : _crossFmtVol(v)}</text>`;
+  }
+
+  if(isInfluence){
+    // Courbes superposées : une polyline par partenaire
+    let curvesHtml = '';
+    for(let i = 0; i < displayKeys.length; i++){
+      const k = displayKeys[i];
+      const color = seriesPalette[i % seriesPalette.length];
+      const arr = valuesByKey.get(k);
+      const pts = arr.map(pt => `${xScale(pt.year)},${yScale(pt.val)}`).join(' ');
+      const name = partnerLabel(k);
+      curvesHtml += `<g data-iso3="${escAttr(k)}"
+        onmouseenter="_crossHoverEnter('${escAttr(k)}', event, '${escAttr(entry.key)}')"
+        onmousemove="_crossHoverMove(event)"
+        onmouseleave="_crossHoverLeave()" style="cursor:pointer">
+        <polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/>
+      </g>`;
+    }
+    svgInner = yAxisHtml + curvesHtml + xAxisHtml;
+  } else {
+    // Aires empilées : on calcule pour chaque année les y0/y1 cumulés
+    // Construction des paths SVG (un par série)
+    const cumulByYear = new Map();   // year → cumul courant
+    for(const yr of years) cumulByYear.set(yr, 0);
+    let areasHtml = '';
+    for(let i = 0; i < displayKeys.length; i++){
+      const k = displayKeys[i];
+      const arr = valuesByKey.get(k);
+      const isOthers = (k === '__others__');
+      const color = isOthers ? '#cfc8b6' : seriesPalette[i % seriesPalette.length];
+      // Construire le path : aller dans le sens des années (bord supérieur) puis revenir (bord inférieur)
+      const upper = [], lower = [];
+      for(const pt of arr){
+        const cum = cumulByYear.get(pt.year);
+        const newCum = cum + pt.val;
+        upper.push(`${xScale(pt.year)},${yScale(newCum)}`);
+        lower.push(`${xScale(pt.year)},${yScale(cum)}`);
+        cumulByYear.set(pt.year, newCum);
+      }
+      const pathD = 'M ' + upper.join(' L ') + ' L ' + lower.reverse().join(' L ') + ' Z';
+      const dataAttr = isOthers ? '' : ` data-iso3="${escAttr(k)}"`;
+      const events = isOthers ? '' :
+        ` onmouseenter="_crossHoverEnter('${escAttr(k)}', event, '${escAttr(entry.key)}')"
+          onmousemove="_crossHoverMove(event)"
+          onmouseleave="_crossHoverLeave()" style="cursor:pointer"`;
+      areasHtml += `<g${dataAttr}${events}>
+        <path d="${pathD}" fill="${color}" stroke="#fff" stroke-width="0.4"/>
+      </g>`;
+    }
+    svgInner = yAxisHtml + areasHtml + xAxisHtml;
+  }
+
+  // Légende compacte sous le graphique : nom + couleur du top 4 affichés
+  let legendHtml = '<div class="cross-area-legend">';
+  for(let i = 0; i < Math.min(4, displayKeys.length); i++){
+    const k = displayKeys[i];
+    const color = (k === '__others__') ? '#cfc8b6' : seriesPalette[i % seriesPalette.length];
+    const name = (k === '__others__') ? 'autres' : (partnerFlag(k) || '') + ' ' + partnerLabel(k);
+    legendHtml += `<span class="cross-area-legend-item"><span class="cross-area-legend-dot" style="background:${color}"></span>${escAttr(name).slice(0, 14)}</span>`;
+  }
+  if(displayKeys.length > 4) legendHtml += `<span class="cross-area-legend-more">+${displayKeys.length - 4}</span>`;
+  legendHtml += '</div>';
+
+  const cfg = state.indicators.find(c => c.indicator === realInd);
+  const totalVol = grandTotal;
+  const fmtV = fmtWithUnit(totalVol, cfg?.unit_display);
+  const modeLabel = isInfluence ? 'Courbes d\'influence' : 'Aires empilées';
+  host.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
+      ${svgInner}
+    </svg>
+    ${legendHtml}
+    <div class="cross-tile-foot">${modeLabel} · ${displayKeys.length} séries · ${fmtV}</div>`;
+
+  // Mettre à jour le cache hover : pour chaque partenaire, sa dernière valeur dans la série (ou moyenne)
+  // Cela permet au tooltip d'afficher quelque chose de cohérent au survol d'une aire/courbe.
+  const displayMap = new Map(), volumeMap = new Map();
+  for(const k of displayKeys){
+    if(k === '__others__') continue;
+    const arr = valuesByKey.get(k);
+    if(!arr || !arr.length) continue;
+    const last = arr[arr.length - 1];
+    displayMap.set(k, last.val);
+    // En volume, on stocke le volume cumulé ; en influence, juste la dernière valeur (le pct sert pour l'affichage)
+    if(isInfluence){
+      volumeMap.set(k, totalByPartner.get(k) || 0);
+    } else {
+      volumeMap.set(k, totalByPartner.get(k) || 0);
+    }
+  }
+  _crossTileData.set(key, { displayMap, volumeMap, entry });
 }
 
 
