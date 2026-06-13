@@ -924,6 +924,45 @@ main { flex: 1; padding: 16px 18px 28px; }
   color: var(--text3); font-family: var(--mono); font-style: italic;
 }
 
+/* ─── Slot Partenaire B (mode bilatéral Relations) ─── */
+.rel-partner-b .rel-partner-b-add {
+  background: var(--bg2); border: 1px dashed var(--border); border-radius: 6px;
+  padding: 4px 10px; font-size: 11px; color: var(--text3); cursor: pointer;
+  font-family: var(--sans); transition: all .12s;
+}
+.rel-partner-b .rel-partner-b-add:hover {
+  border-color: var(--green); color: var(--green);
+  border-style: solid; background: rgba(10,110,74,.04);
+}
+.rel-partner-b.filled { background: rgba(10,110,74,.08); border-radius: 6px; padding: 2px 4px; }
+.rel-partner-b-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--green); color: #fff; border-radius: 4px;
+  padding: 3px 8px; font-size: 11px; font-weight: 600;
+}
+.rel-partner-b-clear {
+  background: rgba(255,255,255,.2); border: none; color: #fff;
+  border-radius: 50%; width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; cursor: pointer; line-height: 1;
+  margin-left: 2px;
+}
+.rel-partner-b-clear:hover { background: rgba(255,255,255,.35); }
+
+/* Placeholder du mode bilatéral en attendant la livraison 2 */
+.rel-bilateral-placeholder {
+  padding: 60px 30px; text-align: center;
+  background: var(--bg2); border: 1px dashed var(--border); border-radius: 12px;
+  margin-top: 16px;
+}
+.rel-bilateral-placeholder .empty-title {
+  font-size: 16px; font-weight: 600; color: var(--green);
+  margin-bottom: 8px; font-family: var(--sans);
+}
+.rel-bilateral-placeholder .empty-sub {
+  font-size: 12px; color: var(--text3); max-width: 480px; margin: 0 auto;
+}
+
 /* Grille des tuiles */
 .cross-grid { display: grid; gap: 10px; }
 .cross-grid.g1 { grid-template-columns: 1fr; }
@@ -4025,6 +4064,13 @@ let _relZonePartnersCache = null; // cache des ISO3 inclus dans la zone active (
 let _relYearRange = null;         // [yMin, yMax] inclusif, ou null = utiliser state.year ponctuel
 let _relYearAggMode = 'sum';      // 'sum' (cumul sur la plage) | 'avg' (moyenne annuelle)
 
+// ─── Mode bilatéral (Relations) ─────────────────────────────────────────
+// Si _relPartnerB est rempli, Relations bascule en mode bilatéral A↔B au lieu du mode multi-pays.
+// A reste state.subject (sujet principal de l'app), B est défini ici.
+// Format : { isos: [iso3], label: string } — toujours un seul pays pour B (pas de zone)
+// Vidé = mode multi-pays normal (comportement historique).
+let _relPartnerB = null;
+
 // Liste des zones disponibles, mise en cache. Retourne [{zone_id, zone_nom, n_pays}].
 // Trié par catégorie (GEO_ d'abord par nombre de pays décroissant, puis organisations alphabétique).
 let _allZonesCache = null;
@@ -4120,6 +4166,26 @@ function setRelYearAggMode(mode){
   renderRelMain();
   syncUrl();
 }
+
+// ─── Setters mode bilatéral ─────────────────────────────────────
+// Définit le partenaire B (un seul pays ISO3) et bascule en mode bilatéral.
+// Si isos est null/vide → vide B et revient au mode multi-pays.
+function setRelPartnerB(isos){
+  if(!isos || (Array.isArray(isos) && isos.length === 0)){
+    _relPartnerB = null;
+  } else {
+    const list = Array.isArray(isos) ? isos : [isos];
+    // En bilatéral on ne prend qu'un seul pays pour B (pas de zone)
+    const iso = list[0];
+    if(!iso) { _relPartnerB = null; }
+    else {
+      _relPartnerB = { isos: [iso], label: isoToName(iso) || iso };
+    }
+  }
+  renderRelations();   // re-render complet (changement de mode)
+  syncUrl();
+}
+function clearRelPartnerB(){ setRelPartnerB(null); }
 
 /* ─── Dimensions disponibles pour le référentiel d'analyse ────────
    Pour un flux donné, on renvoie la liste des dimensions possibles
@@ -4295,6 +4361,25 @@ function renderRelMain(){
     <span class="rel-filter-label">Partenaires${helpIco('filtre_zone')}</span>
     <select class="rel-zone-select" onchange="setRelZoneFilter(this.value)">${zoneOpts}</select>
   </div>`;
+  // ─── Slot Partenaire B (mode bilatéral) ──────────────────────────
+  // Toujours visible dans la barre. Vide → mode multi-pays. Rempli → mode bilatéral.
+  let partnerBSelector;
+  if(_relPartnerB){
+    const iso = _relPartnerB.isos[0];
+    const flag = isoToFlag(iso) || '';
+    partnerBSelector = `<div class="rel-dim-wrap rel-partner-b filled" style="margin-left:10px" title="Mode bilatéral actif">
+      <span class="rel-filter-label">Étudier avec</span>
+      <span class="rel-partner-b-chip">
+        <span>${flag} ${escAttr(_relPartnerB.label)}</span>
+        <button class="rel-partner-b-clear" onclick="clearRelPartnerB()" title="Sortir du mode bilatéral">×</button>
+      </span>
+    </div>`;
+  } else {
+    partnerBSelector = `<div class="rel-dim-wrap rel-partner-b" style="margin-left:10px">
+      <span class="rel-filter-label">Étudier avec</span>
+      <button class="rel-partner-b-add" onclick="openSearch('partnerB')" title="Choisir un 2e pays pour analyse bilatérale">+ ajouter un pays</button>
+    </div>`;
+  }
   // sélecteur de plage temporelle : 2 selects (min, max) + bascule somme/moyenne si plage active
   const yearsAvail = getFluxYearsAvailable(entry);
   let yearRangeSelector = '';
@@ -4351,10 +4436,24 @@ function renderRelMain(){
   }
   main.innerHTML = `
     <div class="pu-head">
-      <span class="name">${entry.label_long}</span>
-      <span class="meta">${state.subject.label}</span>
+      <span class="name">${entry.label_long}${_relPartnerB ? ' · mode bilatéral' : ''}</span>
+      <span class="meta">${state.subject.label}${_relPartnerB ? ' ↔ ' + _relPartnerB.label : ''}</span>
     </div>
-    <div class="rel-crumb-bar"><div class="rel-crumb">${crumb}</div>${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}${metricSelector}${zoneSelector}${yearRangeSelector}</div>
+    <div class="rel-crumb-bar">
+      <div class="rel-crumb">${crumb}</div>
+      ${_relPartnerB ? '' : (dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : '')}
+      ${_relPartnerB ? '' : metricSelector}
+      ${partnerBSelector}
+      ${_relPartnerB ? '' : zoneSelector}
+      ${yearRangeSelector}
+    </div>
+    ${_relPartnerB ? `
+      <div class="rel-bilateral-placeholder">
+        <div class="empty-title">Mode bilatéral · ${state.subject.label} ↔ ${escAttr(_relPartnerB.label)}</div>
+        <div class="empty-sub">L'interface bilatérale (grille de tuiles multi-indicateurs avec vizs commutables) arrive en livraison 2.</div>
+        <div class="empty-sub" style="margin-top:10px">Pour repasser en mode multi-pays, clique sur le × à côté du nom du pays B.</div>
+      </div>
+    ` : `
     <div class="pu-cells">
       <div class="top-row">
         <div class="pu-cell">
@@ -4373,10 +4472,13 @@ function renderRelMain(){
           <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span></div>
         </div>
       </div>
-    </div>`;
-  renderRelComposition();
-  renderRelEvolution();
-  renderRelFluxMap();
+    </div>`}`;
+  // En mode bilatéral, on n'appelle pas les renderers spécifiques (qui s'appuient sur les DOM #relCompBody etc.)
+  if(!_relPartnerB){
+    renderRelComposition();
+    renderRelEvolution();
+    renderRelFluxMap();
+  }
 }
 function setRelMetric(m){ _relMetric = m; _relInfluencePinned = null; renderRelMain(); syncUrl(); }
 function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label: 'Partenaire' }).label; }
@@ -6244,18 +6346,24 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
 /* ─── RECHERCHE SUJET (⌘K) — pays multi-cochables, zones en 1 clic ─── */
 let _searchSel = 0, _searchItems = [];
 let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
-let _searchMode = 'subject';   // 'subject' | 'compareB'
+let _searchMode = 'subject';   // 'subject' | 'compareB' | 'partnerB'
 
-function openSearch(){
-  _searchMode = 'subject';
+function openSearch(mode){
+  _searchMode = (mode === 'compareB' || mode === 'partnerB') ? mode : 'subject';
   document.getElementById('searchOverlay').classList.add('open');
   _multiPick = [];
-  if(state.subject && state.subject.isos.length > 1){
+  // En mode partnerB : un seul pays, pas de présélection multi
+  if(_searchMode === 'subject' && state.subject && state.subject.isos.length > 1){
     _multiPick = state.subject.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
   }
   const inp = document.getElementById('searchInput');
   inp.value = ''; inp.focus();
-  inp.placeholder = 'Rechercher un pays ou une zone…';
+  const placeholders = {
+    subject: 'Rechercher un pays ou une zone…',
+    compareB: 'Choisir un comparant…',
+    partnerB: 'Choisir un pays pour analyse bilatérale…',
+  };
+  inp.placeholder = placeholders[_searchMode] || placeholders.subject;
   onSearchInput('');
   renderTray();
 }
@@ -6338,6 +6446,12 @@ function onSearchInput(q){
 function toggleCountry(i){
   const it = _searchItems[i]; if(!it || it.kind !== 'pays') return;
   const iso = it.iso;
+  // En mode partnerB : clic pays = validation directe (un seul pays attendu, pas de multi-pick)
+  if(_searchMode === 'partnerB'){
+    setRelPartnerB([iso]);
+    closeSearch();
+    return;
+  }
   if(isPicked(iso)) _multiPick = _multiPick.filter(p => p.iso3 !== iso);
   else _multiPick.push({ iso3: iso, name: it.label, flag: it.flag });
   // rafraîchir l'état visuel de la ligne + le bandeau
@@ -6348,6 +6462,16 @@ function toggleCountry(i){
 
 function pickZone(i){
   const it = _searchItems[i]; if(!it || it.kind !== 'zone') return;
+  // En mode partnerB : pas de zone, B doit être un pays unique
+  if(_searchMode === 'partnerB'){
+    // Si la zone n'a qu'un pays (cas rare mais possible), on l'accepte
+    if(it.isos && it.isos.length === 1){
+      setRelPartnerB(it.isos);
+      closeSearch();
+    }
+    // Sinon : rien (l'utilisateur doit choisir un pays individuel)
+    return;
+  }
   if(_searchMode === 'compareB') setCompareB(it.isos, it.label);
   else setSubject(it.isos, it.label);
   closeSearch();
@@ -6419,6 +6543,8 @@ function syncUrl(){
   }
   if(_crossMetric && _crossMetric !== 'volume') p.set('cm', _crossMetric);
   if(_crossZoneFilter) p.set('cz', _crossZoneFilter);
+  // Mode bilatéral Relations : partenaire B (un seul pays ISO3)
+  if(_relPartnerB && _relPartnerB.isos && _relPartnerB.isos.length) p.set('rb', _relPartnerB.isos[0]);
   history.replaceState(null, '', '#' + p.toString());
 }
 function applyUrlState(){
@@ -6450,6 +6576,11 @@ function applyUrlState(){
     _crossMetric = p.get('cm');
   }
   if(p.get('cz')) _crossZoneFilter = p.get('cz');
+  // Mode bilatéral Relations
+  if(p.get('rb')){
+    const iso = p.get('rb');
+    if(iso) _relPartnerB = { isos: [iso], label: isoToName(iso) || iso };
+  }
 }
 function switchViewSilent(v){
   if(!['synthese','puissance','relations','croise'].includes(v)) return;
