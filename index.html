@@ -4218,23 +4218,29 @@ const BIL_DEFAULT_KEYS = [
 let _bilSelected = null;          // Set<flowEntryKey>, lazy
 let _bilViewType = null;          // Map<flowEntryKey, 'fiche'|'courbes'|'barchart'|'topctx'>, lazy
 function _loadBilState(){
-  if(_bilSelected) return;
-  try {
-    const raw = localStorage.getItem(BIL_STORAGE_KEY);
-    if(raw){
-      const arr = JSON.parse(raw);
-      if(Array.isArray(arr)) _bilSelected = new Set(arr.slice(0, BIL_MAX_TILES));
-    }
-  } catch {}
-  if(!_bilSelected) _bilSelected = new Set(BIL_DEFAULT_KEYS);
-  try {
-    const raw = localStorage.getItem(BIL_VIEW_TYPE_KEY);
-    if(raw){
-      const obj = JSON.parse(raw);
-      _bilViewType = new Map(Object.entries(obj));
-    }
-  } catch {}
-  if(!_bilViewType) _bilViewType = new Map();
+  // Init indépendante de chaque branche, pour permettre une initialisation partielle préalable
+  // (par ex. via URL ou navigation entre couples qui ne touche que _bilSelected).
+  if(_bilSelected && _bilViewType) return;
+  if(!_bilSelected){
+    try {
+      const raw = localStorage.getItem(BIL_STORAGE_KEY);
+      if(raw){
+        const arr = JSON.parse(raw);
+        if(Array.isArray(arr)) _bilSelected = new Set(arr.slice(0, BIL_MAX_TILES));
+      }
+    } catch {}
+    if(!_bilSelected) _bilSelected = new Set(BIL_DEFAULT_KEYS);
+  }
+  if(!_bilViewType){
+    try {
+      const raw = localStorage.getItem(BIL_VIEW_TYPE_KEY);
+      if(raw){
+        const obj = JSON.parse(raw);
+        _bilViewType = new Map(Object.entries(obj));
+      }
+    } catch {}
+    if(!_bilViewType) _bilViewType = new Map();
+  }
 }
 function _saveBilState(){
   try { localStorage.setItem(BIL_STORAGE_KEY, JSON.stringify([..._bilSelected])); } catch {}
@@ -4244,13 +4250,19 @@ function _saveBilState(){
     localStorage.setItem(BIL_VIEW_TYPE_KEY, JSON.stringify(obj));
   } catch {}
 }
-function _bilGetViewType(key){ return _bilViewType.get(key) || 'fiche'; }
+// Défensif : auto-init si _bilViewType est encore null
+function _bilGetViewType(key){
+  if(!_bilViewType) _loadBilState();
+  return _bilViewType.get(key) || 'fiche';
+}
 function _bilSetViewType(key, type){
+  if(!_bilViewType) _loadBilState();
   _bilViewType.set(key, type);
   _saveBilState();
   _renderBilTile(key);   // re-render uniquement cette tuile
 }
 function _bilToggleFlux(key){
+  if(!_bilSelected) _loadBilState();
   if(_bilSelected.has(key)){
     _bilSelected.delete(key);
   } else {
@@ -4265,6 +4277,7 @@ function _bilToggleFlux(key){
   renderRelMain();   // re-render complet (grille change)
 }
 function _bilDeselectAll(){
+  if(!_bilSelected) _loadBilState();
   _bilSelected.clear();
   _saveBilState();
   renderRelMain();
@@ -6348,24 +6361,29 @@ let _crossHoverIso = null;
 const _crossTileData = new Map();   // key (flowEntryKey) → { displayMap, volumeMap, entry }
 
 function _loadCrossState(){
-  if(_crossSelected) return;
-  try {
-    const raw = localStorage.getItem(CROSS_STORAGE_KEY);
-    if(raw){
-      const arr = JSON.parse(raw);
-      if(Array.isArray(arr)) _crossSelected = new Set(arr.slice(0, CROSS_MAX_TILES));
-    }
-  } catch {}
-  if(!_crossSelected) _crossSelected = new Set(CROSS_DEFAULT_KEYS);
-
-  try {
-    const raw = localStorage.getItem(CROSS_VIEW_TYPE_KEY);
-    if(raw){
-      const obj = JSON.parse(raw);
-      _crossViewType = new Map(Object.entries(obj));
-    }
-  } catch {}
-  if(!_crossViewType) _crossViewType = new Map();
+  // Bug fix : on doit pouvoir initialiser _crossViewType même si _crossSelected
+  // a été pré-rempli par applyUrlState. On teste chaque branche indépendamment.
+  if(_crossSelected && _crossViewType) return;
+  if(!_crossSelected){
+    try {
+      const raw = localStorage.getItem(CROSS_STORAGE_KEY);
+      if(raw){
+        const arr = JSON.parse(raw);
+        if(Array.isArray(arr)) _crossSelected = new Set(arr.slice(0, CROSS_MAX_TILES));
+      }
+    } catch {}
+    if(!_crossSelected) _crossSelected = new Set(CROSS_DEFAULT_KEYS);
+  }
+  if(!_crossViewType){
+    try {
+      const raw = localStorage.getItem(CROSS_VIEW_TYPE_KEY);
+      if(raw){
+        const obj = JSON.parse(raw);
+        _crossViewType = new Map(Object.entries(obj));
+      }
+    } catch {}
+    if(!_crossViewType) _crossViewType = new Map();
+  }
 }
 function _saveCrossState(){
   try { localStorage.setItem(CROSS_STORAGE_KEY, JSON.stringify([..._crossSelected])); } catch {}
@@ -6377,8 +6395,13 @@ function _saveCrossState(){
 }
 
 // Type de vue pour une tuile donnée. Par défaut : carte.
-function _crossGetViewType(key){ return _crossViewType.get(key) || 'carte'; }
+// Défensif : si _crossViewType n'a pas encore été initialisé (boot via URL par ex.), on init à la volée.
+function _crossGetViewType(key){
+  if(!_crossViewType) _loadCrossState();
+  return _crossViewType.get(key) || 'carte';
+}
 function _crossSetViewType(key, type){
+  if(!_crossViewType) _loadCrossState();
   _crossViewType.set(key, type);
   _saveCrossState();
   // Cas spécial : si on passe en 'aires' et qu'aucune plage n'est active (ni globale ni tuile),
@@ -6408,6 +6431,7 @@ function _crossSetViewType(key, type){
 
 // Toggle d'un flux dans la sélection. Respecte la limite CROSS_MAX_TILES.
 function _crossToggleFlux(key){
+  if(!_crossSelected) _loadCrossState();
   if(_crossSelected.has(key)){
     _crossSelected.delete(key);
   } else {
@@ -6424,6 +6448,7 @@ function _crossToggleFlux(key){
   if(typeof syncUrl === 'function') syncUrl();
 }
 function _crossDeselectAll(){
+  if(!_crossSelected) _loadCrossState();
   _crossSelected.clear();
   _saveCrossState();
   renderCroise();
