@@ -4230,6 +4230,16 @@ function _loadBilState(){
       }
     } catch {}
     if(!_bilSelected) _bilSelected = new Set(BIL_DEFAULT_KEYS);
+    // Validation : ne garder que les clés correspondant à des entrées réellement présentes en DB.
+    // Évite les "tuiles fantômes" qui n'apparaissent pas dans la nav gauche.
+    const validKeys = new Set(flowEntriesPresent().map(e => e.key));
+    const filtered = [..._bilSelected].filter(k => validKeys.has(k));
+    if(filtered.length === 0 && validKeys.size > 0){
+      // Aucune clé du défaut n'est valide : on prend les 4 premières entrées présentes
+      _bilSelected = new Set([...validKeys].slice(0, 4));
+    } else {
+      _bilSelected = new Set(filtered);
+    }
   }
   if(!_bilViewType){
     try {
@@ -6373,6 +6383,15 @@ function _loadCrossState(){
       }
     } catch {}
     if(!_crossSelected) _crossSelected = new Set(CROSS_DEFAULT_KEYS);
+    // Validation : ne garder que les clés qui correspondent à des entrées présentes en DB.
+    // Sinon tuiles "fantômes" qui n'apparaissent pas dans la nav gauche.
+    const validKeys = new Set(flowEntriesPresent().map(e => e.key));
+    const filtered = [..._crossSelected].filter(k => validKeys.has(k));
+    if(filtered.length === 0 && validKeys.size > 0){
+      _crossSelected = new Set([...validKeys].slice(0, 4));
+    } else {
+      _crossSelected = new Set(filtered);
+    }
   }
   if(!_crossViewType){
     try {
