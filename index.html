@@ -6289,6 +6289,11 @@ let _crossSelected = null;        // Set<flowEntryKey>, lazy load
 let _crossViewType = null;        // Map<flowEntryKey, 'carte'|'treemap'>, lazy
 let _crossMetric = 'volume';      // 'volume' | 'influence' — commun à toutes les tuiles
 let _crossZoneFilter = null;      // zone_id ou null
+// Échelle Volume quand un filtre zone est actif :
+// - 'absolute' : pct = part dans le total mondial du sujet (comparable entre toutes cartes)
+// - 'zone'     : pct = part dans le total de la zone (plus contrasté mais non comparable)
+// Sans filtre zone, les deux modes sont équivalents (le toggle est caché).
+let _crossVolumeScale = 'absolute';
 let _crossYearRange = null;       // [yMin, yMax] ou null = ponctuel (état GLOBAL)
 let _crossYearAggMode = 'sum';    // 'sum' | 'avg' (état GLOBAL)
 
@@ -6643,6 +6648,12 @@ function setCrossZoneFilter(zoneId){
   renderCroise();
   if(typeof syncUrl === 'function') syncUrl();
 }
+// Échelle Volume avec filtre zone (cf. _crossVolumeScale)
+function setCrossVolumeScale(scale){
+  _crossVolumeScale = (scale === 'zone') ? 'zone' : 'absolute';
+  renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
+}
 // Période GLOBALE Croisé (s'applique aux tuiles sans surcharge)
 function setCrossYearRange(yMin, yMax){
   if(yMin == null && yMax == null){ _crossYearRange = null; }
@@ -6779,11 +6790,34 @@ function renderCroise(){
     </div>`;
   }
 
+  // Toggle Échelle (visible uniquement si Mode Volume + filtre zone actif)
+  // - 'absolute' = % du total mondial du sujet → comparable entre cartes
+  // - 'zone'     = % du total de la zone → plus contrasté localement
+  let scaleToggleHtml = '';
+  if(_crossMetric === 'volume' && _crossZoneFilter){
+    scaleToggleHtml = `<div class="rel-dim-wrap">
+      <span class="rel-filter-label">Échelle</span>
+      <div class="seg">
+        <button class="${_crossVolumeScale==='absolute'?'on':''}" onclick="setCrossVolumeScale('absolute')" title="Pourcentage du total mondial du sujet (comparable entre cartes)">Absolue</button>
+        <button class="${_crossVolumeScale==='zone'?'on':''}" onclick="setCrossVolumeScale('zone')" title="Pourcentage du total de la zone (plus contrasté localement)">Zone</button>
+      </div>
+    </div>`;
+  }
+
   // Légende d'échelle de couleurs (absolue, dépend du mode Volume/Influence).
   // Affichée en bandeau sous les filtres, partagée par toutes les tuiles.
   const thresholds = CROSS_SCALE_THRESHOLDS[_crossMetric];
   let legendHtml = '<div class="cross-legend">';
-  legendHtml += `<span class="cross-legend-label">Échelle (${_crossMetric === 'volume' ? 'part du total sujet' : 'part chez partenaire'})</span>`;
+  // Libellé contextuel selon Mesure ET Échelle Volume
+  let legendLabel;
+  if(_crossMetric === 'influence'){
+    legendLabel = 'Échelle (part chez partenaire)';
+  } else if(_crossZoneFilter && _crossVolumeScale === 'zone'){
+    legendLabel = 'Échelle (part de la zone)';
+  } else {
+    legendLabel = 'Échelle (part du total sujet)';
+  }
+  legendHtml += `<span class="cross-legend-label">${escAttr(legendLabel)}</span>`;
   legendHtml += '<div class="cross-legend-bar">';
   for(let i = 0; i < thresholds.length; i++){
     legendHtml += `<div class="cross-legend-cell" style="background:${CROSS_PALETTE[i]}" title="${escAttr(thresholds[i].label)}">
@@ -6805,6 +6839,7 @@ function renderCroise(){
         <span class="rel-filter-label">Partenaires${helpIco('filtre_zone')}</span>
         <select class="rel-zone-select" onchange="setCrossZoneFilter(this.value)">${zoneOpts}</select>
       </div>
+      ${scaleToggleHtml}
       ${periodSelectorHtml}
       ${presetsHtml}
       <div class="cross-counter-wrap">
@@ -6932,7 +6967,16 @@ function _renderCrossTile(key){
     if(bil.length) rows = bil;
   }
   rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
-  // Appliquer filtre zone
+  // ─── Calcul du TOTAL MONDIAL DU SUJET (avant filtre zone) ───
+  // Sert de dénominateur pour les pourcentages en mode Volume.
+  // Garantit que les pourcentages restent comparables entre tuiles filtrées et non-filtrées.
+  // Ex: Sénégal = 5% des imports France, qu'on affiche la carte monde entier ou seulement l'Afrique.
+  let subjectTotal = 0;
+  for(const r of rows){
+    const v = r.value || 0;
+    if(v > 0) subjectTotal += v;
+  }
+  // Appliquer filtre zone (AFTER subjectTotal calculation)
   if(_crossZoneFilter){
     const zoneSet = (function(){
       const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
@@ -6969,8 +7013,18 @@ function _renderCrossTile(key){
       if(wt > 0) displayMap.set(p, (v/wt) * 100);
     }
   } else {
-    // Volume : on garde le pct dans le total du sujet
-    const total = [...byPartner.values()].reduce((a,b)=>a+b, 0) || 1;
+    // Volume : choix du dénominateur selon _crossVolumeScale (toggle global Croisé)
+    // - 'absolute' (défaut) : pct = part dans le total mondial du sujet → comparable entre cartes
+    // - 'zone' (filtre actif) : pct = part dans le total de la zone affichée → plus contrasté localement
+    // Sans filtre zone, les deux donnent le même résultat.
+    let total;
+    if(_crossVolumeScale === 'zone' && _crossZoneFilter){
+      // Total local : somme des partenaires de la zone (= byPartner déjà filtré)
+      total = [...byPartner.values()].reduce((a,b)=>a+b, 0) || 1;
+    } else {
+      // Total absolu (mondial) : subjectTotal calculé avant le filtre zone
+      total = subjectTotal > 0 ? subjectTotal : ([...byPartner.values()].reduce((a,b)=>a+b, 0) || 1);
+    }
     displayMap = new Map();
     for(const [p, v] of byPartner) displayMap.set(p, (v/total) * 100);
   }
@@ -7607,6 +7661,8 @@ function syncUrl(){
   }
   if(_crossMetric && _crossMetric !== 'volume') p.set('cm', _crossMetric);
   if(_crossZoneFilter) p.set('cz', _crossZoneFilter);
+  // Échelle Volume (visible seulement si zone active) : 'zone' = local, 'absolute' = défaut donc omis
+  if(_crossVolumeScale === 'zone') p.set('cvs', 'zone');
   // Mode bilatéral Relations : partenaire B (un seul pays ISO3)
   if(_relPartnerB && _relPartnerB.isos && _relPartnerB.isos.length) p.set('rb', _relPartnerB.isos[0]);
   history.replaceState(null, '', '#' + p.toString());
@@ -7640,6 +7696,7 @@ function applyUrlState(){
     _crossMetric = p.get('cm');
   }
   if(p.get('cz')) _crossZoneFilter = p.get('cz');
+  if(p.get('cvs') === 'zone') _crossVolumeScale = 'zone';
   // Mode bilatéral Relations
   if(p.get('rb')){
     const iso = p.get('rb');
