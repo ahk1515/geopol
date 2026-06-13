@@ -806,6 +806,108 @@ main { flex: 1; padding: 16px 18px 28px; }
   background: rgba(10,110,74,.05);
 }
 
+/* Légende d'échelle absolue Croisé */
+.cross-legend {
+  display: flex; align-items: center; gap: 12px;
+  padding: 6px 10px 0;
+  font-size: 10px;
+}
+.cross-legend-label {
+  font-family: var(--mono); color: var(--text3);
+  text-transform: uppercase; letter-spacing: .05em; font-size: 9px;
+  white-space: nowrap;
+}
+.cross-legend-bar {
+  display: flex; flex: 1; max-width: 700px;
+  border: 1px solid var(--border); border-radius: 4px; overflow: hidden;
+  height: 22px;
+}
+.cross-legend-cell {
+  flex: 1; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  cursor: help;
+}
+.cross-legend-tick {
+  font-family: var(--mono); font-size: 8.5px; color: var(--text);
+  text-shadow: 0 1px 1px rgba(255,255,255,.7);
+  white-space: nowrap;
+  pointer-events: none;
+}
+/* Pour les cellules sombres, basculer la couleur du tick en clair */
+.cross-legend-cell:nth-child(n+5) .cross-legend-tick {
+  color: rgba(255,255,255,.95);
+  text-shadow: 0 1px 1px rgba(0,0,0,.4);
+}
+
+/* Bandeau période sous le header de tuile */
+.cross-tile-period {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 12px;
+  font-size: 10px; font-family: var(--mono);
+  color: var(--text3); background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .12s;
+}
+.cross-tile-period:hover { background: rgba(10,110,74,.04); color: var(--text2); }
+.cross-tile-period.overridden {
+  background: rgba(10,110,74,.06);
+  border-left: 2px solid var(--green);
+  color: var(--green);
+}
+.cross-period-label { letter-spacing: .03em; }
+.cross-period-hint {
+  font-size: 9px; opacity: .55; font-style: italic;
+}
+.cross-period-clear {
+  background: none; border: none; color: var(--orange);
+  cursor: pointer; padding: 0 4px; font-size: 14px; line-height: 1;
+}
+.cross-period-clear:hover { color: var(--terra); }
+
+/* Popover de surcharge de période par tuile */
+#crossTilePeriodPopover {
+  position: fixed; z-index: 220;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.18);
+  min-width: 280px; max-width: 320px;
+  font-family: var(--sans);
+}
+#crossTilePeriodPopover .ctp-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px 6px;
+  font-size: 11px; font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+#crossTilePeriodPopover .ctp-close {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 16px; line-height: 1;
+}
+#crossTilePeriodPopover .ctp-close:hover { color: var(--text); }
+#crossTilePeriodPopover .ctp-body { padding: 10px 12px; }
+#crossTilePeriodPopover .ctp-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+  font-size: 11px; color: var(--text2);
+}
+#crossTilePeriodPopover .ctp-row label { color: var(--text3); font-family: var(--mono); font-size: 10px; }
+#crossTilePeriodPopover .ctp-row select {
+  padding: 4px 6px; font-size: 11px; font-family: var(--mono);
+  border: 1px solid var(--border); border-radius: 4px; background: var(--bg2);
+}
+#crossTilePeriodPopover .ctp-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; border-top: 1px solid var(--border);
+}
+#crossTilePeriodPopover .ctp-reset {
+  background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 8px; font-size: 10px; color: var(--text3); cursor: pointer;
+}
+#crossTilePeriodPopover .ctp-reset:hover { border-color: var(--orange); color: var(--orange); }
+#crossTilePeriodPopover .ctp-apply {
+  background: var(--green); color: #fff; border: none; border-radius: 4px;
+  padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer;
+}
+#crossTilePeriodPopover .ctp-apply:hover { background: var(--green-d); }
+
 /* Grille des tuiles */
 .cross-grid { display: grid; gap: 10px; }
 .cross-grid.g1 { grid-template-columns: 1fr; }
@@ -4973,6 +5075,42 @@ const CROSS_DEFAULT_KEYS = [
   'commerce_ressources|to',       // Importations ressources
 ];
 
+// ─── Échelle de couleurs ABSOLUE pour les cartes Croisé ────────────
+// Les couleurs sont fixées sur des seuils en pourcentage (pas sur le rang local),
+// ce qui rend les cartes COMPARABLES entre elles : même couleur = même intensité réelle.
+// Les seuils diffèrent entre Volume (% du total sujet, souvent faibles) et Influence
+// (% chez chaque partenaire, peuvent atteindre 100%).
+const CROSS_PALETTE = ['#f5e6dc','#ecc8a8','#d4956f','#b66a3a','#9c4a1f','#7c2d12','#5c1c08'];
+const CROSS_SCALE_THRESHOLDS = {
+  // 7 buckets, chacun mappant [borne_inf, borne_sup) → CROSS_PALETTE[i]
+  volume: [
+    { max: 0.5,  label: '< 0,5%' },
+    { max: 2,    label: '0,5 – 2%' },
+    { max: 5,    label: '2 – 5%' },
+    { max: 10,   label: '5 – 10%' },
+    { max: 25,   label: '10 – 25%' },
+    { max: 50,   label: '25 – 50%' },
+    { max: 999,  label: '> 50%' },     // borne haute exclusive (≥ 50%)
+  ],
+  influence: [
+    { max: 5,    label: '< 5%' },
+    { max: 15,   label: '5 – 15%' },
+    { max: 30,   label: '15 – 30%' },
+    { max: 50,   label: '30 – 50%' },
+    { max: 75,   label: '50 – 75%' },
+    { max: 90,   label: '75 – 90%' },
+    { max: 999,  label: '> 90%' },
+  ],
+};
+// Helper : pour une valeur en pourcentage et un mode, renvoie l'index dans la palette
+function _crossColorIdx(pctValue, metric){
+  const thresholds = CROSS_SCALE_THRESHOLDS[metric] || CROSS_SCALE_THRESHOLDS.volume;
+  for(let i = 0; i < thresholds.length; i++){
+    if(pctValue < thresholds[i].max) return i;
+  }
+  return thresholds.length - 1;
+}
+
 // Préselections thématiques : profils prédéfinis pour explorer rapidement.
 // Chaque clé donne un nom affiché + la liste des flux à activer.
 const CROSS_PRESETS = {
@@ -4994,8 +5132,162 @@ let _crossSelected = null;        // Set<flowEntryKey>, lazy load
 let _crossViewType = null;        // Map<flowEntryKey, 'carte'|'treemap'>, lazy
 let _crossMetric = 'volume';      // 'volume' | 'influence' — commun à toutes les tuiles
 let _crossZoneFilter = null;      // zone_id ou null
-let _crossYearRange = null;       // [yMin, yMax] ou null = ponctuel
-let _crossYearAggMode = 'sum';    // 'sum' | 'avg'
+let _crossYearRange = null;       // [yMin, yMax] ou null = ponctuel (état GLOBAL)
+let _crossYearAggMode = 'sum';    // 'sum' | 'avg' (état GLOBAL)
+
+// État per-tile : surcharge de la période par tuile.
+// Si une clé n'est PAS dans la Map → la tuile suit l'état global.
+// Si la clé existe → la tuile a sa propre période.
+// Format : Map<key, { range: [yMin,yMax]|null, mode: 'sum'|'avg' }>
+const CROSS_TILE_PERIOD_KEY = 'geopol_cross_tile_periods';
+let _crossTilePeriods = null;   // lazy load
+function _loadCrossTilePeriods(){
+  if(_crossTilePeriods) return;
+  try {
+    const raw = localStorage.getItem(CROSS_TILE_PERIOD_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      _crossTilePeriods = new Map(Object.entries(obj));
+    }
+  } catch {}
+  if(!_crossTilePeriods) _crossTilePeriods = new Map();
+}
+function _saveCrossTilePeriods(){
+  try {
+    const obj = {};
+    for(const [k, v] of _crossTilePeriods) obj[k] = v;
+    localStorage.setItem(CROSS_TILE_PERIOD_KEY, JSON.stringify(obj));
+  } catch {}
+}
+// Retourne la période effective pour une tuile : surcharge si présente, sinon état global.
+// Retourne toujours { range: [yMin,yMax]|null, mode: 'sum'|'avg', overridden: bool }
+function _crossGetTilePeriod(key){
+  _loadCrossTilePeriods();
+  const override = _crossTilePeriods.get(key);
+  if(override){
+    return { range: override.range || null, mode: override.mode || 'sum', overridden: true };
+  }
+  return { range: _crossYearRange, mode: _crossYearAggMode, overridden: false };
+}
+// Surcharge la période d'une tuile (passer null comme range pour revenir au ponctuel)
+function _crossSetTilePeriod(key, range, mode){
+  _loadCrossTilePeriods();
+  _crossTilePeriods.set(key, { range, mode: mode || 'sum' });
+  _saveCrossTilePeriods();
+  _renderCrossTile(key);
+}
+// Retire la surcharge → la tuile suit l'état global
+function _crossClearTileOverride(key){
+  _loadCrossTilePeriods();
+  if(_crossTilePeriods.delete(key)){
+    _saveCrossTilePeriods();
+    _renderCrossTile(key);
+  }
+}
+
+// Popover : ouvre un mini-éditeur de période pour la tuile concernée.
+// Permet de surcharger : choisir min/max + Σ/x̄, ou repasser au global (clear).
+let _crossOpenedPopoverKey = null;
+function _crossOpenPeriodPopover(ev, key){
+  ev.stopPropagation();
+  // Si on clique sur le × clear, on ne déclenche pas le popover (déjà géré par stopPropagation côté bouton)
+  if(ev.target && ev.target.classList && ev.target.classList.contains('cross-period-clear')) return;
+  // Toggle : si déjà ouvert sur la même tuile, on ferme
+  if(_crossOpenedPopoverKey === key){ _crossClosePeriodPopover(); return; }
+  _crossClosePeriodPopover();
+  const isos = state.subject.isos;
+  const inList = sqlList(isos);
+  const entry = getFlowEntryByKey(key);
+  if(!entry) return;
+  // Bornes années disponibles pour cet indicateur précisément (plus utile que les bornes globales)
+  let yAvMin = 2000, yAvMax = state.year;
+  const yr = safeExec(`SELECT MIN(year), MAX(year) FROM flux WHERE indicator='${escapeSql(entry.realIndicator)}' AND (country_to IN (${inList}) OR country_from IN (${inList}))`);
+  if(yr.length && yr[0].values[0][0] != null){
+    yAvMin = yr[0].values[0][0];
+    yAvMax = yr[0].values[0][1];
+  }
+  const period = _crossGetTilePeriod(key);
+  const initMin = period.range ? period.range[0] : Math.max(yAvMin, yAvMax - 4);
+  const initMax = period.range ? period.range[1] : yAvMax;
+  const initMode = period.mode || 'sum';
+  let optsMin = '', optsMax = '';
+  for(let y = yAvMin; y <= yAvMax; y++){
+    optsMin += `<option value="${y}"${y===initMin?' selected':''}>${y}</option>`;
+    optsMax += `<option value="${y}"${y===initMax?' selected':''}>${y}</option>`;
+  }
+  const pop = document.createElement('div');
+  pop.id = 'crossTilePeriodPopover';
+  pop.innerHTML = `<div class="ctp-head">
+      <span>Période de cette tuile</span>
+      <button class="ctp-close" onclick="_crossClosePeriodPopover()">×</button>
+    </div>
+    <div class="ctp-body">
+      <div class="ctp-row">
+        <label>De</label>
+        <select id="ctpMin">${optsMin}</select>
+        <span style="color:var(--text3)">→</span>
+        <label>à</label>
+        <select id="ctpMax">${optsMax}</select>
+      </div>
+      <div class="ctp-row">
+        <label>Agrégation</label>
+        <div class="seg">
+          <button id="ctpModeSum" class="${initMode==='sum'?'on':''}">Σ Cumul</button>
+          <button id="ctpModeAvg" class="${initMode==='avg'?'on':''}">x̄ Moyenne</button>
+        </div>
+      </div>
+    </div>
+    <div class="ctp-foot">
+      ${period.overridden ? `<button class="ctp-reset" onclick="_crossClearTileOverride('${escAttr(key)}');_crossClosePeriodPopover()">Suivre le global</button>` : '<span></span>'}
+      <button class="ctp-apply" onclick="_crossApplyTilePeriod('${escAttr(key)}')">Appliquer</button>
+    </div>`;
+  document.body.appendChild(pop);
+  _crossOpenedPopoverKey = key;
+  // Branchement des toggles Σ/x̄ (état conservé dans des data-attributes du popover)
+  pop.dataset.mode = initMode;
+  document.getElementById('ctpModeSum').onclick = function(){
+    pop.dataset.mode = 'sum';
+    document.getElementById('ctpModeSum').classList.add('on');
+    document.getElementById('ctpModeAvg').classList.remove('on');
+  };
+  document.getElementById('ctpModeAvg').onclick = function(){
+    pop.dataset.mode = 'avg';
+    document.getElementById('ctpModeAvg').classList.add('on');
+    document.getElementById('ctpModeSum').classList.remove('on');
+  };
+  // Positionner près du bandeau cliqué
+  const rect = ev.currentTarget.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  let left = rect.left;
+  let top = rect.bottom + 6;
+  if(left + popRect.width > window.innerWidth - 10) left = window.innerWidth - popRect.width - 10;
+  if(top + popRect.height > window.innerHeight - 10) top = rect.top - popRect.height - 6;
+  pop.style.left = Math.max(10, left) + 'px';
+  pop.style.top = Math.max(10, top) + 'px';
+  // Fermeture au clic ailleurs
+  setTimeout(() => {
+    document.addEventListener('click', _crossPopoverOutsideClick);
+  }, 0);
+}
+function _crossPopoverOutsideClick(e){
+  const pop = document.getElementById('crossTilePeriodPopover');
+  if(pop && !pop.contains(e.target)) _crossClosePeriodPopover();
+}
+function _crossClosePeriodPopover(){
+  const pop = document.getElementById('crossTilePeriodPopover');
+  if(pop) pop.remove();
+  _crossOpenedPopoverKey = null;
+  document.removeEventListener('click', _crossPopoverOutsideClick);
+}
+function _crossApplyTilePeriod(key){
+  const pop = document.getElementById('crossTilePeriodPopover');
+  if(!pop) return;
+  const yMin = +document.getElementById('ctpMin').value;
+  const yMax = +document.getElementById('ctpMax').value;
+  const mode = pop.dataset.mode || 'sum';
+  _crossSetTilePeriod(key, [Math.min(yMin,yMax), Math.max(yMin,yMax)], mode);
+  _crossClosePeriodPopover();
+}
 
 // État hover : ISO3 du pays survolé. Synchronise toutes les tuiles.
 let _crossHoverIso = null;
@@ -5151,6 +5443,24 @@ function setCrossZoneFilter(zoneId){
   renderCroise();
   if(typeof syncUrl === 'function') syncUrl();
 }
+// Période GLOBALE Croisé (s'applique aux tuiles sans surcharge)
+function setCrossYearRange(yMin, yMax){
+  if(yMin == null && yMax == null){ _crossYearRange = null; }
+  else if(yMin > yMax){ _crossYearRange = [yMax, yMin]; }
+  else { _crossYearRange = [yMin, yMax]; }
+  renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
+}
+function clearCrossYearRange(){
+  _crossYearRange = null;
+  renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
+}
+function setCrossYearAggMode(mode){
+  _crossYearAggMode = (mode === 'avg') ? 'avg' : 'sum';
+  renderCroise();
+  if(typeof syncUrl === 'function') syncUrl();
+}
 
 // ─── Rendu principal ───
 function renderCroise(){
@@ -5231,6 +5541,57 @@ function renderCroise(){
   }
   presetsHtml += '</div>';
 
+  // Sélecteur de période globale Croisé.
+  // Récupération des bornes : on prend l'enveloppe min/max sur tous les indicateurs flux pour ce sujet.
+  // (cohérent : c'est la plage maximale possible quel que soit le flux affiché)
+  const isos = state.subject.isos;
+  const inList = sqlList(isos);
+  let yAvMin = 2000, yAvMax = state.year;
+  const yr = safeExec(`SELECT MIN(year), MAX(year) FROM flux WHERE country_to IN (${inList}) OR country_from IN (${inList})`);
+  if(yr.length && yr[0].values[0][0] != null){
+    yAvMin = yr[0].values[0][0];
+    yAvMax = yr[0].values[0][1];
+  }
+  let periodSelectorHtml = '';
+  if(_crossYearRange){
+    const [curMin, curMax] = _crossYearRange;
+    let optsMin = '', optsMax = '';
+    for(let y = yAvMin; y <= yAvMax; y++){
+      optsMin += `<option value="${y}"${y===curMin?' selected':''}>${y}</option>`;
+      optsMax += `<option value="${y}"${y===curMax?' selected':''}>${y}</option>`;
+    }
+    periodSelectorHtml = `<div class="rel-dim-wrap">
+      <span class="rel-filter-label">Période${helpIco('somme_vs_moyenne')}</span>
+      <select class="rel-zone-select" style="max-width:80px" onchange="setCrossYearRange(+this.value, ${curMax})">${optsMin}</select>
+      <span style="color:var(--text3);font-family:var(--mono);font-size:11px">→</span>
+      <select class="rel-zone-select" style="max-width:80px" onchange="setCrossYearRange(${curMin}, +this.value)">${optsMax}</select>
+      <div class="seg" style="margin-left:4px">
+        <button class="${_crossYearAggMode==='sum'?'on':''}" onclick="setCrossYearAggMode('sum')" title="Cumul sur la période">Σ</button>
+        <button class="${_crossYearAggMode==='avg'?'on':''}" onclick="setCrossYearAggMode('avg')" title="Moyenne annuelle">x̄</button>
+      </div>
+      <button class="rel-range-clear" onclick="clearCrossYearRange()" title="Revenir à une année">×</button>
+    </div>`;
+  } else {
+    const yStart = Math.max(yAvMin, yAvMax - 4);
+    periodSelectorHtml = `<div class="rel-dim-wrap">
+      <span class="rel-filter-label">Période${helpIco('filtre_periode')}</span>
+      <button class="rel-range-toggle" onclick="setCrossYearRange(${yStart}, ${yAvMax})" title="Activer une plage d'années">Plage…</button>
+    </div>`;
+  }
+
+  // Légende d'échelle de couleurs (absolue, dépend du mode Volume/Influence).
+  // Affichée en bandeau sous les filtres, partagée par toutes les tuiles.
+  const thresholds = CROSS_SCALE_THRESHOLDS[_crossMetric];
+  let legendHtml = '<div class="cross-legend">';
+  legendHtml += `<span class="cross-legend-label">Échelle (${_crossMetric === 'volume' ? 'part du total sujet' : 'part chez partenaire'})</span>`;
+  legendHtml += '<div class="cross-legend-bar">';
+  for(let i = 0; i < thresholds.length; i++){
+    legendHtml += `<div class="cross-legend-cell" style="background:${CROSS_PALETTE[i]}" title="${escAttr(thresholds[i].label)}">
+      <span class="cross-legend-tick">${escAttr(thresholds[i].label)}</span>
+    </div>`;
+  }
+  legendHtml += '</div></div>';
+
   const filtersHtml = `
     <div class="cross-filter-bar">
       <div class="rel-dim-wrap">
@@ -5244,12 +5605,14 @@ function renderCroise(){
         <span class="rel-filter-label">Partenaires${helpIco('filtre_zone')}</span>
         <select class="rel-zone-select" onchange="setCrossZoneFilter(this.value)">${zoneOpts}</select>
       </div>
+      ${periodSelectorHtml}
       ${presetsHtml}
       <div class="cross-counter-wrap">
         <span id="crossCounter" class="cross-counter">${_crossSelected.size}/${CROSS_MAX_TILES} vues</span>
         <button class="cross-clear-btn" onclick="_crossDeselectAll()">Tout désélectionner</button>
       </div>
-    </div>`;
+    </div>
+    ${legendHtml}`;
 
   // 3. Grille de tuiles
   let gridHtml = '';
@@ -5299,7 +5662,25 @@ function _renderCrossTile(key){
   }
   const viewType = _crossGetViewType(key);
   const label = entry.label_long || entry.label || key;
+
+  // Période effective : surcharge tuile sinon état global
+  const period = _crossGetTilePeriod(key);
+  // Construire le libellé du bandeau période
+  let periodLabel, periodAction;
+  if(period.range){
+    const [yMin, yMax] = period.range;
+    const modeLabel = period.mode === 'avg' ? 'moyenne' : 'cumul';
+    periodLabel = `📅 ${yMin}–${yMax} ${modeLabel}`;
+  } else {
+    periodLabel = `📅 ${state.year} ponctuel`;
+  }
+  const overrideClass = period.overridden ? ' overridden' : '';
+  const overrideHint = period.overridden
+    ? `<button class="cross-period-clear" onclick="_crossClearTileOverride('${escAttr(key)}')" title="Revenir à la période globale">×</button>`
+    : `<span class="cross-period-hint">global</span>`;
+
   // Header de tuile : titre + toggle carte/treemap
+  // Bandeau période : visible, cliquable pour ouvrir le popover
   let html = `<div class="cross-tile-head">
     <span class="cross-tile-title">${escAttr(label)}</span>
     <div class="seg cross-tile-seg">
@@ -5307,17 +5688,42 @@ function _renderCrossTile(key){
       <button class="${viewType==='treemap'?'on':''}" onclick="_crossSetViewType('${escAttr(key)}','treemap')" title="Treemap">▦</button>
     </div>
   </div>
+  <div class="cross-tile-period${overrideClass}" onclick="_crossOpenPeriodPopover(event, '${escAttr(key)}')" title="Cliquer pour modifier la période">
+    <span class="cross-period-label">${periodLabel}</span>
+    ${overrideHint}
+  </div>
   <div class="cross-tile-body" id="${tileId}-body"></div>`;
   host.innerHTML = html;
 
   const body = document.getElementById(tileId + '-body');
   if(!body) return;
 
-  // Récupérer les rows pour ce flux (avec les filtres communs Croisé)
-  // IMPORTANT : Croisé doit utiliser punctualYear=state.year pour ne PAS hériter de l'état Relations
-  // Si Croisé acquiert ses propres filtres temporels, on les passera ici. Pour l'étape 1, mode ponctuel.
-  const opts = _crossYearRange ? { yearRange: _crossYearRange } : { punctualYear: state.year };
+  // Options de calcul des flux : utilise la période EFFECTIVE de la tuile (peut être surchargée)
+  // - Si range défini : passe yearRange, le helper agrégera sur la plage (sum brut, ou divisé par N si avg)
+  // - Sinon : passe punctualYear = state.year (mode ponctuel, indépendant de Relations)
+  let opts;
+  if(period.range){
+    opts = { yearRange: period.range };
+    // Si la tuile a un mode 'avg' surchargé, on doit le faire respecter manuellement
+    // car les helpers prennent _relYearAggMode par défaut. On post-divise si nécessaire.
+    // Pour simplifier : si tuile surcharge avec avg, on passe yearRange et on post-divise les valeurs.
+  } else {
+    opts = { punctualYear: state.year };
+  }
+
   let rows = getFluxRows(entry, null, opts);
+  // Post-traitement avg si surcharge tuile (les helpers ne savent pas par défaut, ils utilisent _relYearAggMode)
+  // Note : si la tuile suit le global ET que le global est en 'avg', getFluxRows fait déjà la division.
+  // Mais ici on a passé yearRange explicite donc les helpers font 'sum' par défaut.
+  // Donc on doit appliquer le divider nous-mêmes selon period.mode.
+  if(period.range && period.mode === 'avg'){
+    const [yMin, yMax] = period.range;
+    const nYears = yMax - yMin + 1;
+    if(nYears > 1){
+      rows = rows.map(r => ({...r, value: (r.value || 0) / nYears}));
+    }
+  }
+
   if(isDebtIndicator(entry.indicator)){
     const bil = rows.filter(r => isBilateral(r));
     if(bil.length) rows = bil;
@@ -5401,13 +5807,11 @@ function _crossDrawTreemap(host, displayMap, volumeMap, entry){
   const placed = squarifyTreemap(nodes, 0, 0, W, H);
   const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
   let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">`;
-  // Palette par valeur (du clair au foncé orange terra)
-  const max = Math.max(...placed.map(p => p.item.value));
+  // ÉCHELLE ABSOLUE alignée sur celle de la carte : la couleur d'une cellule dépend
+  // uniquement de sa valeur en pourcentage, pas de son rang dans le treemap.
   for(const p of placed){
-    const ratio = p.item.value / max;
-    const palette = ['#f5e6dc','#ecc8a8','#d4956f','#b66a3a','#9c4a1f','#7c2d12'];
-    const idx = Math.min(palette.length - 1, Math.floor(ratio * palette.length));
-    const color = p.item.isOthers ? '#cfc8b6' : palette[idx];
+    const idx = _crossColorIdx(p.item.value, _crossMetric);
+    const color = p.item.isOthers ? '#cfc8b6' : CROSS_PALETTE[idx];
     const showLabel = p.w > 50 && p.h > 22;
     // data-iso3 sur le <g> pour permettre la sync hover. Pas pour "autres".
     const isoAttr = p.item.isOthers ? '' : ` data-iso3="${escAttr(p.item.key)}"`;
@@ -5437,15 +5841,13 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
     const world = await loadWorldTopology();
     const features = topojson.feature(world, world.objects.countries).features;
     const W = 360, H = 220;
-    // Échelle quantile sur displayMap
-    const values = [...displayMap.entries()].map(([iso, v]) => ({iso, v})).sort((a,b)=>a.v-b.v);
-    const palette = ['#f5e6dc','#ecc8a8','#d4956f','#b66a3a','#9c4a1f','#7c2d12','#5c1c08'];
+    // ÉCHELLE ABSOLUE : la couleur d'un pays dépend uniquement de sa valeur en pourcentage,
+    // pas de son rang dans cette carte. Permet la comparaison entre tuiles : même couleur ⇒
+    // même intensité réelle. Les seuils diffèrent entre Volume et Influence (sémantique différente).
     const colorByIso = {};
-    const n = values.length;
-    for(let i = 0; i < n; i++){
-      const q = i / Math.max(1, n - 1);
-      const idx = Math.min(palette.length - 1, Math.floor(q * palette.length));
-      colorByIso[values[i].iso] = palette[idx];
+    for(const [iso, pct] of displayMap){
+      const idx = _crossColorIdx(pct, _crossMetric);
+      colorByIso[iso] = CROSS_PALETTE[idx];
     }
     // Calculer le zoneSet AVANT la projection, pour pouvoir zoomer dessus si filtre actif
     let zoneSet = null;
