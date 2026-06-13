@@ -1026,6 +1026,74 @@ main { flex: 1; padding: 16px 18px 28px; }
   text-align: center; padding: 8px 0;
 }
 
+/* ─── Viz Courbes temporelles bilatérales (📈) ─── */
+.bil-courbes-legend {
+  display: flex; gap: 14px; padding: 0 4px 6px;
+  font-size: 10px; color: var(--text2);
+  align-items: center; flex-wrap: wrap;
+}
+.bil-courbes-legend span { display: flex; align-items: center; gap: 5px; }
+
+/* ─── Viz Bar chart comparatif (📊) ─── */
+.bil-barchart { display: flex; flex-direction: column; gap: 6px; }
+.bil-section-title {
+  font-family: var(--mono); font-size: 9px;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--text3); margin-top: 6px;
+}
+.bil-bar-row {
+  display: grid; grid-template-columns: 130px 1fr 50px; gap: 8px;
+  align-items: center; font-size: 10px;
+}
+.bil-bar-label { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bil-bar-track {
+  height: 12px; background: var(--bg3); border-radius: 2px; overflow: hidden;
+  position: relative;
+}
+.bil-bar-fill {
+  height: 100%; border-radius: 2px;
+  transition: width .3s ease;
+}
+.bil-bar-val {
+  font-family: var(--mono); font-size: 10px; color: var(--text);
+  text-align: right; font-weight: 500;
+}
+
+/* ─── Viz Top contextuel (🔍) ─── */
+.bil-topctx {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  font-size: 10px;
+}
+.bil-topctx-col {
+  display: flex; flex-direction: column; gap: 3px;
+}
+.bil-topctx-title {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text3); margin-bottom: 6px;
+  line-height: 1.4;
+}
+.bil-topctx-row {
+  display: grid; grid-template-columns: 16px 1fr 40px; gap: 6px;
+  align-items: center; padding: 2px 4px;
+  border-radius: 3px; transition: background .12s;
+}
+.bil-topctx-row:not(.anchor):hover { background: rgba(10,110,74,.06); }
+.bil-topctx-row.anchor {
+  background: rgba(10,110,74,.15); border: 1px solid var(--green);
+  font-weight: 600;
+}
+.bil-topctx-flag { font-size: 12px; }
+.bil-topctx-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bil-topctx-pct {
+  font-family: var(--mono); font-size: 10px; color: var(--green);
+  text-align: right; font-weight: 600;
+}
+.bil-topctx-empty {
+  font-size: 10px; color: var(--text3); font-style: italic;
+  padding: 8px 0;
+}
+
 /* Grille des tuiles */
 .cross-grid { display: grid; gap: 10px; }
 .cross-grid.g1 { grid-template-columns: 1fr; }
@@ -4891,11 +4959,15 @@ function _renderBilTile(key){
     ? `<button class="cross-period-clear" onclick="_bilClearTileOverride('${escAttr(key)}')" title="Revenir à la période globale">×</button>`
     : `<span class="cross-period-hint">global</span>`;
 
-  // Header de tuile + bandeau période (livraison 2 : on n'a que la fiche, le sélecteur de viz arrive en livraison 3)
+  // Header de tuile : 4 boutons de viz (📋 fiche / 📈 courbes / 📊 barchart / 🔍 top contextuel)
+  // + bandeau période cliquable
   let html = `<div class="cross-tile-head">
     <span class="cross-tile-title">${escAttr(label)}</span>
     <div class="seg cross-tile-seg">
       <button class="${viewType==='fiche'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','fiche')" title="Fiche synthétique">📋</button>
+      <button class="${viewType==='courbes'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','courbes')" title="Courbes temporelles">📈</button>
+      <button class="${viewType==='barchart'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','barchart')" title="Bar chart comparatif">📊</button>
+      <button class="${viewType==='topctx'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','topctx')" title="Top contextuel (cliquer pour naviguer)">🔍</button>
     </div>
   </div>
   <div class="cross-tile-period${overrideClass}" onclick="_bilOpenPeriodPopover(event, '${escAttr(key)}')" title="Cliquer pour modifier la période">
@@ -4926,9 +4998,17 @@ function _renderBilTile(key){
     return;
   }
 
-  // Pour l'instant, on ne supporte que la viz 'fiche' (livraison 2)
-  // Les autres types seront ajoutés en livraison 3 (courbes, barchart, top contextuel)
-  _bilDrawFiche(body, entry, data, isoA, isoB);
+  // Dispatcher selon le type de viz sélectionné pour cette tuile
+  if(viewType === 'courbes'){
+    _bilDrawCourbes(body, entry, data, isoA, isoB);
+  } else if(viewType === 'barchart'){
+    _bilDrawBarchart(body, entry, data, isoA, isoB);
+  } else if(viewType === 'topctx'){
+    _bilDrawTopCtx(body, entry, data, isoA, isoB);
+  } else {
+    // 'fiche' par défaut
+    _bilDrawFiche(body, entry, data, isoA, isoB);
+  }
 }
 
 // Dessine la fiche synthétique bilatérale :
@@ -5112,6 +5192,228 @@ function _bilApplyTilePeriod(key){
   const mode = pop.dataset.mode || 'sum';
   _bilSetTilePeriod(key, [Math.min(yMin,yMax), Math.max(yMin,yMax)], mode);
   _bilClosePeriodPopover();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  VIZS BILATÉRALES — types 'courbes', 'barchart', 'topctx'
+// ═══════════════════════════════════════════════════════════════
+
+// Helper pour récupérer le top contextuel : top partenaires d'un pays donné
+// pour un flux et une période. Sens = 'from' (ex: imports → partenaires fournisseurs)
+// ou 'to' (exports → partenaires clients).
+// Retourne [{iso, vol, pct, name, flag}] trié par vol décroissant.
+function _bilGetTopForCountry(iso, entry, opts, sens, limit){
+  limit = limit || 10;
+  const realInd = entry.realIndicator;
+  const subjectCol = (sens === 'from') ? 'country_to' : 'country_from';   // sens='from' = pays est destinataire (imports)
+  const partnerCol = (sens === 'from') ? 'country_from' : 'country_to';
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+
+  let yClause, useRange = false, nYears = 1;
+  if(opts.yearRange){
+    const [yMin, yMax] = opts.yearRange;
+    yClause = `year >= ${yMin} AND year <= ${yMax}`;
+    useRange = true;
+    nYears = yMax - yMin + 1;
+  } else {
+    yClause = `year = ${state.year}`;
+  }
+  const divider = (useRange && opts.mode === 'avg' && nYears > 1) ? nYears : 1;
+
+  const debtFilter = isDebtIndicator(realInd) ? ` AND subcategory_1='bilaterale'` : '';
+  const r = safeExec(`SELECT ${partnerCol} AS p, SUM(value) AS v
+                      FROM flux WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                      AND ${subjectCol}='${escapeSql(iso)}'
+                      AND ${partnerCol} NOT IN (${exclAgg})
+                      AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'${debtFilter}
+                      GROUP BY ${partnerCol} ORDER BY v DESC LIMIT ${limit + 5}`);
+  if(!r.length) return [];
+  // Total mondial pour calculer le % de chaque partenaire
+  const totR = safeExec(`SELECT SUM(value) FROM flux
+                         WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                         AND ${subjectCol}='${escapeSql(iso)}'
+                         AND ${partnerCol} NOT IN (${exclAgg})
+                         AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'${debtFilter}`);
+  const total = (totR.length && totR[0].values[0][0]) ? totR[0].values[0][0] / divider : 0;
+  const list = [];
+  for(const [p, v] of r[0].values){
+    if(!p) continue;
+    const vol = v / divider;
+    list.push({
+      iso: p, vol, pct: total > 0 ? (vol / total) * 100 : 0,
+      name: partnerLabel(p), flag: partnerFlag(p),
+    });
+  }
+  return list.slice(0, limit);
+}
+
+// Viz "Courbes temporelles" : 2 courbes en grand (A→B et B→A) sur la plage
+function _bilDrawCourbes(host, entry, data, isoA, isoB){
+  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
+  const unitDisplay = cfg?.unit_display || '';
+  const nameA = isoToName(isoA) || isoA;
+  const nameB = isoToName(isoB) || isoB;
+
+  if(data.serieAtoB.length < 2 && data.serieBtoA.length < 2){
+    host.innerHTML = `<div class="cross-tile-empty">Active une plage temporelle pour voir l'évolution</div>`;
+    return;
+  }
+  const W = 360, H = 200, M = { top: 10, right: 10, bottom: 22, left: 40 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const allYears = new Set();
+  let maxVal = 0;
+  for(const pt of data.serieAtoB){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
+  for(const pt of data.serieBtoA){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
+  const ysort = [...allYears].sort((a,b) => a-b);
+  const yMin = ysort[0], yMax = ysort[ysort.length-1];
+  const xScale = (y) => M.left + ((y - yMin) / Math.max(1, yMax - yMin)) * innerW;
+  const yScale = (v) => M.top + innerH - (v / Math.max(1, maxVal)) * innerH;
+
+  // Axes
+  let axes = '';
+  // Y : 3 graduations
+  for(let i = 0; i <= 3; i++){
+    const v = (maxVal / 3) * i;
+    const y = yScale(v);
+    axes += `<line x1="${M.left}" y1="${y}" x2="${W - M.right}" y2="${y}" stroke="#eee" stroke-width="0.5"/>`;
+    axes += `<text x="${M.left - 4}" y="${y + 3}" text-anchor="end" font-family="var(--mono)" font-size="8" fill="var(--text3)">${_crossFmtVol(v)}</text>`;
+  }
+  // X : graduations années (max 5)
+  const tickStep = Math.max(1, Math.floor((ysort.length - 1) / 4));
+  for(let i = 0; i < ysort.length; i += tickStep){
+    const y = ysort[i];
+    axes += `<text x="${xScale(y)}" y="${H - 6}" text-anchor="middle" font-family="var(--mono)" font-size="8" fill="var(--text3)">${y}</text>`;
+  }
+
+  const lineAB = data.serieAtoB.length >= 2
+    ? `<polyline fill="none" stroke="#0a6e4a" stroke-width="2" points="${data.serieAtoB.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
+    : '';
+  const lineBA = data.serieBtoA.length >= 2
+    ? `<polyline fill="none" stroke="#b45309" stroke-width="2" points="${data.serieBtoA.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
+    : '';
+
+  // Points et labels au survol (simple)
+  let pointsAB = '';
+  for(const pt of data.serieAtoB) pointsAB += `<circle cx="${xScale(pt.year)}" cy="${yScale(pt.val)}" r="2" fill="#0a6e4a"/>`;
+  let pointsBA = '';
+  for(const pt of data.serieBtoA) pointsBA += `<circle cx="${xScale(pt.year)}" cy="${yScale(pt.val)}" r="2" fill="#b45309"/>`;
+
+  host.innerHTML = `
+    <div class="bil-courbes-legend">
+      <span><span class="bil-spark-dot" style="background:#0a6e4a"></span>${escAttr(nameA)} → ${escAttr(nameB)}</span>
+      <span><span class="bil-spark-dot" style="background:#b45309"></span>${escAttr(nameB)} → ${escAttr(nameA)}</span>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
+      ${axes}${lineAB}${lineBA}${pointsAB}${pointsBA}
+    </svg>
+    <div class="cross-tile-foot">${escAttr(data.periodLabel)} · ${escAttr(unitDisplay)}</div>`;
+}
+
+// Viz "Bar chart comparatif" : 3 barres par sens, axe commun pour comparaison directe
+function _bilDrawBarchart(host, entry, data, isoA, isoB){
+  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
+  const unitDisplay = cfg?.unit_display || '';
+  const nameA = isoToName(isoA) || isoA;
+  const nameB = isoToName(isoB) || isoB;
+  const flagA = isoToFlag(isoA) || '';
+  const flagB = isoToFlag(isoB) || '';
+
+  const maxVol = Math.max(data.volAtoB, data.volBtoA, 1);
+  const fmtVol = v => v > 0 ? fmtWithUnit(v, unitDisplay) : '—';
+  const fmtPct = p => (p != null && isFinite(p) && p > 0) ? p.toFixed(p >= 10 ? 1 : 2) + '%' : '—';
+
+  // Bar chart 6 lignes : Volume A→B / Volume B→A puis 4 pourcentages
+  // Pour les volumes on utilise une échelle commune (maxVol), pour les pourcentages on étire chacun à 100%
+  const barRow = (label, valStr, ratio, color) => `
+    <div class="bil-bar-row">
+      <div class="bil-bar-label">${label}</div>
+      <div class="bil-bar-track"><div class="bil-bar-fill" style="width:${Math.max(2, ratio*100).toFixed(1)}%;background:${color}"></div></div>
+      <div class="bil-bar-val">${valStr}</div>
+    </div>`;
+
+  host.innerHTML = `
+    <div class="bil-barchart">
+      <div class="bil-section-title">Volumes</div>
+      ${barRow(`${flagA} → ${flagB}`, fmtVol(data.volAtoB), data.volAtoB / maxVol, '#0a6e4a')}
+      ${barRow(`${flagB} → ${flagA}`, fmtVol(data.volBtoA), data.volBtoA / maxVol, '#b45309')}
+      <div class="bil-section-title">Influences relatives (sur 100%)</div>
+      ${barRow(`Part de ${escAttr(nameA)} chez ${escAttr(nameB)}`, fmtPct(data.pctAdansImportsB), (data.pctAdansImportsB||0)/100, '#0a6e4a')}
+      ${barRow(`${escAttr(nameB)} dans envois ${escAttr(nameA)}`, fmtPct(data.pctBdansExportsA), (data.pctBdansExportsA||0)/100, '#0a6e4a')}
+      ${barRow(`Part de ${escAttr(nameB)} chez ${escAttr(nameA)}`, fmtPct(data.pctBdansImportsA), (data.pctBdansImportsA||0)/100, '#b45309')}
+      ${barRow(`${escAttr(nameA)} dans envois ${escAttr(nameB)}`, fmtPct(data.pctAdansExportsB), (data.pctAdansExportsB||0)/100, '#b45309')}
+    </div>
+    <div class="cross-tile-foot">${escAttr(data.periodLabel)}</div>`;
+}
+
+// Viz "Top contextuel" : top partenaires de B avec A surligné + top partenaires de A avec B surligné
+// Chaque ligne du top est cliquable → bascule en bilatéral avec ce nouveau couple
+function _bilDrawTopCtx(host, entry, data, isoA, isoB){
+  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
+  const unitDisplay = cfg?.unit_display || '';
+  const nameA = isoToName(isoA) || isoA;
+  const nameB = isoToName(isoB) || isoB;
+
+  const opts = { yearRange: data.yearRange[0] !== data.yearRange[1] ? data.yearRange : null, mode: 'sum' };
+  // Top fournisseurs de B (sens 'from' = on cherche les pays qui envoient à B)
+  const topB = _bilGetTopForCountry(isoB, entry, opts, 'from', 8);
+  // Top clients de A (sens 'to' = on cherche les pays vers qui A envoie)
+  const topAclients = _bilGetTopForCountry(isoA, entry, opts, 'to', 8);
+
+  const renderTop = (list, anchorIso, anchorName, title) => {
+    if(!list.length) return `<div class="bil-topctx-empty">Pas de données</div>`;
+    let html = `<div class="bil-topctx-title">${title}</div>`;
+    for(const it of list){
+      const isAnchor = (it.iso === anchorIso);
+      // Clic = bascule bilatéral : on garde le sujet A et on change B
+      // Sauf si on clique sur A lui-même (déjà sujet) → on ne fait rien
+      const clickable = !isAnchor && it.iso !== state.subject.isos[0];
+      const handler = clickable ? `onclick="_bilNavigateToCouple('${escAttr(it.iso)}')"` : '';
+      const cursor = clickable ? 'cursor:pointer' : 'cursor:default';
+      html += `<div class="bil-topctx-row ${isAnchor?'anchor':''}" ${handler} style="${cursor}">
+        <span class="bil-topctx-flag">${it.flag || ''}</span>
+        <span class="bil-topctx-name">${escAttr(it.name)}</span>
+        <span class="bil-topctx-pct">${it.pct.toFixed(1)}%</span>
+      </div>`;
+    }
+    return html;
+  };
+
+  host.innerHTML = `
+    <div class="bil-topctx">
+      <div class="bil-topctx-col">
+        ${renderTop(topB, isoA, nameA, `Top partenaires ${escAttr(nameB)} <span style="opacity:.6">(${escAttr(nameA)} surligné)</span>`)}
+      </div>
+      <div class="bil-topctx-col">
+        ${renderTop(topAclients, isoB, nameB, `Top destinataires ${escAttr(nameA)} <span style="opacity:.6">(${escAttr(nameB)} surligné)</span>`)}
+      </div>
+    </div>
+    <div class="cross-tile-foot">${escAttr(data.periodLabel)} · Cliquer un autre pays pour basculer</div>`;
+}
+
+// Navigation entre couples : remplace B par un nouveau pays, garde A (= sujet actuel)
+function _bilNavigateToCouple(newIsoB){
+  if(!newIsoB || !state.subject || !state.subject.isos.length) return;
+  // Ne bascule pas si on clique sur le sujet courant (déjà A)
+  if(newIsoB === state.subject.isos[0]) return;
+  setRelPartnerB([newIsoB]);
+}
+
+// ─── Porte d'entrée Croisé → Relations bilatéral ─────────────────
+// Au clic sur un pays dans une tuile Croisé, on bascule vers Relations en mode bilatéral
+// avec : A = sujet actuel, B = pays cliqué, et l'indicateur de la tuile cliquée comme actif.
+function _crossClickToRelations(iso, flowEntryKey){
+  if(!iso) return;
+  if(!state.subject || !state.subject.isos.length) return;
+  // Le sujet ne peut pas être son propre partenaire B
+  if(iso === state.subject.isos[0]) return;
+  // Définir le partenaire B (sera utilisé en mode bilatéral)
+  _relPartnerB = { isos: [iso], label: isoToName(iso) || iso };
+  // Définir l'indicateur actif Relations (pour qu'il soit présélectionné dans la nav gauche)
+  if(flowEntryKey) _relEntryKey = flowEntryKey;
+  // Bascule d'onglet
+  switchView('relations');
+  syncUrl();
 }
 function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label: 'Partenaire' }).label; }
 
@@ -6603,7 +6905,8 @@ function _crossDrawTreemap(host, displayMap, volumeMap, entry){
     const events = p.item.isOthers ? '' :
       ` onmouseenter="_crossHoverEnter('${escAttr(p.item.key)}', event, '${escAttr(entry.key)}')"
         onmousemove="_crossHoverMove(event)"
-        onmouseleave="_crossHoverLeave()"`;
+        onmouseleave="_crossHoverLeave()"
+        onclick="_crossClickToRelations('${escAttr(p.item.key)}', '${escAttr(entry.key)}')"`;
     svg += `<g${isoAttr}${cursor}${events}>
       <rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${color}" stroke="#fff" stroke-width="1"/>
       ${showLabel ? `<text x="${p.x + 4}" y="${p.y + 12}" font-family="var(--sans)" font-size="9" font-weight="600" fill="#fff" style="text-shadow:0 1px 2px rgba(0,0,0,.3);pointer-events:none">${escAttr(p.item.name).slice(0, 18)}</text>` : ''}
@@ -6674,7 +6977,8 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
           data-iso3="${escAttr(iso)}" style="cursor:pointer"
           onmouseenter="_crossHoverEnter('${escAttr(iso)}', event, '${escAttr(entry.key)}')"
           onmousemove="_crossHoverMove(event)"
-          onmouseleave="_crossHoverLeave()"></path>`;
+          onmouseleave="_crossHoverLeave()"
+          onclick="_crossClickToRelations('${escAttr(iso)}', '${escAttr(entry.key)}')"></path>`;
       } else {
         pathsHtml += `<path d="${d}" fill="${fill}" stroke="#fff" stroke-width="0.3"></path>`;
       }
@@ -6894,7 +7198,8 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
       curvesHtml += `<g data-iso3="${escAttr(k)}"
         onmouseenter="_crossHoverEnter('${escAttr(k)}', event, '${escAttr(entry.key)}')"
         onmousemove="_crossHoverMove(event)"
-        onmouseleave="_crossHoverLeave()" style="cursor:pointer">
+        onmouseleave="_crossHoverLeave()"
+        onclick="_crossClickToRelations('${escAttr(k)}', '${escAttr(entry.key)}')" style="cursor:pointer">
         <polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/>
       </g>`;
     }
@@ -6924,7 +7229,8 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
       const events = isOthers ? '' :
         ` onmouseenter="_crossHoverEnter('${escAttr(k)}', event, '${escAttr(entry.key)}')"
           onmousemove="_crossHoverMove(event)"
-          onmouseleave="_crossHoverLeave()" style="cursor:pointer"`;
+          onmouseleave="_crossHoverLeave()"
+          onclick="_crossClickToRelations('${escAttr(k)}', '${escAttr(entry.key)}')" style="cursor:pointer"`;
       areasHtml += `<g${dataAttr}${events}>
         <path d="${pathD}" fill="${color}" stroke="#fff" stroke-width="0.4"/>
       </g>`;
