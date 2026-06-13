@@ -755,9 +755,28 @@ main { flex: 1; padding: 16px 18px 28px; }
   font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
   color: var(--text2); font-weight: 600;
   padding: 12px 14px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;  /* header ne se compresse pas */
 }
+/* Wrapper scrollable pour le contenu de la nav.
+   Cible toutes les .cross-cat qui suivent le header.
+   Permet de défiler dans la liste des indicateurs quand elle dépasse la hauteur visible. */
+.cross-nav .cross-cat {
+  padding: 8px 0 0;
+}
+/* Conteneur déroulant : on englobe les catégories dans un overflow-y:auto via une astuce CSS.
+   Comme la nav est en flex-direction:column, on rend le dernier groupe d'éléments flexibles
+   avec scroll interne. */
+.cross-nav-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;   /* indispensable en flex pour que overflow fonctionne */
+}
+.cross-nav-scroll::-webkit-scrollbar { width: 6px; }
+.cross-nav-scroll::-webkit-scrollbar-track { background: transparent; }
+.cross-nav-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.cross-nav-scroll::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 .cross-nav .cross-cat:last-of-type { padding-bottom: 10px; }
-.cross-cat { padding: 8px 0 0; }
 .cross-cat-head {
   font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--text3); padding: 4px 14px;
@@ -5005,7 +5024,7 @@ function _buildBilateralLayout(){
   return `<div class="cross-layout bil-layout">
     <aside class="cross-nav">
       <div class="cross-nav-head">Indicateurs · ${state.subject.label} ↔ ${escAttr(_relPartnerB.label)}</div>
-      ${navHtml}
+      <div class="cross-nav-scroll">${navHtml}</div>
     </aside>
     <main class="cross-main">
       ${headerHtml}
@@ -6819,7 +6838,7 @@ function renderCroise(){
     <div class="cross-layout">
       <aside class="cross-nav" id="crossNav">
         <div class="cross-nav-head">Indicateurs de flux</div>
-        ${navHtml}
+        <div class="cross-nav-scroll">${navHtml}</div>
       </aside>
       <main class="cross-main">
         ${filtersHtml}
