@@ -963,6 +963,69 @@ main { flex: 1; padding: 16px 18px 28px; }
   font-size: 12px; color: var(--text3); max-width: 480px; margin: 0 auto;
 }
 
+/* ─── Layout bilatéral (réutilise les classes cross-* + spécificités) ─── */
+.bil-layout .cross-nav-head { font-size: 9.5px; }
+.bil-filter-bar { padding: 8px 12px; }
+.bil-mode-tag {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--text);
+  background: rgba(10,110,74,.08); border: 1px solid var(--green);
+  border-radius: 6px; padding: 4px 10px;
+}
+.bil-mode-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+  display: inline-block;
+}
+.bil-couple {
+  font-family: var(--mono); font-weight: 600; color: var(--green);
+  letter-spacing: .02em;
+}
+
+/* Tuile bilatérale : structure 2 colonnes + sparkline en bas */
+.bil-tile { min-height: 220px; }
+.bil-tile-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.bil-cols {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border);
+}
+.bil-col { display: flex; flex-direction: column; gap: 6px; }
+.bil-col-head {
+  font-size: 10px; color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+.bil-col-head strong { color: var(--text); font-weight: 600; }
+.bil-arrow { color: var(--green); margin: 0 2px; font-weight: 700; }
+.bil-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 10px; gap: 8px;
+}
+.bil-row-label { color: var(--text3); }
+.bil-row-value {
+  font-family: var(--mono); font-size: 11px; color: var(--text);
+  font-weight: 500;
+}
+.bil-row-value.primary {
+  font-size: 14px; font-weight: 700; color: var(--green);
+}
+
+/* Sparkline temporelle en bas de la fiche */
+.bil-spark { display: flex; flex-direction: column; gap: 4px; }
+.bil-spark-legend {
+  display: flex; gap: 12px;
+  font-size: 9px; color: var(--text3);
+  align-items: center;
+}
+.bil-spark-legend span { display: flex; align-items: center; gap: 4px; }
+.bil-spark-dot {
+  display: inline-block; width: 8px; height: 2px;
+}
+.bil-spark-empty {
+  font-size: 10px; color: var(--text3); font-style: italic;
+  text-align: center; padding: 8px 0;
+}
+
 /* Grille des tuiles */
 .cross-grid { display: grid; gap: 10px; }
 .cross-grid.g1 { grid-template-columns: 1fr; }
@@ -4071,6 +4134,243 @@ let _relYearAggMode = 'sum';      // 'sum' (cumul sur la plage) | 'avg' (moyenne
 // Vidé = mode multi-pays normal (comportement historique).
 let _relPartnerB = null;
 
+// ─── État de la grille bilatérale (mode A↔B) ────────────────────
+// Constantes et state pour la grille de tuiles affichée en mode bilatéral.
+// Inspiré de Croisé : flux sélectionnés, types de vue par tuile, persistance localStorage.
+const BIL_MAX_TILES = 9;
+const BIL_STORAGE_KEY = 'geopol_bil_selected';
+const BIL_VIEW_TYPE_KEY = 'geopol_bil_view_types';
+// Sélection par défaut au premier passage en bilatéral : 4 flux structurants
+const BIL_DEFAULT_KEYS = [
+  'commerce|to',                  // sujet importe depuis B
+  'commerce|from',                // sujet exporte vers B
+  'transferts_armement|to',       // sujet reçoit armement de B
+  'commerce_ressources|to',       // sujet importe ressources de B
+];
+let _bilSelected = null;          // Set<flowEntryKey>, lazy
+let _bilViewType = null;          // Map<flowEntryKey, 'fiche'|'courbes'|'barchart'|'topctx'>, lazy
+function _loadBilState(){
+  if(_bilSelected) return;
+  try {
+    const raw = localStorage.getItem(BIL_STORAGE_KEY);
+    if(raw){
+      const arr = JSON.parse(raw);
+      if(Array.isArray(arr)) _bilSelected = new Set(arr.slice(0, BIL_MAX_TILES));
+    }
+  } catch {}
+  if(!_bilSelected) _bilSelected = new Set(BIL_DEFAULT_KEYS);
+  try {
+    const raw = localStorage.getItem(BIL_VIEW_TYPE_KEY);
+    if(raw){
+      const obj = JSON.parse(raw);
+      _bilViewType = new Map(Object.entries(obj));
+    }
+  } catch {}
+  if(!_bilViewType) _bilViewType = new Map();
+}
+function _saveBilState(){
+  try { localStorage.setItem(BIL_STORAGE_KEY, JSON.stringify([..._bilSelected])); } catch {}
+  try {
+    const obj = {};
+    for(const [k,v] of _bilViewType) obj[k] = v;
+    localStorage.setItem(BIL_VIEW_TYPE_KEY, JSON.stringify(obj));
+  } catch {}
+}
+function _bilGetViewType(key){ return _bilViewType.get(key) || 'fiche'; }
+function _bilSetViewType(key, type){
+  _bilViewType.set(key, type);
+  _saveBilState();
+  _renderBilTile(key);   // re-render uniquement cette tuile
+}
+function _bilToggleFlux(key){
+  if(_bilSelected.has(key)){
+    _bilSelected.delete(key);
+  } else {
+    if(_bilSelected.size >= BIL_MAX_TILES){
+      const cnt = document.getElementById('bilCounter');
+      if(cnt){ cnt.classList.add('limit-hit'); setTimeout(() => cnt.classList.remove('limit-hit'), 600); }
+      return;
+    }
+    _bilSelected.add(key);
+  }
+  _saveBilState();
+  renderRelMain();   // re-render complet (grille change)
+}
+function _bilDeselectAll(){
+  _bilSelected.clear();
+  _saveBilState();
+  renderRelMain();
+}
+
+// État période per-tile bilatéral
+const BIL_TILE_PERIOD_KEY = 'geopol_bil_tile_periods';
+let _bilTilePeriods = null;
+function _loadBilTilePeriods(){
+  if(_bilTilePeriods) return;
+  try {
+    const raw = localStorage.getItem(BIL_TILE_PERIOD_KEY);
+    if(raw) _bilTilePeriods = new Map(Object.entries(JSON.parse(raw)));
+  } catch {}
+  if(!_bilTilePeriods) _bilTilePeriods = new Map();
+}
+function _saveBilTilePeriods(){
+  try {
+    const obj = {};
+    for(const [k,v] of _bilTilePeriods) obj[k] = v;
+    localStorage.setItem(BIL_TILE_PERIOD_KEY, JSON.stringify(obj));
+  } catch {}
+}
+function _bilGetTilePeriod(key){
+  _loadBilTilePeriods();
+  const override = _bilTilePeriods.get(key);
+  if(override) return { range: override.range || null, mode: override.mode || 'sum', overridden: true };
+  // Sinon : reprend la plage globale Relations (déjà partagée) ou ponctuel
+  return { range: _relYearRange, mode: _relYearAggMode, overridden: false };
+}
+function _bilSetTilePeriod(key, range, mode){
+  _loadBilTilePeriods();
+  _bilTilePeriods.set(key, { range, mode: mode || 'sum' });
+  _saveBilTilePeriods();
+  _renderBilTile(key);
+}
+function _bilClearTileOverride(key){
+  _loadBilTilePeriods();
+  if(_bilTilePeriods.delete(key)){
+    _saveBilTilePeriods();
+    _renderBilTile(key);
+  }
+}
+
+// ─── Calcul des données bilatérales pour une tuile ─────────────────
+// Pour un flux donné (entry) et un couple A↔B, retourne :
+// {
+//   volAtoB, volBtoA        : volumes absolus dans chaque sens (sur la période, agrégés selon mode)
+//   pctAchezB, pctBchezA    : influences relatives (volume / total mondial respectif)
+//   serieAtoB, serieBtoA    : Array<{year, val}> pour la courbe temporelle
+//   periodLabel             : libellé de période en cours pour le footer
+// }
+// 'opts' attendu : { yearRange: [yMin,yMax]|null, mode: 'sum'|'avg' }
+function _bilComputeTileData(entry, isoA, isoB, opts){
+  const realInd = entry.realIndicator;
+  // Colonnes selon le sens du flux pour la direction "to" (côté sujet récepteur)
+  // Pour commerce/dette/armement, on calcule SYMÉTRIQUEMENT les deux sens
+  // sans dépendre de entry.side : on prend country_from = A pour "A→B" et country_from = B pour "B→A"
+  const sqlA = `'${escapeSql(isoA)}'`;
+  const sqlB = `'${escapeSql(isoB)}'`;
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+
+  // Fenêtre temporelle
+  let yClause, useRange = false, nYears = 1, yMin = null, yMax = null;
+  if(opts.yearRange){
+    [yMin, yMax] = opts.yearRange;
+    yClause = `year >= ${yMin} AND year <= ${yMax}`;
+    useRange = true;
+    nYears = yMax - yMin + 1;
+  } else {
+    // Mode ponctuel : on prend state.year avec fallback sur dernière année dispo si vide
+    let y = state.year;
+    const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realInd)}' AND year=${y} AND (country_from=${sqlA} OR country_to=${sqlA}) LIMIT 1`);
+    if(!chk.length){
+      const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realInd)}' AND (country_from=${sqlA} OR country_to=${sqlA})`);
+      if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    }
+    yClause = `year = ${y}`;
+    yMin = yMax = y;
+  }
+
+  // Diviseur pour mode 'avg'
+  const divider = (useRange && opts.mode === 'avg' && nYears > 1) ? nYears : 1;
+
+  // Volumes A→B et B→A (cumul sur la période)
+  const rAtoB = safeExec(`SELECT SUM(value) FROM flux
+                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                          AND country_from=${sqlA} AND country_to=${sqlB}`);
+  const rBtoA = safeExec(`SELECT SUM(value) FROM flux
+                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                          AND country_from=${sqlB} AND country_to=${sqlA}`);
+  let volAtoB = (rAtoB.length && rAtoB[0].values[0][0]) ? rAtoB[0].values[0][0] / divider : 0;
+  let volBtoA = (rBtoA.length && rBtoA[0].values[0][0]) ? rBtoA[0].values[0][0] / divider : 0;
+
+  // Cas dette bilatérale : filtre subcategory_1='bilaterale'
+  if(isDebtIndicator(realInd)){
+    const rA = safeExec(`SELECT SUM(value) FROM flux
+                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                          AND country_from=${sqlA} AND country_to=${sqlB}
+                          AND subcategory_1='bilaterale'`);
+    const rB = safeExec(`SELECT SUM(value) FROM flux
+                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                          AND country_from=${sqlB} AND country_to=${sqlA}
+                          AND subcategory_1='bilaterale'`);
+    volAtoB = (rA.length && rA[0].values[0][0]) ? rA[0].values[0][0] / divider : 0;
+    volBtoA = (rB.length && rB[0].values[0][0]) ? rB[0].values[0][0] / divider : 0;
+  }
+
+  // Influences relatives
+  // "B représente X% des exports de A sur ce flux" = volAtoB / (total exports de A)
+  // "A représente Y% des imports de B" = volAtoB / (total imports de B)
+  // On utilise les requêtes mondiales (toutes destinations / origines, hors agrégats régionaux et sentinelles)
+  const qTotal = (col, iso) => `SELECT SUM(value) FROM flux
+                                  WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                                  AND ${col}='${escapeSql(iso)}'
+                                  AND ${col === 'country_from' ? 'country_to' : 'country_from'} NOT IN (${exclAgg})
+                                  AND ${col === 'country_from' ? 'country_to' : 'country_from'} NOT LIKE '\\_\\_%' ESCAPE '\\'`;
+  const totAFrom = safeExec(qTotal('country_from', isoA));
+  const totBTo = safeExec(qTotal('country_to', isoB));
+  const totBFrom = safeExec(qTotal('country_from', isoB));
+  const totATo = safeExec(qTotal('country_to', isoA));
+  const sAFrom = (totAFrom.length && totAFrom[0].values[0][0]) ? totAFrom[0].values[0][0] / divider : 0;
+  const sBTo = (totBTo.length && totBTo[0].values[0][0]) ? totBTo[0].values[0][0] / divider : 0;
+  const sBFrom = (totBFrom.length && totBFrom[0].values[0][0]) ? totBFrom[0].values[0][0] / divider : 0;
+  const sATo = (totATo.length && totATo[0].values[0][0]) ? totATo[0].values[0][0] / divider : 0;
+  // Influence : pourcentages
+  // A→B : volAtoB est une portion des exports de A et des imports de B
+  const pctBdansExportsA = sAFrom > 0 ? (volAtoB / sAFrom) * 100 : 0;
+  const pctAdansImportsB = sBTo > 0 ? (volAtoB / sBTo) * 100 : 0;
+  // B→A : volBtoA est une portion des exports de B et des imports de A
+  const pctAdansExportsB = sBFrom > 0 ? (volBtoA / sBFrom) * 100 : 0;
+  const pctBdansImportsA = sATo > 0 ? (volBtoA / sATo) * 100 : 0;
+
+  // Séries temporelles A→B et B→A (pour la courbe)
+  // Toujours année par année sur la fenêtre, sans divider (la courbe montre les valeurs réelles)
+  const serieAtoB = [];
+  const serieBtoA = [];
+  if(useRange && nYears > 1){
+    const debtFilter = isDebtIndicator(realInd) ? ` AND subcategory_1='bilaterale'` : '';
+    const sAB = safeExec(`SELECT year, SUM(value) FROM flux
+                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                          AND country_from=${sqlA} AND country_to=${sqlB}${debtFilter}
+                          GROUP BY year ORDER BY year`);
+    const sBA = safeExec(`SELECT year, SUM(value) FROM flux
+                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
+                          AND country_from=${sqlB} AND country_to=${sqlA}${debtFilter}
+                          GROUP BY year ORDER BY year`);
+    if(sAB.length){
+      for(const [y, v] of sAB[0].values) serieAtoB.push({ year: y, val: v || 0 });
+    }
+    if(sBA.length){
+      for(const [y, v] of sBA[0].values) serieBtoA.push({ year: y, val: v || 0 });
+    }
+  }
+
+  // Libellé période pour footer
+  let periodLabel;
+  if(useRange){
+    const modeLabel = opts.mode === 'avg' ? 'moy/an' : 'cumul';
+    periodLabel = `${yMin}–${yMax} ${modeLabel}`;
+  } else {
+    periodLabel = String(yMin);
+  }
+
+  return {
+    volAtoB, volBtoA,
+    pctBdansExportsA, pctAdansImportsB,
+    pctAdansExportsB, pctBdansImportsA,
+    serieAtoB, serieBtoA,
+    periodLabel,
+    yearRange: [yMin, yMax],
+  };
+}
+
 // Liste des zones disponibles, mise en cache. Retourne [{zone_id, zone_nom, n_pays}].
 // Trié par catégorie (GEO_ d'abord par nombre de pays décroissant, puis organisations alphabétique).
 let _allZonesCache = null;
@@ -4447,13 +4747,7 @@ function renderRelMain(){
       ${_relPartnerB ? '' : zoneSelector}
       ${yearRangeSelector}
     </div>
-    ${_relPartnerB ? `
-      <div class="rel-bilateral-placeholder">
-        <div class="empty-title">Mode bilatéral · ${state.subject.label} ↔ ${escAttr(_relPartnerB.label)}</div>
-        <div class="empty-sub">L'interface bilatérale (grille de tuiles multi-indicateurs avec vizs commutables) arrive en livraison 2.</div>
-        <div class="empty-sub" style="margin-top:10px">Pour repasser en mode multi-pays, clique sur le × à côté du nom du pays B.</div>
-      </div>
-    ` : `
+    ${_relPartnerB ? _buildBilateralLayout() : `
     <div class="pu-cells">
       <div class="top-row">
         <div class="pu-cell">
@@ -4473,14 +4767,352 @@ function renderRelMain(){
         </div>
       </div>
     </div>`}`;
-  // En mode bilatéral, on n'appelle pas les renderers spécifiques (qui s'appuient sur les DOM #relCompBody etc.)
-  if(!_relPartnerB){
+  // En mode bilatéral, on n'appelle pas les renderers multi-pays.
+  // À la place, on rend chaque tuile de la grille bilatérale.
+  if(_relPartnerB){
+    _loadBilState();
+    for(const key of _bilSelected) _renderBilTile(key);
+  } else {
     renderRelComposition();
     renderRelEvolution();
     renderRelFluxMap();
   }
 }
 function setRelMetric(m){ _relMetric = m; _relInfluencePinned = null; renderRelMain(); syncUrl(); }
+
+// ═══════════════════════════════════════════════════════════════
+//  LAYOUT BILATÉRAL — Grille multi-indicateurs A↔B
+// ═══════════════════════════════════════════════════════════════
+
+// Construit le HTML du layout bilatéral : nav flux gauche + barre filtre + grille de tuiles.
+// L'appel à _renderBilTile pour chaque flux sélectionné se fait après l'insertion innerHTML.
+function _buildBilateralLayout(){
+  _loadBilState();
+  // 1. Construire la nav latérale des flux disponibles
+  const allEntries = flowEntriesPresent().filter(e => e.presentInDb !== false);
+  const byCat = new Map();
+  for(const e of allEntries){
+    const cfg = state.indicators.find(c => c.indicator === e.realIndicator);
+    const cat = cfg?.category || 'autres';
+    if(!byCat.has(cat)) byCat.set(cat, []);
+    byCat.get(cat).push(e);
+  }
+  const catLabels = {
+    commerce: 'Commerce', armement: 'Armement', finance: 'Finance',
+    migration: 'Migrations', education: 'Éducation', diplomatie: 'Diplomatie',
+    autres: 'Autres',
+  };
+  let navHtml = '';
+  for(const [cat, entries] of byCat){
+    const catLab = catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
+    let items = '';
+    for(const e of entries){
+      const checked = _bilSelected.has(e.key);
+      items += `<label class="cross-flux-item ${checked?'on':''}">
+        <input type="checkbox" ${checked?'checked':''} onchange="_bilToggleFlux('${escAttr(e.key)}')">
+        <span>${escAttr(e.label_long || e.label || e.key)}</span>
+      </label>`;
+    }
+    navHtml += `<div class="cross-cat"><div class="cross-cat-head">${catLab}</div>${items}</div>`;
+  }
+
+  // 2. Barre du haut (filtres bilatéraux : compteur + désélection + indicateur de mode)
+  const headerHtml = `<div class="cross-filter-bar bil-filter-bar">
+    <div class="bil-mode-tag">
+      <span class="bil-mode-dot"></span>
+      <span>Mode bilatéral</span>
+      <span class="bil-couple">${escAttr(state.subject.label)} ↔ ${escAttr(_relPartnerB.label)}</span>
+    </div>
+    <div class="cross-counter-wrap">
+      <span id="bilCounter" class="cross-counter">${_bilSelected.size}/${BIL_MAX_TILES} indicateurs</span>
+      <button class="cross-clear-btn" onclick="_bilDeselectAll()">Tout désélectionner</button>
+    </div>
+  </div>`;
+
+  // 3. Grille de tuiles
+  const selectedKeys = [..._bilSelected];
+  let gridHtml = '';
+  if(!selectedKeys.length){
+    gridHtml = `<div class="cross-empty">
+      <div class="empty-title">Aucun indicateur sélectionné</div>
+      <div class="empty-sub">Coche des flux dans la barre de gauche pour les afficher ici.</div>
+    </div>`;
+  } else {
+    const n = selectedKeys.length;
+    const gridClass = n === 1 ? 'g1' : (n === 2 ? 'g2' : (n <= 4 ? 'g4' : (n <= 6 ? 'g6' : 'g9')));
+    gridHtml = `<div class="cross-grid ${gridClass}" id="bilGrid">`;
+    for(const key of selectedKeys){
+      gridHtml += `<div class="cross-tile bil-tile" id="bilTile-${escAttr(key.replace(/[|]/g,'_'))}" data-key="${escAttr(key)}"></div>`;
+    }
+    gridHtml += `</div>`;
+  }
+
+  // 4. Layout 2 colonnes
+  return `<div class="cross-layout bil-layout">
+    <aside class="cross-nav">
+      <div class="cross-nav-head">Indicateurs · ${state.subject.label} ↔ ${escAttr(_relPartnerB.label)}</div>
+      ${navHtml}
+    </aside>
+    <main class="cross-main">
+      ${headerHtml}
+      ${gridHtml}
+    </main>
+  </div>`;
+}
+
+// Rend UNE seule tuile bilatérale.
+function _renderBilTile(key){
+  const tileId = 'bilTile-' + key.replace(/[|]/g, '_');
+  const host = document.getElementById(tileId);
+  if(!host) return;
+  if(!_relPartnerB || !state.subject || !state.subject.isos.length){
+    host.innerHTML = `<div class="cross-tile-empty">Mode bilatéral non actif</div>`;
+    return;
+  }
+  const entry = getFlowEntryByKey(key);
+  if(!entry){ host.innerHTML = `<div class="cross-tile-empty">Flux inconnu</div>`; return; }
+  const viewType = _bilGetViewType(key);
+  const label = entry.label_long || entry.label || key;
+  const isoA = state.subject.isos[0];
+  const isoB = _relPartnerB.isos[0];
+
+  // Période effective (per-tile ou globale Relations)
+  const period = _bilGetTilePeriod(key);
+  let periodHeader;
+  if(period.range){
+    const [yMin, yMax] = period.range;
+    const m = period.mode === 'avg' ? 'moy/an' : 'cumul';
+    periodHeader = `📅 ${yMin}–${yMax} ${m}`;
+  } else {
+    periodHeader = `📅 ${state.year} ponctuel`;
+  }
+  const overrideClass = period.overridden ? ' overridden' : '';
+  const overrideHint = period.overridden
+    ? `<button class="cross-period-clear" onclick="_bilClearTileOverride('${escAttr(key)}')" title="Revenir à la période globale">×</button>`
+    : `<span class="cross-period-hint">global</span>`;
+
+  // Header de tuile + bandeau période (livraison 2 : on n'a que la fiche, le sélecteur de viz arrive en livraison 3)
+  let html = `<div class="cross-tile-head">
+    <span class="cross-tile-title">${escAttr(label)}</span>
+    <div class="seg cross-tile-seg">
+      <button class="${viewType==='fiche'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','fiche')" title="Fiche synthétique">📋</button>
+    </div>
+  </div>
+  <div class="cross-tile-period${overrideClass}" onclick="_bilOpenPeriodPopover(event, '${escAttr(key)}')" title="Cliquer pour modifier la période">
+    <span class="cross-period-label">${periodHeader}</span>
+    ${overrideHint}
+  </div>
+  <div class="cross-tile-body bil-tile-body" id="${tileId}-body"></div>`;
+  host.innerHTML = html;
+  const body = document.getElementById(tileId + '-body');
+  if(!body) return;
+
+  // Calcul des données pour la tuile
+  const opts = {
+    yearRange: period.range,
+    mode: period.mode,
+  };
+  let data;
+  try {
+    data = _bilComputeTileData(entry, isoA, isoB, opts);
+  } catch(e){
+    body.innerHTML = `<div class="cross-tile-empty">Erreur : ${escAttr(e.message || 'calcul impossible')}</div>`;
+    return;
+  }
+
+  // Si pas de volume du tout dans les 2 sens : message
+  if(data.volAtoB <= 0 && data.volBtoA <= 0){
+    body.innerHTML = `<div class="cross-tile-empty">Pas d'échange ${state.subject.label} ↔ ${escAttr(_relPartnerB.label)}</div>`;
+    return;
+  }
+
+  // Pour l'instant, on ne supporte que la viz 'fiche' (livraison 2)
+  // Les autres types seront ajoutés en livraison 3 (courbes, barchart, top contextuel)
+  _bilDrawFiche(body, entry, data, isoA, isoB);
+}
+
+// Dessine la fiche synthétique bilatérale :
+// 2 colonnes A→B et B→A avec volume + influences + (si plage active) sparkline temporelle.
+function _bilDrawFiche(host, entry, data, isoA, isoB){
+  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
+  const unitDisplay = cfg?.unit_display || '';
+
+  const nameA = isoToName(isoA) || isoA;
+  const nameB = isoToName(isoB) || isoB;
+  const flagA = isoToFlag(isoA) || '';
+  const flagB = isoToFlag(isoB) || '';
+
+  const fmtVol = v => v > 0 ? fmtWithUnit(v, unitDisplay) : '—';
+  const fmtPct = p => (p != null && isFinite(p) && p > 0) ? p.toFixed(p >= 10 ? 1 : 2) + '%' : '—';
+
+  // Colonne A→B
+  const colAB = `<div class="bil-col">
+    <div class="bil-col-head">${flagA} <strong>${escAttr(nameA)}</strong> <span class="bil-arrow">→</span> ${flagB} ${escAttr(nameB)}</div>
+    <div class="bil-row">
+      <div class="bil-row-label">Volume</div>
+      <div class="bil-row-value primary">${fmtVol(data.volAtoB)}</div>
+    </div>
+    <div class="bil-row">
+      <div class="bil-row-label">Part chez ${escAttr(nameB)}</div>
+      <div class="bil-row-value">${fmtPct(data.pctAdansImportsB)}</div>
+    </div>
+    <div class="bil-row">
+      <div class="bil-row-label">Part dans envois ${escAttr(nameA)}</div>
+      <div class="bil-row-value">${fmtPct(data.pctBdansExportsA)}</div>
+    </div>
+  </div>`;
+
+  // Colonne B→A
+  const colBA = `<div class="bil-col">
+    <div class="bil-col-head">${flagB} <strong>${escAttr(nameB)}</strong> <span class="bil-arrow">→</span> ${flagA} ${escAttr(nameA)}</div>
+    <div class="bil-row">
+      <div class="bil-row-label">Volume</div>
+      <div class="bil-row-value primary">${fmtVol(data.volBtoA)}</div>
+    </div>
+    <div class="bil-row">
+      <div class="bil-row-label">Part chez ${escAttr(nameA)}</div>
+      <div class="bil-row-value">${fmtPct(data.pctBdansImportsA)}</div>
+    </div>
+    <div class="bil-row">
+      <div class="bil-row-label">Part dans envois ${escAttr(nameB)}</div>
+      <div class="bil-row-value">${fmtPct(data.pctAdansExportsB)}</div>
+    </div>
+  </div>`;
+
+  // Sparkline temporelle si plage active : 2 courbes superposées (A→B vert, B→A orange)
+  let sparkHtml = '';
+  if(data.serieAtoB.length >= 2 || data.serieBtoA.length >= 2){
+    const W = 320, H = 60, M = { top: 5, right: 5, bottom: 12, left: 5 };
+    const innerW = W - M.left - M.right;
+    const innerH = H - M.top - M.bottom;
+    const allYears = new Set();
+    let maxVal = 0;
+    for(const pt of data.serieAtoB){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
+    for(const pt of data.serieBtoA){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
+    const ysort = [...allYears].sort((a,b) => a-b);
+    const yMin = ysort[0], yMax = ysort[ysort.length-1];
+    const xScale = (y) => M.left + ((y - yMin) / Math.max(1, yMax - yMin)) * innerW;
+    const yScale = (v) => M.top + innerH - (v / Math.max(1, maxVal)) * innerH;
+    const lineAB = data.serieAtoB.length >= 2
+      ? `<polyline fill="none" stroke="#0a6e4a" stroke-width="1.5" points="${data.serieAtoB.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
+      : '';
+    const lineBA = data.serieBtoA.length >= 2
+      ? `<polyline fill="none" stroke="#b45309" stroke-width="1.5" points="${data.serieBtoA.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
+      : '';
+    const xTickStart = `<text x="${M.left}" y="${H - 3}" font-family="var(--mono)" font-size="8" fill="var(--text3)" text-anchor="start">${yMin}</text>`;
+    const xTickEnd = `<text x="${W - M.right}" y="${H - 3}" font-family="var(--mono)" font-size="8" fill="var(--text3)" text-anchor="end">${yMax}</text>`;
+    sparkHtml = `<div class="bil-spark">
+      <div class="bil-spark-legend">
+        <span><span class="bil-spark-dot" style="background:#0a6e4a"></span>${escAttr(nameA)} → ${escAttr(nameB)}</span>
+        <span><span class="bil-spark-dot" style="background:#b45309"></span>${escAttr(nameB)} → ${escAttr(nameA)}</span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
+        ${lineAB}${lineBA}${xTickStart}${xTickEnd}
+      </svg>
+    </div>`;
+  } else {
+    sparkHtml = `<div class="bil-spark-empty">Active une plage temporelle pour voir l'évolution</div>`;
+  }
+
+  host.innerHTML = `
+    <div class="bil-cols">${colAB}${colBA}</div>
+    ${sparkHtml}
+    <div class="cross-tile-foot">${escAttr(data.periodLabel)}</div>`;
+}
+
+// Popover de période pour une tuile bilatérale (réutilise la logique Croisé en plus simple)
+let _bilOpenedPopoverKey = null;
+function _bilOpenPeriodPopover(ev, key){
+  ev.stopPropagation();
+  if(ev.target && ev.target.classList && ev.target.classList.contains('cross-period-clear')) return;
+  if(_bilOpenedPopoverKey === key){ _bilClosePeriodPopover(); return; }
+  _bilClosePeriodPopover();
+  const entry = getFlowEntryByKey(key);
+  if(!entry || !state.subject || !_relPartnerB) return;
+  // Bornes années dispo pour ce flux (côté A ou B)
+  const isoA = state.subject.isos[0], isoB = _relPartnerB.isos[0];
+  let yAvMin = 2000, yAvMax = state.year;
+  const yr = safeExec(`SELECT MIN(year), MAX(year) FROM flux
+                       WHERE indicator='${escapeSql(entry.realIndicator)}'
+                       AND (country_to IN ('${escapeSql(isoA)}','${escapeSql(isoB)}') OR country_from IN ('${escapeSql(isoA)}','${escapeSql(isoB)}'))`);
+  if(yr.length && yr[0].values[0][0] != null){
+    yAvMin = yr[0].values[0][0];
+    yAvMax = yr[0].values[0][1];
+  }
+  const period = _bilGetTilePeriod(key);
+  const initMin = period.range ? period.range[0] : Math.max(yAvMin, yAvMax - 4);
+  const initMax = period.range ? period.range[1] : yAvMax;
+  const initMode = period.mode || 'sum';
+  let optsMin = '', optsMax = '';
+  for(let y = yAvMin; y <= yAvMax; y++){
+    optsMin += `<option value="${y}"${y===initMin?' selected':''}>${y}</option>`;
+    optsMax += `<option value="${y}"${y===initMax?' selected':''}>${y}</option>`;
+  }
+  const pop = document.createElement('div');
+  pop.id = 'crossTilePeriodPopover';
+  pop.innerHTML = `<div class="ctp-head">
+      <span>Période de cette tuile</span>
+      <button class="ctp-close" onclick="_bilClosePeriodPopover()">×</button>
+    </div>
+    <div class="ctp-body">
+      <div class="ctp-row">
+        <label>De</label><select id="ctpMin">${optsMin}</select>
+        <span style="color:var(--text3)">→</span>
+        <label>à</label><select id="ctpMax">${optsMax}</select>
+      </div>
+      <div class="ctp-row">
+        <label>Agrégation</label>
+        <div class="seg">
+          <button id="ctpModeSum" class="${initMode==='sum'?'on':''}">Σ Cumul</button>
+          <button id="ctpModeAvg" class="${initMode==='avg'?'on':''}">x̄ Moyenne</button>
+        </div>
+      </div>
+    </div>
+    <div class="ctp-foot">
+      ${period.overridden ? `<button class="ctp-reset" onclick="_bilClearTileOverride('${escAttr(key)}');_bilClosePeriodPopover()">Suivre la période globale</button>` : '<span></span>'}
+      <button class="ctp-apply" onclick="_bilApplyTilePeriod('${escAttr(key)}')">Appliquer</button>
+    </div>`;
+  document.body.appendChild(pop);
+  _bilOpenedPopoverKey = key;
+  pop.dataset.mode = initMode;
+  document.getElementById('ctpModeSum').onclick = function(){
+    pop.dataset.mode = 'sum';
+    this.classList.add('on');
+    document.getElementById('ctpModeAvg').classList.remove('on');
+  };
+  document.getElementById('ctpModeAvg').onclick = function(){
+    pop.dataset.mode = 'avg';
+    this.classList.add('on');
+    document.getElementById('ctpModeSum').classList.remove('on');
+  };
+  const rect = ev.currentTarget.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  let left = rect.left, top = rect.bottom + 6;
+  if(left + popRect.width > window.innerWidth - 10) left = window.innerWidth - popRect.width - 10;
+  if(top + popRect.height > window.innerHeight - 10) top = rect.top - popRect.height - 6;
+  pop.style.left = Math.max(10, left) + 'px';
+  pop.style.top = Math.max(10, top) + 'px';
+  setTimeout(() => document.addEventListener('click', _bilPopoverOutsideClick), 0);
+}
+function _bilPopoverOutsideClick(e){
+  const pop = document.getElementById('crossTilePeriodPopover');
+  if(pop && !pop.contains(e.target)) _bilClosePeriodPopover();
+}
+function _bilClosePeriodPopover(){
+  const pop = document.getElementById('crossTilePeriodPopover');
+  if(pop) pop.remove();
+  _bilOpenedPopoverKey = null;
+  document.removeEventListener('click', _bilPopoverOutsideClick);
+}
+function _bilApplyTilePeriod(key){
+  const pop = document.getElementById('crossTilePeriodPopover');
+  if(!pop) return;
+  const yMin = +document.getElementById('ctpMin').value;
+  const yMax = +document.getElementById('ctpMax').value;
+  const mode = pop.dataset.mode || 'sum';
+  _bilSetTilePeriod(key, [Math.min(yMin,yMax), Math.max(yMin,yMax)], mode);
+  _bilClosePeriodPopover();
+}
 function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label: 'Partenaire' }).label; }
 
 
