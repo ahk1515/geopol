@@ -4230,16 +4230,40 @@ function _loadBilState(){
       }
     } catch {}
     if(!_bilSelected) _bilSelected = new Set(BIL_DEFAULT_KEYS);
-    // Validation : ne garder que les clés correspondant à des entrées réellement présentes en DB.
-    // Évite les "tuiles fantômes" qui n'apparaissent pas dans la nav gauche.
-    const validKeys = new Set(flowEntriesPresent().map(e => e.key));
-    const filtered = [..._bilSelected].filter(k => validKeys.has(k));
-    if(filtered.length === 0 && validKeys.size > 0){
-      // Aucune clé du défaut n'est valide : on prend les 4 premières entrées présentes
-      _bilSelected = new Set([...validKeys].slice(0, 4));
-    } else {
-      _bilSelected = new Set(filtered);
+    // Validation + migration vers le sens canonique 'to' :
+    // - Pour chaque clé enregistrée, on cherche d'abord l'entrée avec ce sens exact
+    // - Sinon on bascule vers la version 'to' du même indicateur (sens canonique en bilatéral)
+    // - Sinon la clé est invalide (entrée absente DB)
+    // Évite les "tuiles fantômes" et les doublons par sens.
+    const allValid = flowEntriesPresent();
+    const validByKey = new Map(allValid.map(e => [e.key, e]));
+    const toVersionByIndicator = new Map();
+    for(const e of allValid) if(e.side === 'to') toVersionByIndicator.set(e.indicator, e.key);
+    const seenIndicators = new Set();
+    const normalized = [];
+    for(const k of _bilSelected){
+      const entry = validByKey.get(k);
+      if(!entry) continue;   // clé inconnue → drop
+      // Bascule systématique vers le sens 'to' s'il existe pour cet indicateur
+      const canonicalKey = toVersionByIndicator.get(entry.indicator) || k;
+      if(seenIndicators.has(entry.indicator)) continue;
+      seenIndicators.add(entry.indicator);
+      normalized.push(canonicalKey);
     }
+    if(normalized.length === 0 && allValid.length > 0){
+      // Aucun défaut valide : prendre les 4 premiers indicateurs distincts (sens 'to' privilégié)
+      const seen = new Set();
+      for(const e of allValid){
+        if(seen.has(e.indicator)) continue;
+        const canonical = toVersionByIndicator.get(e.indicator) || e.key;
+        normalized.push(canonical);
+        seen.add(e.indicator);
+        if(normalized.length >= 4) break;
+      }
+    }
+    _bilSelected = new Set(normalized.slice(0, BIL_MAX_TILES));
+    // Sauvegarder l'état migré pour éviter la migration à chaque chargement
+    _saveBilState();
   }
   if(!_bilViewType){
     try {
@@ -4280,6 +4304,16 @@ function _bilToggleFlux(key){
       const cnt = document.getElementById('bilCounter');
       if(cnt){ cnt.classList.add('limit-hit'); setTimeout(() => cnt.classList.remove('limit-hit'), 600); }
       return;
+    }
+    // Éviter les doublons par indicateur : si une autre clé de même indicator est déjà cochée,
+    // on la retire (la nav bilatérale ne montre qu'une case par indicateur, mais des héritages
+    // localStorage pourraient encore introduire un doublon).
+    const entry = getFlowEntryByKey(key);
+    if(entry){
+      for(const k of [..._bilSelected]){
+        const e = getFlowEntryByKey(k);
+        if(e && e.indicator === entry.indicator) _bilSelected.delete(k);
+      }
     }
     _bilSelected.add(key);
   }
@@ -4879,10 +4913,36 @@ function setRelMetric(m){ _relMetric = m; _relInfluencePinned = null; renderRelM
 // L'appel à _renderBilTile pour chaque flux sélectionné se fait après l'insertion innerHTML.
 function _buildBilateralLayout(){
   _loadBilState();
-  // 1. Construire la nav latérale des flux disponibles
+  // 1. Construire la nav latérale des flux disponibles.
+  // En BILATÉRAL, contrairement au mode multi-pays, on n'a PAS besoin du dédoublement par sens
+  // (chaque tuile affiche déjà A→B et B→A simultanément). On dédoublonne donc par indicateur :
+  // 1 case par indicateur réel, avec le sens canonique 'to' comme clé.
+  // Cela passe la nav de 18 entrées (2 sens × 9 indicateurs) à 9 entrées max.
   const allEntries = flowEntriesPresent().filter(e => e.presentInDb !== false);
-  const byCat = new Map();
+  // Dédoublonnage par indicateur : on garde une seule entrée par indicateur canonique,
+  // en privilégiant le sens 'to' (qui existe pour tous).
+  const seenIndicators = new Set();
+  const bilEntries = [];
   for(const e of allEntries){
+    if(seenIndicators.has(e.indicator)) continue;
+    // On préfère le sens 'to' s'il existe pour cet indicateur, sinon on prend ce qu'on a
+    const toVersion = allEntries.find(x => x.indicator === e.indicator && x.side === 'to');
+    bilEntries.push(toVersion || e);
+    seenIndicators.add(e.indicator);
+  }
+  // Construire les libellés simplifiés (au lieu de "Commerce — Fournisseurs" → "Commerce")
+  const INDICATOR_BIL_LABELS = {
+    commerce: 'Commerce',
+    transferts_armement: "Transferts d'armement",
+    dette_exterieure: 'Dette extérieure',
+    commerce_ressources: 'Commerce de ressources',
+    refugies: 'Réfugiés',
+    migrants: 'Migrants',
+    etudiants_international: 'Étudiants internationaux',
+    representation_diplomatique: 'Représentations diplomatiques',
+  };
+  const byCat = new Map();
+  for(const e of bilEntries){
     const cfg = state.indicators.find(c => c.indicator === e.realIndicator);
     const cat = cfg?.category || 'autres';
     if(!byCat.has(cat)) byCat.set(cat, []);
@@ -4899,9 +4959,12 @@ function _buildBilateralLayout(){
     let items = '';
     for(const e of entries){
       const checked = _bilSelected.has(e.key);
+      // Libellé simplifié : utilise la table INDICATOR_BIL_LABELS, fallback sur l'indicator brut
+      const label = INDICATOR_BIL_LABELS[e.indicator]
+        || (e.indicator.charAt(0).toUpperCase() + e.indicator.slice(1).replace(/_/g, ' '));
       items += `<label class="cross-flux-item ${checked?'on':''}">
         <input type="checkbox" ${checked?'checked':''} onchange="_bilToggleFlux('${escAttr(e.key)}')">
-        <span>${escAttr(e.label_long || e.label || e.key)}</span>
+        <span>${escAttr(label)}</span>
       </label>`;
     }
     navHtml += `<div class="cross-cat"><div class="cross-cat-head">${catLab}</div>${items}</div>`;
