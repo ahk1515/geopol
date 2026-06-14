@@ -31,13 +31,13 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Restore WITS checkpoint
+      - name: Restore IMF IMTS checkpoint
         uses: actions/cache@v4
         with:
-          path: etl/wits_checkpoint.json
-          key: wits-checkpoint-${{ github.run_id }}
+          path: etl/imf_imts_checkpoint.json
+          key: imf-imts-checkpoint-${{ github.run_id }}
           restore-keys: |
-            wits-checkpoint-
+            imf-imts-checkpoint-
 
       - name: Download existing DB from R2
         env:
@@ -74,12 +74,12 @@ jobs:
           R2_PUBLIC_URL:    ${{ secrets.R2_PUBLIC_URL }}
         run: python run_etl.py
 
-      - name: Save WITS checkpoint
+      - name: Save IMF IMTS checkpoint
         if: always()
         uses: actions/cache@v4
         with:
-          path: etl/wits_checkpoint.json
-          key: wits-checkpoint-${{ github.run_id }}
+          path: etl/imf_imts_checkpoint.json
+          key: imf-imts-checkpoint-${{ github.run_id }}
 
       - name: Summary
         if: always()
