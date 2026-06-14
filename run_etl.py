@@ -21,7 +21,7 @@ from etl.config import PATH_DB, PATH_STATUS, load_admin_config
 # -------------------------------------------------------------
 # IMPORT DES SCRIPTS ETL
 # -------------------------------------------------------------
-from etl.sources import banque_mondiale, owid, comtrade, wits, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, weo, zee
+from etl.sources import banque_mondiale, owid, comtrade, imf_imts, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, weo, zee
 from etl import construits, build_db
 
 # -------------------------------------------------------------
@@ -45,15 +45,15 @@ PIPELINE = [
         "obligatoire": False,
     },
     {
-        "id":          "wits",
-        "label":       "WITS (Commerce bilatéral)",
-        "module":      wits,
+        "id":          "imf_imts",
+        "label":       "IMF IMTS (Commerce bilatéral)",
+        "module":      imf_imts,
         "type":        "automatique",
         "obligatoire": False,
     },
     # COMTRADE — désactivé tant que pas de clé API Premium obtenue.
-    # WITS le remplace : mêmes données primaires UN Comtrade, API gratuite.
-    # Réactivable simplement en décommentant ci-dessous (et commentant le step WITS).
+    # IMF IMTS le remplace : mêmes données primaires (douanes nationales),
+    # API gratuite et officielle. Réactivable simplement en décommentant.
     # {
     #     "id":          "comtrade",
     #     "label":       "UN Comtrade",
