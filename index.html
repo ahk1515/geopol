@@ -156,10 +156,6 @@ header {
 .subject-chip.empty { background: var(--bg3); border-color: var(--border); color: var(--text3); font-style: italic; }
 .subject-chip .x { opacity: .5; font-size: 13px; line-height: 1; }
 .subject-chip .x:hover { opacity: 1; }
-/* chip du comparant B (orange, distinct du sujet A vert) */
-.subject-chip.b { background: var(--orange-d); border-color: var(--orange-b); color: var(--orange); }
-.subject-chip.b:hover { background: var(--orange-b); }
-.subject-chip.b.empty { background: var(--bg3); border: 1px dashed var(--border2); color: var(--text3); }
 
 .ctx-sep { width: 1px; height: 18px; background: var(--border); }
 
@@ -634,32 +630,12 @@ main { flex: 1; padding: 16px 18px 28px; }
   gap: 12px;
   padding: 4px 0;
 }
-.compo-row-compare {
-  grid-template-columns: 180px 1fr;
-  align-items: start;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-}
-.compo-row-compare:last-child { border-bottom: none; }
 .compo-name { font-size: 12.5px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.compo-bars { display: flex; flex-direction: column; gap: 4px; }
-.compo-bar-line {
-  display: grid;
-  grid-template-columns: 90px 1fr 110px;
-  align-items: center;
-  gap: 8px;
-}
-.compo-bar-key {
-  font-family: var(--mono); font-size: 10px; color: var(--green);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.compo-bar-key.b { color: var(--orange); }
 .compo-bar-track {
   background: var(--bg3); border-radius: 2px; height: 12px; overflow: hidden; position: relative;
 }
 .compo-bar-fill { height: 100%; border-radius: 2px; transition: width .25s ease; }
 .compo-bar-fill.a { background: var(--green); }
-.compo-bar-fill.b { background: var(--orange); }
 .compo-bar-val { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--text); text-align: right; }
 .compo-hidden {
   font-size: 10.5px; color: var(--text3); font-style: italic;
@@ -943,175 +919,6 @@ main { flex: 1; padding: 16px 18px 28px; }
   color: var(--text3); font-family: var(--mono); font-style: italic;
 }
 
-/* ─── Slot Partenaire B (mode bilatéral Relations) ─── */
-.rel-partner-b .rel-partner-b-add {
-  background: var(--bg2); border: 1px dashed var(--border); border-radius: 6px;
-  padding: 4px 10px; font-size: 11px; color: var(--text3); cursor: pointer;
-  font-family: var(--sans); transition: all .12s;
-}
-.rel-partner-b .rel-partner-b-add:hover {
-  border-color: var(--green); color: var(--green);
-  border-style: solid; background: rgba(10,110,74,.04);
-}
-.rel-partner-b.filled { background: rgba(10,110,74,.08); border-radius: 6px; padding: 2px 4px; }
-.rel-partner-b-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--green); color: #fff; border-radius: 4px;
-  padding: 3px 8px; font-size: 11px; font-weight: 600;
-}
-.rel-partner-b-clear {
-  background: rgba(255,255,255,.2); border: none; color: #fff;
-  border-radius: 50%; width: 16px; height: 16px;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; cursor: pointer; line-height: 1;
-  margin-left: 2px;
-}
-.rel-partner-b-clear:hover { background: rgba(255,255,255,.35); }
-
-/* Placeholder du mode bilatéral en attendant la livraison 2 */
-.rel-bilateral-placeholder {
-  padding: 60px 30px; text-align: center;
-  background: var(--bg2); border: 1px dashed var(--border); border-radius: 12px;
-  margin-top: 16px;
-}
-.rel-bilateral-placeholder .empty-title {
-  font-size: 16px; font-weight: 600; color: var(--green);
-  margin-bottom: 8px; font-family: var(--sans);
-}
-.rel-bilateral-placeholder .empty-sub {
-  font-size: 12px; color: var(--text3); max-width: 480px; margin: 0 auto;
-}
-
-/* ─── Layout bilatéral (réutilise les classes cross-* + spécificités) ─── */
-.bil-layout .cross-nav-head { font-size: 9.5px; }
-.bil-filter-bar { padding: 8px 12px; }
-.bil-mode-tag {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 11px; color: var(--text);
-  background: rgba(10,110,74,.08); border: 1px solid var(--green);
-  border-radius: 6px; padding: 4px 10px;
-}
-.bil-mode-dot {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--green);
-  display: inline-block;
-}
-.bil-couple {
-  font-family: var(--mono); font-weight: 600; color: var(--green);
-  letter-spacing: .02em;
-}
-
-/* Tuile bilatérale : structure 2 colonnes + sparkline en bas */
-.bil-tile { min-height: 220px; }
-.bil-tile-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
-.bil-cols {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed var(--border);
-}
-.bil-col { display: flex; flex-direction: column; gap: 6px; }
-.bil-col-head {
-  font-size: 10px; color: var(--text2);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  padding-bottom: 4px; border-bottom: 1px solid var(--border);
-}
-.bil-col-head strong { color: var(--text); font-weight: 600; }
-.bil-arrow { color: var(--green); margin: 0 2px; font-weight: 700; }
-.bil-row {
-  display: flex; align-items: baseline; justify-content: space-between;
-  font-size: 10px; gap: 8px;
-}
-.bil-row-label { color: var(--text3); }
-.bil-row-value {
-  font-family: var(--mono); font-size: 11px; color: var(--text);
-  font-weight: 500;
-}
-.bil-row-value.primary {
-  font-size: 14px; font-weight: 700; color: var(--green);
-}
-
-/* Sparkline temporelle en bas de la fiche */
-.bil-spark { display: flex; flex-direction: column; gap: 4px; }
-.bil-spark-legend {
-  display: flex; gap: 12px;
-  font-size: 9px; color: var(--text3);
-  align-items: center;
-}
-.bil-spark-legend span { display: flex; align-items: center; gap: 4px; }
-.bil-spark-dot {
-  display: inline-block; width: 8px; height: 2px;
-}
-.bil-spark-empty {
-  font-size: 10px; color: var(--text3); font-style: italic;
-  text-align: center; padding: 8px 0;
-}
-
-/* ─── Viz Courbes temporelles bilatérales (📈) ─── */
-.bil-courbes-legend {
-  display: flex; gap: 14px; padding: 0 4px 6px;
-  font-size: 10px; color: var(--text2);
-  align-items: center; flex-wrap: wrap;
-}
-.bil-courbes-legend span { display: flex; align-items: center; gap: 5px; }
-
-/* ─── Viz Bar chart comparatif (📊) ─── */
-.bil-barchart { display: flex; flex-direction: column; gap: 6px; }
-.bil-section-title {
-  font-family: var(--mono); font-size: 9px;
-  text-transform: uppercase; letter-spacing: .08em;
-  color: var(--text3); margin-top: 6px;
-}
-.bil-bar-row {
-  display: grid; grid-template-columns: 130px 1fr 50px; gap: 8px;
-  align-items: center; font-size: 10px;
-}
-.bil-bar-label { color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bil-bar-track {
-  height: 12px; background: var(--bg3); border-radius: 2px; overflow: hidden;
-  position: relative;
-}
-.bil-bar-fill {
-  height: 100%; border-radius: 2px;
-  transition: width .3s ease;
-}
-.bil-bar-val {
-  font-family: var(--mono); font-size: 10px; color: var(--text);
-  text-align: right; font-weight: 500;
-}
-
-/* ─── Viz Top contextuel (🔍) ─── */
-.bil-topctx {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-  font-size: 10px;
-}
-.bil-topctx-col {
-  display: flex; flex-direction: column; gap: 3px;
-}
-.bil-topctx-title {
-  font-family: var(--mono); font-size: 9px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .04em;
-  color: var(--text3); margin-bottom: 6px;
-  line-height: 1.4;
-}
-.bil-topctx-row {
-  display: grid; grid-template-columns: 16px 1fr 40px; gap: 6px;
-  align-items: center; padding: 2px 4px;
-  border-radius: 3px; transition: background .12s;
-}
-.bil-topctx-row:not(.anchor):hover { background: rgba(10,110,74,.06); }
-.bil-topctx-row.anchor {
-  background: rgba(10,110,74,.15); border: 1px solid var(--green);
-  font-weight: 600;
-}
-.bil-topctx-flag { font-size: 12px; }
-.bil-topctx-name { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bil-topctx-pct {
-  font-family: var(--mono); font-size: 10px; color: var(--green);
-  text-align: right; font-weight: 600;
-}
-.bil-topctx-empty {
-  font-size: 10px; color: var(--text3); font-style: italic;
-  padding: 8px 0;
-}
 
 /* Grille des tuiles */
 .cross-grid { display: grid; gap: 10px; }
@@ -1229,6 +1036,142 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-map-legend { display: flex; align-items: center; gap: 8px; padding: 8px 4px 0; font-size: 10px; color: var(--text3); }
 .rel-map-legend .bar { height: 8px; width: 120px; border-radius: 3px; background: linear-gradient(to right, #f5e6dc, #d4956f, #b45309, #7c2d12); }
 
+/* ═════ ONGLET COMPARAISONS BILATÉRALES ═════ */
+.cmp-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; min-height: 60vh; text-align: center;
+}
+.cmp-empty-title { font-size: 17px; font-weight: 600; color: var(--text); }
+.cmp-empty-sub { font-family: var(--mono); font-size: 13px; color: var(--text3); }
+.cmp-empty-btn {
+  margin-top: 4px; padding: 10px 18px; border-radius: 8px;
+  background: var(--green-d); border: 1px solid var(--green-b); color: var(--green);
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.cmp-empty-btn:hover { background: var(--green-b); }
+
+.cmp-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  padding: 12px 14px; margin-bottom: 14px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+}
+.cmp-couple { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cmp-side {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 12px; border-radius: 8px; font-size: 14px; font-weight: 500;
+}
+.cmp-side .flag { font-size: 17px; }
+.cmp-side.a { background: var(--green-d); border: 1px solid var(--green-b); color: var(--green); }
+.cmp-side.b { background: var(--orange-d); border: 1px solid var(--orange-b); color: var(--orange); cursor: pointer; transition: all .15s; }
+.cmp-side.b:hover { background: var(--orange-b); }
+.cmp-side .x { opacity: .5; font-size: 14px; line-height: 1; margin-left: 2px; }
+.cmp-side .x:hover { opacity: 1; }
+.cmp-arrow { font-size: 18px; color: var(--text3); font-weight: 700; }
+.cmp-change-btn {
+  background: none; border: 1px solid var(--border2); border-radius: 6px;
+  color: var(--text2); font-size: 11px; padding: 4px 10px; cursor: pointer; transition: all .15s;
+}
+.cmp-change-btn:hover { background: var(--bg3); color: var(--text); }
+.cmp-year { display: flex; align-items: center; gap: 8px; }
+
+.cmp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 980px){ .cmp-split { grid-template-columns: 1fr; } }
+.cmp-half {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; min-height: 360px; display: flex; flex-direction: column;
+}
+.cmp-half-head {
+  padding: 11px 14px; font-size: 13px; font-weight: 600; color: var(--text);
+  border-bottom: 1px solid var(--border); background: var(--bg3);
+}
+.cmp-flux .cmp-half-head { border-left: 3px solid var(--green); }
+.cmp-power .cmp-half-head { border-left: 3px solid var(--orange); }
+.cmp-half-body { flex: 1; padding: 14px; }
+.cmp-placeholder {
+  display: flex; align-items: center; justify-content: center; height: 100%;
+  min-height: 300px; color: var(--text3); font-size: 12.5px; font-style: italic;
+}
+
+/* Layout interne d'une moitié : nav + corps côte à côte */
+.cmp-half-inner { display: flex; flex: 1; min-height: 0; }
+.cmp-nav {
+  width: 184px; flex-shrink: 0; overflow-y: auto; max-height: 640px;
+  border-right: 1px solid var(--border); padding: 8px 6px;
+}
+.cmp-nav.right { border-right: none; border-left: 1px solid var(--border); }
+.cmp-half-body { flex: 1; padding: 10px 12px; overflow-x: auto; }
+.cmp-nav-head {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .05em; padding: 2px 6px 8px;
+}
+.cmp-nav-cat {
+  font-family: var(--mono); font-size: 9.5px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .04em; padding: 8px 6px 3px;
+}
+.cmp-nav-item {
+  display: flex; align-items: center; gap: 7px; padding: 4px 6px;
+  font-size: 11.5px; color: var(--text2); border-radius: 5px; cursor: pointer;
+}
+.cmp-nav-item:hover { background: var(--bg3); }
+.cmp-nav-item.on { color: var(--text); font-weight: 500; }
+.cmp-nav-item input { accent-color: var(--green); }
+
+/* Header de section (catégorie) commun aux deux moitiés */
+.cmp-section-head {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 12px 2px 5px; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+}
+
+/* Barres factorisées (jauge profil flux) */
+.row-bar-track {
+  height: 14px; background: var(--bg4, #eef1f3); border-radius: 3px;
+  display: flex; align-items: stretch; overflow: hidden; width: 100%;
+}
+.row-bar-fill { height: 100%; border-radius: 3px; transition: width .25s ease; }
+
+/* Profil de flux : 5 sous-colonnes */
+.cmp-flux-row {
+  display: grid; grid-template-columns: 80px 1fr 200px 1fr 80px;
+  align-items: center; gap: 8px; min-height: 50px;
+  padding: 4px 0; border-bottom: 1px solid var(--border);
+}
+.cmp-flux-row:hover { background: var(--bg3); }
+.cmp-spark { display: flex; align-items: center; }
+.cmp-spark.right { justify-content: flex-end; }
+.cmp-gauge-col { display: flex; flex-direction: column; gap: 3px; }
+.cmp-gauge-nums { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; }
+.cmp-gauge-nums .pct { font-weight: 500; }
+.cmp-gauge-nums .pct.green { color: var(--green); }
+.cmp-gauge-nums .pct.orange { color: var(--orange); }
+.cmp-gauge-nums .rk { color: var(--text3); }
+.cmp-flux-center { text-align: center; padding: 0 6px; }
+.cmp-flux-title { font-size: 13px; font-weight: 500; line-height: 1.3; color: var(--text); }
+.cmp-flux-vol { font-family: var(--mono); font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+/* Tornado de puissance : 5 colonnes */
+.cmp-torn-row {
+  display: grid; grid-template-columns: 100px 1fr 140px 1fr 100px;
+  align-items: center; gap: 6px; min-height: 40px; padding: 2px 0;
+}
+.cmp-torn-row:hover { background: var(--bg3); }
+.cmp-torn-val { font-family: var(--mono); font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; }
+.cmp-torn-val.a { color: #0a6e4a; justify-content: flex-start; }
+.cmp-torn-val.b { color: #b45309; justify-content: flex-end; }
+.cmp-torn-bar { height: 16px; display: flex; }
+.cmp-torn-bar.a { justify-content: flex-end; }
+.cmp-torn-bar.b { justify-content: flex-start; }
+.cmp-torn-fill { height: 100%; border-radius: 3px; }
+.cmp-torn-fill.a { background: #0a6e4a; }
+.cmp-torn-fill.b { background: #b45309; }
+.cmp-torn-mid { text-align: center; font-size: 11.5px; color: var(--text); line-height: 1.25; }
+.cmp-torn-ratio { display: block; font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 1px; }
+.cmp-torn-row .tr { font-size: 11px; }
+.cmp-torn-row .tr.up { color: #0a6e4a; }
+.cmp-torn-row .tr.down { color: #b45309; }
+.cmp-torn-row .tr.flat { color: var(--text3); }
+
 </style>
 </head>
 <body>
@@ -1242,6 +1185,7 @@ main { flex: 1; padding: 16px 18px 28px; }
       <button class="tab" data-view="puissance">Puissance</button>
       <button class="tab" data-view="relations">Relations</button>
       <button class="tab" data-view="croise">Croisé</button>
+      <button class="tab" data-view="comparaisons">Comparaisons</button>
     </nav>
     <div class="header-spacer"></div>
     <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
@@ -1253,11 +1197,6 @@ main { flex: 1; padding: 16px 18px 28px; }
   <div id="contextBar">
     <span class="ctx-label">Sujet</span>
     <div id="subjectSlot"></div>
-    <div id="compareBSlotWrap" style="display:none;align-items:center;gap:12px">
-      <span class="ctx-sep"></span>
-      <span class="ctx-label">Comparer à<span class="help-tip" onclick="event.stopPropagation();showHelp('comparaison_ab', this)" title="Aide" role="button">ⓘ</span></span>
-      <div id="compareBSlot"></div>
-    </div>
     <span class="ctx-sep"></span>
     <span class="ctx-label">Année</span>
     <div id="yearSlot"></div>
@@ -1279,6 +1218,10 @@ main { flex: 1; padding: 16px 18px 28px; }
 
     <section class="view" id="view-croise">
       <div id="croiseContent"></div>
+    </section>
+
+    <section class="view" id="view-comparaisons">
+      <div id="comparaisonsContent"></div>
     </section>
   </main>
 </div>
@@ -1716,7 +1659,6 @@ const state = {
   yearBounds: { min: 2000, max: 2024 },
   view: 'synthese',        // onglet actif
   subject: null,           // { isos:[iso3,...], label }  — null si vide
-  compareB: null,          // { isos:[...], label } — exclusif à Puissance
   isDemo: false,
   // caches perf (récupérés/étendus depuis l'ancien code aux étapes suivantes)
   _rankCache: new Map(),
@@ -1775,8 +1717,6 @@ const cache = {
   flux: new Map(),    // indicator -> { partner:{rows}, influence:{rows} } (à la demande)
   world: new Map(),   // "indicator|year" -> { sorted:[...], n } (stats mondiales, à la demande)
 };
-// Cache parallèle pour le comparant B (Puissance A vs B).
-const cacheB = { key: null, identite: null, projection: null };
 
 function subjectKey(isos){ return isos.slice().sort().join(','); }
 
@@ -1867,66 +1807,6 @@ function getIdentiteSeries(indicator){
     }
   }
   // tri global par année (au cas où historique et projection se chevauchent)
-  return out.sort((a,b) => a.year - b.year);
-}
-
-/* ─── CACHE POUR LE COMPARANT B (Puissance A vs B) ────────────── */
-function ensureIdentiteCacheB(){
-  if(!state.compareB || !state.compareB.isos.length){ cacheB.key = null; cacheB.identite = null; cacheB.projection = null; return false; }
-  const isos = state.compareB.isos;
-  const key = subjectKey(isos);
-  if(cacheB.key === key && cacheB.identite) return true;
-  cacheB.key = key; cacheB.identite = {}; cacheB.projection = {};
-  const inList = sqlList(isos);
-  const r = safeExec(`SELECT indicator, year, country_iso3, value, subcategory FROM identite WHERE country_iso3 IN (${inList})`);
-  if(!r.length) return true;
-  const tmpH = {}, tmpP = {};
-  for(const [ind, year, iso, val, sub] of r[0].values){
-    if(val == null) continue;
-    const bucket = (sub === 'projection') ? tmpP : tmpH;
-    (bucket[ind] ??= {});
-    (bucket[ind][year] ??= []).push(val);
-  }
-  function aggregate(tmp, target){
-    for(const ind in tmp){
-      const method = aggMethodFor(ind);
-      const byYear = {};
-      for(const y in tmp[ind]){
-        const arr = tmp[ind][y];
-        byYear[y] = (method === 'sum') ? arr.reduce((a,b)=>a+b,0) : arr.reduce((a,b)=>a+b,0) / arr.length;
-      }
-      target[ind] = byYear;
-    }
-  }
-  aggregate(tmpH, cacheB.identite);
-  aggregate(tmpP, cacheB.projection);
-  return true;
-}
-function getIdentiteValueB(indicator, year){
-  if(!ensureIdentiteCacheB()) return null;
-  const y = year ?? state.year;
-  const series = cacheB.identite?.[indicator]; if(!series) return null;
-  if(series[y] != null && series[y] !== 0) return series[y];
-  const ys = Object.keys(series).map(Number).filter(yy => yy <= y && series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
-  if(ys.length) return series[ys[0]];
-  const any = Object.keys(series).map(Number).filter(yy => series[yy] != null && series[yy] !== 0).sort((a,b)=>b-a);
-  return any.length ? series[any[0]] : null;
-}
-function getIdentiteSeriesB(indicator){
-  if(!ensureIdentiteCacheB()) return [];
-  const out = [];
-  const h = cacheB.identite?.[indicator];
-  if(h){
-    for(const y of Object.keys(h).map(Number).sort((a,b)=>a-b)){
-      if(h[y] != null && h[y] !== 0) out.push({ year: y, value: h[y], projection: false });
-    }
-  }
-  const p = cacheB.projection?.[indicator];
-  if(p){
-    for(const y of Object.keys(p).map(Number).sort((a,b)=>a-b)){
-      if(p[y] != null && p[y] !== 0) out.push({ year: y, value: p[y], projection: true });
-    }
-  }
   return out.sort((a,b) => a.year - b.year);
 }
 
@@ -2280,6 +2160,12 @@ function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
 /* ─── BOOT (repris/adapté de l'ancien) ────────────────────────── */
 async function boot(){
+  // Migration : nettoyage des vestiges du mode bilatéral Relations (retiré).
+  try {
+    localStorage.removeItem('geopol_bil_selected');
+    localStorage.removeItem('geopol_bil_view_types');
+    localStorage.removeItem('geopol_bil_tile_periods');
+  } catch {}
   setLoadingMsg('Initialisation WebAssembly…', 15);
   let SQL;
   try {
@@ -2498,33 +2384,7 @@ function switchView(v){
 /* ─── CONTEXTE (barre sujet + année) ──────────────────────────── */
 function renderContextBar(){
   renderSubjectSlot();
-  renderCompareBSlot();
   renderYearSlot();
-}
-// Slot B : visible uniquement en Puissance (le comparant n'a pas de sens sur les autres onglets).
-function renderCompareBSlot(){
-  const wrap = document.getElementById('compareBSlotWrap');
-  const slot = document.getElementById('compareBSlot');
-  if(state.view !== 'puissance'){ wrap.style.display = 'none'; return; }
-  wrap.style.display = 'inline-flex';
-  if(!state.compareB || !state.compareB.isos.length){
-    slot.innerHTML = `<span class="subject-chip b empty" onclick="openSearchForB()">+ ajouter un comparant</span>`;
-    return;
-  }
-  const b = state.compareB;
-  const flag = b.isos.length === 1 ? isoToFlag(b.isos[0]) : '⊞';
-  slot.innerHTML =
-    `<span class="subject-chip b" onclick="openSearchForB()">
-       <span class="flag">${flag}</span>${b.label}
-       ${b.isos.length>1 ? `<span style="font-family:var(--mono);font-size:10px;opacity:.6">${b.isos.length} pays</span>` : ''}
-       <span class="x" onclick="event.stopPropagation();clearCompareB()">×</span>
-     </span>`;
-}
-function clearCompareB(){
-  state.compareB = null;
-  renderContextBar();
-  refreshActiveView();
-  syncUrl();
 }
 function renderSubjectSlot(){
   const slot = document.getElementById('subjectSlot');
@@ -2589,6 +2449,7 @@ function refreshActiveView(){
   else if(state.view === 'puissance') renderPuissance();
   else if(state.view === 'relations') renderRelations();
   else if(state.view === 'croise') renderCroise();
+  else if(state.view === 'comparaisons') renderComparaisons();
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -2652,19 +2513,6 @@ function getValueYear(indicator, year){
 
 /* ─── INFOBULLE GLOBALE ───────────────────────────────────────── */
 function escAttr(s){ return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
-function showTip(ev, raw){
-  const tip = document.getElementById('globalTip');
-  // format : "titre::ligne1::ligne2" → titre en gras, lignes en dessous
-  const parts = String(raw).split('::');
-  let html = '';
-  parts.forEach((p,i) => {
-    if(i===0) html += `<div style="margin-bottom:3px">${p}</div>`;
-    else html += `<div class="tt">${p}</div>`;
-  });
-  tip.innerHTML = html;
-  tip.style.display = 'block';
-  moveTip(ev);
-}
 function moveTip(ev){
   const tip = document.getElementById('globalTip');
   if(tip.style.display !== 'block') return;
@@ -2720,12 +2568,6 @@ const HELP_TEXTS = {
     <strong>3%</strong> : équilibré, signature stratégique du pays (défaut).<br>
     <strong>5%</strong> : sélectif, ne garde que les positions dominantes.</p>
     <p>Réglage sauvegardé entre sessions.</p>`
-  },
-  comparaison_ab: {
-    title: 'Comparaison A vs B',
-    body: `<p>Le sujet A est celui de la barre de contexte (en haut). Le sujet B est défini ici, indépendamment.</p>
-    <p>Sur le radar, B apparaît en polygone orange pointillé superposé à A en vert. Sur la courbe, les deux séries sont superposées avec écart relatif en % dans l'entête.</p>
-    <p>La carte reste sur A seul (lisibilité). Le bloc Composition montre les deux pays en barres groupées par sub1.</p>`
   },
   filtre_zone: {
     title: 'Filtre Partenaires',
@@ -3757,8 +3599,7 @@ function selectPuIndicator(ind){
 // Zone principale : entête + cellules (courbe en haut, carte en bas).
 /* ─── COMPOSITION PAR SUB1 (étape B — ressources) ───────────────
    Pour les indicateurs ressources (production / réserves énergétiques et minérales),
-   éclate la valeur globale par type (sub1). Affichage en bar chart horizontal trié,
-   en mode comparaison A vs B avec barres groupées si compareB est actif.
+   éclate la valeur globale par type (sub1). Affichage en bar chart horizontal trié.
 */
 // Indicateurs concernés : valeurs absolues éclatées par sub1.
 // Les *_share sont volontairement absents : ils sont déjà éclatés dans le bloc Atouts de Synthèse.
@@ -3806,66 +3647,39 @@ function buildCompoBlock(indicator){
   const cfg = state.indicators.find(c => c.indicator === indicator);
   if(!cfg) return '';
   const isosA = currentIsos();
-  const hasB = state.compareB && state.compareB.isos.length > 0;
-  const isosB = hasB ? state.compareB.isos : null;
 
   const dataA = getCompoBySub1(indicator, isosA, state.year);
-  const dataB = hasB ? getCompoBySub1(indicator, isosB, state.year) : {};
 
-  // Union des sub1, triées par max(A,B) décroissant
-  const allSubs = new Set([...Object.keys(dataA), ...Object.keys(dataB)]);
+  // sub1 triées par valeur décroissante
+  const allSubs = new Set([...Object.keys(dataA)]);
   if(allSubs.size === 0) return '';
   const items = [...allSubs].map(sub => ({
     sub,
     label: prettySubLabel(sub),
     a: dataA[sub] || 0,
-    b: dataB[sub] || 0,
-  })).sort((x,y) => Math.max(y.a, y.b) - Math.max(x.a, x.b));
+  })).sort((x,y) => y.a - x.a);
 
   const TOP = 10;
   const visible = items.slice(0, TOP);
   const hidden = items.slice(TOP);
-  const maxVal = Math.max(...visible.flatMap(it => [it.a, it.b])) || 1;
+  const maxVal = Math.max(...visible.map(it => it.a)) || 1;
 
-  // Rendu : une ligne par sub. Si hasB, deux barres empilées verticalement dans la ligne (A vert, B orange).
   let rows = '';
   for(const it of visible){
     const wA = Math.max(2, (it.a / maxVal) * 100);
-    const wB = hasB ? Math.max(it.b > 0 ? 2 : 0, (it.b / maxVal) * 100) : 0;
     const aStr = it.a > 0 ? `${fmtNumber(it.a, cfg.unit_display)} ${scaleSuffix(it.a, cfg.unit_display)}` : '—';
-    const bStr = it.b > 0 ? `${fmtNumber(it.b, cfg.unit_display)} ${scaleSuffix(it.b, cfg.unit_display)}` : '—';
-    if(hasB){
-      rows += `<div class="compo-row compo-row-compare">
-        <div class="compo-name">${it.label}</div>
-        <div class="compo-bars">
-          <div class="compo-bar-line">
-            <span class="compo-bar-key">${state.subject.label}</span>
-            <span class="compo-bar-track"><span class="compo-bar-fill a" style="width:${wA.toFixed(1)}%"></span></span>
-            <span class="compo-bar-val">${aStr}</span>
-          </div>
-          <div class="compo-bar-line">
-            <span class="compo-bar-key b">${state.compareB.label}</span>
-            <span class="compo-bar-track"><span class="compo-bar-fill b" style="width:${wB.toFixed(1)}%"></span></span>
-            <span class="compo-bar-val">${bStr}</span>
-          </div>
-        </div>
-      </div>`;
-    } else {
-      rows += `<div class="compo-row">
+    rows += `<div class="compo-row">
         <div class="compo-name">${it.label}</div>
         <div class="compo-bar-track"><div class="compo-bar-fill a" style="width:${wA.toFixed(1)}%"></div></div>
         <div class="compo-bar-val">${aStr}</div>
       </div>`;
-    }
   }
   let hiddenLine = '';
   if(hidden.length){
     const sumHiddenA = hidden.reduce((s,it) => s + it.a, 0);
-    const sumHiddenB = hidden.reduce((s,it) => s + it.b, 0);
     const list = hidden.map(it => it.label).join(', ');
     const aStr = sumHiddenA > 0 ? `${fmtNumber(sumHiddenA, cfg.unit_display)} ${scaleSuffix(sumHiddenA, cfg.unit_display)}` : '';
-    const bStr = hasB && sumHiddenB > 0 ? ` · ${state.compareB.label} ${fmtNumber(sumHiddenB, cfg.unit_display)} ${scaleSuffix(sumHiddenB, cfg.unit_display)}` : '';
-    hiddenLine = `<div class="compo-hidden" title="${escAttr(list)}">+ ${hidden.length} autres types · ${aStr}${bStr}</div>`;
+    hiddenLine = `<div class="compo-hidden" title="${escAttr(list)}">+ ${hidden.length} autres types · ${aStr}</div>`;
   }
   return `<div class="pu-cell">
     <div class="pu-cell-head">
@@ -3890,24 +3704,10 @@ function renderPuMain(){
     const rp = rankPercentile(_puIndicator, val, realYear || state.year);
     if(rp) rankLine = `${ordinalFr(rp.rank)} / ${rp.total} mondial`;
   }
-  // valeur B et écart relatif (B vs A) si comparaison active
-  const hasB = state.compareB && state.compareB.isos.length > 0;
-  const valB = hasB ? getIdentiteValueB(_puIndicator, state.year) : null;
-  let cmpLine = '';
-  if(hasB && valB != null){
-    const bTxt = `${fmtNumber(valB, c.unit_display)} ${scaleSuffix(valB, c.unit_display)}`;
-    let delta = '';
-    if(val != null && val !== 0){
-      const ratio = (valB - val) / Math.abs(val) * 100;
-      const sign = ratio >= 0 ? '+' : '';
-      delta = ` <span style="color:var(--orange);font-weight:600">(${sign}${ratio.toFixed(0)}%)</span>`;
-    }
-    cmpLine = ` <span style="color:var(--orange);font-family:var(--mono);font-size:10px;letter-spacing:.05em;margin-left:8px">vs ${state.compareB.label} ${bTxt}${delta}</span>`;
-  }
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${c.label || c.indicator}</span>
-      <span class="meta">${val!=null ? fmtNumber(val, c.unit_display)+' '+scaleSuffix(val,c.unit_display) : '—'}${rankLine?' · '+rankLine:''} · ${realYear||'—'} · ${src||'n/d'}${cmpLine}</span>
+      <span class="meta">${val!=null ? fmtNumber(val, c.unit_display)+' '+scaleSuffix(val,c.unit_display) : '—'}${rankLine?' · '+rankLine:''} · ${realYear||'—'} · ${src||'n/d'}</span>
     </div>
     <div class="pu-cells">
       <div class="top-row">
@@ -3939,16 +3739,13 @@ function drawPuCurve(){
   const wrap = document.getElementById('puCurve');
   if(!wrap) return;
   const seriesA = getIdentiteSeries(_puIndicator);
-  const hasB = state.compareB && state.compareB.isos.length > 0;
-  const seriesB = hasB ? getIdentiteSeriesB(_puIndicator) : [];
-  if(seriesA.length < 2 && seriesB.length < 2){
+  if(seriesA.length < 2){
     wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Série temporelle insuffisante</div>`;
     return;
   }
   const W = wrap.clientWidth || 600, H = 260, m = { t:14, r:16, b:24, l:48 };
-  // échelle commune A ∪ B
-  const allYears = seriesA.concat(seriesB).map(d => d.year);
-  const allVals = seriesA.concat(seriesB).map(d => d.value);
+  const allYears = seriesA.map(d => d.year);
+  const allVals = seriesA.map(d => d.value);
   const xMin = Math.min(...allYears), xMax = Math.max(...allYears);
   const yMin = Math.min(...allVals), yMax = Math.max(...allVals);
   const yLo = yMin - (yMax-yMin)*0.08, yHi = yMax + (yMax-yMin)*0.08;
@@ -3964,7 +3761,6 @@ function drawPuCurve(){
     return { hist, proj, histPath, projPath };
   }
   const A = buildPathsFor(seriesA);
-  const B = hasB ? buildPathsFor(seriesB) : null;
   // aire (uniquement pour A, par lisibilité)
   const area = (A.histPath && A.hist.length) ? A.histPath + ` L${X(A.hist[A.hist.length-1].year).toFixed(1)},${Y(yLo).toFixed(1)} L${X(A.hist[0].year).toFixed(1)},${Y(yLo).toFixed(1)} Z` : '';
 
@@ -3987,29 +3783,15 @@ function drawPuCurve(){
     projMark = `<line class="curve-grid" x1="${xp}" y1="${m.t}" x2="${xp}" y2="${H-m.b}" style="stroke:var(--orange);opacity:.4;stroke-dasharray:3 3"/><text class="curve-lbl" x="${xp}" y="${m.t+8}" text-anchor="middle" style="fill:var(--orange)">projection →</text>`;
   }
   const lastA = A.hist[A.hist.length-1] || A.proj[A.proj.length-1];
-  const lastB = B ? (B.hist[B.hist.length-1] || B.proj[B.proj.length-1]) : null;
-
-  // légende quand B actif
-  let legend = '';
-  if(hasB){
-    legend = `<g transform="translate(${m.l+6},${m.t-2})">
-      <line x1="0" y1="6" x2="14" y2="6" stroke="var(--green)" stroke-width="2"/><text x="18" y="9" class="curve-lbl" style="font-size:10px;fill:var(--text2)">${state.subject.label}</text>
-      <line x1="120" y1="6" x2="134" y2="6" stroke="var(--orange)" stroke-width="2" stroke-dasharray="4 3"/><text x="138" y="9" class="curve-lbl" style="font-size:10px;fill:var(--text2)">${state.compareB.label}</text>
-    </g>`;
-  }
 
   wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     ${gridY}
     ${area ? `<path class="curve-area" d="${area}"/>` : ''}
     ${A.histPath ? `<path class="curve-line" d="${A.histPath}"/>` : ''}
     ${A.projPath ? `<path class="curve-line curve-proj" d="${A.projPath}" style="stroke:var(--orange)"/>` : ''}
-    ${B && B.histPath ? `<path class="curve-line" d="${B.histPath}" style="stroke:var(--orange);stroke-dasharray:4 3"/>` : ''}
-    ${B && B.projPath ? `<path class="curve-line" d="${B.projPath}" style="stroke:var(--orange);stroke-dasharray:2 3;opacity:.6"/>` : ''}
     ${lastA ? `<circle class="curve-dot" cx="${X(lastA.year).toFixed(1)}" cy="${Y(lastA.value).toFixed(1)}" r="3"/>` : ''}
-    ${lastB ? `<circle cx="${X(lastB.year).toFixed(1)}" cy="${Y(lastB.value).toFixed(1)}" r="3" fill="var(--orange)"/>` : ''}
     ${projMark}
     ${labX}
-    ${legend}
   </svg>`;
 }
 
@@ -4025,22 +3807,12 @@ function drawPuRadar(){
   const W = 360, H = 320, cx = W/2, cy = H/2 + 4, R = Math.min(W,H)/2 - 38;
   const N = axes.length;
   const year = state.year;
-  const hasB = state.compareB && state.compareB.isos.length > 0;
-  if(hasB) ensureIdentiteCacheB();
-  // points par axe : A et (option) B
+  // points par axe : A
   const pts = axes.map((ax, i) => {
     const angle = -Math.PI/2 + i * (2*Math.PI / N);
     const valA = getIdentiteValue(ax.indicator, year);
     const rpA = valA != null ? rankPercentile(ax.indicator, valA, getValueYear(ax.indicator, year) || year) : null;
-    let pctB = null;
-    if(hasB){
-      const valB = getIdentiteValueB(ax.indicator, year);
-      if(valB != null){
-        const rpB = rankPercentile(ax.indicator, valB, year);
-        if(rpB) pctB = rpB.percentile;
-      }
-    }
-    return { axis: ax, angle, valA, pct: rpA?.percentile ?? null, pctB };
+    return { axis: ax, angle, valA, pct: rpA?.percentile ?? null };
   });
 
   // axes (rayons)
@@ -4064,18 +3836,6 @@ function drawPuRadar(){
     const d = polyPtsA.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
     polyA = `<path class="radar-poly" d="${d}"/>`;
   }
-  // polygone B (orange) — par-dessus A en transparence
-  let polyB = '';
-  if(hasB){
-    const polyPtsB = pts.map(p => {
-      const r = (p.pctB != null) ? R * p.pctB : 0;
-      return [cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r];
-    });
-    if(polyPtsB.some(p => p[0] !== cx || p[1] !== cy)){
-      const d = polyPtsB.map((p,i) => (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + ' Z';
-      polyB = `<path d="${d}" fill="var(--orange)" fill-opacity=".12" stroke="var(--orange)" stroke-width="1.8" stroke-dasharray="4 3"/>`;
-    }
-  }
 
   // points + labels
   let dots = '', labels = '';
@@ -4084,10 +3844,6 @@ function drawPuRadar(){
     if(p.pct != null){
       const r = R * p.pct;
       dots += `<circle class="radar-pt ${isActive?'active':''}" cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3"/>`;
-    }
-    if(hasB && p.pctB != null){
-      const r = R * p.pctB;
-      dots += `<circle cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3" fill="var(--orange)"/>`;
     }
     const lx = cx + Math.cos(p.angle) * (R + 22);
     const ly = cy + Math.sin(p.angle) * (R + 22);
@@ -4105,7 +3861,6 @@ function drawPuRadar(){
     ${axesSvg}
     ${medianRing}
     ${polyA}
-    ${polyB}
     ${dots}
     ${labels}
   </svg>`;
@@ -4214,306 +3969,6 @@ let _relZonePartnersCache = null; // cache des ISO3 inclus dans la zone active (
 let _relYearRange = null;         // [yMin, yMax] inclusif, ou null = utiliser state.year ponctuel
 let _relYearAggMode = 'sum';      // 'sum' (cumul sur la plage) | 'avg' (moyenne annuelle)
 
-// ─── Mode bilatéral (Relations) ─────────────────────────────────────────
-// Si _relPartnerB est rempli, Relations bascule en mode bilatéral A↔B au lieu du mode multi-pays.
-// A reste state.subject (sujet principal de l'app), B est défini ici.
-// Format : { isos: [iso3], label: string } — toujours un seul pays pour B (pas de zone)
-// Vidé = mode multi-pays normal (comportement historique).
-let _relPartnerB = null;
-
-// ─── État de la grille bilatérale (mode A↔B) ────────────────────
-// Constantes et state pour la grille de tuiles affichée en mode bilatéral.
-// Inspiré de Croisé : flux sélectionnés, types de vue par tuile, persistance localStorage.
-const BIL_MAX_TILES = 9;
-const BIL_STORAGE_KEY = 'geopol_bil_selected';
-const BIL_VIEW_TYPE_KEY = 'geopol_bil_view_types';
-// Sélection par défaut au premier passage en bilatéral : 4 flux structurants
-const BIL_DEFAULT_KEYS = [
-  'commerce|to',                  // sujet importe depuis B
-  'commerce|from',                // sujet exporte vers B
-  'transferts_armement|to',       // sujet reçoit armement de B
-  'commerce_ressources|to',       // sujet importe ressources de B
-];
-let _bilSelected = null;          // Set<flowEntryKey>, lazy
-let _bilViewType = null;          // Map<flowEntryKey, 'fiche'|'courbes'|'barchart'|'topctx'>, lazy
-function _loadBilState(){
-  // Init indépendante de chaque branche, pour permettre une initialisation partielle préalable
-  // (par ex. via URL ou navigation entre couples qui ne touche que _bilSelected).
-  if(_bilSelected && _bilViewType) return;
-  if(!_bilSelected){
-    try {
-      const raw = localStorage.getItem(BIL_STORAGE_KEY);
-      if(raw){
-        const arr = JSON.parse(raw);
-        if(Array.isArray(arr)) _bilSelected = new Set(arr.slice(0, BIL_MAX_TILES));
-      }
-    } catch {}
-    if(!_bilSelected) _bilSelected = new Set(BIL_DEFAULT_KEYS);
-    // Validation + migration vers le sens canonique 'to' :
-    // - Pour chaque clé enregistrée, on cherche d'abord l'entrée avec ce sens exact
-    // - Sinon on bascule vers la version 'to' du même indicateur (sens canonique en bilatéral)
-    // - Sinon la clé est invalide (entrée absente DB)
-    // Évite les "tuiles fantômes" et les doublons par sens.
-    const allValid = flowEntriesPresent();
-    const validByKey = new Map(allValid.map(e => [e.key, e]));
-    const toVersionByIndicator = new Map();
-    for(const e of allValid) if(e.side === 'to') toVersionByIndicator.set(e.indicator, e.key);
-    const seenIndicators = new Set();
-    const normalized = [];
-    for(const k of _bilSelected){
-      const entry = validByKey.get(k);
-      if(!entry) continue;   // clé inconnue → drop
-      // Bascule systématique vers le sens 'to' s'il existe pour cet indicateur
-      const canonicalKey = toVersionByIndicator.get(entry.indicator) || k;
-      if(seenIndicators.has(entry.indicator)) continue;
-      seenIndicators.add(entry.indicator);
-      normalized.push(canonicalKey);
-    }
-    if(normalized.length === 0 && allValid.length > 0){
-      // Aucun défaut valide : prendre les 4 premiers indicateurs distincts (sens 'to' privilégié)
-      const seen = new Set();
-      for(const e of allValid){
-        if(seen.has(e.indicator)) continue;
-        const canonical = toVersionByIndicator.get(e.indicator) || e.key;
-        normalized.push(canonical);
-        seen.add(e.indicator);
-        if(normalized.length >= 4) break;
-      }
-    }
-    _bilSelected = new Set(normalized.slice(0, BIL_MAX_TILES));
-    // Sauvegarder l'état migré pour éviter la migration à chaque chargement
-    _saveBilState();
-  }
-  if(!_bilViewType){
-    try {
-      const raw = localStorage.getItem(BIL_VIEW_TYPE_KEY);
-      if(raw){
-        const obj = JSON.parse(raw);
-        _bilViewType = new Map(Object.entries(obj));
-      }
-    } catch {}
-    if(!_bilViewType) _bilViewType = new Map();
-  }
-}
-function _saveBilState(){
-  try { localStorage.setItem(BIL_STORAGE_KEY, JSON.stringify([..._bilSelected])); } catch {}
-  try {
-    const obj = {};
-    for(const [k,v] of _bilViewType) obj[k] = v;
-    localStorage.setItem(BIL_VIEW_TYPE_KEY, JSON.stringify(obj));
-  } catch {}
-}
-// Défensif : auto-init si _bilViewType est encore null
-function _bilGetViewType(key){
-  if(!_bilViewType) _loadBilState();
-  return _bilViewType.get(key) || 'fiche';
-}
-function _bilSetViewType(key, type){
-  if(!_bilViewType) _loadBilState();
-  _bilViewType.set(key, type);
-  _saveBilState();
-  _renderBilTile(key);   // re-render uniquement cette tuile
-}
-function _bilToggleFlux(key){
-  if(!_bilSelected) _loadBilState();
-  if(_bilSelected.has(key)){
-    _bilSelected.delete(key);
-  } else {
-    if(_bilSelected.size >= BIL_MAX_TILES){
-      const cnt = document.getElementById('bilCounter');
-      if(cnt){ cnt.classList.add('limit-hit'); setTimeout(() => cnt.classList.remove('limit-hit'), 600); }
-      return;
-    }
-    // Éviter les doublons par indicateur : si une autre clé de même indicator est déjà cochée,
-    // on la retire (la nav bilatérale ne montre qu'une case par indicateur, mais des héritages
-    // localStorage pourraient encore introduire un doublon).
-    const entry = getFlowEntryByKey(key);
-    if(entry){
-      for(const k of [..._bilSelected]){
-        const e = getFlowEntryByKey(k);
-        if(e && e.indicator === entry.indicator) _bilSelected.delete(k);
-      }
-    }
-    _bilSelected.add(key);
-  }
-  _saveBilState();
-  renderRelMain();   // re-render complet (grille change)
-}
-function _bilDeselectAll(){
-  if(!_bilSelected) _loadBilState();
-  _bilSelected.clear();
-  _saveBilState();
-  renderRelMain();
-}
-
-// État période per-tile bilatéral
-const BIL_TILE_PERIOD_KEY = 'geopol_bil_tile_periods';
-let _bilTilePeriods = null;
-function _loadBilTilePeriods(){
-  if(_bilTilePeriods) return;
-  try {
-    const raw = localStorage.getItem(BIL_TILE_PERIOD_KEY);
-    if(raw) _bilTilePeriods = new Map(Object.entries(JSON.parse(raw)));
-  } catch {}
-  if(!_bilTilePeriods) _bilTilePeriods = new Map();
-}
-function _saveBilTilePeriods(){
-  try {
-    const obj = {};
-    for(const [k,v] of _bilTilePeriods) obj[k] = v;
-    localStorage.setItem(BIL_TILE_PERIOD_KEY, JSON.stringify(obj));
-  } catch {}
-}
-function _bilGetTilePeriod(key){
-  _loadBilTilePeriods();
-  const override = _bilTilePeriods.get(key);
-  if(override) return { range: override.range || null, mode: override.mode || 'sum', overridden: true };
-  // Sinon : reprend la plage globale Relations (déjà partagée) ou ponctuel
-  return { range: _relYearRange, mode: _relYearAggMode, overridden: false };
-}
-function _bilSetTilePeriod(key, range, mode){
-  _loadBilTilePeriods();
-  _bilTilePeriods.set(key, { range, mode: mode || 'sum' });
-  _saveBilTilePeriods();
-  _renderBilTile(key);
-}
-function _bilClearTileOverride(key){
-  _loadBilTilePeriods();
-  if(_bilTilePeriods.delete(key)){
-    _saveBilTilePeriods();
-    _renderBilTile(key);
-  }
-}
-
-// ─── Calcul des données bilatérales pour une tuile ─────────────────
-// Pour un flux donné (entry) et un couple A↔B, retourne :
-// {
-//   volAtoB, volBtoA        : volumes absolus dans chaque sens (sur la période, agrégés selon mode)
-//   pctAchezB, pctBchezA    : influences relatives (volume / total mondial respectif)
-//   serieAtoB, serieBtoA    : Array<{year, val}> pour la courbe temporelle
-//   periodLabel             : libellé de période en cours pour le footer
-// }
-// 'opts' attendu : { yearRange: [yMin,yMax]|null, mode: 'sum'|'avg' }
-function _bilComputeTileData(entry, isoA, isoB, opts){
-  const realInd = entry.realIndicator;
-  // Colonnes selon le sens du flux pour la direction "to" (côté sujet récepteur)
-  // Pour commerce/dette/armement, on calcule SYMÉTRIQUEMENT les deux sens
-  // sans dépendre de entry.side : on prend country_from = A pour "A→B" et country_from = B pour "B→A"
-  const sqlA = `'${escapeSql(isoA)}'`;
-  const sqlB = `'${escapeSql(isoB)}'`;
-  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
-
-  // Fenêtre temporelle
-  let yClause, useRange = false, nYears = 1, yMin = null, yMax = null;
-  if(opts.yearRange){
-    [yMin, yMax] = opts.yearRange;
-    yClause = `year >= ${yMin} AND year <= ${yMax}`;
-    useRange = true;
-    nYears = yMax - yMin + 1;
-  } else {
-    // Mode ponctuel : on prend state.year avec fallback sur dernière année dispo si vide
-    let y = state.year;
-    const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realInd)}' AND year=${y} AND (country_from=${sqlA} OR country_to=${sqlA}) LIMIT 1`);
-    if(!chk.length){
-      const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realInd)}' AND (country_from=${sqlA} OR country_to=${sqlA})`);
-      if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
-    }
-    yClause = `year = ${y}`;
-    yMin = yMax = y;
-  }
-
-  // Diviseur pour mode 'avg'
-  const divider = (useRange && opts.mode === 'avg' && nYears > 1) ? nYears : 1;
-
-  // Volumes A→B et B→A (cumul sur la période)
-  const rAtoB = safeExec(`SELECT SUM(value) FROM flux
-                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                          AND country_from=${sqlA} AND country_to=${sqlB}`);
-  const rBtoA = safeExec(`SELECT SUM(value) FROM flux
-                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                          AND country_from=${sqlB} AND country_to=${sqlA}`);
-  let volAtoB = (rAtoB.length && rAtoB[0].values[0][0]) ? rAtoB[0].values[0][0] / divider : 0;
-  let volBtoA = (rBtoA.length && rBtoA[0].values[0][0]) ? rBtoA[0].values[0][0] / divider : 0;
-
-  // Cas dette bilatérale : filtre subcategory_1='bilaterale'
-  if(isDebtIndicator(realInd)){
-    const rA = safeExec(`SELECT SUM(value) FROM flux
-                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                          AND country_from=${sqlA} AND country_to=${sqlB}
-                          AND subcategory_1='bilaterale'`);
-    const rB = safeExec(`SELECT SUM(value) FROM flux
-                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                          AND country_from=${sqlB} AND country_to=${sqlA}
-                          AND subcategory_1='bilaterale'`);
-    volAtoB = (rA.length && rA[0].values[0][0]) ? rA[0].values[0][0] / divider : 0;
-    volBtoA = (rB.length && rB[0].values[0][0]) ? rB[0].values[0][0] / divider : 0;
-  }
-
-  // Influences relatives
-  // "B représente X% des exports de A sur ce flux" = volAtoB / (total exports de A)
-  // "A représente Y% des imports de B" = volAtoB / (total imports de B)
-  // On utilise les requêtes mondiales (toutes destinations / origines, hors agrégats régionaux et sentinelles)
-  const qTotal = (col, iso) => `SELECT SUM(value) FROM flux
-                                  WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                                  AND ${col}='${escapeSql(iso)}'
-                                  AND ${col === 'country_from' ? 'country_to' : 'country_from'} NOT IN (${exclAgg})
-                                  AND ${col === 'country_from' ? 'country_to' : 'country_from'} NOT LIKE '\\_\\_%' ESCAPE '\\'`;
-  const totAFrom = safeExec(qTotal('country_from', isoA));
-  const totBTo = safeExec(qTotal('country_to', isoB));
-  const totBFrom = safeExec(qTotal('country_from', isoB));
-  const totATo = safeExec(qTotal('country_to', isoA));
-  const sAFrom = (totAFrom.length && totAFrom[0].values[0][0]) ? totAFrom[0].values[0][0] / divider : 0;
-  const sBTo = (totBTo.length && totBTo[0].values[0][0]) ? totBTo[0].values[0][0] / divider : 0;
-  const sBFrom = (totBFrom.length && totBFrom[0].values[0][0]) ? totBFrom[0].values[0][0] / divider : 0;
-  const sATo = (totATo.length && totATo[0].values[0][0]) ? totATo[0].values[0][0] / divider : 0;
-  // Influence : pourcentages
-  // A→B : volAtoB est une portion des exports de A et des imports de B
-  const pctBdansExportsA = sAFrom > 0 ? (volAtoB / sAFrom) * 100 : 0;
-  const pctAdansImportsB = sBTo > 0 ? (volAtoB / sBTo) * 100 : 0;
-  // B→A : volBtoA est une portion des exports de B et des imports de A
-  const pctAdansExportsB = sBFrom > 0 ? (volBtoA / sBFrom) * 100 : 0;
-  const pctBdansImportsA = sATo > 0 ? (volBtoA / sATo) * 100 : 0;
-
-  // Séries temporelles A→B et B→A (pour la courbe)
-  // Toujours année par année sur la fenêtre, sans divider (la courbe montre les valeurs réelles)
-  const serieAtoB = [];
-  const serieBtoA = [];
-  if(useRange && nYears > 1){
-    const debtFilter = isDebtIndicator(realInd) ? ` AND subcategory_1='bilaterale'` : '';
-    const sAB = safeExec(`SELECT year, SUM(value) FROM flux
-                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                          AND country_from=${sqlA} AND country_to=${sqlB}${debtFilter}
-                          GROUP BY year ORDER BY year`);
-    const sBA = safeExec(`SELECT year, SUM(value) FROM flux
-                          WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                          AND country_from=${sqlB} AND country_to=${sqlA}${debtFilter}
-                          GROUP BY year ORDER BY year`);
-    if(sAB.length){
-      for(const [y, v] of sAB[0].values) serieAtoB.push({ year: y, val: v || 0 });
-    }
-    if(sBA.length){
-      for(const [y, v] of sBA[0].values) serieBtoA.push({ year: y, val: v || 0 });
-    }
-  }
-
-  // Libellé période pour footer
-  let periodLabel;
-  if(useRange){
-    const modeLabel = opts.mode === 'avg' ? 'moy/an' : 'cumul';
-    periodLabel = `${yMin}–${yMax} ${modeLabel}`;
-  } else {
-    periodLabel = String(yMin);
-  }
-
-  return {
-    volAtoB, volBtoA,
-    pctBdansExportsA, pctAdansImportsB,
-    pctAdansExportsB, pctBdansImportsA,
-    serieAtoB, serieBtoA,
-    periodLabel,
-    yearRange: [yMin, yMax],
-  };
-}
 
 // Liste des zones disponibles, mise en cache. Retourne [{zone_id, zone_nom, n_pays}].
 // Trié par catégorie (GEO_ d'abord par nombre de pays décroissant, puis organisations alphabétique).
@@ -4610,26 +4065,6 @@ function setRelYearAggMode(mode){
   renderRelMain();
   syncUrl();
 }
-
-// ─── Setters mode bilatéral ─────────────────────────────────────
-// Définit le partenaire B (un seul pays ISO3) et bascule en mode bilatéral.
-// Si isos est null/vide → vide B et revient au mode multi-pays.
-function setRelPartnerB(isos){
-  if(!isos || (Array.isArray(isos) && isos.length === 0)){
-    _relPartnerB = null;
-  } else {
-    const list = Array.isArray(isos) ? isos : [isos];
-    // En bilatéral on ne prend qu'un seul pays pour B (pas de zone)
-    const iso = list[0];
-    if(!iso) { _relPartnerB = null; }
-    else {
-      _relPartnerB = { isos: [iso], label: isoToName(iso) || iso };
-    }
-  }
-  renderRelations();   // re-render complet (changement de mode)
-  syncUrl();
-}
-function clearRelPartnerB(){ setRelPartnerB(null); }
 
 /* ─── Dimensions disponibles pour le référentiel d'analyse ────────
    Pour un flux donné, on renvoie la liste des dimensions possibles
@@ -4805,25 +4240,6 @@ function renderRelMain(){
     <span class="rel-filter-label">Partenaires${helpIco('filtre_zone')}</span>
     <select class="rel-zone-select" onchange="setRelZoneFilter(this.value)">${zoneOpts}</select>
   </div>`;
-  // ─── Slot Partenaire B (mode bilatéral) ──────────────────────────
-  // Toujours visible dans la barre. Vide → mode multi-pays. Rempli → mode bilatéral.
-  let partnerBSelector;
-  if(_relPartnerB){
-    const iso = _relPartnerB.isos[0];
-    const flag = isoToFlag(iso) || '';
-    partnerBSelector = `<div class="rel-dim-wrap rel-partner-b filled" style="margin-left:10px" title="Mode bilatéral actif">
-      <span class="rel-filter-label">Étudier avec</span>
-      <span class="rel-partner-b-chip">
-        <span>${flag} ${escAttr(_relPartnerB.label)}</span>
-        <button class="rel-partner-b-clear" onclick="clearRelPartnerB()" title="Sortir du mode bilatéral">×</button>
-      </span>
-    </div>`;
-  } else {
-    partnerBSelector = `<div class="rel-dim-wrap rel-partner-b" style="margin-left:10px">
-      <span class="rel-filter-label">Étudier avec</span>
-      <button class="rel-partner-b-add" onclick="openSearch('partnerB')" title="Choisir un 2e pays pour analyse bilatérale">+ ajouter un pays</button>
-    </div>`;
-  }
   // sélecteur de plage temporelle : 2 selects (min, max) + bascule somme/moyenne si plage active
   const yearsAvail = getFluxYearsAvailable(entry);
   let yearRangeSelector = '';
@@ -4880,18 +4296,16 @@ function renderRelMain(){
   }
   main.innerHTML = `
     <div class="pu-head">
-      <span class="name">${entry.label_long}${_relPartnerB ? ' · mode bilatéral' : ''}</span>
-      <span class="meta">${state.subject.label}${_relPartnerB ? ' ↔ ' + _relPartnerB.label : ''}</span>
+      <span class="name">${entry.label_long}</span>
+      <span class="meta">${state.subject.label}</span>
     </div>
     <div class="rel-crumb-bar">
       <div class="rel-crumb">${crumb}</div>
-      ${_relPartnerB ? '' : (dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : '')}
-      ${_relPartnerB ? '' : metricSelector}
-      ${partnerBSelector}
-      ${_relPartnerB ? '' : zoneSelector}
+      ${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}
+      ${metricSelector}
+      ${zoneSelector}
       ${yearRangeSelector}
     </div>
-    ${_relPartnerB ? _buildBilateralLayout() : `
     <div class="pu-cells">
       <div class="top-row">
         <div class="pu-cell">
@@ -4910,616 +4324,14 @@ function renderRelMain(){
           <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span></div>
         </div>
       </div>
-    </div>`}`;
-  // En mode bilatéral, on n'appelle pas les renderers multi-pays.
-  // À la place, on rend chaque tuile de la grille bilatérale.
-  if(_relPartnerB){
-    _loadBilState();
-    for(const key of _bilSelected) _renderBilTile(key);
-  } else {
-    renderRelComposition();
-    renderRelEvolution();
-    renderRelFluxMap();
-  }
+    </div>`;
+  renderRelComposition();
+  renderRelEvolution();
+  renderRelFluxMap();
 }
 function setRelMetric(m){ _relMetric = m; _relInfluencePinned = null; renderRelMain(); syncUrl(); }
 
-// ═══════════════════════════════════════════════════════════════
-//  LAYOUT BILATÉRAL — Grille multi-indicateurs A↔B
-// ═══════════════════════════════════════════════════════════════
 
-// Construit le HTML du layout bilatéral : nav flux gauche + barre filtre + grille de tuiles.
-// L'appel à _renderBilTile pour chaque flux sélectionné se fait après l'insertion innerHTML.
-function _buildBilateralLayout(){
-  _loadBilState();
-  // 1. Construire la nav latérale des flux disponibles.
-  // En BILATÉRAL, contrairement au mode multi-pays, on n'a PAS besoin du dédoublement par sens
-  // (chaque tuile affiche déjà A→B et B→A simultanément). On dédoublonne donc par indicateur :
-  // 1 case par indicateur réel, avec le sens canonique 'to' comme clé.
-  // Cela passe la nav de 18 entrées (2 sens × 9 indicateurs) à 9 entrées max.
-  const allEntries = flowEntriesPresent().filter(e => e.presentInDb !== false);
-  // Dédoublonnage par indicateur : on garde une seule entrée par indicateur canonique,
-  // en privilégiant le sens 'to' (qui existe pour tous).
-  const seenIndicators = new Set();
-  const bilEntries = [];
-  for(const e of allEntries){
-    if(seenIndicators.has(e.indicator)) continue;
-    // On préfère le sens 'to' s'il existe pour cet indicateur, sinon on prend ce qu'on a
-    const toVersion = allEntries.find(x => x.indicator === e.indicator && x.side === 'to');
-    bilEntries.push(toVersion || e);
-    seenIndicators.add(e.indicator);
-  }
-  // Construire les libellés simplifiés (au lieu de "Commerce — Fournisseurs" → "Commerce")
-  const INDICATOR_BIL_LABELS = {
-    commerce: 'Commerce',
-    transferts_armement: "Transferts d'armement",
-    dette_exterieure: 'Dette extérieure',
-    commerce_ressources: 'Commerce de ressources',
-    refugies: 'Réfugiés',
-    migrants: 'Migrants',
-    etudiants_international: 'Étudiants internationaux',
-    representation_diplomatique: 'Représentations diplomatiques',
-  };
-  const byCat = new Map();
-  for(const e of bilEntries){
-    const cfg = state.indicators.find(c => c.indicator === e.realIndicator);
-    const cat = cfg?.category || 'autres';
-    if(!byCat.has(cat)) byCat.set(cat, []);
-    byCat.get(cat).push(e);
-  }
-  const catLabels = {
-    commerce: 'Commerce', armement: 'Armement', finance: 'Finance',
-    migration: 'Migrations', education: 'Éducation', diplomatie: 'Diplomatie',
-    autres: 'Autres',
-  };
-  let navHtml = '';
-  for(const [cat, entries] of byCat){
-    const catLab = catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
-    let items = '';
-    for(const e of entries){
-      const checked = _bilSelected.has(e.key);
-      // Libellé simplifié : utilise la table INDICATOR_BIL_LABELS, fallback sur l'indicator brut
-      const label = INDICATOR_BIL_LABELS[e.indicator]
-        || (e.indicator.charAt(0).toUpperCase() + e.indicator.slice(1).replace(/_/g, ' '));
-      items += `<label class="cross-flux-item ${checked?'on':''}">
-        <input type="checkbox" ${checked?'checked':''} onchange="_bilToggleFlux('${escAttr(e.key)}')">
-        <span>${escAttr(label)}</span>
-      </label>`;
-    }
-    navHtml += `<div class="cross-cat"><div class="cross-cat-head">${catLab}</div>${items}</div>`;
-  }
-
-  // 2. Barre du haut (filtres bilatéraux : compteur + désélection + indicateur de mode)
-  const headerHtml = `<div class="cross-filter-bar bil-filter-bar">
-    <div class="bil-mode-tag">
-      <span class="bil-mode-dot"></span>
-      <span>Mode bilatéral</span>
-      <span class="bil-couple">${escAttr(state.subject.label)} ↔ ${escAttr(_relPartnerB.label)}</span>
-    </div>
-    <div class="cross-counter-wrap">
-      <span id="bilCounter" class="cross-counter">${_bilSelected.size}/${BIL_MAX_TILES} indicateurs</span>
-      <button class="cross-clear-btn" onclick="_bilDeselectAll()">Tout désélectionner</button>
-    </div>
-  </div>`;
-
-  // 3. Grille de tuiles
-  const selectedKeys = [..._bilSelected];
-  let gridHtml = '';
-  if(!selectedKeys.length){
-    gridHtml = `<div class="cross-empty">
-      <div class="empty-title">Aucun indicateur sélectionné</div>
-      <div class="empty-sub">Coche des flux dans la barre de gauche pour les afficher ici.</div>
-    </div>`;
-  } else {
-    const n = selectedKeys.length;
-    const gridClass = n === 1 ? 'g1' : (n === 2 ? 'g2' : (n <= 4 ? 'g4' : (n <= 6 ? 'g6' : 'g9')));
-    gridHtml = `<div class="cross-grid ${gridClass}" id="bilGrid">`;
-    for(const key of selectedKeys){
-      gridHtml += `<div class="cross-tile bil-tile" id="bilTile-${escAttr(key.replace(/[|]/g,'_'))}" data-key="${escAttr(key)}"></div>`;
-    }
-    gridHtml += `</div>`;
-  }
-
-  // 4. Layout 2 colonnes
-  return `<div class="cross-layout bil-layout">
-    <aside class="cross-nav">
-      <div class="cross-nav-head">Indicateurs · ${state.subject.label} ↔ ${escAttr(_relPartnerB.label)}</div>
-      <div class="cross-nav-scroll">${navHtml}</div>
-    </aside>
-    <main class="cross-main">
-      ${headerHtml}
-      ${gridHtml}
-    </main>
-  </div>`;
-}
-
-// Rend UNE seule tuile bilatérale.
-function _renderBilTile(key){
-  const tileId = 'bilTile-' + key.replace(/[|]/g, '_');
-  const host = document.getElementById(tileId);
-  if(!host) return;
-  if(!_relPartnerB || !state.subject || !state.subject.isos.length){
-    host.innerHTML = `<div class="cross-tile-empty">Mode bilatéral non actif</div>`;
-    return;
-  }
-  const entry = getFlowEntryByKey(key);
-  if(!entry){ host.innerHTML = `<div class="cross-tile-empty">Flux inconnu</div>`; return; }
-  const viewType = _bilGetViewType(key);
-  const label = entry.label_long || entry.label || key;
-  const isoA = state.subject.isos[0];
-  const isoB = _relPartnerB.isos[0];
-
-  // Période effective (per-tile ou globale Relations)
-  const period = _bilGetTilePeriod(key);
-  let periodHeader;
-  if(period.range){
-    const [yMin, yMax] = period.range;
-    const m = period.mode === 'avg' ? 'moy/an' : 'cumul';
-    periodHeader = `📅 ${yMin}–${yMax} ${m}`;
-  } else {
-    periodHeader = `📅 ${state.year} ponctuel`;
-  }
-  const overrideClass = period.overridden ? ' overridden' : '';
-  const overrideHint = period.overridden
-    ? `<button class="cross-period-clear" onclick="_bilClearTileOverride('${escAttr(key)}')" title="Revenir à la période globale">×</button>`
-    : `<span class="cross-period-hint">global</span>`;
-
-  // Header de tuile : 4 boutons de viz (📋 fiche / 📈 courbes / 📊 barchart / 🔍 top contextuel)
-  // + bandeau période cliquable
-  let html = `<div class="cross-tile-head">
-    <span class="cross-tile-title">${escAttr(label)}</span>
-    <div class="seg cross-tile-seg">
-      <button class="${viewType==='fiche'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','fiche')" title="Fiche synthétique">📋</button>
-      <button class="${viewType==='courbes'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','courbes')" title="Courbes temporelles">📈</button>
-      <button class="${viewType==='barchart'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','barchart')" title="Bar chart comparatif">📊</button>
-      <button class="${viewType==='topctx'?'on':''}" onclick="_bilSetViewType('${escAttr(key)}','topctx')" title="Top contextuel (cliquer pour naviguer)">🔍</button>
-    </div>
-  </div>
-  <div class="cross-tile-period${overrideClass}" onclick="_bilOpenPeriodPopover(event, '${escAttr(key)}')" title="Cliquer pour modifier la période">
-    <span class="cross-period-label">${periodHeader}</span>
-    ${overrideHint}
-  </div>
-  <div class="cross-tile-body bil-tile-body" id="${tileId}-body"></div>`;
-  host.innerHTML = html;
-  const body = document.getElementById(tileId + '-body');
-  if(!body) return;
-
-  // Calcul des données pour la tuile
-  const opts = {
-    yearRange: period.range,
-    mode: period.mode,
-  };
-  let data;
-  try {
-    data = _bilComputeTileData(entry, isoA, isoB, opts);
-  } catch(e){
-    body.innerHTML = `<div class="cross-tile-empty">Erreur : ${escAttr(e.message || 'calcul impossible')}</div>`;
-    return;
-  }
-
-  // Si pas de volume du tout dans les 2 sens : message
-  if(data.volAtoB <= 0 && data.volBtoA <= 0){
-    body.innerHTML = `<div class="cross-tile-empty">Pas d'échange ${state.subject.label} ↔ ${escAttr(_relPartnerB.label)}</div>`;
-    return;
-  }
-
-  // Dispatcher selon le type de viz sélectionné pour cette tuile
-  if(viewType === 'courbes'){
-    _bilDrawCourbes(body, entry, data, isoA, isoB);
-  } else if(viewType === 'barchart'){
-    _bilDrawBarchart(body, entry, data, isoA, isoB);
-  } else if(viewType === 'topctx'){
-    _bilDrawTopCtx(body, entry, data, isoA, isoB);
-  } else {
-    // 'fiche' par défaut
-    _bilDrawFiche(body, entry, data, isoA, isoB);
-  }
-}
-
-// Dessine la fiche synthétique bilatérale :
-// 2 colonnes A→B et B→A avec volume + influences + (si plage active) sparkline temporelle.
-function _bilDrawFiche(host, entry, data, isoA, isoB){
-  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
-  const unitDisplay = cfg?.unit_display || '';
-
-  const nameA = isoToName(isoA) || isoA;
-  const nameB = isoToName(isoB) || isoB;
-  const flagA = isoToFlag(isoA) || '';
-  const flagB = isoToFlag(isoB) || '';
-
-  const fmtVol = v => v > 0 ? fmtWithUnit(v, unitDisplay) : '—';
-  const fmtPct = p => (p != null && isFinite(p) && p > 0) ? p.toFixed(p >= 10 ? 1 : 2) + '%' : '—';
-
-  // Colonne A→B
-  const colAB = `<div class="bil-col">
-    <div class="bil-col-head">${flagA} <strong>${escAttr(nameA)}</strong> <span class="bil-arrow">→</span> ${flagB} ${escAttr(nameB)}</div>
-    <div class="bil-row">
-      <div class="bil-row-label">Volume</div>
-      <div class="bil-row-value primary">${fmtVol(data.volAtoB)}</div>
-    </div>
-    <div class="bil-row">
-      <div class="bil-row-label">Part chez ${escAttr(nameB)}</div>
-      <div class="bil-row-value">${fmtPct(data.pctAdansImportsB)}</div>
-    </div>
-    <div class="bil-row">
-      <div class="bil-row-label">Part dans envois ${escAttr(nameA)}</div>
-      <div class="bil-row-value">${fmtPct(data.pctBdansExportsA)}</div>
-    </div>
-  </div>`;
-
-  // Colonne B→A
-  const colBA = `<div class="bil-col">
-    <div class="bil-col-head">${flagB} <strong>${escAttr(nameB)}</strong> <span class="bil-arrow">→</span> ${flagA} ${escAttr(nameA)}</div>
-    <div class="bil-row">
-      <div class="bil-row-label">Volume</div>
-      <div class="bil-row-value primary">${fmtVol(data.volBtoA)}</div>
-    </div>
-    <div class="bil-row">
-      <div class="bil-row-label">Part chez ${escAttr(nameA)}</div>
-      <div class="bil-row-value">${fmtPct(data.pctBdansImportsA)}</div>
-    </div>
-    <div class="bil-row">
-      <div class="bil-row-label">Part dans envois ${escAttr(nameB)}</div>
-      <div class="bil-row-value">${fmtPct(data.pctAdansExportsB)}</div>
-    </div>
-  </div>`;
-
-  // Sparkline temporelle si plage active : 2 courbes superposées (A→B vert, B→A orange)
-  let sparkHtml = '';
-  if(data.serieAtoB.length >= 2 || data.serieBtoA.length >= 2){
-    const W = 320, H = 60, M = { top: 5, right: 5, bottom: 12, left: 5 };
-    const innerW = W - M.left - M.right;
-    const innerH = H - M.top - M.bottom;
-    const allYears = new Set();
-    let maxVal = 0;
-    for(const pt of data.serieAtoB){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
-    for(const pt of data.serieBtoA){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
-    const ysort = [...allYears].sort((a,b) => a-b);
-    const yMin = ysort[0], yMax = ysort[ysort.length-1];
-    const xScale = (y) => M.left + ((y - yMin) / Math.max(1, yMax - yMin)) * innerW;
-    const yScale = (v) => M.top + innerH - (v / Math.max(1, maxVal)) * innerH;
-    const lineAB = data.serieAtoB.length >= 2
-      ? `<polyline fill="none" stroke="#0a6e4a" stroke-width="1.5" points="${data.serieAtoB.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
-      : '';
-    const lineBA = data.serieBtoA.length >= 2
-      ? `<polyline fill="none" stroke="#b45309" stroke-width="1.5" points="${data.serieBtoA.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
-      : '';
-    const xTickStart = `<text x="${M.left}" y="${H - 3}" font-family="var(--mono)" font-size="8" fill="var(--text3)" text-anchor="start">${yMin}</text>`;
-    const xTickEnd = `<text x="${W - M.right}" y="${H - 3}" font-family="var(--mono)" font-size="8" fill="var(--text3)" text-anchor="end">${yMax}</text>`;
-    sparkHtml = `<div class="bil-spark">
-      <div class="bil-spark-legend">
-        <span><span class="bil-spark-dot" style="background:#0a6e4a"></span>${escAttr(nameA)} → ${escAttr(nameB)}</span>
-        <span><span class="bil-spark-dot" style="background:#b45309"></span>${escAttr(nameB)} → ${escAttr(nameA)}</span>
-      </div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
-        ${lineAB}${lineBA}${xTickStart}${xTickEnd}
-      </svg>
-    </div>`;
-  } else {
-    sparkHtml = `<div class="bil-spark-empty">Active une plage temporelle pour voir l'évolution</div>`;
-  }
-
-  host.innerHTML = `
-    <div class="bil-cols">${colAB}${colBA}</div>
-    ${sparkHtml}
-    <div class="cross-tile-foot">${escAttr(data.periodLabel)}</div>`;
-}
-
-// Popover de période pour une tuile bilatérale (réutilise la logique Croisé en plus simple)
-let _bilOpenedPopoverKey = null;
-function _bilOpenPeriodPopover(ev, key){
-  ev.stopPropagation();
-  if(ev.target && ev.target.classList && ev.target.classList.contains('cross-period-clear')) return;
-  if(_bilOpenedPopoverKey === key){ _bilClosePeriodPopover(); return; }
-  _bilClosePeriodPopover();
-  const entry = getFlowEntryByKey(key);
-  if(!entry || !state.subject || !_relPartnerB) return;
-  // Bornes années dispo pour ce flux (côté A ou B)
-  const isoA = state.subject.isos[0], isoB = _relPartnerB.isos[0];
-  let yAvMin = 2000, yAvMax = state.year;
-  const yr = safeExec(`SELECT MIN(year), MAX(year) FROM flux
-                       WHERE indicator='${escapeSql(entry.realIndicator)}'
-                       AND (country_to IN ('${escapeSql(isoA)}','${escapeSql(isoB)}') OR country_from IN ('${escapeSql(isoA)}','${escapeSql(isoB)}'))`);
-  if(yr.length && yr[0].values[0][0] != null){
-    yAvMin = yr[0].values[0][0];
-    yAvMax = yr[0].values[0][1];
-  }
-  const period = _bilGetTilePeriod(key);
-  const initMin = period.range ? period.range[0] : Math.max(yAvMin, yAvMax - 4);
-  const initMax = period.range ? period.range[1] : yAvMax;
-  const initMode = period.mode || 'sum';
-  let optsMin = '', optsMax = '';
-  for(let y = yAvMin; y <= yAvMax; y++){
-    optsMin += `<option value="${y}"${y===initMin?' selected':''}>${y}</option>`;
-    optsMax += `<option value="${y}"${y===initMax?' selected':''}>${y}</option>`;
-  }
-  const pop = document.createElement('div');
-  pop.id = 'crossTilePeriodPopover';
-  pop.innerHTML = `<div class="ctp-head">
-      <span>Période de cette tuile</span>
-      <button class="ctp-close" onclick="_bilClosePeriodPopover()">×</button>
-    </div>
-    <div class="ctp-body">
-      <div class="ctp-row">
-        <label>De</label><select id="ctpMin">${optsMin}</select>
-        <span style="color:var(--text3)">→</span>
-        <label>à</label><select id="ctpMax">${optsMax}</select>
-      </div>
-      <div class="ctp-row">
-        <label>Agrégation</label>
-        <div class="seg">
-          <button id="ctpModeSum" class="${initMode==='sum'?'on':''}">Σ Cumul</button>
-          <button id="ctpModeAvg" class="${initMode==='avg'?'on':''}">x̄ Moyenne</button>
-        </div>
-      </div>
-    </div>
-    <div class="ctp-foot">
-      ${period.overridden ? `<button class="ctp-reset" onclick="_bilClearTileOverride('${escAttr(key)}');_bilClosePeriodPopover()">Suivre la période globale</button>` : '<span></span>'}
-      <button class="ctp-apply" onclick="_bilApplyTilePeriod('${escAttr(key)}')">Appliquer</button>
-    </div>`;
-  document.body.appendChild(pop);
-  _bilOpenedPopoverKey = key;
-  pop.dataset.mode = initMode;
-  document.getElementById('ctpModeSum').onclick = function(){
-    pop.dataset.mode = 'sum';
-    this.classList.add('on');
-    document.getElementById('ctpModeAvg').classList.remove('on');
-  };
-  document.getElementById('ctpModeAvg').onclick = function(){
-    pop.dataset.mode = 'avg';
-    this.classList.add('on');
-    document.getElementById('ctpModeSum').classList.remove('on');
-  };
-  const rect = ev.currentTarget.getBoundingClientRect();
-  const popRect = pop.getBoundingClientRect();
-  let left = rect.left, top = rect.bottom + 6;
-  if(left + popRect.width > window.innerWidth - 10) left = window.innerWidth - popRect.width - 10;
-  if(top + popRect.height > window.innerHeight - 10) top = rect.top - popRect.height - 6;
-  pop.style.left = Math.max(10, left) + 'px';
-  pop.style.top = Math.max(10, top) + 'px';
-  setTimeout(() => document.addEventListener('click', _bilPopoverOutsideClick), 0);
-}
-function _bilPopoverOutsideClick(e){
-  const pop = document.getElementById('crossTilePeriodPopover');
-  if(pop && !pop.contains(e.target)) _bilClosePeriodPopover();
-}
-function _bilClosePeriodPopover(){
-  const pop = document.getElementById('crossTilePeriodPopover');
-  if(pop) pop.remove();
-  _bilOpenedPopoverKey = null;
-  document.removeEventListener('click', _bilPopoverOutsideClick);
-}
-function _bilApplyTilePeriod(key){
-  const pop = document.getElementById('crossTilePeriodPopover');
-  if(!pop) return;
-  const yMin = +document.getElementById('ctpMin').value;
-  const yMax = +document.getElementById('ctpMax').value;
-  const mode = pop.dataset.mode || 'sum';
-  _bilSetTilePeriod(key, [Math.min(yMin,yMax), Math.max(yMin,yMax)], mode);
-  _bilClosePeriodPopover();
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  VIZS BILATÉRALES — types 'courbes', 'barchart', 'topctx'
-// ═══════════════════════════════════════════════════════════════
-
-// Helper pour récupérer le top contextuel : top partenaires d'un pays donné
-// pour un flux et une période. Sens = 'from' (ex: imports → partenaires fournisseurs)
-// ou 'to' (exports → partenaires clients).
-// Retourne [{iso, vol, pct, name, flag}] trié par vol décroissant.
-function _bilGetTopForCountry(iso, entry, opts, sens, limit){
-  limit = limit || 10;
-  const realInd = entry.realIndicator;
-  const subjectCol = (sens === 'from') ? 'country_to' : 'country_from';   // sens='from' = pays est destinataire (imports)
-  const partnerCol = (sens === 'from') ? 'country_from' : 'country_to';
-  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
-
-  let yClause, useRange = false, nYears = 1;
-  if(opts.yearRange){
-    const [yMin, yMax] = opts.yearRange;
-    yClause = `year >= ${yMin} AND year <= ${yMax}`;
-    useRange = true;
-    nYears = yMax - yMin + 1;
-  } else {
-    yClause = `year = ${state.year}`;
-  }
-  const divider = (useRange && opts.mode === 'avg' && nYears > 1) ? nYears : 1;
-
-  const debtFilter = isDebtIndicator(realInd) ? ` AND subcategory_1='bilaterale'` : '';
-  const r = safeExec(`SELECT ${partnerCol} AS p, SUM(value) AS v
-                      FROM flux WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                      AND ${subjectCol}='${escapeSql(iso)}'
-                      AND ${partnerCol} NOT IN (${exclAgg})
-                      AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'${debtFilter}
-                      GROUP BY ${partnerCol} ORDER BY v DESC LIMIT ${limit + 5}`);
-  if(!r.length) return [];
-  // Total mondial pour calculer le % de chaque partenaire
-  const totR = safeExec(`SELECT SUM(value) FROM flux
-                         WHERE indicator='${escapeSql(realInd)}' AND ${yClause}
-                         AND ${subjectCol}='${escapeSql(iso)}'
-                         AND ${partnerCol} NOT IN (${exclAgg})
-                         AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'${debtFilter}`);
-  const total = (totR.length && totR[0].values[0][0]) ? totR[0].values[0][0] / divider : 0;
-  const list = [];
-  for(const [p, v] of r[0].values){
-    if(!p) continue;
-    const vol = v / divider;
-    list.push({
-      iso: p, vol, pct: total > 0 ? (vol / total) * 100 : 0,
-      name: partnerLabel(p), flag: partnerFlag(p),
-    });
-  }
-  return list.slice(0, limit);
-}
-
-// Viz "Courbes temporelles" : 2 courbes en grand (A→B et B→A) sur la plage
-function _bilDrawCourbes(host, entry, data, isoA, isoB){
-  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
-  const unitDisplay = cfg?.unit_display || '';
-  const nameA = isoToName(isoA) || isoA;
-  const nameB = isoToName(isoB) || isoB;
-
-  if(data.serieAtoB.length < 2 && data.serieBtoA.length < 2){
-    host.innerHTML = `<div class="cross-tile-empty">Active une plage temporelle pour voir l'évolution</div>`;
-    return;
-  }
-  const W = 360, H = 200, M = { top: 10, right: 10, bottom: 22, left: 40 };
-  const innerW = W - M.left - M.right;
-  const innerH = H - M.top - M.bottom;
-  const allYears = new Set();
-  let maxVal = 0;
-  for(const pt of data.serieAtoB){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
-  for(const pt of data.serieBtoA){ allYears.add(pt.year); if(pt.val > maxVal) maxVal = pt.val; }
-  const ysort = [...allYears].sort((a,b) => a-b);
-  const yMin = ysort[0], yMax = ysort[ysort.length-1];
-  const xScale = (y) => M.left + ((y - yMin) / Math.max(1, yMax - yMin)) * innerW;
-  const yScale = (v) => M.top + innerH - (v / Math.max(1, maxVal)) * innerH;
-
-  // Axes
-  let axes = '';
-  // Y : 3 graduations
-  for(let i = 0; i <= 3; i++){
-    const v = (maxVal / 3) * i;
-    const y = yScale(v);
-    axes += `<line x1="${M.left}" y1="${y}" x2="${W - M.right}" y2="${y}" stroke="#eee" stroke-width="0.5"/>`;
-    axes += `<text x="${M.left - 4}" y="${y + 3}" text-anchor="end" font-family="var(--mono)" font-size="8" fill="var(--text3)">${_crossFmtVol(v)}</text>`;
-  }
-  // X : graduations années (max 5)
-  const tickStep = Math.max(1, Math.floor((ysort.length - 1) / 4));
-  for(let i = 0; i < ysort.length; i += tickStep){
-    const y = ysort[i];
-    axes += `<text x="${xScale(y)}" y="${H - 6}" text-anchor="middle" font-family="var(--mono)" font-size="8" fill="var(--text3)">${y}</text>`;
-  }
-
-  const lineAB = data.serieAtoB.length >= 2
-    ? `<polyline fill="none" stroke="#0a6e4a" stroke-width="2" points="${data.serieAtoB.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
-    : '';
-  const lineBA = data.serieBtoA.length >= 2
-    ? `<polyline fill="none" stroke="#b45309" stroke-width="2" points="${data.serieBtoA.map(p => xScale(p.year)+','+yScale(p.val)).join(' ')}"/>`
-    : '';
-
-  // Points et labels au survol (simple)
-  let pointsAB = '';
-  for(const pt of data.serieAtoB) pointsAB += `<circle cx="${xScale(pt.year)}" cy="${yScale(pt.val)}" r="2" fill="#0a6e4a"/>`;
-  let pointsBA = '';
-  for(const pt of data.serieBtoA) pointsBA += `<circle cx="${xScale(pt.year)}" cy="${yScale(pt.val)}" r="2" fill="#b45309"/>`;
-
-  host.innerHTML = `
-    <div class="bil-courbes-legend">
-      <span><span class="bil-spark-dot" style="background:#0a6e4a"></span>${escAttr(nameA)} → ${escAttr(nameB)}</span>
-      <span><span class="bil-spark-dot" style="background:#b45309"></span>${escAttr(nameB)} → ${escAttr(nameA)}</span>
-    </div>
-    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">
-      ${axes}${lineAB}${lineBA}${pointsAB}${pointsBA}
-    </svg>
-    <div class="cross-tile-foot">${escAttr(data.periodLabel)} · ${escAttr(unitDisplay)}</div>`;
-}
-
-// Viz "Bar chart comparatif" : 3 barres par sens, axe commun pour comparaison directe
-function _bilDrawBarchart(host, entry, data, isoA, isoB){
-  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
-  const unitDisplay = cfg?.unit_display || '';
-  const nameA = isoToName(isoA) || isoA;
-  const nameB = isoToName(isoB) || isoB;
-  const flagA = isoToFlag(isoA) || '';
-  const flagB = isoToFlag(isoB) || '';
-
-  const maxVol = Math.max(data.volAtoB, data.volBtoA, 1);
-  const fmtVol = v => v > 0 ? fmtWithUnit(v, unitDisplay) : '—';
-  const fmtPct = p => (p != null && isFinite(p) && p > 0) ? p.toFixed(p >= 10 ? 1 : 2) + '%' : '—';
-
-  // Bar chart 6 lignes : Volume A→B / Volume B→A puis 4 pourcentages
-  // Pour les volumes on utilise une échelle commune (maxVol), pour les pourcentages on étire chacun à 100%
-  const barRow = (label, valStr, ratio, color) => `
-    <div class="bil-bar-row">
-      <div class="bil-bar-label">${label}</div>
-      <div class="bil-bar-track"><div class="bil-bar-fill" style="width:${Math.max(2, ratio*100).toFixed(1)}%;background:${color}"></div></div>
-      <div class="bil-bar-val">${valStr}</div>
-    </div>`;
-
-  host.innerHTML = `
-    <div class="bil-barchart">
-      <div class="bil-section-title">Volumes</div>
-      ${barRow(`${flagA} → ${flagB}`, fmtVol(data.volAtoB), data.volAtoB / maxVol, '#0a6e4a')}
-      ${barRow(`${flagB} → ${flagA}`, fmtVol(data.volBtoA), data.volBtoA / maxVol, '#b45309')}
-      <div class="bil-section-title">Influences relatives (sur 100%)</div>
-      ${barRow(`Part de ${escAttr(nameA)} chez ${escAttr(nameB)}`, fmtPct(data.pctAdansImportsB), (data.pctAdansImportsB||0)/100, '#0a6e4a')}
-      ${barRow(`${escAttr(nameB)} dans envois ${escAttr(nameA)}`, fmtPct(data.pctBdansExportsA), (data.pctBdansExportsA||0)/100, '#0a6e4a')}
-      ${barRow(`Part de ${escAttr(nameB)} chez ${escAttr(nameA)}`, fmtPct(data.pctBdansImportsA), (data.pctBdansImportsA||0)/100, '#b45309')}
-      ${barRow(`${escAttr(nameA)} dans envois ${escAttr(nameB)}`, fmtPct(data.pctAdansExportsB), (data.pctAdansExportsB||0)/100, '#b45309')}
-    </div>
-    <div class="cross-tile-foot">${escAttr(data.periodLabel)}</div>`;
-}
-
-// Viz "Top contextuel" : top partenaires de B avec A surligné + top partenaires de A avec B surligné
-// Chaque ligne du top est cliquable → bascule en bilatéral avec ce nouveau couple
-function _bilDrawTopCtx(host, entry, data, isoA, isoB){
-  const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
-  const unitDisplay = cfg?.unit_display || '';
-  const nameA = isoToName(isoA) || isoA;
-  const nameB = isoToName(isoB) || isoB;
-
-  const opts = { yearRange: data.yearRange[0] !== data.yearRange[1] ? data.yearRange : null, mode: 'sum' };
-  // Top fournisseurs de B (sens 'from' = on cherche les pays qui envoient à B)
-  const topB = _bilGetTopForCountry(isoB, entry, opts, 'from', 8);
-  // Top clients de A (sens 'to' = on cherche les pays vers qui A envoie)
-  const topAclients = _bilGetTopForCountry(isoA, entry, opts, 'to', 8);
-
-  const renderTop = (list, anchorIso, anchorName, title) => {
-    if(!list.length) return `<div class="bil-topctx-empty">Pas de données</div>`;
-    let html = `<div class="bil-topctx-title">${title}</div>`;
-    for(const it of list){
-      const isAnchor = (it.iso === anchorIso);
-      // Clic = bascule bilatéral : on garde le sujet A et on change B
-      // Sauf si on clique sur A lui-même (déjà sujet) → on ne fait rien
-      const clickable = !isAnchor && it.iso !== state.subject.isos[0];
-      const handler = clickable ? `onclick="_bilNavigateToCouple('${escAttr(it.iso)}')"` : '';
-      const cursor = clickable ? 'cursor:pointer' : 'cursor:default';
-      html += `<div class="bil-topctx-row ${isAnchor?'anchor':''}" ${handler} style="${cursor}">
-        <span class="bil-topctx-flag">${it.flag || ''}</span>
-        <span class="bil-topctx-name">${escAttr(it.name)}</span>
-        <span class="bil-topctx-pct">${it.pct.toFixed(1)}%</span>
-      </div>`;
-    }
-    return html;
-  };
-
-  host.innerHTML = `
-    <div class="bil-topctx">
-      <div class="bil-topctx-col">
-        ${renderTop(topB, isoA, nameA, `Top partenaires ${escAttr(nameB)} <span style="opacity:.6">(${escAttr(nameA)} surligné)</span>`)}
-      </div>
-      <div class="bil-topctx-col">
-        ${renderTop(topAclients, isoB, nameB, `Top destinataires ${escAttr(nameA)} <span style="opacity:.6">(${escAttr(nameB)} surligné)</span>`)}
-      </div>
-    </div>
-    <div class="cross-tile-foot">${escAttr(data.periodLabel)} · Cliquer un autre pays pour basculer</div>`;
-}
-
-// Navigation entre couples : remplace B par un nouveau pays, garde A (= sujet actuel)
-function _bilNavigateToCouple(newIsoB){
-  if(!newIsoB || !state.subject || !state.subject.isos.length) return;
-  // Ne bascule pas si on clique sur le sujet courant (déjà A)
-  if(newIsoB === state.subject.isos[0]) return;
-  setRelPartnerB([newIsoB]);
-}
-
-// ─── Porte d'entrée Croisé → Relations bilatéral ─────────────────
-// Au clic sur un pays dans une tuile Croisé, on bascule vers Relations en mode bilatéral
-// avec : A = sujet actuel, B = pays cliqué, et l'indicateur de la tuile cliquée comme actif.
-function _crossClickToRelations(iso, flowEntryKey){
-  if(!iso) return;
-  if(!state.subject || !state.subject.isos.length) return;
-  // Le sujet ne peut pas être son propre partenaire B
-  if(iso === state.subject.isos[0]) return;
-  // Définir le partenaire B (sera utilisé en mode bilatéral)
-  _relPartnerB = { isos: [iso], label: isoToName(iso) || iso };
-  // Définir l'indicateur actif Relations (pour qu'il soit présélectionné dans la nav gauche)
-  if(flowEntryKey) _relEntryKey = flowEntryKey;
-  // Bascule d'onglet
-  switchView('relations');
-  syncUrl();
-}
 function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label: 'Partenaire' }).label; }
 
 
@@ -7085,8 +5897,7 @@ function _crossDrawTreemap(host, displayMap, volumeMap, entry){
     const events = p.item.isOthers ? '' :
       ` onmouseenter="_crossHoverEnter('${escAttr(p.item.key)}', event, '${escAttr(entry.key)}')"
         onmousemove="_crossHoverMove(event)"
-        onmouseleave="_crossHoverLeave()"
-        onclick="_crossClickToRelations('${escAttr(p.item.key)}', '${escAttr(entry.key)}')"`;
+        onmouseleave="_crossHoverLeave()"`;
     svg += `<g${isoAttr}${cursor}${events}>
       <rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" fill="${color}" stroke="#fff" stroke-width="1"/>
       ${showLabel ? `<text x="${p.x + 4}" y="${p.y + 12}" font-family="var(--sans)" font-size="9" font-weight="600" fill="#fff" style="text-shadow:0 1px 2px rgba(0,0,0,.3);pointer-events:none">${escAttr(p.item.name).slice(0, 18)}</text>` : ''}
@@ -7157,8 +5968,7 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
           data-iso3="${escAttr(iso)}" style="cursor:pointer"
           onmouseenter="_crossHoverEnter('${escAttr(iso)}', event, '${escAttr(entry.key)}')"
           onmousemove="_crossHoverMove(event)"
-          onmouseleave="_crossHoverLeave()"
-          onclick="_crossClickToRelations('${escAttr(iso)}', '${escAttr(entry.key)}')"></path>`;
+          onmouseleave="_crossHoverLeave()"></path>`;
       } else {
         pathsHtml += `<path d="${d}" fill="${fill}" stroke="#fff" stroke-width="0.3"></path>`;
       }
@@ -7378,8 +6188,7 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
       curvesHtml += `<g data-iso3="${escAttr(k)}"
         onmouseenter="_crossHoverEnter('${escAttr(k)}', event, '${escAttr(entry.key)}')"
         onmousemove="_crossHoverMove(event)"
-        onmouseleave="_crossHoverLeave()"
-        onclick="_crossClickToRelations('${escAttr(k)}', '${escAttr(entry.key)}')" style="cursor:pointer">
+        onmouseleave="_crossHoverLeave()">
         <polyline fill="none" stroke="${color}" stroke-width="1.5" points="${pts}"/>
       </g>`;
     }
@@ -7409,8 +6218,7 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
       const events = isOthers ? '' :
         ` onmouseenter="_crossHoverEnter('${escAttr(k)}', event, '${escAttr(entry.key)}')"
           onmousemove="_crossHoverMove(event)"
-          onmouseleave="_crossHoverLeave()"
-          onclick="_crossClickToRelations('${escAttr(k)}', '${escAttr(entry.key)}')" style="cursor:pointer"`;
+          onmouseleave="_crossHoverLeave()"`;
       areasHtml += `<g${dataAttr}${events}>
         <path d="${pathD}" fill="${color}" stroke="#fff" stroke-width="0.4"/>
       </g>`;
@@ -7464,45 +6272,20 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
 /* ─── RECHERCHE SUJET (⌘K) — pays multi-cochables, zones en 1 clic ─── */
 let _searchSel = 0, _searchItems = [];
 let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
-let _searchMode = 'subject';   // 'subject' | 'compareB' | 'partnerB'
+let _searchMode = 'subject';   // 'subject' (étendu à l'étape 2)
 
 function openSearch(mode){
-  _searchMode = (mode === 'compareB' || mode === 'partnerB') ? mode : 'subject';
+  _searchMode = 'subject';
   document.getElementById('searchOverlay').classList.add('open');
   _multiPick = [];
-  // En mode partnerB : un seul pays, pas de présélection multi
   if(_searchMode === 'subject' && state.subject && state.subject.isos.length > 1){
     _multiPick = state.subject.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
   }
   const inp = document.getElementById('searchInput');
   inp.value = ''; inp.focus();
-  const placeholders = {
-    subject: 'Rechercher un pays ou une zone…',
-    compareB: 'Choisir un comparant…',
-    partnerB: 'Choisir un pays pour analyse bilatérale…',
-  };
-  inp.placeholder = placeholders[_searchMode] || placeholders.subject;
+  inp.placeholder = 'Rechercher un pays ou une zone…';
   onSearchInput('');
   renderTray();
-}
-function openSearchForB(){
-  _searchMode = 'compareB';
-  document.getElementById('searchOverlay').classList.add('open');
-  _multiPick = [];
-  if(state.compareB && state.compareB.isos.length > 1){
-    _multiPick = state.compareB.isos.map(iso => ({ iso3: iso, name: isoToName(iso), flag: isoToFlag(iso) }));
-  }
-  const inp = document.getElementById('searchInput');
-  inp.value = ''; inp.focus();
-  inp.placeholder = 'Choisir un comparant…';
-  onSearchInput('');
-  renderTray();
-}
-function setCompareB(isos, label){
-  state.compareB = { isos: isos.slice(), label: label || detectZoneLabel(isos) };
-  renderContextBar();
-  refreshActiveView();
-  syncUrl();
 }
 function closeSearch(){ document.getElementById('searchOverlay').classList.remove('open'); }
 
@@ -7564,9 +6347,9 @@ function onSearchInput(q){
 function toggleCountry(i){
   const it = _searchItems[i]; if(!it || it.kind !== 'pays') return;
   const iso = it.iso;
-  // En mode partnerB : clic pays = validation directe (un seul pays attendu, pas de multi-pick)
-  if(_searchMode === 'partnerB'){
-    setRelPartnerB([iso]);
+  // Mode comparaisons : un seul pays B, validation immédiate (pas de multi-pick).
+  if(_searchMode === 'cmpB'){
+    setCmpPartnerB(iso, 'country', it.label);
     closeSearch();
     return;
   }
@@ -7580,18 +6363,13 @@ function toggleCountry(i){
 
 function pickZone(i){
   const it = _searchItems[i]; if(!it || it.kind !== 'zone') return;
-  // En mode partnerB : pas de zone, B doit être un pays unique
-  if(_searchMode === 'partnerB'){
-    // Si la zone n'a qu'un pays (cas rare mais possible), on l'accepte
-    if(it.isos && it.isos.length === 1){
-      setRelPartnerB(it.isos);
-      closeSearch();
-    }
-    // Sinon : rien (l'utilisateur doit choisir un pays individuel)
+  // Mode comparaisons : B peut être une zone (it.iso = zone_id).
+  if(_searchMode === 'cmpB'){
+    setCmpPartnerB(it.iso, 'zone', it.label);
+    closeSearch();
     return;
   }
-  if(_searchMode === 'compareB') setCompareB(it.isos, it.label);
-  else setSubject(it.isos, it.label);
+  setSubject(it.isos, it.label);
   closeSearch();
 }
 
@@ -7617,8 +6395,7 @@ function validateMultiSelection(){
   if(!_multiPick.length) return;
   const isos = _multiPick.map(p => p.iso3);
   const label = detectZoneLabel(isos);
-  if(_searchMode === 'compareB') setCompareB(isos, label);
-  else setSubject(isos, label);
+  setSubject(isos, label);
   closeSearch();
 }
 
@@ -7640,6 +6417,690 @@ function updateSearchSel(){
   });
 }
 
+/* ════════════════════════════════════════════════════════════════
+   ONGLET COMPARAISONS BILATÉRALES (A ↔ B)
+   Étape 2 : squelette. Top bar + sélecteur de B + layout 2 moitiés vide.
+   Les calculs (profil de flux / tornado de puissance) arrivent aux étapes 3-4.
+═════════════════════════════════════════════════════════════════ */
+// Partenaire B : un pays (ISO3) OU une zone (zone_id).
+let _cmpPartnerB = null;          // ISO3 ou zone_id, ou null
+let _cmpPartnerBType = null;      // 'country' | 'zone' | null
+let _cmpPartnerBLabel = null;     // libellé affiché
+let _cmpFluxSelected = null;      // Set<flowEntryKey> (lazy, étape 3)
+let _cmpPowerSelected = null;     // Set<indicator> (lazy, étape 4)
+let _cmpYear = null;              // année d'analyse, défaut = state.year
+
+const CMP_FLUX_STORAGE_KEY = 'geopol_cmp_flux_selected';
+const CMP_POWER_STORAGE_KEY = 'geopol_cmp_power_selected';
+
+function _cmpGetYear(){ return _cmpYear ?? state.year; }
+
+// Sélection / réinitialisation du partenaire B
+function setCmpPartnerB(id, type, label){
+  if(!id){ _cmpPartnerB = null; _cmpPartnerBType = null; _cmpPartnerBLabel = null; }
+  else { _cmpPartnerB = id; _cmpPartnerBType = type || 'country'; _cmpPartnerBLabel = label || id; }
+  renderComparaisons();
+  syncUrl();
+}
+function clearCmpPartnerB(){ setCmpPartnerB(null); }
+
+// Ouverture de la modal de recherche en mode choix de B (un seul pays OU une zone).
+function openCmpSearch(){
+  _searchMode = 'cmpB';
+  document.getElementById('searchOverlay').classList.add('open');
+  _multiPick = [];
+  const inp = document.getElementById('searchInput');
+  inp.value = ''; inp.focus();
+  inp.placeholder = 'Choisir un pays ou une zone à comparer…';
+  onSearchInput('');
+  renderTray();
+}
+
+// Drapeau / pictogramme du partenaire B selon son type.
+function _cmpPartnerBFlag(){
+  if(_cmpPartnerBType === 'zone') return '⊞';
+  return isoToFlag(_cmpPartnerB) || '🏳';
+}
+
+/* ─── HELPERS COMMUNS FACTORISÉS (étape 5, utilisés dès 3-4) ──────── */
+// Liste des ISO3 d'une zone (cache local).
+const _cmpZoneIsosCache = new Map();
+function getZoneIsos(zoneId){
+  if(_cmpZoneIsosCache.has(zoneId)) return _cmpZoneIsosCache.get(zoneId);
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(zoneId)}'`);
+  const isos = (r.length ? r[0].values.map(v => v[0]).filter(Boolean) : []).filter(i => !REGIONAL_CODES.has(i));
+  _cmpZoneIsosCache.set(zoneId, isos);
+  return isos;
+}
+// Tendance d'une série temporelle [{year,value}] : 'up'|'down'|'flat' selon le seuil (défaut ±5%).
+function getEvolutionTrend(values, threshold){
+  const th = threshold ?? 0.05;
+  const arr = (values || []).filter(d => d && d.value != null && d.value !== 0).sort((a,b)=>a.year-b.year);
+  if(arr.length < 2) return 'flat';
+  const first = arr[0].value, last = arr[arr.length-1].value;
+  if(!first) return 'flat';
+  const chg = (last - first) / Math.abs(first);
+  if(chg >= th) return 'up';
+  if(chg <= -th) return 'down';
+  return 'flat';
+}
+// Médiane d'un tableau de nombres.
+function _cmpMedian(arr){
+  const a = (arr || []).filter(v => v != null && !isNaN(v)).slice().sort((x,y)=>x-y);
+  if(!a.length) return null;
+  const m = Math.floor(a.length/2);
+  return a.length % 2 ? a[m] : (a[m-1]+a[m])/2;
+}
+
+/* ─── RÉSOLUTION DU PARTENAIRE B EN LISTE D'ISO ──────────────────── */
+// Retourne { isos:[...], isCountry:bool }. Pour un pays : [iso]. Pour une zone : tous ses ISO.
+function _cmpBIsos(){
+  if(!_cmpPartnerB) return { isos: [], isCountry: false };
+  if(_cmpPartnerBType === 'zone') return { isos: getZoneIsos(_cmpPartnerB), isCountry: false };
+  return { isos: [_cmpPartnerB], isCountry: true };
+}
+
+/* ─── COLONNES DIRECTIONNELLES POUR UN FLUX ──────────────────────── */
+// Même convention que getFluxRows : selon realIndicator/side, qui est "sujet" et qui est "partenaire".
+function _cmpFlowCols(entry){
+  const real = entry.realIndicator;
+  if(real === 'import_commercial') return { real, subjectCol:'country_to', partnerCol:'country_from' };
+  if(real === 'export_commercial') return { real, subjectCol:'country_from', partnerCol:'country_to' };
+  const subjectCol = (entry.side === 'to') ? 'country_to' : 'country_from';
+  const partnerCol = (entry.side === 'to') ? 'country_from' : 'country_to';
+  return { real, subjectCol, partnerCol };
+}
+
+/* ─── VOLUME BILATÉRAL (subject=isosS, partenaire=isosP) à une année ─ */
+// Pour le flux `entry` : somme des valeurs où subjectCol ∈ isosS ET partnerCol ∈ isosP.
+// Fallback année : si rien à `year`, prend la dernière année <= year avec données.
+function _cmpBilatVolume(entry, isosS, isosP, year){
+  if(!isosS.length || !isosP.length) return { value: null, year: null };
+  const { real, subjectCol, partnerCol } = _cmpFlowCols(entry);
+  const sList = sqlList(isosS), pList = sqlList(isosP);
+  let y = year;
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(real)}' AND year=${y} AND ${subjectCol} IN (${sList}) AND ${partnerCol} IN (${pList}) LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(real)}' AND ${subjectCol} IN (${sList}) AND ${partnerCol} IN (${pList})`);
+    if(ly.length && ly[0].values.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    else return { value: null, year: null };
+  }
+  const r = safeExec(`SELECT SUM(value) FROM flux WHERE indicator='${escapeSql(real)}' AND year=${y} AND ${subjectCol} IN (${sList}) AND ${partnerCol} IN (${pList})`);
+  const v = (r.length && r[0].values.length) ? r[0].values[0][0] : null;
+  return { value: v, year: y };
+}
+
+/* ─── TOTAL D'UN PAYS/ZONE SUR UN FLUX (tous partenaires) à une année ─ */
+// Sert de dénominateur pour la "part" : volume total que isosS échange dans ce flux/sens.
+function _cmpFlowTotal(entry, isosS, year){
+  if(!isosS.length) return null;
+  const { real, subjectCol, partnerCol } = _cmpFlowCols(entry);
+  const sList = sqlList(isosS);
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  let y = year;
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(real)}' AND year=${y} AND ${subjectCol} IN (${sList}) LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(real)}' AND ${subjectCol} IN (${sList})`);
+    if(ly.length && ly[0].values.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    else return null;
+  }
+  const r = safeExec(`SELECT SUM(value) FROM flux WHERE indicator='${escapeSql(real)}' AND year=${y}
+                      AND ${subjectCol} IN (${sList}) AND ${partnerCol} NOT IN (${sList})
+                      AND ${partnerCol} NOT IN (${exclAgg})`);
+  return (r.length && r[0].values.length) ? r[0].values[0][0] : null;
+}
+
+/* ─── RANG D'UN PARTENAIRE PARMI LES PARTENAIRES (étape 5 commun) ───── */
+// Rang de isosP dans la liste des partenaires de isosS pour ce flux (1 = plus gros), et total partenaires non nuls.
+function getRankAmongPartners(entry, isosS, isosP, year){
+  if(!isosS.length || !isosP.length) return { rank: null, total: 0 };
+  const { real, subjectCol, partnerCol } = _cmpFlowCols(entry);
+  const sList = sqlList(isosS);
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  let y = year;
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(real)}' AND year=${y} AND ${subjectCol} IN (${sList}) LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(real)}' AND ${subjectCol} IN (${sList})`);
+    if(ly.length && ly[0].values.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    else return { rank: null, total: 0 };
+  }
+  // Agrège par partenaire (un partenaire de la zone B compte comme un seul bucket via regroupement).
+  const r = safeExec(`SELECT ${partnerCol} AS p, SUM(value) AS v FROM flux
+                      WHERE indicator='${escapeSql(real)}' AND year=${y}
+                      AND ${subjectCol} IN (${sList}) AND ${partnerCol} NOT IN (${sList})
+                      AND ${partnerCol} NOT IN (${exclAgg})
+                      AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                      GROUP BY ${partnerCol} HAVING v > 0 ORDER BY v DESC`);
+  if(!r.length) return { rank: null, total: 0 };
+  const rows = r[0].values.map(([p,v]) => ({ p, v }));
+  const total = rows.length;
+  // Volume cumulé du partenaire B (somme de ses ISO s'il s'agit d'une zone).
+  const pSet = new Set(isosP);
+  const bVol = rows.filter(x => pSet.has(x.p)).reduce((s,x)=>s+x.v, 0);
+  if(bVol <= 0) return { rank: null, total };
+  // Rang : nb de partenaires (hors B) strictement plus gros que B + 1.
+  let above = 0;
+  for(const x of rows){ if(pSet.has(x.p)) continue; if(x.v > bVol) above++; }
+  return { rank: above + 1, total };
+}
+
+/* ─── TOP CONCURRENTS : autres partenaires les plus gros de isosS ──── */
+function _cmpTopCompetitors(entry, isosS, excludeIsos, year, limit){
+  if(!isosS.length) return [];
+  const { real, subjectCol, partnerCol } = _cmpFlowCols(entry);
+  const sList = sqlList(isosS);
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  let y = year;
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(real)}' AND year=${y} AND ${subjectCol} IN (${sList}) LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(real)}' AND ${subjectCol} IN (${sList})`);
+    if(ly.length && ly[0].values.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    else return [];
+  }
+  const r = safeExec(`SELECT ${partnerCol} AS p, SUM(value) AS v FROM flux
+                      WHERE indicator='${escapeSql(real)}' AND year=${y}
+                      AND ${subjectCol} IN (${sList}) AND ${partnerCol} NOT IN (${sList})
+                      AND ${partnerCol} NOT IN (${exclAgg})
+                      AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                      GROUP BY ${partnerCol} HAVING v > 0 ORDER BY v DESC LIMIT ${(limit||3) + (excludeIsos?excludeIsos.length:0) + 2}`);
+  if(!r.length) return [];
+  const excl = new Set(excludeIsos || []);
+  return r[0].values.map(([p,v]) => ({ iso:p, value:v }))
+    .filter(x => !excl.has(x.iso))
+    .slice(0, limit || 3);
+}
+
+/* ─── RANG MONDIAL DU COUPLE (parmi tous les couples du flux) ──────── */
+function _cmpCoupleWorldRank(entry, isosS, isosP, year){
+  const { real, subjectCol, partnerCol } = _cmpFlowCols(entry);
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  let y = year;
+  const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(real)}' AND year=${y} LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(real)}'`);
+    if(ly.length && ly[0].values.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    else return null;
+  }
+  // Volume du couple courant
+  const cur = _cmpBilatVolume(entry, isosS, isosP, y).value;
+  if(cur == null || cur <= 0) return null;
+  // Compte des couples (subjectCol,partnerCol) strictement plus gros
+  const r = safeExec(`SELECT COUNT(*) FROM (
+                        SELECT ${subjectCol} AS s, ${partnerCol} AS p, SUM(value) AS v FROM flux
+                        WHERE indicator='${escapeSql(real)}' AND year=${y}
+                        AND ${subjectCol} NOT IN (${exclAgg}) AND ${partnerCol} NOT IN (${exclAgg})
+                        AND ${subjectCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                        AND ${partnerCol} NOT LIKE '\\_\\_%' ESCAPE '\\'
+                        GROUP BY ${subjectCol}, ${partnerCol} HAVING v > ${cur}
+                      )`);
+  const above = (r.length && r[0].values.length) ? r[0].values[0][0] : 0;
+  return above + 1;
+}
+
+/* ─── SÉRIE "PART" SUR 10 ANS (pour sparkline) ───────────────────── */
+// Pour chaque année [yMax-9 .. yMax] : part = volume bilatéral / total de isosS sur ce flux.
+function _cmpPartSeries(entry, isosS, isosP, yMax){
+  const out = [];
+  for(let y = yMax - 9; y <= yMax; y++){
+    const vol = _cmpBilatVolume(entry, isosS, isosP, y);
+    // volume strictement à l'année y (sans fallback) pour une vraie série
+    let v = null;
+    if(vol.year === y) v = vol.value;
+    const tot = _cmpFlowTotalStrict(entry, isosS, y);
+    const part = (v != null && tot && tot > 0) ? v / tot : null;
+    out.push({ year: y, value: part });
+  }
+  return out;
+}
+// Total strict (année exacte, pas de fallback) — pour les séries.
+function _cmpFlowTotalStrict(entry, isosS, year){
+  if(!isosS.length) return null;
+  const { real, subjectCol, partnerCol } = _cmpFlowCols(entry);
+  const sList = sqlList(isosS);
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const r = safeExec(`SELECT SUM(value) FROM flux WHERE indicator='${escapeSql(real)}' AND year=${year}
+                      AND ${subjectCol} IN (${sList}) AND ${partnerCol} NOT IN (${sList})
+                      AND ${partnerCol} NOT IN (${exclAgg})`);
+  return (r.length && r[0].values.length) ? r[0].values[0][0] : null;
+}
+
+/* ─── VALEUR IDENTITÉ POUR UN SET D'ISO ARBITRAIRE (tornado) ──────── */
+// Additif (aggregation sum) → somme. Non additif → médiane (zone) ou valeur unique (pays).
+// Fallback année : dernière <= year avec données. Renvoie { value, year }.
+function _cmpIdentiteValue(isos, indicator, year){
+  if(!isos.length) return { value: null, year: null };
+  const method = aggMethodFor(indicator);
+  const inList = sqlList(isos);
+  let y = year;
+  const chk = safeExec(`SELECT 1 FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND country_iso3 IN (${inList}) AND value IS NOT NULL AND value!=0 LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM identite WHERE indicator='${escapeSql(indicator)}' AND country_iso3 IN (${inList}) AND value IS NOT NULL AND value!=0 AND year<=${y}`);
+    if(ly.length && ly[0].values.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    else return { value: null, year: null };
+  }
+  const r = safeExec(`SELECT value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${y} AND country_iso3 IN (${inList}) AND value IS NOT NULL AND value!=0`);
+  if(!r.length || !r[0].values.length) return { value: null, year: y };
+  const vals = r[0].values.map(v => v[0]).filter(v => v != null);
+  if(!vals.length) return { value: null, year: y };
+  let value;
+  if(method === 'sum') value = vals.reduce((a,b)=>a+b, 0);
+  else value = (vals.length > 1) ? _cmpMedian(vals) : vals[0];
+  return { value, year: y };
+}
+// Série identité sur N ans pour un set d'ISO (tendance tornado).
+function _cmpIdentiteSeries(isos, indicator, yMax, span){
+  const out = [];
+  for(let y = yMax - (span||4); y <= yMax; y++){
+    const r = _cmpIdentiteValueStrict(isos, indicator, y);
+    out.push({ year: y, value: r });
+  }
+  return out;
+}
+function _cmpIdentiteValueStrict(isos, indicator, year){
+  if(!isos.length) return null;
+  const method = aggMethodFor(indicator);
+  const inList = sqlList(isos);
+  const r = safeExec(`SELECT value FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${year} AND country_iso3 IN (${inList}) AND value IS NOT NULL AND value!=0`);
+  if(!r.length || !r[0].values.length) return null;
+  const vals = r[0].values.map(v => v[0]).filter(v => v != null);
+  if(!vals.length) return null;
+  if(method === 'sum') return vals.reduce((a,b)=>a+b, 0);
+  return (vals.length > 1) ? _cmpMedian(vals) : vals[0];
+}
+
+/* ─── SPARKLINE SVG (part sur 10 ans) ────────────────────────────── */
+// série [{year,value}] (value peut être null). Couleur verte ou orange.
+function _cmpSparkline(series, color){
+  const pts = series.filter(d => d.value != null);
+  if(pts.length < 2) return `<svg width="60" height="24"></svg>`;
+  const vals = pts.map(d => d.value);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const W = 60, H = 24, pad = 2;
+  const xs = series.length - 1;
+  const X = i => pad + (i/(xs||1)) * (W - pad*2);
+  const Y = v => H - pad - ((v - lo)/((hi-lo)||1)) * (H - pad*2);
+  // indices réels (pour aligner X sur l'année dans la série complète)
+  let d = '', lastPt = null;
+  series.forEach((p,i) => {
+    if(p.value == null) return;
+    const x = X(i), y = Y(p.value);
+    d += (d ? 'L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+    lastPt = { x, y };
+  });
+  const dot = lastPt ? `<circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="2" fill="${color}"/>` : '';
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <polyline fill="none" stroke="${color}" stroke-width="1.5" points="${d.replace(/[ML]/g,' ').trim()}"/>
+    ${dot}
+  </svg>`;
+}
+
+/* ─── JAUGE (part %) ──────────────────────────────────────────────── */
+// align: 'right' (remplissage collé à droite, côté A) | 'left' (côté B).
+function _cmpGauge(pct, color, align){
+  const w = pct == null ? 0 : Math.max(0, Math.min(100, pct*100));
+  const just = align === 'right' ? 'flex-end' : 'flex-start';
+  return `<div class="row-bar-track" style="justify-content:${just}">
+    <div class="row-bar-fill" style="width:${w.toFixed(1)}%;background:${color}"></div>
+  </div>`;
+}
+
+function renderComparaisons(){
+  const host = document.getElementById('comparaisonsContent');
+  if(!host) return;
+
+  // Pas de sujet A : message identique aux autres onglets.
+  if(!state.subject || !state.subject.isos.length){
+    host.innerHTML = `<div class="need-subject"><p>Choisissez d'abord un sujet (barre du haut) pour démarrer une comparaison.</p></div>`;
+    return;
+  }
+
+  // Pas de partenaire B : invitation centrée.
+  if(!_cmpPartnerB){
+    host.innerHTML = `
+      <div class="cmp-empty">
+        <div class="cmp-empty-title">Choisissez un partenaire pour démarrer la comparaison</div>
+        <div class="cmp-empty-sub">${state.subject.label} ↔ ?</div>
+        <button class="cmp-empty-btn" onclick="openCmpSearch()">+ Choisir un partenaire</button>
+      </div>`;
+    return;
+  }
+
+  const aFlag = state.subject.isos.length === 1 ? (isoToFlag(state.subject.isos[0]) || '🏳') : '⊞';
+  const year = _cmpGetYear();
+  const mn = state.yearBounds.min, mx = state.yearBounds.max;
+  let yearOpts = '';
+  for(let y = mx; y >= mn; y--){ yearOpts += `<option value="${y}" ${y===year?'selected':''}>${y}</option>`; }
+
+  host.innerHTML = `
+    <div class="cmp-topbar">
+      <div class="cmp-couple">
+        <span class="cmp-side a"><span class="flag">${aFlag}</span>${escAttr(state.subject.label)}</span>
+        <span class="cmp-arrow">↔</span>
+        <span class="cmp-side b" onclick="openCmpSearch()" title="Changer de partenaire">
+          <span class="flag">${_cmpPartnerBFlag()}</span>${escAttr(_cmpPartnerBLabel)}
+          <span class="x" onclick="event.stopPropagation();clearCmpPartnerB()">×</span>
+        </span>
+        <button class="cmp-change-btn" onclick="openCmpSearch()">changer</button>
+      </div>
+      <div class="cmp-year">
+        <span class="ctx-label">Année</span>
+        <select class="year-select" onchange="_cmpSetYear(this.value)">${yearOpts}</select>
+      </div>
+    </div>
+
+    <div class="cmp-split">
+      <section class="cmp-half cmp-flux">
+        <header class="cmp-half-head">Profil de flux</header>
+        <div class="cmp-half-inner">
+          <div class="cmp-nav" id="cmpFluxNav"></div>
+          <div class="cmp-half-body" id="cmpFluxBody"></div>
+        </div>
+      </section>
+      <section class="cmp-half cmp-power">
+        <header class="cmp-half-head">Profil de puissance</header>
+        <div class="cmp-half-inner">
+          <div class="cmp-half-body" id="cmpPowerBody"></div>
+          <div class="cmp-nav right" id="cmpPowerNav"></div>
+        </div>
+      </section>
+    </div>`;
+  renderCmpFluxNav();
+  renderCmpFluxProfile();
+  renderCmpPowerNav();
+  renderCmpPowerTornado();
+}
+
+function _cmpSetYear(v){
+  _cmpYear = parseInt(v);
+  renderCmpFluxProfile();
+  renderCmpPowerTornado();
+  syncUrl();
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MOITIÉ GAUCHE — PROFIL DE FLUX
+═════════════════════════════════════════════════════════════════ */
+const CMP_FLUX_MAX = 18;
+const CMP_FLUX_DEFAULTS = ['commerce|from','commerce|to','transferts_armement|from','migrants|to'];
+const CMP_FLUX_CAT_ORDER = ['Commerce','Armement','Finance','Migrations','Éducation','Diplomatie'];
+// Mappe la catégorie de config (souvent en minuscules/variantes) vers un libellé d'affichage canonique.
+function _cmpCatLabel(cat){
+  const c = (cat||'').toLowerCase();
+  if(c.includes('commerce')) return 'Commerce';
+  if(c.includes('arm')) return 'Armement';
+  if(c.includes('financ') || c.includes('dette')) return 'Finance';
+  if(c.includes('migr') || c.includes('refug') || c.includes('réfug')) return 'Migrations';
+  if(c.includes('éduc') || c.includes('educ') || c.includes('etud') || c.includes('étud')) return 'Éducation';
+  if(c.includes('diplo')) return 'Diplomatie';
+  return cat || 'Autre';
+}
+
+function _cmpLoadFluxSelected(){
+  if(_cmpFluxSelected) return _cmpFluxSelected;
+  try {
+    const raw = localStorage.getItem(CMP_FLUX_STORAGE_KEY);
+    if(raw){ const arr = JSON.parse(raw); if(Array.isArray(arr)) _cmpFluxSelected = new Set(arr.slice(0, CMP_FLUX_MAX)); }
+  } catch {}
+  if(!_cmpFluxSelected) _cmpFluxSelected = new Set(CMP_FLUX_DEFAULTS.filter(k => getFlowEntryByKey(k)));
+  // garde uniquement les clés présentes en DB
+  _cmpFluxSelected = new Set([..._cmpFluxSelected].filter(k => { const e = getFlowEntryByKey(k); return e && e.presentInDb; }));
+  if(_cmpFluxSelected.size === 0) _cmpFluxSelected = new Set(CMP_FLUX_DEFAULTS.filter(k => { const e = getFlowEntryByKey(k); return e && e.presentInDb; }));
+  return _cmpFluxSelected;
+}
+function _cmpSaveFluxSelected(){
+  try { localStorage.setItem(CMP_FLUX_STORAGE_KEY, JSON.stringify([..._cmpFluxSelected])); } catch {}
+}
+function toggleCmpFlux(key){
+  const sel = _cmpLoadFluxSelected();
+  if(sel.has(key)) sel.delete(key);
+  else { if(sel.size >= CMP_FLUX_MAX) return; sel.add(key); }
+  _cmpSaveFluxSelected();
+  renderCmpFluxNav();
+  renderCmpFluxProfile();
+  syncUrl();
+}
+
+function renderCmpFluxNav(){
+  const host = document.getElementById('cmpFluxNav');
+  if(!host) return;
+  const sel = _cmpLoadFluxSelected();
+  const all = flowEntriesPresent();
+  // groupe par catégorie d'affichage, dans l'ordre fixe
+  const byCat = {};
+  for(const e of all){ const cl = _cmpCatLabel(e.category); (byCat[cl] ??= []).push(e); }
+  const cats = CMP_FLUX_CAT_ORDER.filter(c => byCat[c]).concat(Object.keys(byCat).filter(c => !CMP_FLUX_CAT_ORDER.includes(c)));
+  let html = `<div class="cmp-nav-head">Flux (${sel.size}/${CMP_FLUX_MAX})</div>`;
+  for(const cat of cats){
+    html += `<div class="cmp-nav-cat">${cat}</div>`;
+    for(const e of byCat[cat].sort((a,b)=>a.label_long.localeCompare(b.label_long))){
+      const on = sel.has(e.key);
+      html += `<label class="cmp-nav-item ${on?'on':''}">
+        <input type="checkbox" ${on?'checked':''} onchange="toggleCmpFlux('${escAttr(e.key)}')">
+        <span>${e.label_long}</span>
+      </label>`;
+    }
+  }
+  host.innerHTML = html;
+}
+
+function renderCmpFluxProfile(){
+  const host = document.getElementById('cmpFluxBody');
+  if(!host) return;
+  const sel = _cmpLoadFluxSelected();
+  const isosA = state.subject.isos;
+  const { isos: isosB } = _cmpBIsos();
+  const year = _cmpGetYear();
+  if(!isosB.length){ host.innerHTML = `<div class="cmp-placeholder">Partenaire sans pays résolu.</div>`; return; }
+
+  // Calcule une ligne par flux sélectionné.
+  const rows = [];
+  for(const key of sel){
+    const entry = getFlowEntryByKey(key);
+    if(!entry) continue;
+    // Volume bilatéral dans le sens du flux : sujet=A, partenaire=B
+    const volAB = _cmpBilatVolume(entry, isosA, isosB, year);
+    const vol = volAB.value;
+    const totA = _cmpFlowTotal(entry, isosA, year);
+    const totB = _cmpFlowTotal(entry, isosB, year);
+    const partA = (vol != null && totA && totA > 0) ? vol / totA : null;
+    const partB = (vol != null && totB && totB > 0) ? vol / totB : null;
+    const rkA = getRankAmongPartners(entry, isosA, isosB, year);
+    const rkB = getRankAmongPartners(entry, isosB, isosA, year);
+    const sparkA = _cmpPartSeries(entry, isosA, isosB, year);
+    const sparkB = _cmpPartSeries(entry, isosB, isosA, year);
+    rows.push({ entry, cat: _cmpCatLabel(entry.category), vol, partA, partB, rkA, rkB, sparkA, sparkB });
+  }
+  // tri : catégorie (ordre fixe) puis volume absolu décroissant
+  const catRank = c => { const i = CMP_FLUX_CAT_ORDER.indexOf(c); return i < 0 ? 99 : i; };
+  rows.sort((a,b) => (catRank(a.cat) - catRank(b.cat)) || ((b.vol||0) - (a.vol||0)));
+
+  if(!rows.length){ host.innerHTML = `<div class="cmp-placeholder">Aucun flux sélectionné.</div>`; return; }
+
+  let html = '';
+  let lastCat = null;
+  for(const r of rows){
+    if(r.cat !== lastCat){ html += `<div class="cmp-section-head">${r.cat.toUpperCase()}</div>`; lastCat = r.cat; }
+    const e = r.entry;
+    const volStr = r.vol != null ? fmtWithUnit(r.vol, e.unit_display) : '—';
+    const pctA = r.partA != null ? (r.partA*100).toFixed(r.partA < 0.1 ? 1 : 0) + '%' : '—';
+    const pctB = r.partB != null ? (r.partB*100).toFixed(r.partB < 0.1 ? 1 : 0) + '%' : '—';
+    const rankAStr = r.rkA.rank ? `#${r.rkA.rank}` : '—';
+    const rankBStr = r.rkB.rank ? `#${r.rkB.rank}` : '—';
+    html += `<div class="cmp-flux-row" onmouseenter="_cmpFluxTip(event,'${escAttr(e.key)}')" onmousemove="moveTip(event)" onmouseleave="hideTip()">
+      <div class="cmp-spark left">${_cmpSparkline(r.sparkA, '#0a6e4a')}</div>
+      <div class="cmp-gauge-col">
+        ${_cmpGauge(r.partA, '#0a6e4a', 'right')}
+        <div class="cmp-gauge-nums"><span class="pct green">${pctA}</span><span class="rk">${rankAStr}</span></div>
+      </div>
+      <div class="cmp-flux-center">
+        <div class="cmp-flux-title">${e.label_long}</div>
+        <div class="cmp-flux-vol">${volStr}</div>
+      </div>
+      <div class="cmp-gauge-col">
+        ${_cmpGauge(r.partB, '#b45309', 'left')}
+        <div class="cmp-gauge-nums"><span class="pct orange">${pctB}</span><span class="rk">${rankBStr}</span></div>
+      </div>
+      <div class="cmp-spark right">${_cmpSparkline(r.sparkB, '#b45309')}</div>
+    </div>`;
+  }
+  host.innerHTML = html;
+}
+
+// Tooltip flux : volume exact, top 3 concurrents A et B, rang mondial du couple, série 10 ans.
+function _cmpFluxTip(ev, key){
+  const entry = getFlowEntryByKey(key);
+  if(!entry) return;
+  const isosA = state.subject.isos;
+  const { isos: isosB } = _cmpBIsos();
+  const year = _cmpGetYear();
+  const volAB = _cmpBilatVolume(entry, isosA, isosB, year);
+  const exact = volAB.value != null
+    ? Math.round(volAB.value).toLocaleString('fr-FR') + ' ' + (entry.unit_display || '').replace(/^(T|Mrd|M)\s+/, '')
+    : '—';
+  const topA = _cmpTopCompetitors(entry, isosA, isosB, year, 3).map(x => `${isoToName(x.iso)} (${fmtWithUnit(x.value, entry.unit_display)})`).join(', ') || '—';
+  const topB = _cmpTopCompetitors(entry, isosB, isosA, year, 3).map(x => `${isoToName(x.iso)} (${fmtWithUnit(x.value, entry.unit_display)})`).join(', ') || '—';
+  const wr = _cmpCoupleWorldRank(entry, isosA, isosB, year);
+  const serie = _cmpPartSeries(entry, isosA, isosB, year).filter(d => d.value != null)
+    .map(d => `${d.year}: ${(d.value*100).toFixed(1)}%`).join(' · ') || '—';
+  const body = `Volume exact : ${exact} (${volAB.year || year})<br>
+    Top 3 concurrents chez ${escAttr(state.subject.label)} : ${escAttr(topA)}<br>
+    Top 3 concurrents chez ${escAttr(_cmpPartnerBLabel)} : ${escAttr(topB)}<br>
+    Rang mondial du couple : ${wr ? '#'+wr : '—'}<br>
+    Part chez A sur 10 ans : ${escAttr(serie)}`;
+  showTip2(ev, entry.label_long, body);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MOITIÉ DROITE — TORNADO DE PUISSANCE
+═════════════════════════════════════════════════════════════════ */
+const CMP_POWER_MAX = 10;
+const CMP_POWER_DEFAULTS = ['population','pib_usd','pib_par_hab','budget_defense_pib','volume_armee','age_median'];
+
+function _cmpPowerIndicators(){
+  // indicateurs identité présents en DB
+  return state.indicators.filter(c => c.table === 'identite' && c.presentInDb !== false);
+}
+function _cmpLoadPowerSelected(){
+  if(_cmpPowerSelected) return _cmpPowerSelected;
+  try {
+    const raw = localStorage.getItem(CMP_POWER_STORAGE_KEY);
+    if(raw){ const arr = JSON.parse(raw); if(Array.isArray(arr)) _cmpPowerSelected = new Set(arr.slice(0, CMP_POWER_MAX)); }
+  } catch {}
+  const avail = new Set(_cmpPowerIndicators().map(c => c.indicator));
+  if(!_cmpPowerSelected) _cmpPowerSelected = new Set(CMP_POWER_DEFAULTS.filter(i => avail.has(i)));
+  _cmpPowerSelected = new Set([..._cmpPowerSelected].filter(i => avail.has(i)));
+  if(_cmpPowerSelected.size === 0) _cmpPowerSelected = new Set(CMP_POWER_DEFAULTS.filter(i => avail.has(i)));
+  return _cmpPowerSelected;
+}
+function _cmpSavePowerSelected(){
+  try { localStorage.setItem(CMP_POWER_STORAGE_KEY, JSON.stringify([..._cmpPowerSelected])); } catch {}
+}
+function toggleCmpPower(indicator){
+  const sel = _cmpLoadPowerSelected();
+  if(sel.has(indicator)) sel.delete(indicator);
+  else { if(sel.size >= CMP_POWER_MAX) return; sel.add(indicator); }
+  _cmpSavePowerSelected();
+  renderCmpPowerNav();
+  renderCmpPowerTornado();
+  syncUrl();
+}
+
+function renderCmpPowerNav(){
+  const host = document.getElementById('cmpPowerNav');
+  if(!host) return;
+  const sel = _cmpLoadPowerSelected();
+  const inds = _cmpPowerIndicators();
+  const byCat = {};
+  for(const c of inds){ (byCat[c.category || 'autre'] ??= []).push(c); }
+  let html = `<div class="cmp-nav-head">Indicateurs (${sel.size}/${CMP_POWER_MAX})</div>`;
+  for(const cat of Object.keys(byCat).sort()){
+    html += `<div class="cmp-nav-cat">${cat}</div>`;
+    for(const c of byCat[cat].sort((a,b)=>(a.label||a.indicator).localeCompare(b.label||b.indicator))){
+      const on = sel.has(c.indicator);
+      html += `<label class="cmp-nav-item ${on?'on':''}">
+        <input type="checkbox" ${on?'checked':''} onchange="toggleCmpPower('${escAttr(c.indicator)}')">
+        <span>${c.label || c.indicator}</span>
+      </label>`;
+    }
+  }
+  host.innerHTML = html;
+}
+
+function renderCmpPowerTornado(){
+  const host = document.getElementById('cmpPowerBody');
+  if(!host) return;
+  const sel = _cmpLoadPowerSelected();
+  const isosA = state.subject.isos;
+  const { isos: isosB } = _cmpBIsos();
+  const year = _cmpGetYear();
+
+  // ordre : catégorie alpha, puis ordre de sélection naturel
+  const inds = _cmpPowerIndicators().filter(c => sel.has(c.indicator));
+  const byCat = {};
+  for(const c of inds){ (byCat[c.category || 'autre'] ??= []).push(c); }
+  const cats = Object.keys(byCat).sort();
+
+  if(!inds.length){ host.innerHTML = `<div class="cmp-placeholder">Aucun indicateur sélectionné.</div>`; return; }
+
+  let html = '';
+  for(const cat of cats){
+    html += `<div class="cmp-section-head">${cat.toUpperCase()}</div>`;
+    for(const c of byCat[cat]){
+      const a = _cmpIdentiteValue(isosA, c.indicator, year);
+      const b = _cmpIdentiteValue(isosB, c.indicator, year);
+      const va = a.value, vb = b.value;
+      // normalisation linéaire sur max, seuil 5%
+      const mx = Math.max(va || 0, vb || 0) || 1;
+      const wA = va != null ? Math.max(5, (va/mx)*100) : 0;
+      const wB = vb != null ? Math.max(5, (vb/mx)*100) : 0;
+      // ratio
+      let ratio = '';
+      if(va != null && vb != null && va !== 0 && vb !== 0){
+        const hi = Math.max(va, vb), lo = Math.min(va, vb);
+        const n = hi / lo;
+        ratio = '×' + (n > 10 ? Math.round(n) : n.toFixed(1));
+      }
+      // tendances ±5% sur 5 ans
+      const trA = getEvolutionTrend(_cmpIdentiteSeries(isosA, c.indicator, year, 4), 0.05);
+      const trB = getEvolutionTrend(_cmpIdentiteSeries(isosB, c.indicator, year, 4), 0.05);
+      const arrow = t => t === 'up' ? '<span class="tr up">↗</span>' : t === 'down' ? '<span class="tr down">↘</span>' : '<span class="tr flat">→</span>';
+      const aStr = va != null ? fmtWithUnit(va, c.unit_display) : '—';
+      const bStr = vb != null ? fmtWithUnit(vb, c.unit_display) : '—';
+      html += `<div class="cmp-torn-row" onmouseenter="_cmpPowerTip(event,'${escAttr(c.indicator)}')" onmousemove="moveTip(event)" onmouseleave="hideTip()">
+        <div class="cmp-torn-val a">${arrow(trA)}${aStr}</div>
+        <div class="cmp-torn-bar a"><div class="cmp-torn-fill a" style="width:${wA.toFixed(1)}%"></div></div>
+        <div class="cmp-torn-mid">${c.label || c.indicator}${ratio ? `<span class="cmp-torn-ratio">${ratio}</span>` : ''}</div>
+        <div class="cmp-torn-bar b"><div class="cmp-torn-fill b" style="width:${wB.toFixed(1)}%"></div></div>
+        <div class="cmp-torn-val b">${bStr}${arrow(trB)}</div>
+      </div>`;
+    }
+  }
+  host.innerHTML = html;
+}
+
+// Tooltip tornado : valeur exacte + série 5 ans + rang mondial de chaque pays.
+function _cmpPowerTip(ev, indicator){
+  const c = state.indicators.find(x => x.indicator === indicator);
+  if(!c) return;
+  const isosA = state.subject.isos;
+  const { isos: isosB, isCountry } = _cmpBIsos();
+  const year = _cmpGetYear();
+  const a = _cmpIdentiteValue(isosA, indicator, year);
+  const b = _cmpIdentiteValue(isosB, indicator, year);
+  const exact = (v) => v != null ? Math.round(v).toLocaleString('fr-FR') + ' ' + (c.unit_display||'').replace(/^(T|Mrd|M)\s+/, '') : '—';
+  const serA = _cmpIdentiteSeries(isosA, indicator, year, 4).filter(d=>d.value!=null).map(d=>`${d.year}: ${fmtWithUnit(d.value,c.unit_display)}`).join(' · ') || '—';
+  const serB = _cmpIdentiteSeries(isosB, indicator, year, 4).filter(d=>d.value!=null).map(d=>`${d.year}: ${fmtWithUnit(d.value,c.unit_display)}`).join(' · ') || '—';
+  // rang mondial : seulement pertinent pour un pays (A toujours 1 pays si non-groupe)
+  let rankA = '—', rankB = '—';
+  if(state.subject.isos.length === 1 && a.value != null){ const rp = rankPercentile(indicator, a.value, a.year || year); if(rp) rankA = `${ordinalFr(rp.rank)} / ${rp.total}`; }
+  if(isCountry && b.value != null){ const rp = rankPercentile(indicator, b.value, b.year || year); if(rp) rankB = `${ordinalFr(rp.rank)} / ${rp.total}`; }
+  const body = `${escAttr(state.subject.label)} : ${exact(a.value)} — rang ${rankA}<br>
+    ${escAttr(_cmpPartnerBLabel)} : ${exact(b.value)} — rang ${rankB}<br>
+    ${escAttr(state.subject.label)} sur 5 ans : ${escAttr(serA)}<br>
+    ${escAttr(_cmpPartnerBLabel)} sur 5 ans : ${escAttr(serB)}`;
+  showTip2(ev, c.label || c.indicator, body);
+}
+
 /* ─── EXPORT (placeholder étape 4) ────────────────────────────── */
 function exportCurrentView(){
   alert('Export — sera implémenté à l\'étape 4 (PDF par onglet).');
@@ -7649,7 +7110,6 @@ function exportCurrentView(){
 function syncUrl(){
   const p = new URLSearchParams();
   if(state.subject) p.set('s', state.subject.isos.join(','));
-  if(state.compareB) p.set('b', state.compareB.isos.join(','));
   p.set('y', state.year);
   p.set('tab', state.view);
   // État Croisé : seulement si l'utilisateur l'a personnalisé (différent du défaut)
@@ -7663,8 +7123,13 @@ function syncUrl(){
   if(_crossZoneFilter) p.set('cz', _crossZoneFilter);
   // Échelle Volume (visible seulement si zone active) : 'zone' = local, 'absolute' = défaut donc omis
   if(_crossVolumeScale === 'zone') p.set('cvs', 'zone');
-  // Mode bilatéral Relations : partenaire B (un seul pays ISO3)
-  if(_relPartnerB && _relPartnerB.isos && _relPartnerB.isos.length) p.set('rb', _relPartnerB.isos[0]);
+  // Onglet Comparaisons : partenaire B (pays ISO3 ou zone_id) + type
+  if(_cmpPartnerB){
+    p.set('cmpB', _cmpPartnerB);
+    p.set('cmpBT', _cmpPartnerBType === 'zone' ? 'z' : 'c');
+    if(_cmpFluxSelected && _cmpFluxSelected.size) p.set('cmpFS', [..._cmpFluxSelected].join(','));
+    if(_cmpPowerSelected && _cmpPowerSelected.size) p.set('cmpPS', [..._cmpPowerSelected].join(','));
+  }
   history.replaceState(null, '', '#' + p.toString());
 }
 function applyUrlState(){
@@ -7683,10 +7148,6 @@ function applyUrlState(){
     const isos = p.get('s').split(',').filter(Boolean);
     if(isos.length) state.subject = { isos, label: detectZoneLabel(isos) };
   }
-  if(p.get('b')){
-    const isos = p.get('b').split(',').filter(Boolean);
-    if(isos.length) state.compareB = { isos, label: detectZoneLabel(isos) };
-  }
   // État Croisé depuis l'URL (prioritaire sur localStorage si présent)
   if(p.get('cs')){
     const keys = p.get('cs').split(',').filter(Boolean).slice(0, CROSS_MAX_TILES);
@@ -7697,14 +7158,28 @@ function applyUrlState(){
   }
   if(p.get('cz')) _crossZoneFilter = p.get('cz');
   if(p.get('cvs') === 'zone') _crossVolumeScale = 'zone';
-  // Mode bilatéral Relations
-  if(p.get('rb')){
-    const iso = p.get('rb');
-    if(iso) _relPartnerB = { isos: [iso], label: isoToName(iso) || iso };
+  // Onglet Comparaisons : partenaire B depuis l'URL
+  if(p.get('cmpB')){
+    const id = p.get('cmpB');
+    const type = p.get('cmpBT') === 'z' ? 'zone' : 'country';
+    let label = id;
+    if(type === 'country'){
+      label = isoToName(id) || id;
+    } else if(state.db){
+      try {
+        const r = safeExec(`SELECT zone_nom FROM zones WHERE zone_id='${escapeSql(id)}' LIMIT 1`);
+        if(r.length && r[0].values.length) label = r[0].values[0][0] || id;
+      } catch {}
+    }
+    _cmpPartnerB = id; _cmpPartnerBType = type; _cmpPartnerBLabel = label;
+    const fs = p.get('cmpFS');
+    if(fs){ const arr = fs.split(',').filter(Boolean).slice(0, 18); if(arr.length) _cmpFluxSelected = new Set(arr); }
+    const ps = p.get('cmpPS');
+    if(ps){ const arr = ps.split(',').filter(Boolean).slice(0, 10); if(arr.length) _cmpPowerSelected = new Set(arr); }
   }
 }
 function switchViewSilent(v){
-  if(!['synthese','puissance','relations','croise'].includes(v)) return;
+  if(!['synthese','puissance','relations','croise','comparaisons'].includes(v)) return;
   state.view = v;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
