@@ -700,6 +700,9 @@ tbody td{padding:7px 11px;vertical-align:middle}
     <button class="nav-btn" id="nav-couverture" onclick="showPanel('couverture')">
       <span class="nav-ico">🌐</span> Couverture
     </button>
+    <button class="nav-btn" id="nav-sql" onclick="showPanel('sql')">
+      <span class="nav-ico">🔍</span> Console SQL
+    </button>
   </div>
 </nav>
 
@@ -743,6 +746,16 @@ tbody td{padding:7px 11px;vertical-align:middle}
 
   <div id="couvertureContent">
     <div class="empty"><div class="empty-ico">🌐</div>Chargement…</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: CONSOLE SQL ══════════════════ -->
+<div class="panel" id="panel-sql">
+  <div class="ptitle">Console SQL</div>
+  <div class="psub">Interroge la base en lecture seule (SELECT / WITH uniquement). Aucune écriture possible — la base est une copie chargée dans le navigateur.</div>
+
+  <div id="sqlContent">
+    <div class="empty"><div class="empty-ico">🔍</div>Initialisation…</div>
   </div>
 </div>
 
@@ -3401,6 +3414,241 @@ document.addEventListener('DOMContentLoaded', () => {
   const m = document.getElementById('addIndicatorModal');
   if (m) m.addEventListener('click', function(e){ if (e.target === this) closeAddIndModal(); });
 });
+
+// ═══════════════════════════════════════════════════════════
+// CONSOLE SQL — lecture seule (SELECT / WITH uniquement)
+// ═══════════════════════════════════════════════════════════
+const SqlConsole = {
+  lastQuery: '',
+  running:   false,
+};
+
+// Requêtes pré-enregistrées utiles (notamment pour le calibrage des seuils de flux)
+const SQL_PRESETS = [
+  {
+    label: '— Requêtes pré-enregistrées —',
+    sql:   '',
+  },
+  {
+    label: 'Poids par indicateur de flux (nb lignes)',
+    sql:   "SELECT indicator, COUNT(*) AS lignes\nFROM flux\nGROUP BY indicator\nORDER BY lignes DESC;",
+  },
+  {
+    label: 'Années distinctes par indicateur de flux',
+    sql:   "SELECT indicator,\n       COUNT(DISTINCT year) AS nb_annees,\n       MIN(year) AS annee_min,\n       MAX(year) AS annee_max,\n       COUNT(*) AS lignes\nFROM flux\nGROUP BY indicator\nORDER BY lignes DESC;",
+  },
+  {
+    label: 'Lignes par année pour un indicateur (refugies)',
+    sql:   "SELECT year, COUNT(*) AS lignes, SUM(value) AS total\nFROM flux\nWHERE indicator = 'refugies'\nGROUP BY year\nORDER BY year;",
+  },
+  {
+    label: 'Distribution valeurs (refugies) — paliers',
+    sql:   "SELECT\n  SUM(CASE WHEN value < 10  THEN 1 ELSE 0 END) AS sous_10,\n  SUM(CASE WHEN value < 25  THEN 1 ELSE 0 END) AS sous_25,\n  SUM(CASE WHEN value < 50  THEN 1 ELSE 0 END) AS sous_50,\n  SUM(CASE WHEN value < 100 THEN 1 ELSE 0 END) AS sous_100,\n  COUNT(*) AS total\nFROM flux\nWHERE indicator = 'refugies' AND value > 0;",
+  },
+  {
+    label: 'Top 20 partenaires d\'un flux (import FRA)',
+    sql:   "SELECT country_from AS fournisseur, year, value\nFROM flux\nWHERE indicator = 'import_commercial' AND country_to = 'FRA'\nORDER BY year DESC, value DESC\nLIMIT 20;",
+  },
+  {
+    label: 'Subcategory : valeurs distinctes par indicateur',
+    sql:   "SELECT indicator,\n       COUNT(DISTINCT subcategory_1) AS sub1,\n       COUNT(DISTINCT subcategory_2) AS sub2,\n       COUNT(DISTINCT subcategory_3) AS sub3\nFROM flux\nGROUP BY indicator\nORDER BY indicator;",
+  },
+  {
+    label: 'Poids des tables (dbstat)',
+    sql:   "SELECT name, SUM(pgsize)/1024/1024 AS mb\nFROM dbstat\nGROUP BY name\nORDER BY mb DESC\nLIMIT 20;",
+  },
+  {
+    label: 'Indicateurs identité disponibles',
+    sql:   "SELECT indicator, COUNT(DISTINCT country_iso3) AS pays,\n       MIN(year) AS an_min, MAX(year) AS an_max, COUNT(*) AS lignes\nFROM identite\nGROUP BY indicator\nORDER BY indicator;",
+  },
+];
+
+// Vérifie qu'une requête est en lecture seule. Renvoie {ok, reason}.
+function sqlIsReadOnly(query) {
+  // Retire commentaires et espaces de tête
+  const cleaned = query
+    .replace(/--[^\n]*/g, ' ')          // commentaires ligne
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')  // commentaires bloc
+    .trim();
+  if (!cleaned) return { ok: false, reason: 'Requête vide.' };
+
+  // Mots-clés d'écriture interdits (en début de toute instruction)
+  const forbidden = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|REPLACE|TRUNCATE|ATTACH|DETACH|REINDEX|VACUUM|PRAGMA|BEGIN|COMMIT|ROLLBACK)\b/i;
+  if (forbidden.test(cleaned)) {
+    return { ok: false, reason: 'Lecture seule : seules les requêtes SELECT et WITH sont autorisées.' };
+  }
+
+  // Doit commencer par SELECT ou WITH
+  if (!/^\s*(SELECT|WITH)\b/i.test(cleaned)) {
+    return { ok: false, reason: 'La requête doit commencer par SELECT ou WITH.' };
+  }
+
+  // Interdire plusieurs instructions (un seul ; final toléré)
+  const withoutTrailing = cleaned.replace(/;\s*$/, '');
+  if (withoutTrailing.includes(';')) {
+    return { ok: false, reason: 'Une seule requête à la fois (point-virgule interne détecté).' };
+  }
+
+  return { ok: true };
+}
+
+function renderSqlConsole() {
+  const host = document.getElementById('sqlContent');
+  if (!host) return;
+
+  // Bandeau d'état de la base
+  let dbBanner;
+  if (db) {
+    dbBanner = `<div class="alert ag"><span class="alert-ico">✓</span><div>Base chargée : <span class="mono">${escapeHtml(dbFileName||'?')}</span>. Requêtes en lecture seule.</div></div>`;
+  } else {
+    dbBanner = `<div class="alert ao"><span class="alert-ico">⚠</span>
+      <div>Aucune base chargée. <a href="#" onclick="event.preventDefault();loadDbFromR2().then(()=>renderSqlConsole())" style="color:var(--orange)">Charger depuis R2 →</a>
+      ou via le badge « CHANGER » en haut à droite.</div></div>`;
+  }
+
+  const presetOptions = SQL_PRESETS.map((p, i) =>
+    `<option value="${i}">${escapeHtml(p.label)}</option>`
+  ).join('');
+
+  host.innerHTML = `
+    ${dbBanner}
+    <div class="card">
+      <div class="ch">
+        <span class="ctitle">Requête SQL</span>
+        <select class="cov-filter-select" id="sqlPreset" onchange="applySqlPreset(this.value)" style="min-width:280px">
+          ${presetOptions}
+        </select>
+      </div>
+      <div class="cb">
+        <textarea id="sqlInput" class="modal-input mono" style="width:100%;min-height:120px;resize:vertical;line-height:1.5"
+          placeholder="SELECT indicator, COUNT(*) FROM flux GROUP BY indicator;"
+          spellcheck="false">${escapeHtml(SqlConsole.lastQuery)}</textarea>
+        <div class="frow" style="margin-top:10px;justify-content:space-between">
+          <span class="txt3" style="font-size:10.5px">Ctrl+Entrée pour exécuter · lecture seule (SELECT / WITH)</span>
+          <button class="btn btn-g btn-sm" id="btnRunSql" onclick="runSqlQuery()">▶ Exécuter</button>
+        </div>
+      </div>
+    </div>
+    <div id="sqlResult"></div>
+  `;
+
+  // Raccourci Ctrl+Entrée
+  const ta = document.getElementById('sqlInput');
+  if (ta) {
+    ta.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runSqlQuery();
+      }
+    });
+  }
+}
+
+function applySqlPreset(idx) {
+  const preset = SQL_PRESETS[parseInt(idx)];
+  if (!preset || !preset.sql) return;
+  const ta = document.getElementById('sqlInput');
+  if (ta) { ta.value = preset.sql; ta.focus(); }
+  SqlConsole.lastQuery = preset.sql;
+}
+
+function runSqlQuery() {
+  const ta  = document.getElementById('sqlInput');
+  const out = document.getElementById('sqlResult');
+  if (!ta || !out) return;
+  const query = ta.value;
+  SqlConsole.lastQuery = query;
+
+  if (!db) {
+    out.innerHTML = `<div class="alert ar"><span class="alert-ico">✕</span><div>Aucune base chargée.</div></div>`;
+    return;
+  }
+
+  // Garde-fou lecture seule
+  const check = sqlIsReadOnly(query);
+  if (!check.ok) {
+    out.innerHTML = `<div class="alert ar"><span class="alert-ico">✕</span><div>${escapeHtml(check.reason)}</div></div>`;
+    return;
+  }
+
+  const t0 = performance.now();
+  let res;
+  try {
+    res = db.exec(query);
+  } catch(e) {
+    out.innerHTML = `<div class="alert ar"><span class="alert-ico">✕</span><div><strong>Erreur SQL</strong><br><span class="mono" style="font-size:10.5px">${escapeHtml(e.message)}</span></div></div>`;
+    return;
+  }
+  const ms = (performance.now() - t0).toFixed(0);
+
+  if (!res || res.length === 0) {
+    out.innerHTML = `<div class="alert ai"><span class="alert-ico">ℹ</span><div>Requête exécutée en ${ms} ms — aucun résultat (0 ligne).</div></div>`;
+    return;
+  }
+
+  // res[0] = { columns:[...], values:[[...],...] }
+  const { columns, values } = res[0];
+  const MAX_ROWS = 1000;
+  const shown = values.slice(0, MAX_ROWS);
+
+  const fmtCell = v => {
+    if (v === null || v === undefined) return '<span class="txt3">∅</span>';
+    if (typeof v === 'number') return v.toLocaleString('fr-FR');
+    return escapeHtml(String(v));
+  };
+
+  const header = columns.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+  const rows = shown.map(row =>
+    `<tr>${row.map(c => `<td>${fmtCell(c)}</td>`).join('')}</tr>`
+  ).join('');
+
+  const truncWarn = values.length > MAX_ROWS
+    ? `<div class="alert ao" style="margin-top:10px"><span class="alert-ico">⚠</span><div>${values.length.toLocaleString('fr-FR')} lignes au total — affichage limité aux ${MAX_ROWS} premières. Affine ta requête (LIMIT, filtres) pour voir le reste.</div></div>`
+    : '';
+
+  // Stocke le dernier résultat pour export CSV
+  SqlConsole.lastResult = { columns, values };
+
+  out.innerHTML = `
+    <div class="card" style="margin-top:14px">
+      <div class="ch">
+        <span class="ctitle">${values.length.toLocaleString('fr-FR')} ligne(s) · ${ms} ms</span>
+        <button class="btn btn-s btn-sm" onclick="exportSqlCsv()">⬇ Exporter CSV</button>
+      </div>
+      <div class="tbl-w" style="max-height:560px;overflow:auto">
+        <table>
+          <thead><tr>${header}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+    ${truncWarn}
+  `;
+}
+
+function exportSqlCsv() {
+  const r = SqlConsole.lastResult;
+  if (!r) return;
+  const esc = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v);
+    return /[",\n;]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const lines = [r.columns.map(esc).join(';')];
+  for (const row of r.values) lines.push(row.map(esc).join(';'));
+  const blob = new Blob(['\ufeff' + lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'requete_geopol.csv';
+  a.click();
+}
+
+// Hook : rendre la console quand on arrive sur l'onglet
+const _originalShowPanelSql = window.showPanel;
+window.showPanel = function(name) {
+  if (typeof _originalShowPanelSql === 'function') _originalShowPanelSql(name);
+  if (name === 'sql') renderSqlConsole();
+};
 
 // ═══════════════════════════════════════════════════════════
 // ÉTAPE 0 — BOOT
