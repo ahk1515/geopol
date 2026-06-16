@@ -68,6 +68,82 @@ def purge_hors_bornes():
 
 
 # -------------------------------------------------------------
+# FILTRE DE SEUILS PAR INDICATEUR DE FLUX
+# -------------------------------------------------------------
+# Allège la table flux en supprimant les flux insignifiants, indicateur
+# par indicateur, selon un seuil propre à chaque unité.
+#
+# IMPORTANT — non destructif au sens du pipeline :
+#   Cette passe s'applique À CHAQUE RUN sur des données fraîchement
+#   rechargées par les parsers (API + CSV archivés). Elle ne supprime
+#   jamais une source de façon définitive. Pour assouplir un seuil plus
+#   tard, il suffit de modifier SEUILS_FLUX et de relancer le pipeline :
+#   les données complètes seront réinjectées, puis re-filtrées au nouveau
+#   seuil.
+#
+# ORDRE — cette passe DOIT tourner :
+#   - APRÈS construits.run() (qui agrège tous les partenaires pour calculer
+#     balance_commerciale, export_pct_pib, etc.) → sinon ces totaux seraient
+#     faussés. C'est le cas : build_db est lancé après construits.
+#   - AVANT optimize_db() (VACUUM) → pour que l'espace des lignes
+#     supprimées soit récupéré.
+#
+# Seuils calibrés via le diagnostic de distribution (diag_flux.py), juin 2026.
+# Chaque type de flux a une unité différente, donc un seuil adapté :
+#   - refugies / etudiants : effectifs (personnes), seuil absolu
+#   - commerce_ressources  : USD, seuil absolu
+# Les indicateurs ABSENTS de ce dict ne sont PAS filtrés (dette, armement,
+# migrants, diplomatie, import/export_commercial : conservés intacts).
+SEUILS_FLUX = {
+    # refugies : médiane 26 pers. Seuil 50 coupe ~60% des lignes, perte 0,14%.
+    "refugies":               {"type": "absolu", "valeur": 50},
+    # etudiants : médiane 16 pers. Seuil 25 coupe ~56% des lignes, perte 0,65%.
+    "etudiants_international": {"type": "absolu", "valeur": 25},
+    # commerce_ressources : médiane 481k USD. Seuil 500k coupe ~50%, perte 0,044%.
+    "commerce_ressources":    {"type": "absolu", "valeur": 500_000},
+}
+
+
+def filtre_seuils():
+    """
+    Supprime les flux sous leur seuil, indicateur par indicateur.
+    Retourne le nombre total de lignes supprimées.
+    """
+    conn = sqlite3.connect(PATH_DB)
+    total_supprime = 0
+
+    for indicator, cfg in SEUILS_FLUX.items():
+        t = cfg.get("type")
+        v = cfg.get("valeur")
+
+        if t == "absolu":
+            # Compte avant (pour info), puis supprime sous le seuil.
+            avant = conn.execute(
+                "SELECT COUNT(*) FROM flux WHERE indicator=?",
+                (indicator,),
+            ).fetchone()[0]
+            if avant == 0:
+                # Indicateur configuré mais absent de la base : on ignore en silence.
+                continue
+            res = conn.execute(
+                "DELETE FROM flux WHERE indicator=? AND value IS NOT NULL AND value < ?",
+                (indicator, v),
+            )
+            n = res.rowcount
+            total_supprime += n
+            print(f"  • {indicator} (seuil absolu < {v:,}) : "
+                  f"{n:,} / {avant:,} lignes supprimées")
+        else:
+            # 'relatif' (part bilatérale) : prévu pour une version ultérieure.
+            print(f"  • {indicator} : type de seuil '{t}' non implémenté, ignoré")
+
+    conn.commit()
+    conn.close()
+    print(f"  Total filtre seuils : {total_supprime:,} lignes supprimées")
+    return total_supprime
+
+
+# -------------------------------------------------------------
 # VÉRIFICATION TAILLE
 # -------------------------------------------------------------
 
@@ -382,6 +458,13 @@ def run(sources_status=None):
     # Cette étape est ESSENTIELLE pour réduire la taille avant le contrôle.
     print("\n→ Purge données hors bornes")
     purge_hors_bornes()
+
+    # 2bis. Filtre de seuils par indicateur de flux
+    # Tourne APRÈS construits (totaux déjà calculés sur données complètes,
+    # car build_db est lancé après construits dans le pipeline) et AVANT
+    # le VACUUM (pour récupérer l'espace des lignes supprimées).
+    print("\n→ Filtre de seuils (flux)")
+    filtre_seuils()
 
     # 3. Construction table zones
     print("\n→ Construction table zones")
