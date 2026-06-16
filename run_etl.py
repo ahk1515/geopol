@@ -23,7 +23,6 @@ from etl.config import PATH_DB, PATH_STATUS, load_admin_config
 # -------------------------------------------------------------
 from etl.sources import banque_mondiale, owid, comtrade, imf_imts, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, weo, zee
 from etl import construits, build_db
-from etl import diag_flux   # DIAGNOSTIC TEMPORAIRE — à retirer après mesure des seuils
 
 # -------------------------------------------------------------
 # PIPELINE
@@ -232,19 +231,6 @@ def run():
     except Exception as e:
         print(f"\n❌ Erreur build : {e}")
         sys.exit(1)
-
-    # ── DIAGNOSTIC TEMPORAIRE — distribution des flux ───────
-    # Mesure les seuils de filtrage possibles (lecture seule, n'écrit rien).
-    # Encadré dans un try/except : une erreur ici ne doit JAMAIS faire échouer
-    # le pipeline (la base est déjà construite et uploadée à ce stade).
-    # À RETIRER (cette section + l'import diag_flux en haut) après la mesure.
-    print(f"\n\n{'─'*40}")
-    print("━━ DIAGNOSTIC FLUX (temporaire) ━━")
-    print(f"{'─'*40}")
-    try:
-        diag_flux.run()
-    except Exception as e:
-        print(f"⚠️  Diagnostic flux ignoré (non bloquant) : {e}")
 
     # ── Résumé final ─────────────────────────────────────────
     print(f"\n\n{'='*60}")
