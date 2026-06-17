@@ -41,5 +41,6 @@
   {"indicator":"croissance_pib","label":"Croissance PIB réel","table":"identite","category":"economie","chart_type":"line","unit":"%","unit_display":"%","aggregation":"mean","actif":true,"est_projection":false},
   {"indicator":"migrants","label":"Migrants internationaux","table":"flux","category":"migration","chart_type":"line","unit":"personnes","unit_display":"personnes","aggregation":"sum","actif":true,"est_projection":false},
   {"indicator":"zee","label":"Zone économique exclusive","table":"identite","category":"geographie","chart_type":"line","unit":"km2","unit_display":"km²","aggregation":"sum","actif":true,"est_projection":false},
-  {"indicator":"export_armement","label":"Transfert d'armement","table":"flux","category":"armement","chart_type":"line","unit":"SIPRI_TIV_M","unit_display":"SIPRI_TIV_M","aggregation":"sum","actif":false,"est_projection":false}
+  {"indicator":"export_armement","label":"Transfert d'armement","table":"flux","category":"armement","chart_type":"line","unit":"SIPRI_TIV_M","unit_display":"SIPRI_TIV_M","aggregation":"sum","actif":false,"est_projection":false},
+  {"indicator":"export_commercial","label":"export commercial","table":"flux","category":"commerce","chart_type":"line","unit":"USD","unit_display":"USD","aggregation":"sum","actif":true,"est_projection":false}
 ]
