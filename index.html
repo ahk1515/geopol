@@ -1190,6 +1190,7 @@ main { flex: 1; padding: 16px 18px 28px; }
     <div class="header-spacer"></div>
     <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
     <button class="hbtn" id="exportBtn" onclick="exportCurrentView()"><span>⬇</span> Exporter</button>
+    <button class="hbtn" id="aboutBtn" onclick="openAbout()" title="À propos de GÉOPOL"><span>ℹ</span></button>
     <div class="db-badge"><span class="dot" id="dbDot"></span><span id="dbName">—</span></div>
   </header>
 
@@ -1232,6 +1233,44 @@ main { flex: 1; padding: 16px 18px 28px; }
   <div class="load-bar-wrap"><div class="load-bar" id="loadPbar"></div></div>
   <div id="loadingMsg">Initialisation…</div>
   <div id="loadingDetail" style="font-family:var(--mono);font-size:10px;color:var(--text3);opacity:.7;min-height:13px"></div>
+  <div id="loadingIntro" style="max-width:520px;margin-top:18px;font-size:12px;line-height:1.65;color:var(--text2);text-align:left;padding:0 24px">
+    <p style="margin:0 0 8px"><strong>Explorateur de données géopolitiques, open-source.</strong></p>
+    <p style="margin:0 0 8px">Deux familles : les <strong>indicateurs</strong> d'un pays (population, PIB, production…) et les <strong>flux</strong> entre pays (commerce, dette, armes, réfugiés). <span id="introTempo"></span></p>
+    <p style="margin:0 0 8px">La force de l'outil est le <strong>croisement</strong> : superposer plusieurs indicateurs pour révéler des tendances qu'aucun ne montre seul.</p>
+    <p style="margin:0 0 8px">Chaque relation se lit en <strong>volume</strong> (la valeur brute) ou en <strong>influence</strong> (son poids pour chaque partenaire) — un flux modeste pour une grande puissance peut être vital pour un petit pays.</p>
+    <p style="margin:0;color:var(--text3)">⚠️ Une donnée absente ne signifie pas « zéro », seulement qu'elle n'est pas disponible.</p>
+  </div>
+</div>
+
+<!-- ░░ PANNEAU À PROPOS ░░ -->
+<div id="aboutOverlay" style="position:fixed;inset:0;z-index:300;display:none;background:rgba(26,28,34,.55);backdrop-filter:blur(3px);align-items:flex-start;justify-content:center;padding:6vh 16px;overflow-y:auto" onclick="if(event.target===this)closeAbout()">
+  <div style="background:var(--bg2,#1a1c22);border:1px solid var(--bg4,#2a2d36);border-radius:12px;max-width:600px;width:100%;padding:28px 30px;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.15em;color:var(--green)">GÉOPOL</div>
+      <button class="hbtn" onclick="closeAbout()" style="padding:4px 10px">✕</button>
+    </div>
+    <div style="font-size:13px;line-height:1.7;color:var(--text2)">
+      <p style="margin:0 0 14px">Outil <strong>open-source et expérimental</strong> d'exploration géopolitique. Ce n'est pas une source officielle : les données proviennent d'organismes tiers, agrégées et recalculées pour permettre la comparaison.</p>
+
+      <div style="font-weight:600;color:var(--text);margin:16px 0 6px">Deux types de données</div>
+      <p style="margin:0 0 4px"><strong>Indicateurs</strong> — un attribut d'un pays à une date (population, PIB, production de pétrole…).</p>
+      <p style="margin:0 0 14px"><strong>Flux</strong> — un échange orienté entre deux pays (exportations, dette, transferts d'armes, réfugiés…).</p>
+
+      <div style="font-weight:600;color:var(--text);margin:16px 0 6px">Lire en volume ou en influence</div>
+      <p style="margin:0 0 14px">Une relation se lit de deux façons. En <strong>volume</strong> : la valeur brute (combien). En <strong>influence</strong> : le poids de cette relation <em>pour chaque partenaire</em>. Exemple — les échanges France-Sénégal sont modestes pour la France mais majeurs pour le Sénégal. Le volume seul masque cette asymétrie ; l'influence la révèle. Les deux sont vraies, elles répondent à des questions différentes.</p>
+
+      <div style="font-weight:600;color:var(--text);margin:16px 0 6px">Lire les absences</div>
+      <p style="margin:0 0 14px">Trois cas à ne pas confondre : une valeur <strong>manquante</strong> (non disponible — n'est pas zéro), un <strong>vrai zéro</strong> (mesuré), et une valeur <strong>filtrée</strong> (les très petits flux sont écartés pour alléger l'outil). <span id="aboutCoverage"></span></p>
+
+      <div style="font-weight:600;color:var(--text);margin:16px 0 6px">Données et temporalité</div>
+      <p style="margin:0 0 14px"><span id="aboutTempo"></span> Certaines valeurs sont des <strong>projections</strong> (ex. économie jusqu'en 2050), pas des mesures.</p>
+
+      <div style="font-weight:600;color:var(--text);margin:16px 0 6px">Sources</div>
+      <p style="margin:0 0 14px">Banque Mondiale, FMI, Our World in Data, UNHCR, SIPRI, USGS, Energy Institute, Marine Regions, et indicateurs calculés par GÉOPOL.</p>
+
+      <p style="margin:0;color:var(--text3);font-size:11px" id="aboutUpdate"></p>
+    </div>
+  </div>
 </div>
 
 <!-- ░░ OVERLAY RECHERCHE (sujet) ░░ -->
@@ -2415,6 +2454,7 @@ function finishBoot(dbName, badge){
   }
   setDbBadge(dbName, badge);
   setLoadingMsg('Prêt', 100);
+  fillAboutDynamic();     // remplit couverture/temporalité (chargement + panneau)
   applyUrlState();        // restaure l'état depuis l'URL si présent
   renderContextBar();
   refreshActiveView();    // rend l'onglet actif (Synthèse par défaut)
@@ -6338,6 +6378,49 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
 let _searchSel = 0, _searchItems = [];
 let _multiPick = [];   // [{iso3, name, flag}] sélection multi en cours
 let _searchMode = 'subject';   // 'subject' (étendu à l'étape 2)
+
+/* ─── PANNEAU À PROPOS ────────────────────────────────────────── */
+function fillAboutDynamic(){
+  // Couverture pays (totale) + nb d'indicateurs, calculés depuis la base
+  let nbPays = 0, anMin = null, anMax = null;
+  try {
+    const rp = safeExec(`SELECT COUNT(DISTINCT country_iso3) FROM identite`);
+    if(rp.length && rp[0].values.length) nbPays = rp[0].values[0][0] || 0;
+    const ry = safeExec(`SELECT MIN(year), MAX(year) FROM identite WHERE year <= ${CURRENT_YEAR}`);
+    if(ry.length && ry[0].values.length){ anMin = ry[0].values[0][0]; anMax = ry[0].values[0][1]; }
+  } catch(e){}
+
+  const tempo = (anMin && anMax)
+    ? `Couverture : ${anMin}–${anMax}, dont certaines projections au-delà.`
+    : '';
+  const tempoIntro = (anMin && anMax) ? `Couverture ${anMin}–${anMax}, dont certaines <strong>projections</strong>.` : '';
+
+  const introT = document.getElementById('introTempo');
+  if(introT) introT.innerHTML = tempoIntro;
+
+  const aboutT = document.getElementById('aboutTempo');
+  if(aboutT) aboutT.textContent = tempo;
+
+  const cov = document.getElementById('aboutCoverage');
+  if(cov && nbPays){
+    cov.innerHTML = `La couverture varie selon l'indicateur : <strong>${nbPays} pays</strong> au total, mais beaucoup moins pour certaines données spécialisées (énergie, minéraux…).`;
+  }
+
+  // Date de dernière mise à jour : on tente status.json (best effort)
+  const upd = document.getElementById('aboutUpdate');
+  if(upd){
+    fetch('https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/status.json?v=' + Date.now())
+      .then(r => r.ok ? r.json() : null)
+      .then(s => {
+        const d = s && (s.last_run || s.date || s.timestamp || s.fin);
+        upd.textContent = d ? ('Dernière mise à jour : ' + new Date(d).toLocaleDateString('fr-FR')) : '';
+      })
+      .catch(() => {});
+  }
+}
+function openAbout(){ const o = document.getElementById('aboutOverlay'); if(o) o.style.display = 'flex'; }
+function closeAbout(){ const o = document.getElementById('aboutOverlay'); if(o) o.style.display = 'none'; }
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeAbout(); });
 
 function openSearch(mode){
   _searchMode = 'subject';
