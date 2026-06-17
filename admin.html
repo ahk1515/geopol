@@ -703,6 +703,9 @@ tbody td{padding:7px 11px;vertical-align:middle}
     <button class="nav-btn" id="nav-sql" onclick="showPanel('sql')">
       <span class="nav-ico">🔍</span> Console SQL
     </button>
+    <button class="nav-btn" id="nav-sante" onclick="showPanel('sante')">
+      <span class="nav-ico">🩺</span> Santé données
+    </button>
   </div>
 </nav>
 
@@ -756,6 +759,16 @@ tbody td{padding:7px 11px;vertical-align:middle}
 
   <div id="sqlContent">
     <div class="empty"><div class="empty-ico">🔍</div>Initialisation…</div>
+  </div>
+</div>
+
+<!-- ══════════════════ PANEL: SANTÉ DONNÉES ══════════════════ -->
+<div class="panel" id="panel-sante">
+  <div class="ptitle">Santé des données</div>
+  <div class="psub">Contrôles de cohérence : couverture, plausibilité des valeurs, structure, cohérence croisée. Signale pour inspection — ne modifie rien.</div>
+
+  <div id="santeContent">
+    <div class="empty"><div class="empty-ico">🩺</div>Initialisation…</div>
   </div>
 </div>
 
@@ -3653,7 +3666,283 @@ window.showPanel = function(name) {
 // ═══════════════════════════════════════════════════════════
 // ÉTAPE 0 — BOOT
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// SANTÉ DES DONNÉES — contrôles de cohérence (lecture seule)
+// ═══════════════════════════════════════════════════════════
+// Chaque contrôle : exécute une requête, évalue chaque ligne, renvoie
+// un statut (ok / warn / error) + des lignes à inspecter.
+// Les contrôles SIGNALENT, ne bloquent jamais. Seuils larges.
+
+// Helper : exécute une requête et renvoie les lignes en objets {col: val}
+function sqlRows(query) {
+  const res = db.exec(query);
+  if (!res || res.length === 0) return [];
+  const { columns, values } = res[0];
+  return values.map(row => {
+    const o = {};
+    columns.forEach((c, i) => o[c] = row[i]);
+    return o;
+  });
+}
+
+// Définition des contrôles. Chaque check renvoie {status, summary, rows[]}
+const SANTE_CHECKS = [
+  // ─── FAMILLE 1 : COUVERTURE ───
+  {
+    famille: 'Couverture',
+    titre: 'Indicateurs de flux à très faible couverture pays',
+    desc: 'Un flux mondial devrait toucher de nombreux pays. < 5 pays = suspect.',
+    run() {
+      const rows = sqlRows(`
+        SELECT indicator, COUNT(DISTINCT country_from||country_to) AS paires,
+               COUNT(DISTINCT country_to) AS pays_dest
+        FROM flux GROUP BY indicator`);
+      const flagged = rows.filter(r => r.pays_dest < 5);
+      return {
+        status: flagged.length ? 'warn' : 'ok',
+        summary: flagged.length ? `${flagged.length} indicateur(s) sous 5 pays destinataires` : `${rows.length} indicateurs, couverture normale`,
+        rows: flagged,
+      };
+    },
+  },
+  {
+    famille: 'Couverture',
+    titre: 'Indicateurs identité à très faible couverture',
+    desc: 'Production/réserves mondiales : < 5 pays par subcategory = suspect (cf. bug minéraux).',
+    run() {
+      const rows = sqlRows(`
+        SELECT indicator, subcategory, COUNT(DISTINCT country_iso3) AS pays
+        FROM identite
+        WHERE subcategory IS NOT NULL AND subcategory != ''
+        GROUP BY indicator, subcategory
+        HAVING pays < 5
+        ORDER BY pays ASC`);
+      return {
+        status: rows.length ? 'warn' : 'ok',
+        summary: rows.length ? `${rows.length} (indicateur, type) sous 5 pays` : 'Couverture des subcategory normale',
+        rows,
+      };
+    },
+  },
+  // ─── FAMILLE 2 : PLAUSIBILITÉ ───
+  {
+    famille: 'Plausibilité',
+    titre: 'Valeurs négatives ou nulles inattendues',
+    desc: 'Production, commerce, effectifs : une valeur ≤ 0 est anormale.',
+    run() {
+      const rows = sqlRows(`
+        SELECT indicator, COUNT(*) AS nb
+        FROM identite WHERE value < 0 GROUP BY indicator
+        UNION ALL
+        SELECT 'flux:'||indicator, COUNT(*) FROM flux WHERE value < 0 GROUP BY indicator`);
+      return {
+        status: rows.length ? 'error' : 'ok',
+        summary: rows.length ? `${rows.length} indicateur(s) avec valeurs négatives` : 'Aucune valeur négative',
+        rows,
+      };
+    },
+  },
+  {
+    famille: 'Plausibilité',
+    titre: 'Sauts temporels extrêmes (×10 ou ÷10 entre 2 années)',
+    desc: 'Variation d\'un facteur 10+ d\'une année à la suivante = possible bug d\'échelle (cf. pétrole 2023).',
+    run() {
+      // Sur identité, par pays/indicateur/subcategory : compare années consécutives
+      const rows = sqlRows(`
+        WITH s AS (
+          SELECT country_iso3, indicator, subcategory, year, value,
+                 LAG(value) OVER (PARTITION BY country_iso3, indicator, subcategory ORDER BY year) AS prev
+          FROM identite WHERE value > 0
+        )
+        SELECT indicator, country_iso3, subcategory, year,
+               ROUND(prev,2) AS valeur_avant, ROUND(value,2) AS valeur_apres
+        FROM s
+        WHERE prev IS NOT NULL AND (value > prev*10 OR value < prev/10.0)
+        ORDER BY indicator LIMIT 100`);
+      return {
+        status: rows.length ? 'warn' : 'ok',
+        summary: rows.length ? `${rows.length} saut(s) extrême(s) détecté(s)` : 'Aucun saut temporel anormal',
+        rows,
+      };
+    },
+  },
+  // ─── FAMILLE 3 : STRUCTURE ───
+  {
+    famille: 'Structure',
+    titre: 'Clé primaire identite (doit inclure subcategory)',
+    desc: 'Vérifie que la migration de clé est appliquée (sinon les subcategory s\'écrasent).',
+    run() {
+      const info = sqlRows(`SELECT name, pk FROM pragma_table_info('identite')`);
+      const pkCols = info.filter(r => r.pk > 0).map(r => r.name);
+      const ok = pkCols.includes('subcategory');
+      return {
+        status: ok ? 'ok' : 'error',
+        summary: ok ? `Clé correcte : (${pkCols.join(', ')})` : `Clé SANS subcategory : (${pkCols.join(', ')}) — migration non appliquée !`,
+        rows: [],
+      };
+    },
+  },
+  {
+    famille: 'Structure',
+    titre: 'Subcategory NULL dans identite',
+    desc: 'Après standardisation, les subcategory vides doivent être \'\' et non NULL.',
+    run() {
+      const rows = sqlRows(`SELECT COUNT(*) AS nb_null FROM identite WHERE subcategory IS NULL`);
+      const n = rows[0] ? rows[0].nb_null : 0;
+      return {
+        status: n > 0 ? 'warn' : 'ok',
+        summary: n > 0 ? `${n} ligne(s) avec subcategory NULL (devrait être '')` : 'Aucun NULL résiduel',
+        rows: [],
+      };
+    },
+  },
+  // ─── FAMILLE 4 : COHÉRENCE CROISÉE ───
+  {
+    famille: 'Cohérence croisée',
+    titre: 'Production vs part (_share) : mêmes volumes de lignes',
+    desc: 'Chaque valeur de production doit avoir sa part correspondante.',
+    run() {
+      const rows = sqlRows(`
+        SELECT base.ind, base.n AS lignes_prod, COALESCE(sh.n,0) AS lignes_share
+        FROM (SELECT indicator AS ind, COUNT(*) AS n FROM identite
+              WHERE indicator IN ('energie_production','mineraux_production','energie_reserves','mineraux_reserves')
+              GROUP BY indicator) base
+        LEFT JOIN (SELECT indicator AS ind, COUNT(*) AS n FROM identite GROUP BY indicator) sh
+          ON sh.ind = base.ind || '_share'`);
+      const flagged = rows.filter(r => r.lignes_prod !== r.lignes_share);
+      return {
+        status: flagged.length ? 'warn' : 'ok',
+        summary: flagged.length ? `${flagged.length} indicateur(s) désynchronisé(s) avec leur _share` : 'Production et parts synchronisées',
+        rows: flagged.length ? flagged : rows,
+      };
+    },
+  },
+  {
+    famille: 'Cohérence croisée',
+    titre: 'Parts (_share) : somme mondiale proche de 100%',
+    desc: 'Pour chaque ressource/année, la somme des parts devrait avoisiner 100%.',
+    run() {
+      const rows = sqlRows(`
+        SELECT indicator, subcategory, year, ROUND(SUM(value),1) AS somme_pct
+        FROM identite
+        WHERE indicator LIKE '%_share' AND subcategory != ''
+        GROUP BY indicator, subcategory, year
+        HAVING somme_pct < 80 OR somme_pct > 120
+        ORDER BY ABS(somme_pct-100) DESC LIMIT 50`);
+      return {
+        status: rows.length ? 'warn' : 'ok',
+        summary: rows.length ? `${rows.length} (ressource, année) hors plage 80-120%` : 'Sommes des parts cohérentes',
+        rows,
+      };
+    },
+  },
+  {
+    famille: 'Cohérence croisée',
+    titre: 'Doublons d\'indicateurs (même donnée sous 2 noms)',
+    desc: 'Détecte les paires d\'indicateurs flux identiques (cf. import/export, armement).',
+    run() {
+      const pairs = [
+        ['import_commercial','export_commercial'],
+        ['transferts_armement','export_armement'],
+      ];
+      const out = [];
+      for (const [a,b] of pairs) {
+        const r = sqlRows(`
+          SELECT
+            (SELECT COUNT(*) FROM flux WHERE indicator='${a}') AS n_a,
+            (SELECT COUNT(*) FROM flux WHERE indicator='${b}') AS n_b`);
+        if (r[0] && r[0].n_a > 0 && r[0].n_a === r[0].n_b) {
+          out.push({ paire: `${a} = ${b}`, lignes: r[0].n_a, note: 'doublon probable (même volume)' });
+        }
+      }
+      return {
+        status: out.length ? 'warn' : 'ok',
+        summary: out.length ? `${out.length} doublon(s) connu(s) — redondance assumée` : 'Aucun doublon détecté',
+        rows: out,
+      };
+    },
+  },
+];
+
+function renderSante() {
+  const host = document.getElementById('santeContent');
+  if (!host) return;
+  if (!db) {
+    host.innerHTML = `<div class="alert ao"><span class="alert-ico">⚠</span>
+      <div>Aucune base chargée. <a href="#" onclick="event.preventDefault();loadDbFromR2().then(()=>renderSante())" style="color:var(--orange)">Charger depuis R2 →</a></div></div>`;
+    return;
+  }
+  host.innerHTML = `
+    <div class="frow" style="justify-content:space-between;margin-bottom:14px">
+      <span class="txt3" style="font-size:11px">Contrôles non bloquants — signalent pour inspection humaine.</span>
+      <button class="btn btn-g btn-sm" onclick="runSante()">🩺 Lancer les contrôles</button>
+    </div>
+    <div id="santeResults"><div class="empty"><div class="empty-ico">🩺</div>Clique sur « Lancer les contrôles ».</div></div>
+  `;
+}
+
+function runSante() {
+  const out = document.getElementById('santeResults');
+  if (!out || !db) return;
+  out.innerHTML = '<div class="empty">Analyse en cours…</div>';
+
+  const ICON = { ok:'🟢', warn:'🟠', error:'🔴' };
+  const results = [];
+  for (const check of SANTE_CHECKS) {
+    let r;
+    try { r = check.run(); }
+    catch(e) { r = { status:'error', summary:'Erreur du contrôle : '+e.message, rows:[] }; }
+    results.push({ check, r });
+  }
+
+  // Synthèse globale
+  const nbError = results.filter(x => x.r.status==='error').length;
+  const nbWarn  = results.filter(x => x.r.status==='warn').length;
+  const globalStatus = nbError ? 'error' : (nbWarn ? 'warn' : 'ok');
+  const globalMsg = nbError ? `${nbError} anomalie(s) critique(s), ${nbWarn} avertissement(s)`
+                  : nbWarn ? `${nbWarn} point(s) à inspecter`
+                  : 'Tous les contrôles au vert';
+
+  // Regroupe par famille
+  const familles = [...new Set(SANTE_CHECKS.map(c => c.famille))];
+  let html = `<div class="alert ${globalStatus==='error'?'ar':globalStatus==='warn'?'ao':'ag'}" style="margin-bottom:16px">
+    <span class="alert-ico">${ICON[globalStatus]}</span>
+    <div><strong>${globalMsg}</strong> — ${SANTE_CHECKS.length} contrôles exécutés.</div></div>`;
+
+  for (const fam of familles) {
+    html += `<div class="ctitle" style="margin:18px 0 8px">${fam}</div>`;
+    for (const {check, r} of results.filter(x => x.check.famille===fam)) {
+      const rowsTable = r.rows && r.rows.length ? `
+        <div class="tbl-w" style="max-height:240px;overflow:auto;margin-top:8px">
+          <table><thead><tr>${Object.keys(r.rows[0]).map(k=>`<th>${k}</th>`).join('')}</tr></thead>
+          <tbody>${r.rows.map(row=>`<tr>${Object.values(row).map(v=>`<td>${v===null?'∅':(typeof v==='number'?v.toLocaleString('fr-FR'):v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+        </div>` : '';
+      html += `
+        <div class="card" style="margin-bottom:8px">
+          <div class="ch">
+            <span class="ctitle">${ICON[r.status]} ${check.titre}</span>
+          </div>
+          <div class="cb">
+            <div class="txt3" style="font-size:11px;margin-bottom:4px">${check.desc}</div>
+            <div style="font-size:13px">${r.summary}</div>
+            ${rowsTable}
+          </div>
+        </div>`;
+    }
+  }
+  out.innerHTML = html;
+}
+
+// Hook showPanel
+const _originalShowPanelSante = window.showPanel;
+window.showPanel = function(name) {
+  if (typeof _originalShowPanelSante === 'function') _originalShowPanelSante(name);
+  if (name === 'sante') renderSante();
+};
+
+
 async function bootPilot() {
+
   // 1. Charger le PAT depuis localStorage
   loadStoredPat();
 
