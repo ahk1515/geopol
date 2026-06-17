@@ -22,7 +22,7 @@ from etl.config import PATH_DB, PATH_STATUS, load_admin_config
 # IMPORT DES SCRIPTS ETL
 # -------------------------------------------------------------
 from etl.sources import banque_mondiale, owid, comtrade, imf_imts, unhcr, etudiants, banque_mondiale_ids, sipri, manuel, energy_institute, weo, zee
-from etl import construits, build_db
+from etl import construits, build_db, migrate
 
 # -------------------------------------------------------------
 # PIPELINE
@@ -172,6 +172,20 @@ def run():
 
     # Rechargement config admin (antériorité, pays, etc.)
     load_admin_config()
+
+    # ── Étape 0 : Migrations de schéma ──────────────────────
+    # Tourne AVANT tous les parsers, sur la base téléchargée depuis R2.
+    # Corrige notamment la clé primaire de `identite` (ajout subcategory)
+    # pour que les indicateurs à subcategory (minéraux, énergie…) ne
+    # s'écrasent plus. Idempotent : ne fait rien si déjà à jour.
+    print("\n\n━━ MIGRATIONS DE SCHÉMA ━━")
+    try:
+        migrate.run()
+    except Exception as e:
+        print(f"❌ Migration échouée : {e}")
+        # Une migration échouée laisserait la base dans un état douteux :
+        # on arrête plutôt que de réinsérer dans une structure incertaine.
+        sys.exit(1)
 
     sources_status = {}
     pipeline_ok    = True
