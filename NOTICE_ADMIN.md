@@ -14,10 +14,12 @@
 5. [Onglet Pilotage DB](#5-onglet-pilotage-db)
 6. [Onglet Couverture](#6-onglet-couverture)
 7. [Onglet Imports](#7-onglet-imports)
-8. [Ajouter un indicateur — procédures](#8-ajouter-un-indicateur--procédures)
-9. [Dépannage](#9-dépannage)
-10. [Annexe — Anatomie du système](#10-annexe--anatomie-du-système)
-11. [Annexe — Prompts IA prêts à l'emploi](#11-annexe--prompts-ia-prêts-à-lemploi)
+8. [Onglet Console SQL](#8-onglet-console-sql)
+9. [Onglet Santé des données](#9-onglet-santé-des-données)
+10. [Ajouter un indicateur — procédures](#10-ajouter-un-indicateur--procédures)
+11. [Dépannage](#11-dépannage)
+12. [Annexe — Anatomie du système](#12-annexe--anatomie-du-système)
+13. [Annexe — Prompts IA prêts à l'emploi](#13-annexe--prompts-ia-prêts-à-lemploi)
 
 ---
 
@@ -101,13 +103,15 @@ Si quelque chose cloche → voir [§10 Dépannage](#10-dépannage).
 
 L'admin a **un seul groupe d'onglets** dans la barre latérale gauche : Pilotage.
 
-### Pilotage (les 4 onglets)
+### Pilotage (les 6 onglets)
 | Onglet | À quoi ça sert |
 |---|---|
 | 📡 **Suivi ETL** | Voir l'état du pipeline, déclencher un run |
 | 📥 **Imports** | Vue des sources auto, dépôt CSV semi-auto, manuel IA |
 | ⚙️ **Pilotage DB** | Bornes années, toggles indicateurs |
 | 🌐 **Couverture** | Matrice de qualité des données, drill-down |
+| 🔍 **Console SQL** | Interroger la base en lecture seule (requêtes libres ou pré-enregistrées) |
+| 🩺 **Santé données** | Contrôles de cohérence automatiques (couverture, plausibilité, doublons) |
 
 ### Le header
 
@@ -402,9 +406,48 @@ Un seul CSV peut contenir **plusieurs indicateurs différents** — chaque ligne
 
 ---
 
-## 8. Ajouter un indicateur — procédures
+## 8. Onglet Console SQL
 
-### 8.1 Vue d'ensemble : trois types d'ajout
+L'onglet **🔍 Console SQL** te permet d'interroger la base directement, **sans lancer de run**. C'est l'outil pour vérifier un chiffre, explorer le contenu, ou diagnostiquer un problème en quelques secondes.
+
+### 8.1 Comment ça marche
+La base chargée dans l'admin (depuis R2, ou un .db local) est interrogeable en **lecture seule**. Tu tapes une requête SQL, tu cliques **Exécuter** (ou Ctrl+Entrée), le résultat s'affiche en tableau. Bouton **Exporter CSV** pour récupérer le résultat.
+
+### 8.2 Lecture seule garantie
+Seules les requêtes commençant par `SELECT` ou `WITH` sont autorisées. Tout `INSERT`, `UPDATE`, `DELETE`, `DROP`, etc. est bloqué avant exécution, ainsi que les requêtes multiples. De toute façon, la base est une **copie en mémoire** dans ton navigateur — même une requête destructive ne toucherait jamais la vraie base sur R2. Double sécurité.
+
+### 8.3 Requêtes pré-enregistrées
+Un menu déroulant propose des requêtes prêtes à l'emploi : poids par indicateur de flux, années distinctes par indicateur, distribution des valeurs, subcategory par indicateur, poids des tables (dbstat), indicateurs d'identité disponibles… Tu sélectionnes, ça remplit la zone de saisie, tu ajustes si besoin.
+
+> **Astuce :** après un run, recharge la base (F5 ou le badge DB → R2) avant d'interroger, sinon tu vois la version en cache du navigateur.
+
+---
+
+## 9. Onglet Santé des données
+
+L'onglet **🩺 Santé données** lance une batterie de **contrôles de cohérence** sur la base et affiche un tableau de bord vert / orange / rouge. C'est le filet qui détecte les données cassées **avant** qu'elles ne faussent l'app.
+
+### 9.1 Utilisation
+Tu cliques sur **Lancer les contrôles**. Chaque contrôle affiche son statut (🟢 ok / 🟠 à inspecter / 🔴 anomalie) et, si pertinent, les lignes concernées. Une synthèse globale en haut indique le nombre d'anomalies.
+
+### 9.2 Les quatre familles de contrôles
+| Famille | Ce qui est vérifié |
+|---|---|
+| **Couverture** | Indicateurs (flux et identité) couvrant anormalement peu de pays (< 5) |
+| **Plausibilité** | Valeurs négatives ; sauts d'un facteur 10+ entre deux années consécutives (signe de bug d'échelle) |
+| **Structure** | Clé primaire de `identite` (doit inclure subcategory) ; subcategory NULL résiduelles |
+| **Cohérence croisée** | Production et part (`_share`) synchronisées ; sommes des parts proches de 100 % ; doublons d'indicateurs connus |
+
+### 9.3 Principe : signaler, pas bloquer
+Ces contrôles **attirent ton attention**, ils ne rejettent rien automatiquement. Un orange n'est pas forcément un problème : certains indicateurs couvrent légitimement peu de pays, et les doublons commerce/armement sont une redondance assumée. À toi de juger ce qui mérite correction.
+
+> **Réflexe recommandé :** lance ces contrôles après chaque run (en rechargeant la base d'abord). C'est ainsi qu'on détecte une régression — par exemple une source qui se met soudain à ne renvoyer que quelques pays.
+
+---
+
+## 10. Ajouter un indicateur — procédures
+
+### 10.1 Vue d'ensemble : trois types d'ajout
 
 | Type | Source | Effort | Procédure |
 |---|---|---|---|
@@ -412,7 +455,7 @@ Un seul CSV peut contenir **plusieurs indicateurs différents** — chaque ligne
 | **Semi-automatique** | CSV annuel téléchargeable manuellement | Modif Python + dépôt CSV | [§9.3](#83-ajouter-une-source-semi-automatique) |
 | **Manuel assisté IA** | Donnée ponctuelle ou prospective | Aucune modif Python | [§9.5](#85-ajouter-une-donnée-manuelle-assistée-ia) |
 
-### 8.2 Ajouter un indicateur automatique
+### 10.2 Ajouter un indicateur automatique
 
 **Quand l'utiliser :** une API publique fournit la donnée et tu veux l'inclure dans le pipeline automatique.
 
@@ -428,7 +471,7 @@ Un seul CSV peut contenir **plusieurs indicateurs différents** — chaque ligne
 
 **Le plus simple : utiliser le prompt en [§12.1](#121-prompt-pour-ajouter-un-indicateur-automatique)** qui te génère le code prêt à coller.
 
-### 8.3 Ajouter une source semi-automatique
+### 10.3 Ajouter une source semi-automatique
 
 **Quand l'utiliser :** la donnée existe sous forme de CSV/Excel téléchargeable annuellement (pas d'API).
 
@@ -445,7 +488,7 @@ Un seul CSV peut contenir **plusieurs indicateurs différents** — chaque ligne
 
 **Le plus simple : utiliser le prompt en [§12.2](#122-prompt-pour-ajouter-un-parser-semi-automatique)** qui te génère le parser complet.
 
-### 8.4 Désactiver une source définitivement
+### 10.4 Désactiver une source définitivement
 
 Si tu veux qu'une source automatique **arrête d'être récupérée** (et pas juste cacher dans l'app) :
 
@@ -456,7 +499,7 @@ Si tu veux qu'une source automatique **arrête d'être récupérée** (et pas ju
 
 Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou tu modifies les bornes années pour les exclure).
 
-### 8.5 Ajouter une donnée manuelle assistée IA
+### 10.5 Ajouter une donnée manuelle assistée IA
 
 **C'est le cas le plus simple — aucune modification Python.**
 
@@ -500,9 +543,9 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 
 ---
 
-## 9. Dépannage
+## 11. Dépannage
 
-### 9.1 Le badge DB affiche "Échec chargement R2"
+### 11.1 Le badge DB affiche "Échec chargement R2"
 
 **Cause typique** : tu as ouvert admin.html en `file:///` (double-clic local).
 **Solution** : utiliser https://ahk1515.github.io/geopol/admin.html
@@ -510,7 +553,7 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 **Cause moins fréquente** : R2 indisponible (très rare).
 **Solution** : recharger la page après quelques minutes.
 
-### 9.2 Le badge auth refuse mon PAT
+### 11.2 Le badge auth refuse mon PAT
 
 **Cause** : token mal copié, permissions manquantes, ou expiration.
 **Solution** :
@@ -518,7 +561,7 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 2. Vérifier les permissions : Actions = R/W, Contents = R/W
 3. Regénérer un PAT et le recoller
 
-### 9.3 Un commit reste bloqué sur "Commit en cours…"
+### 11.3 Un commit reste bloqué sur "Commit en cours…"
 
 **Cause typique** : F12 → Console montre une erreur 401/403 → permissions insuffisantes.
 **Solution** : vérifier les permissions du PAT.
@@ -528,7 +571,7 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 
 **Si bloqué sans message d'erreur** : recharger (Ctrl+Shift+R pour vider le cache).
 
-### 9.4 Le run pipeline échoue (statut ✕)
+### 11.4 Le run pipeline échoue (statut ✕)
 
 **Cause typique** : modification récente du code Python avec un bug.
 **Solution** :
@@ -539,17 +582,17 @@ Les données déjà présentes restent dans la DB jusqu'au prochain VACUUM (ou t
 **Cause fréquente après modif** : import manquant dans `run_etl.py`.
 Exemple : tu as supprimé `manuel.py` mais l'import est resté → l'orchestrateur plante.
 
-### 9.5 L'onglet Couverture montre 0% partout
+### 11.5 L'onglet Couverture montre 0% partout
 
 **Cause** : la DB n'est pas chargée en mémoire.
 **Solution** : retourner sur Suivi ETL et attendre que le badge DB passe au vert.
 
-### 9.6 Le tableau des sources est vide
+### 11.6 Le tableau des sources est vide
 
 **Cause** : `status.json` n'est pas accessible sur R2.
 **Solution** : vérifier https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/status.json directement dans le navigateur — il doit s'afficher du JSON.
 
-### 9.7 Comment révoquer un PAT en urgence
+### 11.7 Comment révoquer un PAT en urgence
 
 Si tu penses que ton PAT a fuité :
 1. https://github.com/settings/tokens
@@ -563,9 +606,9 @@ L'admin se bloquera côté actions (les lectures publiques fonctionneront toujou
 
 ---
 
-## 10. Annexe — Anatomie du système
+## 12. Annexe — Anatomie du système
 
-### 10.1 Flux des données
+### 12.1 Flux des données
 
 ```
        ┌─────────────────────┐
@@ -600,7 +643,7 @@ L'admin se bloquera côté actions (les lectures publiques fonctionneront toujou
    └─────────────────────────────────┘
 ```
 
-### 10.2 Fichiers clés du repo
+### 12.2 Fichiers clés du repo
 
 | Fichier | Rôle | Modifié par |
 |---|---|---|
@@ -616,7 +659,7 @@ L'admin se bloquera côté actions (les lectures publiques fonctionneront toujou
 | `uploads/manuel/` | Dépôt CSV manuel IA | Admin (upload) |
 | `.github/workflows/etl.yml` | Définition GitHub Actions | Manuellement |
 
-### 10.3 Sentinelles dans la table `flux`
+### 12.3 Sentinelles dans la table `flux`
 
 Pour les flux non-bilatéraux entre pays :
 
@@ -626,15 +669,18 @@ Pour les flux non-bilatéraux entre pays :
 | `__private__` | Créditeur privé |
 | `__intra__` | Flux interne à un groupe (mode groupe dans l'app) |
 
-### 10.4 Schéma SQL
+### 12.4 Schéma SQL
 
 ```sql
 identite (
   country_iso3 TEXT, indicator TEXT, year INTEGER,
-  value REAL, unit TEXT, source TEXT, subcategory TEXT,
-  PRIMARY KEY (country_iso3, indicator, year)
+  value REAL, unit TEXT, source TEXT, subcategory TEXT DEFAULT '',
+  PRIMARY KEY (country_iso3, indicator, year, subcategory)
 )
+```
+> Note : la clé primaire de `identite` inclut `subcategory` depuis la migration de juin 2026 (sinon les indicateurs à subcategory — minéraux, énergie — s'écrasaient entre eux). La subcategory vide est stockée comme `''`, jamais `NULL`.
 
+```sql
 flux (
   country_from TEXT, country_to TEXT, indicator TEXT, year INTEGER,
   value REAL, unit TEXT, source TEXT,
@@ -649,9 +695,9 @@ zones (
 
 ---
 
-## 11. Annexe — Prompts IA prêts à l'emploi
+## 13. Annexe — Prompts IA prêts à l'emploi
 
-### 11.1 Prompt pour ajouter un indicateur automatique
+### 13.1 Prompt pour ajouter un indicateur automatique
 
 Copier-coller dans une conversation IA, en remplaçant les `[CROCHETS]` :
 
@@ -688,7 +734,7 @@ Ne propose PAS de modifier d'autres fichiers (run_etl.py, parsers existants) sau
 Sois précis sur où coller chaque bloc (numéro de ligne approximatif ou contexte).
 ```
 
-### 11.2 Prompt pour ajouter un parser semi-automatique
+### 13.2 Prompt pour ajouter un parser semi-automatique
 
 Quand tu as un nouveau fichier CSV/Excel récurrent (annuel) qui n'a pas d'API.
 
@@ -742,7 +788,7 @@ Génère-moi :
 Sois rigoureux : pas d'interpolation, pas d'estimation, pas de valeur par défaut quand la source dit vide. Toute ligne ignorée doit être affichée dans les logs.
 ```
 
-### 11.3 Prompt pour formatter un CSV manuel (variante des prompts intégrés à admin)
+### 13.3 Prompt pour formatter un CSV manuel (variante des prompts intégrés à admin)
 
 Si les prompts par défaut dans admin ne suffisent pas, utiliser cette variante adaptée :
 
@@ -788,7 +834,7 @@ Ne mets RIEN d'autre dans le CSV (pas de commentaires, pas d'en-tête additionne
 Le premier ligne du CSV doit être l'en-tête, le reste les données.
 ```
 
-### 11.4 Prompt pour comprendre une partie de cette notice
+### 13.4 Prompt pour comprendre une partie de cette notice
 
 À utiliser si une section de la notice te semble trop courte ou pas claire :
 
@@ -806,7 +852,7 @@ Si certaines parties dépendent d'autres sections, fais des renvois et explique 
 les dépendances. N'invente pas de fonctionnalités qui ne sont pas dans la notice.
 ```
 
-### 11.5 Prompt pour diagnostiquer un problème
+### 13.5 Prompt pour diagnostiquer un problème
 
 ```
 J'utilise admin.html du projet GÉOPOL. J'ai un problème :
