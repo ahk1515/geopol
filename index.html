@@ -1231,6 +1231,7 @@ main { flex: 1; padding: 16px 18px 28px; }
   <div class="load-logo">GÉOPOL</div>
   <div class="load-bar-wrap"><div class="load-bar" id="loadPbar"></div></div>
   <div id="loadingMsg">Initialisation…</div>
+  <div id="loadingDetail" style="font-family:var(--mono);font-size:10px;color:var(--text3);opacity:.7;min-height:13px"></div>
 </div>
 
 <!-- ░░ OVERLAY RECHERCHE (sujet) ░░ -->
@@ -2152,6 +2153,10 @@ function setLoadingMsg(msg, pct){
   const e = document.getElementById('loadingMsg'); if(e) e.textContent = msg;
   const p = document.getElementById('loadPbar'); if(p && pct!=null) p.style.width = pct + '%';
 }
+function setLoadingDetail(txt){
+  const e = document.getElementById('loadingDetail'); if(e) e.textContent = txt || '';
+}
+function fmtMo(octets){ return (octets/1024/1024).toFixed(1) + ' Mo'; }
 function setDbBadge(name, st){
   document.getElementById('dbDot').className = 'dot ' + st;
   document.getElementById('dbName').textContent = name;
@@ -2173,20 +2178,80 @@ async function boot(){
   } catch(e){ setLoadingMsg('Erreur WebAssembly : ' + e.message, 0); return; }
 
   setLoadingMsg('Chargement de la base…', 35);
+  setLoadingDetail('Connexion au serveur…');
   let buf;
+  const DB_URL = 'https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/geopolitique.db?v=' + Date.now();
+  const t0 = performance.now();
   try {
-    const res = await fetch('https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/geopolitique.db?v=' + Date.now());
+    const res = await fetch(DB_URL);
     if(!res.ok) throw new Error('HTTP ' + res.status);
-    buf = await res.arrayBuffer();
+
+    // Taille annoncée par le serveur (si disponible)
+    const total = parseInt(res.headers.get('Content-Length') || '0', 10);
+    const totalLabel = total ? fmtMo(total) : 'taille inconnue';
+
+    // Lecture en streaming pour afficher progression + débit + ETA réels
+    if(res.body && res.body.getReader){
+      const reader = res.body.getReader();
+      const chunks = [];
+      let recu = 0;
+      while(true){
+        const { done, value } = await reader.read();
+        if(done) break;
+        chunks.push(value);
+        recu += value.length;
+        const sec = (performance.now() - t0) / 1000;
+        const debit = recu / sec; // octets/s
+        if(total){
+          const pct = Math.min(99, Math.round(recu / total * 100));
+          const reste = (total - recu) / debit; // secondes
+          setLoadingMsg('Téléchargement de la base…', 35 + pct * 0.4);
+          setLoadingDetail(`${fmtMo(recu)} / ${totalLabel} · ${(debit/1024/1024).toFixed(1)} Mo/s · ~${Math.max(1,Math.round(reste))} s restantes`);
+        } else {
+          setLoadingDetail(`${fmtMo(recu)} reçus · ${(debit/1024/1024).toFixed(1)} Mo/s`);
+        }
+      }
+      // Reconstituer le buffer
+      const all = new Uint8Array(recu);
+      let pos = 0;
+      for(const c of chunks){ all.set(c, pos); pos += c.length; }
+      buf = all.buffer;
+    } else {
+      // Navigateur sans streaming : fallback simple
+      setLoadingDetail(`Téléchargement (${totalLabel})…`);
+      buf = await res.arrayBuffer();
+    }
+    const dureeTotale = ((performance.now() - t0) / 1000).toFixed(1);
+    setLoadingDetail(`${fmtMo(buf.byteLength)} chargés en ${dureeTotale} s`);
   } catch(e){
-    setLoadingMsg('Base distante indisponible — mode démo', 60);
-    await sleep(350);
+    // Messages d'erreur explicites selon le type de blocage
+    let msg;
+    if(e.message && e.message.startsWith('HTTP')){
+      msg = `Serveur indisponible (${e.message}) — passage en mode démo`;
+    } else if(e.name === 'TypeError' || /fetch|network|Failed/i.test(e.message||'')){
+      msg = 'Connexion impossible (réseau ou pare-feu) — mode démo';
+    } else {
+      msg = 'Base distante indisponible — mode démo';
+    }
+    setLoadingMsg(msg, 60);
+    setLoadingDetail('Vérifiez votre connexion. Les données affichées sont fictives.');
+    await sleep(1200);
     initDemo(SQL);
     return;
   }
-  setLoadingMsg('Ouverture de la base…', 70);
-  state.db = new SQL.Database(new Uint8Array(buf));
-  setLoadingMsg('Chargement de la configuration…', 85);
+  setLoadingMsg('Ouverture de la base…', 78);
+  setLoadingDetail('Lecture en mémoire…');
+  try {
+    state.db = new SQL.Database(new Uint8Array(buf));
+  } catch(e){
+    setLoadingMsg('Base corrompue ou illisible — mode démo', 60);
+    setLoadingDetail(e.message || '');
+    await sleep(1200);
+    initDemo(SQL);
+    return;
+  }
+  setLoadingMsg('Chargement de la configuration…', 90);
+  setLoadingDetail('');
   await loadConfig();
   finishBoot('Base distante', 'ok');
 }
