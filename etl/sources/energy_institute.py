@@ -153,13 +153,21 @@ def parse_series_sheet(ws, indicator, subcategory, unit):
         print(f"  ⚠️  En-tête non trouvé pour {subcategory}")
         return []
 
-    # Années disponibles et leurs index de colonne
+    # Années disponibles et leurs index de colonne.
+    # ATTENTION : le fichier Energy Institute répète l'en-tête d'année sur
+    # plusieurs colonnes (ex. 2023 apparaît pour le volume, puis pour
+    # "Growth rate per annum", puis pour "Share"). On ne doit garder que la
+    # PREMIÈRE colonne de chaque année (le volume brut), sinon les colonnes
+    # Growth/Share écrasent le volume (valeurs ~part au lieu du volume réel).
     header_row = rows[header_idx]
-    year_cols = {
-        col_idx: v
-        for col_idx, v in enumerate(header_row)
-        if isinstance(v, int) and ANNEE_DEBUT <= v <= ANNEE_FIN
-    }
+    year_cols = {}              # col_idx -> année (déduplication par année)
+    seen_years = set()
+    for col_idx, v in enumerate(header_row):
+        if isinstance(v, int) and ANNEE_DEBUT <= v <= ANNEE_FIN:
+            if v in seen_years:
+                continue        # année déjà prise (colonne Growth/Share) → ignorer
+            seen_years.add(v)
+            year_cols[col_idx] = v
 
     if not year_cols:
         print(f"  ⏭️  Aucune année dans la plage {ANNEE_DEBUT}-{ANNEE_FIN} pour {subcategory}")
