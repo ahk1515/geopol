@@ -53,7 +53,7 @@ def upsert_identite(conn, indicator, unit, unit_display, rows):
             (country_iso3, indicator, year, value, unit, source, subcategory)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """, [
-        (iso3, indicator, year, value, unit, SOURCE, None)
+        (iso3, indicator, year, value, unit, SOURCE, '')
         for (iso3, year, value) in rows
     ])
     conn.commit()
@@ -262,7 +262,7 @@ def calc_share(conn, indicator, share_indicator):
         SELECT country_iso3, year, subcategory, value
         FROM identite
         WHERE indicator = ?
-        AND (subcategory IS NOT NULL)
+        AND subcategory IS NOT NULL AND subcategory != ''
     """, (indicator,)).fetchall()
 
     if not rows_db:
