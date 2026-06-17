@@ -142,8 +142,8 @@ def upsert_rows(conn, indicator, rows, meta):
             value        REAL,
             unit         TEXT,
             source       TEXT,
-            subcategory  TEXT,
-            PRIMARY KEY (country_iso3, indicator, year)
+            subcategory  TEXT DEFAULT '',
+            PRIMARY KEY (country_iso3, indicator, year, subcategory)
         )
     """)
 
@@ -155,7 +155,7 @@ def upsert_rows(conn, indicator, rows, meta):
             row["value"],
             meta["unit"],
             SOURCE,
-            None,
+            '',
         )
         for row in rows
     ]
