@@ -2,7 +2,7 @@
 
 > **Usage :** colle l'intégralité de ce fichier en début de nouvelle conversation avec Claude pour qu'il reprenne le projet là où on l'a laissé. L'assistant te demandera les fichiers spécifiques dont il a besoin selon la tâche.
 >
-> **Dernière mise à jour :** session juin 2026 — bascule ETL Comtrade → IMF IMTS, ajout onglet Croisé, refonte mode bilatéral, préparation refonte architecture en 5 onglets (Comparaisons bilatérales).
+> **Dernière mise à jour :** session juin 2026 — réparation ETL IMF IMTS, optimisation taille DB (filtre de seuils, −303 Mo), console SQL admin, migration clé `identite` (subcategory), correction parser Energy Institute, contrôle qualité "Santé des données", flyer d'accueil + panneau À propos dans l'app.
 
 ---
 
@@ -15,55 +15,41 @@ Tu dois :
 - Développer un **sens critique constructif** : remettre en question les choix qui ne tiennent pas, proposer mieux quand c'est utile, ne pas hésiter à dire « non, voici pourquoi »
 - Être **concis** dans tes réponses, jamais flatteur ni redondant
 - **Vulgariser** quand l'utilisateur n'est pas développeur (il ne l'est pas)
-- **Demander confirmation** avant de coder, surtout pour les changements structurants
-- **Décider pour lui** quand il te dit "tu décides" — c'est une marque de confiance, pas un appel à hésiter
+- **Demander confirmation avant de coder** — l'utilisateur formule souvent sa pensée en plusieurs messages ; ne pars pas en codage dès le premier signal
+- **Décider pour lui** quand il te dit "tu décides" — c'est une marque de confiance
 - **Ne jamais modifier des fichiers tiers sans aval explicite**
-- **Tester ce qui peut l'être** avant de livrer (parsing, syntaxe, cas limites)
+- **Mesurer avant d'agir** : la méthode qui a payé toute la session = diagnostiquer/mesurer les données réelles avant de coder une correction ou un seuil (ex. tester l'API en conditions réelles, mesurer une distribution avant de fixer un seuil)
+- **Tester ce qui peut l'être** avant de livrer (parsing, syntaxe via `node --check` / `py_compile`, cas limites, tests d'intégration sur base simulée)
 
-L'utilisateur préfère qu'on **avance par étapes courtes validées** plutôt qu'avec de grandes livraisons monobloc. Chaque modification doit être validée avant la suivante.
+L'utilisateur préfère qu'on **avance par étapes courtes validées** plutôt qu'avec de grandes livraisons monobloc.
 
 **Conventions de dialogue :**
-- L'utilisateur teste en console (F12 du navigateur). La DB SQLite est `state.db`, **pas** `window.db`.
-- Quand tu lui demandes des choix multiples, utilise le tool `ask_user_input_v0` plutôt que des listes à puces (bien plus rapide sur mobile pour lui).
+- L'utilisateur teste en console (F12 du navigateur). La DB SQLite est `state.db` dans l'app, `db` (global) dans l'admin.
+- Quand tu lui demandes des choix multiples, utilise le tool `ask_user_input_v0` plutôt que des listes à puces (plus rapide sur mobile).
 - Tu peux le challenger franchement : « tu as raison de me reprendre » est mieux que « excellente question ! ».
 - Quand tu fais une erreur, dis-le clairement et corrige sans t'excuser longuement.
+- Il a un **PC pro bridé** : pas de Python local, pas d'admin. Il édite via l'interface GitHub et lance l'ETL via le panel admin. Il peut désormais **interroger la DB sans run** via la console SQL de l'admin (voir plus bas).
 
 ---
 
 ## ARCHITECTURE DU SYSTÈME
 
 ```
-       ┌─────────────────────┐
-       │    Sources externes  │
-       │  WB · OWID · UNHCR  │
-       │  IDS · SIPRI · IMF  │
-       │  IMTS · ...         │
-       └──────────┬──────────┘
-                  │ APIs / CSV
-                  ▼
-       ┌─────────────────────┐
-       │   GitHub Actions    │
-       │     run_etl.py      │ ← lit etl_config.json
-       └──────────┬──────────┘
+   Sources externes (APIs / CSV)
+   WB · OWID · UNHCR · IDS · SIPRI · IMF IMTS · WEO
+   Energy Institute · USGS · Marine Regions · resourcetrade.earth
                   │
                   ▼
-       ┌─────────────────────┐
-       │ geopolitique.db     │
-       │   (Cloudflare R2)   │
-       └──────────┬──────────┘
+   GitHub Actions — run_etl.py  ← lit etl_config.json
+   (télécharge la DB R2, migre, parse, build, ré-upload)
+                  │
+                  ▼
+   geopolitique.db  (Cloudflare R2, persistante entre runs)
                   │ fetch public
                   ▼
-       ┌─────────────────────┐
-       │     index.html      │ ← affichage
-       │   ahk1515.github.io │
-       └─────────────────────┘
-
-   ┌─────────────────────────────────┐
-   │      admin.html (pilotage)      │
-   │  ↑ lit status.json + DB R2       │
-   │  ↓ commits sur GitHub via PAT    │
-   │  ↓ déclenche workflow_dispatch   │
-   └─────────────────────────────────┘
+   index.html (app)  ←→  admin.html (pilotage)
+   ahk1515.github.io      lit status.json + DB R2
+                          commits via PAT, workflow_dispatch
 ```
 
 **Comptes & URLs :**
@@ -71,16 +57,18 @@ L'utilisateur préfère qu'on **avance par étapes courtes validées** plutôt q
 - App : https://ahk1515.github.io/geopol
 - Admin : https://ahk1515.github.io/geopol/admin.html
 - R2 public : https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev
-  - DB : `/geopolitique.db`
-  - Status : `/status.json`
+  - DB : `/geopolitique.db`  ·  Status : `/status.json`
 
 **Stack :**
 - HTML/CSS/JS vanilla (pas de framework)
 - sql.js (SQLite/WASM) pour charger la DB côté navigateur
-- D3.js pour les visualisations dans `index.html`
-- topojson world-atlas (CDN) pour les cartes
+- D3.js pour les visualisations dans `index.html` ; topojson world-atlas (CDN) pour les cartes
 - Python 3.11 pour l'ETL sur GitHub Actions
 - Cloudflare R2 (S3-compatible) pour stocker la DB
+
+**IMPORTANT — la DB persiste entre runs :** le workflow télécharge `geopolitique.db` depuis R2 au début de chaque run, applique migrations + parsers dessus, puis ré-upload. La base n'est PAS reconstruite de zéro. Conséquence : un changement de schéma (`CREATE TABLE IF NOT EXISTS`) ne s'applique PAS à une table déjà existante → il faut une **migration explicite** (cf. `etl/migrate.py`).
+
+**Sandbox Claude :** `raw.githubusercontent.com` est accessible (permet `curl` des fichiers du repo). `api.imf.org` et `wits.worldbank.org` sont bloqués. Pour explorer une API externe : `web_search` puis `web_fetch` sur les URLs des résultats.
 
 ---
 
@@ -89,8 +77,8 @@ L'utilisateur préfère qu'on **avance par étapes courtes validées** plutôt q
 ```sql
 identite (
   country_iso3 TEXT, indicator TEXT, year INTEGER,
-  value REAL, unit TEXT, source TEXT, subcategory TEXT,
-  PRIMARY KEY (country_iso3, indicator, year)
+  value REAL, unit TEXT, source TEXT, subcategory TEXT DEFAULT '',
+  PRIMARY KEY (country_iso3, indicator, year, subcategory)   -- subcategory AJOUTÉE juin 2026
 )
 
 flux (
@@ -100,24 +88,26 @@ flux (
   PRIMARY KEY (country_from, country_to, indicator, year, subcategory_1)
 )
 
-zones (
-  zone_id TEXT, zone_nom TEXT, country_iso3 TEXT
-)
+zones ( zone_id TEXT, zone_nom TEXT, country_iso3 TEXT )
 ```
 
-**Sentinelles pour `country_from` / `country_to` dans `flux` :**
-- `__multilateral__` : créditeur institutionnel (FMI, BM, etc.)
-- `__private__` : créditeur privé
-- `__intra__` : flux interne à un groupe (mode groupe dans l'app)
+**⚠️ Migration clé `identite` (juin 2026) :** la PK incluait seulement `(country_iso3, indicator, year)`, ce qui faisait s'écraser tous les indicateurs à subcategory (minéraux, énergie) — il ne restait qu'une valeur par pays/indicateur/année. Corrigé par `etl/migrate.py` (ajout `subcategory` à la PK) + conversion des `subcategory NULL` en `''` (dans une PK SQLite, deux NULL sont distincts → un `INSERT OR REPLACE` ne dédupliquerait plus les indicateurs sans subcategory ; la chaîne vide `''` déduplique correctement). **Tous les parsers identite insèrent désormais `''` et non `None`.**
 
-**Codes régionaux à exclure des agrégats** (`REGIONAL_CODES` côté JS) :
-agrégats Banque Mondiale type `EAS`, `ECS`, `LCN`, `MEA`, etc.
+**Sentinelles `flux` :**
+- `__multilateral__` : créancier institutionnel (FMI, BM)
+- `__private__` : créancier privé
+- `__intra__` : flux interne à un groupe
+- Agrégats IMF : codes commençant par `G` (G001=World, G998=UE)
 
-**Convention flux commerce (CRUCIAL) :**
-- `import_commercial` : `country_to` = importateur (sujet), `country_from` = fournisseur (partenaire). L'app lit `subjectCol='country_to'`.
-- `export_commercial` : `country_from` = exportateur (sujet), `country_to` = destinataire (partenaire). L'app lit `subjectCol='country_from'`.
-- Une ligne `(country_from=P, country_to=R, indicator='import_commercial')` signifie "R importe X depuis P".
-- Le parser IMF IMTS génère systématiquement les **deux indicators** (import + export miroir) pour chaque flux observé, en gardant **la même paire (country_from, country_to)** et en changeant seulement l'indicator.
+**Convention commerce (CRUCIAL) :**
+- `import_commercial` : `country_to` = importateur (sujet), `country_from` = fournisseur. L'app lit `subjectCol='country_to'`.
+- `export_commercial` : `country_from` = exportateur (sujet), `country_to` = destinataire. L'app lit `subjectCol='country_from'`.
+- Le parser IMF IMTS génère les **deux indicators** pour chaque flux (même paire `country_from/country_to`, seul l'indicator change). C'est un **doublon pur** (~117 k lignes redondantes).
+
+**Doublons connus (non corrigés — redondance assumée) :**
+- `import_commercial` ↔ `export_commercial` (~117 403 lignes chacun, doublon pur)
+- `transferts_armement` ↔ `export_armement` (~2 130 lignes chacun, doublon pur, mêmes valeurs/sens)
+- Suppression possible (gain ~119 k lignes, ~20 Mo) mais touche l'app → en réserve, non prioritaire tant que la taille n'est pas critique.
 
 ---
 
@@ -125,299 +115,164 @@ agrégats Banque Mondiale type `EAS`, `ECS`, `LCN`, `MEA`, etc.
 
 ```
 ahk1515/geopol/
-├── admin.html                    Interface d'administration (~3500 lignes)
-├── index.html                    App publique (~7800 lignes après ajout Croisé + bilatéral)
-├── config.json                   Liste des indicateurs affichés dans l'app
+├── admin.html                    Interface d'administration (~3950 lignes)
+├── index.html                    App publique (~7300 lignes, 5 onglets)
+├── config.json                   Indicateurs affichés dans l'app
 ├── etl_config.json               Bornes années, pays (modifié par admin)
-├── referentiel.json              217 pays : ISO3, organisations, attributs
-├── requirements.txt              Dépendances Python (requests, boto3, pandas)
-├── run_etl.py                    Orchestrateur ETL (pipeline complet)
+├── referentiel.json              Pays : ISO3, organisations, attributs
+├── run_etl.py                    Orchestrateur ETL (migration + pipeline + build)
 ├── prompt_initialisation.md      Ce fichier
 ├── NOTICE_ADMIN.md               Manuel utilisateur de l'admin
-├── prompts_transformation_csv.md Prompts IA pour transformer CSV vers schéma GÉOPOL
+├── prompts_transformation_csv.md Prompts IA pour transformer CSV → schéma GÉOPOL
 ├── todo.md                       Tâches en cours
 │
 ├── etl/
-│   ├── __init__.py
-│   ├── config.py                 Configuration centrale (ANNEE_DEBUT, INDICATORS_WB...)
-│   ├── construits.py             Calcul des indicateurs dérivés
-│   ├── build_db.py               Assemblage DB + upload R2 + status.json (VACUUM inclus)
+│   ├── config.py                 Config centrale (ANNEE_DEBUT/FIN, indicateurs WB...)
+│   ├── migrate.py                Migrations de schéma (clé identite) — tourne EN PREMIER
+│   ├── construits.py             Indicateurs dérivés (balance_commerciale, densite...)
+│   ├── build_db.py               Purge + filtre seuils + zones + VACUUM + contrôle taille + upload R2
 │   ├── build_referentiel.py      Génère referentiel.json
 │   └── sources/
-│       ├── __init__.py
-│       ├── banque_mondiale.py    API WB — indicateurs identite
-│       ├── banque_mondiale_ids.py API WB IDS — dette bilatérale flux
+│       ├── banque_mondiale.py    API WB — identite
+│       ├── banque_mondiale_ids.py API WB IDS — dette bilatérale (flux)
 │       ├── owid.py               OWID Charts API
-│       ├── comtrade.py           UN Comtrade (DÉSACTIVÉ — pas de clé API Premium)
-│       ├── imf_imts.py           IMF IMTS — commerce bilatéral (REMPLACE comtrade)
-│       ├── unhcr.py              UNHCR API — réfugiés
-│       ├── weo.py                IMF WEO — pib_usd, population (avec scale fix)
-│       ├── etudiants.py          UNESCO/OCDE — désactivé
-│       ├── sipri.py              Parser SIPRI CSV — armement (semi-auto)
-│       ├── energy_institute.py   Energy Institute — énergie production/réserves
-│       ├── zee.py                Zones économiques exclusives (Marine Regions)
-│       ├── manuel.py             Parser générique CSV manuels (supporte .csv.gz)
-│       └── uploads/              Dépôt CSV semi-auto (SIPRI etc.)
+│       ├── imf_imts.py           IMF IMTS — commerce bilatéral (RÉPARÉ juin 2026)
+│       ├── unhcr.py              UNHCR — réfugiés
+│       ├── weo.py                IMF WEO — pib_usd, population (+ projections)
+│       ├── sipri.py              SIPRI CSV — armement (semi-auto)
+│       ├── energy_institute.py   Energy Institute — énergie (CORRIGÉ juin 2026)
+│       ├── zee.py                Marine Regions — ZEE
+│       ├── manuel.py             Parser générique CSV manuels (USGS minéraux, etc.)
+│       ├── comtrade.py           DÉSACTIVÉ (pas de clé Premium)
+│       ├── wits.py               Tentative ratée, à supprimer
+│       ├── etudiants.py / opri.py  UNESCO OPRI — désactivé
+│       └── uploads/              CSV semi-auto (SIPRI, Energy Institute .xlsx)
 │
-├── uploads/
-│   └── manuel/                   Dépôt CSV manuels (créés via admin onglet Imports)
-│
-└── .github/
-    └── workflows/
-        └── etl.yml               Scheduler GitHub Actions (lundi 3h UTC, timeout 360min)
+├── uploads/manuel/               CSV manuels (USGS MCS, etc.)
+└── .github/workflows/etl.yml     Scheduler (timeout 360min) + download DB R2 en préambule
 ```
 
 ---
 
 ## SECRETS GITHUB ACTIONS
 
-| Secret | Valeur / usage |
+| Secret | Usage |
 |---|---|
-| `R2_ACCOUNT_ID` | `45d0b33bededb719e901462a1419406f` |
-| `R2_ACCESS_KEY_ID` | Clé accès R2 |
-| `R2_SECRET_KEY` | Clé secrète R2 |
+| `R2_ACCOUNT_ID` | Compte R2 |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_KEY` | Clés R2 |
 | `R2_BUCKET` | `geopol-db` |
-| `R2_PUBLIC_URL` | `https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev` |
-| ~~`COMTRADE_API_KEY`~~ | Retiré (Comtrade désactivé, remplacé par IMF IMTS) |
+| `R2_PUBLIC_URL` | URL publique R2 |
 
 ---
 
-## ÉTAT DE LA DB (réf.)
+## ÉTAT DE LA DB (réf. fin de session juin 2026)
 
-- **Taille** : ~490-540 Mo sur R2 après bascule IMF IMTS (avant : 410 Mo)
-- **Seuils** : warning à 600 Mo, erreur à 700 Mo (à ajuster dans `build_db.py`)
-- **Période** : 2000 → 2024 configurable via `etl_config.json` (`ANNEE_DEBUT`)
-- **Lignes** : ~1.5-2 millions
+- **Taille** : ~273 Mo (après filtre de seuils ; était ~576 Mo avant)
+- **Seuils taille** (`build_db.py`) : warning `DB_SIZE_LIMIT_MB=450`, erreur `DB_SIZE_ALERT_MB=480` (`sys.exit(1)`)
+- **Période** : 2020 → 2050 (projections WEO incluses). `ANNEE_DEBUT` configurable via `etl_config.json`
+- **Lignes flux** : ~1,39 M (était 2,24 M avant filtre)
+- **Lignes identite** : ~33 k + ressources
 
-| Source | Indicateurs | Lignes (ordre de grandeur) | Table |
+| Source | Indicateurs | Lignes (ordre) | Table |
 |---|---|---|---|
-| Banque Mondiale | 12 indicateurs (population, PIB, etc.) | 57 000 | identite |
-| OWID | 5 indicateurs (age_median, etc.) | 20 000 | identite |
-| UNHCR | refugies | 91 000 | flux |
-| Banque Mondiale IDS | dette_exterieure (subcategory_1) | 248 000 | flux |
-| Construits | densite, balance_commerciale, etc. | 9 000 | identite |
-| IMF WEO | pib_usd, population (projections incluses) | varies | identite |
-| **IMF IMTS** | **import_commercial, export_commercial** | **~1 000 000** | **flux** |
-| SIPRI | transferts_armement | varies | flux |
-| Energy Institute | energie_production, energie_reserves | varies | identite |
-| USGS MCS | mineraux_production, mineraux_reserves (en `kt`) | 718 | identite |
-| resourcetrade.earth | commerce_ressources (en USD) | 330 000 | flux |
-| Marine Regions | zee | ~220 | identite |
+| Banque Mondiale | population, PIB, etc. | ~10 k | identite |
+| OWID | age_median, etc. | ~3,7 k | identite |
+| **IMF IMTS** | import_commercial, export_commercial | **~234 k** (réparé) | flux |
+| Banque Mondiale IDS | dette_exterieure (subcat_1) | ~248 k | flux |
+| UNHCR | refugies | ~785 k → filtré (≥50) | flux |
+| (manuel) | etudiants_international | ~804 k → filtré (≥25) | flux |
+| resourcetrade.earth | commerce_ressources (USD) | ~331 k → filtré (≥500k) | flux |
+| (manuel) | migrants | ~273 k | flux |
+| SIPRI | transferts_armement / export_armement | ~2,1 k ×2 | flux |
+| Construits | densite, balance_commerciale | ~6 k | identite |
+| IMF WEO | pib_usd, population (projections) | ~12 k | identite |
+| Energy Institute | energie_production/reserves (+_share) | ~2,3 k (corrigé, 87 pays) | identite |
+| USGS MCS (via manuel) | mineraux_production/reserves (+_share) | ~1,7 k (corrigé, 62 pays) | identite |
+| Marine Regions | zee | ~0 (parser renvoie 0, à investiguer) | identite |
 
 ---
 
-## CONFIG.JSON — 43 INDICATEURS
+## FILTRE DE SEUILS (`build_db.py`, juin 2026)
 
-Liste des indicateurs (état actuel) :
+Dict `SEUILS_FLUX` en tête de `build_db.py`, appliqué par `filtre_seuils()` **entre `purge_hors_bornes()` et `build_zones()`** (après que `construits` a calculé ses totaux sur données complètes, avant le VACUUM). Non destructif : ré-appliqué à chaque run sur données rechargées.
 
-**identite (table) :**
-- demographie : population, age_median, fecondite, densite
-- stabilite : idps_securitaire, idps_climatique, violent_death
-- militaire : volume_armee, budget_defense_pib, transferts_armement_pct_pib
-- economie : pib_usd, pib_par_hab, reserve_change_or, taux_chomage, inflation, croissance_pib
-- finance : ide_in, dette_pct_pib, dette_publique_pib
-- geographie : terres_arables, land_area, zee
-- technologie : depense_rd_pib, brevets_deposes
-- commerce : balance_commerciale, balance_courante_pib
-- energie : energie_production, energie_production_share, energie_reserves, energie_reserves_share
-- ressources : mineraux_production, mineraux_production_share, mineraux_reserves, mineraux_reserves_share
-
-**flux (table) :**
-- migration : refugies, migrants
-- commerce : import_commercial, export_commercial, commerce_ressources
-- armement : transferts_armement, export_armement
-- finance : dette_exterieure
-- education : etudiants_international
-- diplomatie : representation_diplomatique
+```python
+SEUILS_FLUX = {
+    "refugies":               {"type": "absolu", "valeur": 50},      # personnes, médiane 26
+    "etudiants_international": {"type": "absolu", "valeur": 25},      # personnes, médiane 16
+    "commerce_ressources":    {"type": "absolu", "valeur": 500_000}, # USD, médiane 481k
+}
+```
+- Indicateurs absents du dict = non filtrés (dette, armement, migrants, diplo, import/export_commercial conservés).
+- Type `relatif` (seuil bilatéral "part chez A ET chez B") = squelette prévu, non implémenté.
+- Calibrage via diagnostic de distribution (méthode : mesurer la distribution réelle avant de fixer un seuil). Seuil = en effectifs pour les flux en personnes, en valeur pour le monétaire — **le seuil dépend de l'unité, pas de l'indicateur.**
 
 ---
 
-## INDEX.HTML — STRUCTURE ACTUELLE
+## INDEX.HTML — STRUCTURE ACTUELLE (5 onglets, refonte terminée)
 
-L'app a actuellement **4 onglets** : Synthèse, Puissance, Relations, Croisé.
+Top bar transverse : bouton ⌕ Rechercher (sujet), slider année (`state.year`), bouton **ℹ️ À propos**, badge DB.
 
-### Sélection du sujet (top bar, transverse)
-- Bouton ⌕ Rechercher (modal de recherche pays/zone)
-- Slider année (state.year)
+**Écran de chargement (juin 2026) :** progression réelle (Mo / débit / ETA via streaming `res.body.getReader()` + `Content-Length`), messages d'erreur explicites selon le blocage (HTTP / réseau / base corrompue → bascule mode démo), + flyer d'accueil (familles de données, croisement, volume/influence, temporalité, absence≠zéro).
+
+**Panneau À propos (ℹ️) :** open-source/expérimental, types de données, lecture volume/influence (exemple France-Sénégal), lecture des absences (manquant/zéro/filtré), temporalité+projections, sources, date dernière maj (depuis status.json). Valeurs pays/années calculées dynamiquement (`fillAboutDynamic`).
 
 ### Onglet Synthèse
-
-**Cartes valeurs clés** avec sparklines + rang + infobulles (source + année réelle).
-
-**Panorama 2 colonnes** avec **deux dénominateurs différents** :
-- Col 1 « Qui pèse pour le sujet » : `volume_partenaire / volume_total_sujet` (part dans le sujet)
-- Col 2 « Pour qui le sujet pèse » : `volume_partenaire / volume_mondial_partenaire` (poids du sujet chez chaque partenaire)
-- Engrenages indépendants par colonne (pinned flux différents)
-- Libellés contextuels par sens
-
-**Bloc « Atouts en ressources »** :
-- 3 sections : Énergie / Minéraux & métaux / Commerce de ressources
-- **Production et réserves** (les 4 `_share`) : éclatement par sub1 (cobalt, lithium, pétrole, gaz, etc.) avec dictionnaire `RES_SUB_LABELS`
-- **Commerce de ressources** : tableau 3 colonnes (catégorie | import | export) basé sur `commerce_ressources`. 6 catégories Chatham House traduites via `TRADE_CAT_LABELS`. Jauges orange (import) et verte (export). Balance en infobulle.
-- **Seuil de notabilité paramétrable** (1% / 3% / 5%) via engrenage → modal. Stocké en localStorage (`geopol_res_threshold`).
+Portrait d'identité. Cartes valeurs clés + sparklines + rang. Panorama 2 colonnes à deux dénominateurs (« qui pèse pour le sujet » = part dans le sujet ; « pour qui le sujet pèse » = poids du sujet chez chaque partenaire). Bloc « Atouts en ressources » (énergie/minéraux/commerce ressources, seuil notabilité paramétrable).
 
 ### Onglet Puissance
-
-**Nav indicateurs gauche** (sticky, catégories pliables + filtre recherche).
-
-**Radar percentilé** avec engrenage indépendant (PIN_RADAR_KEY, axes à choix).
-
-**Courbe** avec projections WEO en pointillés orange séparés (via subcategory='projection').
-
-**Carte D3** geoNaturalEarth1, world-atlas CDN, choroplèthe verte par quantiles (8 buckets).
-
-**Comparaison A vs B** : slot B permanent. Polygone B orange pointillé sur radar, courbe B superposée, valeur B + écart relatif % dans entête. Carte reste sur A seul.
-
-**Bloc « Composition par type »** : apparaît UNIQUEMENT pour les 4 indicateurs ressources. Bar chart horizontal trié, Top 10 visible + reste agrégé. Mode comparaison A/B : barres groupées verticalement par sub1 (vert A, orange B).
+1 sujet, 1 indicateur. Nav indicateurs gauche (sticky, catégories pliables). Radar percentilé, courbe (projections WEO en pointillés via `subcategory='projection'`), carte D3 choroplèthe. Bloc « Composition par type » pour les 4 indicateurs ressources (bar chart par sub1). *Le slot compareB a été retiré → déplacé vers Comparaisons.*
 
 ### Onglet Relations
-
-**Nav indicateurs gauche** comme Puissance, avec libellés contextuels par sens (FLOW_DIRECTIONS dict).
-
-**Modèle flux bidirectionnels** : DEUX entrées par indicateur (clés `indicator|side`) avec libellés contextuels. Dictionnaire `FLOW_DIRECTIONS` :
-- `dette_exterieure` : to=Créanciers / from=Débiteurs
-- `transferts_armement` : to=Fournisseurs / from=Bénéficiaires
-- `representation_diplomatique` : to=Représentations envoyées / from=Pays hôtes
-- `refugies`, `migrants`, `etudiants_international` : contextuels
-- `commerce` (unifié) : to=Fournisseurs (lit import_commercial) / from=Clients (lit export_commercial)
-- `commerce_ressources` : to=Fournisseurs / from=Clients
-- `FLOW_INDICATOR_ALIASES` : export_armement → transferts_armement
-
-**Mode multi-partenaires** (1 sujet, N partenaires) :
-- Barre filtres sticky : Breadcrumb · Référentiel · Mesure · Partenaires · Période
-- Layout : Composition (treemap ou barres influence) + Évolution (aires empilées ou courbes influence) côte à côte en haut, Carte pleine largeur en bas
-- Mode Volume / Influence (cf. ancien prompt pour détail)
-
-**Mode bilatéral** (sujet ↔ partenaire B, présent depuis juin 2026) :
-- État `_relPartnerB`, setters `setRelPartnerB`, `clearRelPartnerB`
-- Slot B dans la barre filtres + recherche dédiée
-- Grille de tuiles bilatérales avec 4 vizs par tuile : 📋 Fiche, 📈 Courbes, 📊 Barchart, 🔍 Top contextuel
-- Nav : entrées directionnelles (18 max, 1 par flow_entry directionnel)
-- **À NOTER** : ce mode est destiné à être **supprimé** et déplacé vers un nouvel onglet "Comparaisons bilatérales" (cf. mission de refonte en cours)
+1 sujet, N partenaires. Nav indicateurs gauche avec libellés contextuels par sens (`FLOW_DIRECTIONS` : dette to=Créanciers/from=Débiteurs, armement to=Fournisseurs/from=Bénéficiaires, etc.). Mode Volume / Influence. Composition (treemap/barres) + Évolution + Carte. *Le mode bilatéral a été retiré → déplacé vers Comparaisons.*
 
 ### Onglet Croisé
+1 sujet, N indicateurs. Grille de tuiles macro, 3 vizs par tuile (🗺 Carte / ▦ Treemap / 📈 Aires). Mode Volume/Influence, filtre zone, préselections thématiques, période globale + override par tuile (Σ cumul / x̄ moyenne), hover sync entre tuiles. Sync URL : `tab`, `cs`, `cm`, `cz`, `cvs`.
 
-**Vue macro multi-indicateurs** (1 sujet, N indicateurs).
-- Nav indicateurs gauche, choix des flux à afficher
-- Grille de tuiles macro
-- 3 types de viz par tuile : 🗺 Carte, ▦ Treemap, 📈 Aires/Courbes
-- Mode Volume / Influence (commun à toutes les tuiles)
-- Filtre zone géographique
-- Toggle Échelle Absolue / Zone quand filtre zone + mode Volume actif
-- Préselections thématiques (5 profils : Défaut, Commerce, Militaire, Financier, Humain)
-- Période globale + override par tuile (cliquable sur bandeau de tuile)
-- Plage temporelle avec mode Σ (cumul) ou x̄ (moyenne)
-- Hover sync entre tuiles (un pays survolé est mis en évidence dans toutes les tuiles)
-- Sync URL : `tab`, `cs` (cross selected), `cm` (cross metric), `cz` (cross zone), `cvs` (cross volume scale), `rb` (rel partner B)
+### Onglet Comparaisons (bilatérales)
+2 sujets A↔B. Profil de flux 2 colonnes + tornado de puissance (barres miroir normalisées). B = pays ou zone. Sparklines des parts, flèches de tendance.
 
-### Porte d'entrée Croisé → Relations bilatéral (à supprimer)
-
-Au clic sur un pays dans une tuile Croisé, bascule sur Relations en mode bilatéral. Cette porte sera **supprimée** lors de la refonte (le mode bilatéral disparaît de Relations).
+### Conventions JS app
+- Helpers : **`escAttr`** (PAS `escapeHtml`), `safeExec`, `escapeSql`, `sqlList`, `fmtNumber`, `fmtWithUnit`, `scaleSuffix`, `fmtMo`
+- Cache : `cache.identite`, `cache.flux`, `cache.world` + caches flux dédiés
+- `state.db` (SQLite), `state.year`, `state.subject`, `state.config`, `state.yearBounds`
+- Table pays : `COUNTRY_REF` (ISO3 → name/flag/continent/num). Apostrophes échappées en guillemets doubles : `name:"Côte d'Ivoire"`
+- Validation : extraire le `<script>` applicatif, `node --check` avant livraison
 
 ---
 
-## TABLE PAYS — COUNTRY_REF
+## ADMIN.HTML — STRUCTURE ACTUELLE (6 onglets)
 
-Source unique côté JS : `COUNTRY_REF` avec **190 pays** (ISO3 → name, flag, continent, num).
-- Le champ `num` (code ISO 3166-1 numérique) sert au mapping topojson world-atlas → ISO3
-- Pas de duplication : `_NUM_TO_ISO3` est dérivé automatiquement de COUNTRY_REF
-- Helper : `numToIso3(num)`, `isoToFlag(iso)`, `isoToName(iso)`, `isoToContinent(iso)`
-- ⚠️ Apostrophes échappées avec guillemets doubles : `name:"Côte d'Ivoire"`
+`db` (global) = DB SQLite chargée depuis R2 au boot (`loadDbFromR2`) ou via badge "Changer". Système nav : `nav-btn` + `showPanel(id)` + `panel-{id}`. `showPanel` est **chaîné** (plusieurs `_originalShowPanel*` en cascade ; ajouter un onglet = nouveau maillon en fin). Helpers GitHub : `ghReadFile`, `ghWriteFile` (base64 UTF-8), `ghFetch`, `ghTriggerWorkflow`, `ghListRuns`. PAT en `localStorage` (`geopol_admin_pat`).
 
----
-
-## ADMIN.HTML — STRUCTURE ACTUELLE
-
-L'admin a **4 onglets de pilotage** :
-
-### Onglet 1 — Suivi ETL
-- Statut des sources depuis `status.json`
-- Durée, lignes, erreurs par source
-- Bouton "Déclencher un run manuel" (workflow_dispatch via PAT)
-- Historique des 5 derniers runs GitHub Actions
-- Auto-refresh toutes les 30s tant qu'un run est en cours
-
-### Onglet 2 — Imports
-3 sous-onglets :
-- **Automatique** : vue récap des sources API (lecture seule)
-- **Semi-automatique** : 6 sources (SIPRI, Energy, UNDESA, Lowy, ZEE, UNESCO). Drag&drop → commit dans `etl/sources/uploads/`. Seul SIPRI a un parser opérationnel.
-- **Manuel assisté IA** : prompts identite/flux affichés copiables. Drag&drop CSV ou **CSV.GZ** → validation + détection conflits → commit dans `uploads/manuel/`
-
-**Support `.csv.gz`** :
-- Détection automatique de l'extension
-- Décompression à la volée via `DecompressionStream` natif navigateur (pour la validation)
-- Commit du binaire compressé tel quel (gain de taille préservé)
-- Bandeau "🗜️ Fichier compressé .gz détecté" dans le modal d'upload
-
-### Onglet 3 — Pilotage DB
-- 3 KPIs : bornes config, période réelle DB, estimation taille
-- Bannière "indicateurs orphelins" si la DB contient des indicateurs absents de config.json
-- Curseurs années (1980-2050) → modifie `etl_config.json`
-- Toggle "tous les pays"
-- Liste des indicateurs avec toggle actif/inactif → modifie `config.json`
-- Bouton "Commit + (option) relance pipeline"
-
-### Onglet 4 — Couverture
-- Matrice de couverture par indicateur (% pays + % cellules)
-- Filtres : catégorie, table, zone (continents/orgs), recherche
-- Drill-down au clic : pays manquants groupés par continent + export CSV
-
-### Système d'authentification
-- PAT GitHub stocké dans `localStorage` (clé `geopol_admin_pat`)
-- Validation au login via API GitHub
-- Utilisé pour : commits, déclenchement workflow, lecture fichiers privés
-- **Fine-grained PAT recommandé** : Contents Read&Write + Metadata Read sur `ahk1515/geopol`, 90 jours
-
-### Header
-- Badge auth (vert si connecté)
-- Badge DB (chargement R2 + override local possible via "Changer")
-- Bouton "⬇ Exporter .db"
+1. **Suivi ETL** — statut sources (status.json), durée/lignes/erreurs, bouton run manuel, historique runs, auto-refresh.
+2. **Imports** — 3 sous-onglets (Auto récap / Semi-auto drag&drop vers `etl/sources/uploads/` / Manuel assisté IA vers `uploads/manuel/`, support `.csv.gz`).
+3. **Pilotage DB** — KPIs, curseurs années → `etl_config.json`, toggles indicateurs → `config.json`, bouton commit + relance.
+4. **Couverture** — matrice couverture par indicateur, filtres, drill-down pays manquants + export CSV.
+5. **🔍 Console SQL** (juin 2026) — interroge `db` en **lecture seule** (garde-fou `sqlIsReadOnly` : SELECT/WITH only, bloque écritures + requêtes multiples). Textarea + Ctrl+Entrée, résultat en tableau, export CSV, ~9 requêtes pré-enregistrées (`SQL_PRESETS` : poids par indicateur, années distinctes, distribution, subcategory, dbstat...). Hook `_originalShowPanelSql`.
+6. **🩺 Santé données** (juin 2026) — batterie de contrôles de cohérence non bloquants (vert/orange/rouge), 4 familles : **Couverture** (indicateurs à <5 pays), **Plausibilité** (valeurs négatives ; sauts ×10/÷10 entre années), **Structure** (clé PK identite, NULL résiduels), **Cohérence croisée** (production vs _share synchronisés, parts ~100%, doublons connus). `SANTE_CHECKS[]`, `runSante()`, hook `_originalShowPanelSante`. Réflexe : lancer après chaque run (recharger la base d'abord).
 
 ---
 
 ## CONVENTIONS À RESPECTER
 
-**Code Python :**
-- Encoding UTF-8 partout
-- Type hints non requis
-- Logs explicites avec emojis (✅ ❌ ⚠️ ⏭️)
-- Règle "transparence > complétude" : donnée absente → on n'insère pas, jamais d'interpolation
-- `INSERT OR REPLACE` pour gérer les révisions
-- Chaque parser retourne le nombre de lignes insérées via `run()`
-- Lecture fichiers : `gzip.open` si extension `.gz`, sinon `open` natif
+**Python :**
+- UTF-8, logs avec emojis (✅ ❌ ⚠️ ⏭️)
+- Règle **transparence > complétude** : donnée absente → pas d'insertion, jamais d'interpolation
+- `INSERT OR REPLACE` pour les révisions ; subcategory vide = `''` (jamais `None`) dans `identite`
+- Chaque parser retourne le nombre de lignes via `run()`
+- `migrate.run()` tourne en PREMIER (avant les parsers) dans `run_etl.py`
 
-**Code JavaScript app (index.html) :**
-- Vanilla JS, pas de framework
-- Variables CSS pour le thème (`--bg`, `--green`, `--orange`, `--terra`, etc.)
-- Palette papier IBM Plex Mono+Sans, Fraunces titres, vert profond, terracotta accents
-- Helpers communs : **`escAttr`** (pas `escapeHtml` qui n'existe pas), `safeExec`, `escapeSql`, `sqlList`, `fmtNumber`, `fmtWithUnit`, `scaleSuffix`
-- Cache : `cache.identite`, `cache.flux`, `cache.world` ; helpers `_fluxTimelineCache`, `_fluxPartnerTotalsCache`, `_fluxPartnerTotalsTimelineCache`
-- Singleton `_worldTopoCache` + `loadWorldTopology()` partagé entre Puissance et Relations
-- Tooltip global : `#globalTip`, fonctions `showTip2`/`moveTip`/`hideTip`
-- Validation syntaxe : extraction du `<script id="appScript">` puis `node --check` avant chaque livraison
+**JS (app + admin) :** vanilla, variables CSS pour le thème (`--bg`, `--green`, `--orange`, `--terra`), IBM Plex Mono+Sans / Fraunces titres.
 
-**Code JavaScript admin :**
-- Vanilla JS aussi
-- Helpers GitHub : `ghFetch`, `ghReadFile`, `ghWriteFile` (base64 UTF-8 safe), `ghTriggerWorkflow`, `ghListRuns`
-- Hooks `showPanel` chaînés pour modularité
+**Schéma data :** `country_iso3` MAJUSCULES 3 lettres ; `year` INTEGER ; `value` REAL jamais 0 par défaut ; `source` = nom propre. Unités : énergie/minéraux en `kt`, commerce en `USD`.
 
-**Schéma data :**
-- `country_iso3` toujours en MAJUSCULES (3 lettres)
-- `year` en INTEGER 4 chiffres
-- `value` en REAL, jamais 0 par défaut quand la source dit vide
-- `source` = nom propre de la source (ex: "Banque Mondiale", "UNHCR", "IMF IMTS", "resourcetrade.earth", "MCS USGS")
-
-**Unités standards (cohérence entre sources) :**
-- Énergie et minéraux : `kt` (kilotonnes)
-- Commerce : `USD` (pas en milliers)
-- WEO : USD natif, personnes natives, conversion via `SCALE_FACTORS`
+**Ordre `build_db.run()` :** taille init → `purge_hors_bornes` (year < ANNEE_DEBUT seulement, borne basse) → `filtre_seuils` → `build_zones` → `optimize_db` (VACUUM + index) → contrôle taille → upload R2 → status.json. ⚠️ Pas de purge borne haute (préserve projections WEO).
 
 **Workflow d'édition :**
-- Aucune modification de fichier sans aval explicite
-- Toujours signaler **quels autres fichiers** seront impactés
-- Préférer **petites étapes validées** à grosses livraisons
-- Tester la syntaxe (JS via `node --check`, Python via `ast.parse`) avant livraison
-- Le sandbox Claude bloque les domaines non whitelistés (api.imf.org, wits.worldbank.org bloqués). Workaround pour explorer : `web_search` puis `web_fetch` sur URLs issues des résultats.
+- Aucune modification sans aval explicite ; signaler les fichiers impactés
+- Petites étapes validées ; tester syntaxe avant livraison
+- `raw.githubusercontent.com` accessible en `curl` pour récupérer les fichiers réels
 
 ---
 
@@ -425,145 +280,83 @@ L'admin a **4 onglets de pilotage** :
 
 | Clé | Usage |
 |---|---|
-| `geopol_admin_pat` | Token PAT GitHub côté admin |
+| `geopol_admin_pat` | PAT GitHub (admin) — **lié au navigateur/poste** (re-saisir si changement de machine) |
 | `geopol_admin_ignored_orphans` | Indicateurs orphelins ignorés |
-| `geopol_pins_synthese` | Indicateurs identité épinglés (Synthèse) |
-| `geopol_pins_radar` | Axes radar Puissance (indépendant) |
-| `geopol_pins_flux_partner_v3` | Entrées flux colonne Partner Synthèse |
-| `geopol_pins_flux_influence_v3` | Entrées flux colonne Influence Synthèse |
-| `geopol_res_threshold` | Seuil de notabilité ressources (1/3/5) |
-| `geopol_cross_selected` | Set des flowEntryKey cochés en Croisé |
-| `geopol_cross_view_types` | Map key → 'carte'/'treemap'/'aires' |
-| `geopol_cross_tile_periods` | Map key → {range, mode} par tuile Croisé |
-| ~~`geopol_bil_*`~~ | À supprimer lors de la refonte (mode bilatéral disparaît de Relations) |
+| `geopol_pins_synthese` / `geopol_pins_radar` | Épinglages Synthèse / axes radar |
+| `geopol_pins_flux_partner_v3` / `geopol_pins_flux_influence_v3` | Entrées flux Synthèse |
+| `geopol_res_threshold` | Seuil notabilité ressources |
+| `geopol_cross_selected` / `geopol_cross_view_types` / `geopol_cross_tile_periods` | État onglet Croisé |
 
 ---
 
-## DÉCISIONS ARCHITECTURALES IMPORTANTES (historique)
+## DÉCISIONS ARCHITECTURALES IMPORTANTES
 
-1. **DB en lecture seule depuis le navigateur** : admin lit la DB R2 en mémoire via sql.js, mais ne peut pas la modifier. Toute modification passe par GitHub Actions.
-
-2. **Pas de clé R2 dans le navigateur** : les commits passent par l'API GitHub (PAT), pas par R2 direct.
-
-3. **`config.json` toggle uniquement d'affichage** : désactiver un indicateur le cache dans l'app mais n'arrête pas la collecte ETL.
-
-4. **CSV manuel : risque d'écrasement** : `INSERT OR REPLACE` peut écraser les sources auto. Solution : indicateurs distincts ou années non couvertes.
-
-5. **`manuel.py` tourne en dernier dans `PIPELINE`** : en cas de collision, le manuel gagne.
-
-6. **Bornes années via `etl_config.json`** : `config.py` lit ce fichier au démarrage.
-
-7. **Purge globale corrigée en mai 2026** : `build_db.py::purge_hors_bornes()` supprime toutes les lignes < `ANNEE_DEBUT` sans filtre par source.
-
-8. **Ordre `build_db.py`** : purge → zones → VACUUM → contrôle taille → upload.
-
-9. **`commerce_ressources`** : indicateur flux 6 catégories Chatham House, période 2020-2024, stocké en USD.
-
-10. **Filtres Relations transversaux** : zone + plage + métrique + référentiel se combinent librement. Persistent au changement d'indicateur, reset au changement de sujet.
-
-11. **Carte Relations en %** : Volume → % du sujet, Influence → % chez chaque partenaire.
-
-12. **Sticky UI** : barre de filtres Relations + nav indicateurs (Puissance et Relations) sont en `position: sticky`.
-
-13. **Onglet Croisé (juin 2026)** : vue macro 1 sujet × N indicateurs. Sélection multi-flux, 3 types de viz, filtres globaux + override par tuile.
-
-14. **Bascule Comtrade → IMF IMTS (juin 2026)** : Comtrade Premium inaccessible (clé refusée). WITS aussi bloqué (3 dimensions "all" interdites). IMF IMTS adopté : API gratuite SDMX 3.0, endpoint `api.imf.org/external/sdmx/3.0/data/dataflow/IMF.STA/IMTS/~/`, format CSV via `Accept: text/csv`, rate limit 10/5s. Parser fait 1 requête par reporter (imports uniquement), génère les exports miroirs en SQL. Subcategory_1='total' (sentinelle pour PK SQLite).
-
-15. **Granularité commerce** : totaux par couple/année (pas HS2). Cohérent avec l'usage actuel de l'app.
-
-16. **Seuil minimum 100k USD** appliqué dans IMF IMTS : élimine ~30% des lignes en nombre, < 0.01% de la valeur totale.
+1. **DB lecture seule depuis le navigateur** : admin lit la DB R2 en mémoire (sql.js), ne la modifie pas. Modifications via GitHub Actions uniquement.
+2. **Pas de clé R2 dans le navigateur** : commits via API GitHub (PAT).
+3. **`config.json` = toggle d'affichage** : désactiver un indicateur le cache dans l'app, n'arrête pas la collecte ETL.
+4. **DB persistante entre runs** (téléchargée depuis R2 en préambule) → changement de schéma = migration explicite (`migrate.py`).
+5. **`manuel.py` tourne en dernier** dans le pipeline : en cas de collision, le manuel gagne.
+6. **Purge borne basse seulement** (`purge_hors_bornes`) : préserve projections WEO (jusqu'à 2050).
+7. **IMF IMTS remplace Comtrade** (juin 2026) : endpoint SDMX 3.0 `api.imf.org/.../IMTS/~/{REPORTER}.MG_CIF_USD.*.A` (wildcard `*` partenaire OBLIGATOIRE), format CSV, filtre `c[TIME_PERIOD]=ge:{year}` indispensable. Piège SCALE=6 mais OBS_VALUE déjà en USD bruts → NE PAS multiplier. Garde-fou : exception si 0 ligne avec reporters présents. Subcategory_1='total'.
+8. **Filtre de seuils** (juin 2026) : allège la table flux ; seuils par unité (effectif/monétaire), pas par indicateur.
+9. **Migration clé identite + subcategory `''`** (juin 2026) : voir section SCHÉMA SQL.
+10. **Bug Energy Institute corrigé** (juin 2026) : le fichier EI répète l'en-tête d'année sur plusieurs colonnes (volume, puis "Growth rate", puis "Share") → le parser gardait la dernière (la part) au lieu du volume. Fix dans `parse_series_sheet` : ne garder que la PREMIÈRE colonne par année.
 
 ---
 
-## REFONTE EN COURS (à terminer)
+## PROCHAINS CHANTIERS (conçus, non implémentés)
 
-### Architecture cible en 5 onglets
+### Exploration indicateur-centrée (priorité suivante)
+Idée : partir de l'**indicateur** (pas du pays) pour voir les grands équilibres mondiaux d'un flux. Inspiré de l'Atlas of Economic Complexity (Harvard) — bascule de perspective façon `view=products` / `view=markets`.
 
-1. **Synthèse** : portrait d'identité (inchangé)
-2. **Puissance** : 1 sujet, 1 indicateur (slot compareB **retiré**, déplacé vers Comparaisons)
-3. **Relations** : 1 sujet, N partenaires (mode bilatéral **retiré**, déplacé vers Comparaisons)
-4. **Croisé** : 1 sujet, N indicateurs (inchangé)
-5. **Comparaisons bilatérales** (**NOUVEAU**) : 2 sujets A↔B, écran en 2 moitiés
-   - Moitié gauche : profil de flux 2 colonnes (5 sous-colonnes par ligne)
-   - Moitié droite : tornado de puissance (barres miroir normalisées max + seuil 5%)
-   - Sélection du partenaire B : pays OU zone
-   - Sparklines des parts sur 10 ans (côté flux)
-   - Flèches de tendance ±5% sur 5 ans (côté puissance)
+**Décisions de conception déjà prises :**
+- **Intégrer dans l'onglet Relations** comme une bascule "pays-centré ↔ indicateur-centré" (plutôt qu'un onglet séparé), pour réutiliser carte/temporel/sélecteurs existants.
+- **Écran unique adaptatif** avec notion de **profondeur** (0 = structure mondiale ; 1/2/3 = subcategory). Affordance : l'interface signale si on peut creuser ou non. "Structure mondiale d'abord" = vue par défaut.
+- La **forme dépend de la structure de la donnée** (à piloter via une table de métadonnées par indicateur) :
+  - flux plats (commerce IMF 'total', refugies, etudiants, migrants) → classement + carte, pas de dépliage
+  - hiérarchique → treemap façon Atlas
+  - parallèle (dette : sub1=type créancier, sub2 non hiérarchique ~107 valeurs) → tableau croisé
+- **"Qui produit quoi"** sur les ressources (énergie/minéraux, données d'IDENTITÉ avec subcategory, désormais saines) : classement de pays par ressource + carte de densité + `_share` (concentration). Carte choroplèthe (pas réseau de couloirs, ce sont des stocks pas des flux).
 
-### À supprimer dans la refonte
+**Carte des subcategory (mesurée juin 2026, table flux) :**
+| indicateur | sub1 | sub2 | sub3 | nature |
+|---|---|---|---|---|
+| export/transferts_armement | 141 | 1037 | 161 | profond (types d'équipements) |
+| dette_exterieure | 4 | 107 | 0 | parallèle (type créancier × créancier) |
+| commerce_ressources | 6 | 0 | 0 | 1 niveau |
+| representation_diplomatique | 4 | 0 | 0 | 1 niveau |
+| import/export_commercial | 1 ('total') | 0 | 0 | plat |
+| refugies/etudiants/migrants | 0 | 0 | 0 | plat |
+Ressources (identite) : energie_production = 4 types, mineraux_production = 19 types.
 
-- Mode bilatéral dans Relations : `_relPartnerB`, `_bilSelected`, `_bilViewType`, `_bilTilePeriods`, toutes les fonctions `_bil*` et `_buildBilateralLayout`, les 4 vizs détaillées (Fiche/Courbes/Barchart/TopCtx)
-- Slot compareB dans Puissance + renderings A vs B (radar comparé, courbe comparée)
-- Porte d'entrée Croisé → Relations bilatéral (`_crossClickToRelations` et les onclicks associés)
-- CSS associés (`.bil-*`)
-- localStorage `geopol_bil_*`
+**Prérequis avant code :** regarder comment l'onglet Relations est construit dans `index.html` pour greffer la bascule sans casser l'existant ; définir si tous les flux ont un sens émetteur→récepteur clair.
 
-### À déplacer vers Comparaisons
-
-- La logique de comparaison de puissance (radar, courbe) actuellement dans Puissance
-- Slot pays B + recherche dédiée
-
-### À créer dans Comparaisons
-
-- Layout 2 moitiés
-- Profil 2 colonnes (calculs des % parts, rangs, sparklines évolution part sur 10 ans)
-- Tornado de puissance (barres miroir, ratio au centre, flèches tendance)
-- Support B = zone (somme des flux et des indicateurs)
+### Autres pistes en réserve
+- **Déduplication doublons** commerce + armement (~119 k lignes, ~20 Mo) — touche l'app, non prioritaire.
+- **Config admin des seuils** : transformer `SEUILS_FLUX` (codé en dur) en `seuils_config.json` éditable depuis l'admin. Jugé non prioritaire (les seuils bougent rarement).
+- **Contrôle de régression dans Santé données** : comparer le nb de lignes par indicateur au run précédent (via historique status.json) pour détecter les chutes brutales.
+- **ZEE renvoie 0 lignes** : parser `zee.py` à investiguer.
+- **WITS** : parser à supprimer (tentative ratée).
 
 ---
 
-## LIMITES CONNUES & TODO
+## LIMITES CONNUES
 
-- **Comtrade** : désactivé (code commenté dans run_etl.py, parser conservé pour réactivation future)
-- **WITS** : tentative ratée (API ne tolère pas 3 dimensions "all"), parser à supprimer du repo
+- **Comtrade** désactivé (code commenté, parser conservé)
 - **Parsers semi-auto non codés** : UNDESA, Lowy, UNESCO
-- **Sync URL des filtres Relations** : zone, plage, mode Σ/x̄ ne sont pas dans l'URL
-- **Onglet Ressources dédié** : option C laissée de côté
-- **Diagnostic ETL en interface** : fonction `diagUnits()` accessible en console, pourrait devenir un vrai onglet admin
-- **Export d'une vue** : pas de export image/PDF/CSV
-- **Optimisation mobile** : pas prioritaire pour l'instant
-
----
-
-## CHANGEMENTS RÉCENTS (session juin 2026)
-
-### Ajouts majeurs
-
-- **Onglet Croisé** : vue macro 1 sujet × N indicateurs avec 3 types de viz, filtres globaux, période override, sync URL
-- **Mode bilatéral Relations** : grille de tuiles avec 4 vizs détaillées (Fiche/Courbes/Barchart/TopCtx), navigation entre couples, porte d'entrée depuis Croisé. **Sera supprimé lors de la refonte vers onglet Comparaisons.**
-- **IMF IMTS** : nouveau parser commerce bilatéral, remplace Comtrade Premium inaccessible. Subcategory_1='total', génère imports + miroirs exports.
-
-### Corrections importantes
-
-- **Bug `escapeHtml` corrigé** : remplacé par `escAttr` (helper réel) à 3 endroits
-- **Bug lazy-load Map** : `_loadCrossState` et `_loadBilState` initialisent maintenant chaque branche indépendamment (le pré-remplissage par URL ne court-circuitait plus l'init de viewType)
-- **Bug tuiles fantômes** : `_loadCrossState` et `_loadBilState` filtrent les clés selon `flowEntriesPresent()` pour ne garder que les entrées DB réelles
-- **Bug scroll nav** : `.cross-nav` avait `overflow:hidden` + max-height, contenu encapsulé dans `<div class="cross-nav-scroll">` avec `overflow-y:auto`
-- **Bug % volume avec filtre zone** : calcul `subjectTotal` AVANT le filtre zone, pour que les pourcentages restent comparables entre cartes filtrées et non-filtrées
-- **Toggle Échelle Absolue/Zone** : nouveau bloc dans la barre Croisé, visible si Mode Volume + filtre zone actif
-- **Migration localStorage automatique** des clés bilatérales `commerce|from` vers `commerce|to` (au sens canonique)
+- **migrants** : 2 années seulement (2020, 2024 — données quinquennales ONU), peu de bruit, non filtré
+- **representation_diplomatique** : 2 années (2021, 2023)
+- **Export d'une vue** : pas d'export image/PDF
+- **Mobile** : pas prioritaire
 
 ---
 
 ## SI TU REPRENDS, COMMENCE PAR
 
-1. **Demander à l'utilisateur ce qu'il veut faire** (correction, nouvelle fonctionnalité, ajout de source, refonte en cours, etc.)
-2. **Demander les fichiers spécifiques** dont tu as besoin selon la tâche :
-   - Modif admin → `admin.html`
-   - Modif app (index.html) → demander aval explicite avant de toucher
-   - Ajout indicateur auto → `etl/config.py`, le parser concerné, `config.json`
-   - Refonte onglet en cours → demander `index.html` + utiliser le prompt spécifique fourni
-3. **Confirmer la compréhension** avant de coder. Vulgariser si besoin.
-4. **Procéder par étapes validées**, pas en une livraison monobloc.
-5. **Signaler les impacts** sur les autres fichiers à chaque modification.
-6. **Tester en console** : la DB SQLite est `state.db`, pas `window.db`. Les helpers utiles : `diagUnits()`, `state.indicators`, `state.subject`, `state.year`.
+1. **Demander à l'utilisateur ce qu'il veut faire.**
+2. **Récupérer les fichiers réels** via `curl` sur `raw.githubusercontent.com/ahk1515/geopol/refs/heads/main/<chemin>` (ne pas coder à partir de ce prompt seul, qui peut être daté).
+3. **Confirmer la compréhension avant de coder.** Vulgariser. Avancer par étapes validées.
+4. **Mesurer avant d'agir** quand il s'agit de données (utiliser la console SQL admin, ou un diagnostic temporaire).
+5. **Tester** (syntaxe + cas limites) avant livraison. Signaler les fichiers impactés.
 
----
-
-## RÉFÉRENCES UTILES
-
-- Notice utilisateur de l'admin : `NOTICE_ADMIN.md` (à demander si besoin)
-- Prompts de transformation CSV : `prompts_transformation_csv.md` (à demander si besoin)
-- Todo actuel : `todo.md` (à demander si besoin)
-
-*Fin du prompt de reprise. L'utilisateur va maintenant te dire sur quoi il veut travailler.*
+*Fin du prompt de reprise. L'utilisateur va te dire sur quoi travailler.*
