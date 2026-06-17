@@ -213,7 +213,7 @@ def run(filepath=None):
             # Conversion d'échelle → unité native
             val = val * scale_factor
 
-            subcat = "projection" if is_projection else None
+            subcat = "projection" if is_projection else ''
             rows.append((iso3, indicator, year, val, unit_native, SOURCE, subcat))
 
         if rows:
