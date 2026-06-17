@@ -77,7 +77,7 @@ def parse_row_identite(row, line_no):
         val    = float(row["value"].strip())
         unit   = row["unit"].strip() or None
         source = row["source"].strip() or "Manuel IA"
-        subcat = row.get("subcategory", "").strip() or None
+        subcat = row.get("subcategory", "").strip()  # '' si absent (jamais None : cohérence clé PK)
 
         if not valid_iso3(iso3):
             return None, f"ligne {line_no} : ISO3 invalide '{iso3}'"
@@ -176,8 +176,8 @@ def ensure_tables(conn):
             value        REAL,
             unit         TEXT,
             source       TEXT,
-            subcategory  TEXT,
-            PRIMARY KEY (country_iso3, indicator, year)
+            subcategory  TEXT DEFAULT '',
+            PRIMARY KEY (country_iso3, indicator, year, subcategory)
         )
     """)
     conn.execute("""
