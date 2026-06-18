@@ -2292,6 +2292,7 @@ async function boot(){
   setLoadingMsg('Chargement de la configuration…', 90);
   setLoadingDetail('');
   await loadConfig();
+  await loadMetadata();
   finishBoot('Base distante', 'ok');
 }
 
@@ -2317,6 +2318,32 @@ async function loadConfig(){
   }
   buildIndicatorRegistry();
   buildCountryList();
+}
+
+/* ─── MÉTADONNÉES PAR INDICATEUR (Exploration) ────────────────
+   Charge metadata_indicateurs.json : pour chaque indicateur
+   canonique, sa famille (1-4), la nature de ses subcategory
+   (plat/hierarchique/parallele), la profondeur et les libellés
+   de niveaux. Pilote l'affichage adaptatif de l'Exploration.
+   Non bloquant : si absent/illisible, state.indicatorMeta = {}
+   et l'app fonctionne comme avant.
+─────────────────────────────────────────────────────────────── */
+async function loadMetadata(){
+  try {
+    const r = await fetch('./metadata_indicateurs.json?v=' + Date.now());
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    state.indicatorMeta = await r.json();
+  } catch(e) {
+    console.info('metadata_indicateurs.json non chargé :', e.message);
+    state.indicatorMeta = {};
+  }
+}
+
+// Métadonnées d'un indicateur canonique. Repli sur le défaut identité
+// simple (famille 1) si l'indicateur n'a pas d'entrée explicite.
+function getIndicatorMeta(canonical){
+  const m = state.indicatorMeta || {};
+  return m[canonical] || m._identite_simple || null;
 }
 
 // Croise config.json (actif) avec les indicateurs présents en DB.
@@ -7397,6 +7424,7 @@ function initDemo(SQL){
   db.run(`INSERT INTO zones VALUES ('G7','G7','USA','organisationnel'),('G7','G7','DEU','organisationnel'),('G7','G7','FRA','organisationnel'),('G7','G7','GBR','organisationnel'),('G7','G7','ITA','organisationnel'),('G7','G7','JPN','organisationnel'),('G7','G7','CAN','organisationnel'),('BRICS','BRICS','BRA','organisationnel'),('BRICS','BRICS','RUS','organisationnel'),('BRICS','BRICS','IND','organisationnel'),('BRICS','BRICS','CHN','organisationnel'),('BRICS','BRICS','ZAF','organisationnel');`);
 
   state.config = DEMO_CONFIG.slice();
+  state.indicatorMeta = state.indicatorMeta || {};
   for(const c of state.config){ if(c.radar===undefined) c.radar=['population','pib_usd','pib_par_hab','fecondite','age_median','budget_defense_pib'].includes(c.indicator); if(c.rank_inverted===undefined) c.rank_inverted=false; }
   buildIndicatorRegistry();
   buildCountryList();
