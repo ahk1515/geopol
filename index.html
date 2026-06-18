@@ -578,6 +578,12 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-ind .radar-dot.off { background: transparent; }
 .pu-ind .rel-deplie { margin-left: auto; font-size: 11px; color: var(--text3); opacity: .65; flex-shrink: 0; }
 .pu-ind:hover .rel-deplie, .pu-ind.active .rel-deplie { opacity: 1; }
+.rel-sens-toggle { display: inline-flex; align-items: center; gap: 5px; margin-left: 10px; padding: 3px 10px;
+  background: var(--green-d); color: var(--green); border: 1px solid var(--green); border-radius: 5px;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.rel-sens-toggle:hover { background: var(--green); color: var(--bg); }
+.rel-sens-toggle .sens-arrow { font-size: 13px; }
+.rel-sens-static { margin-left: 10px; font-size: 12px; color: var(--text2); }
 .rel-scope-crumb { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
 .rel-scope-crumb .scope-step { display: inline-flex; align-items: center; gap: 4px; color: var(--text2); }
 .rel-scope-crumb .scope-step.current { color: var(--text); font-weight: 600; }
@@ -4405,10 +4411,22 @@ function renderRelNav(filter){
   const body = document.getElementById('relNavBody');
   const all = flowEntriesPresent();
   const ql = (filter || '').trim().toLowerCase();
-  const byCat = {};
+  // Une seule ligne par indicateur canonique : le sens (to/from) est géré par le
+  // toggle ⇄ dans l'écran principal, plus par deux entrées séparées dans la nav.
+  const byInd = new Map();
   for(const e of all){
-    if(ql && !e.label_long.toLowerCase().includes(ql)) continue;
-    (byCat[e.category || 'autre'] ??= []).push(e);
+    if(!byInd.has(e.indicator)) byInd.set(e.indicator, e);
+  }
+  const baseName = (e) => {
+    // nom de base sans le suffixe de sens (« Dette — Créanciers » → « Dette »)
+    const i = e.label_long.indexOf(' — ');
+    return i >= 0 ? e.label_long.slice(0, i) : e.label_long;
+  };
+  const byCat = {};
+  for(const e of byInd.values()){
+    const nm = baseName(e);
+    if(ql && !nm.toLowerCase().includes(ql)) continue;
+    (byCat[e.category || 'autre'] ??= []).push({ entry: e, name: nm });
   }
   let html = '';
   for(const cat of Object.keys(byCat).sort()){
@@ -4416,16 +4434,17 @@ function renderRelNav(filter){
     html += `<div class="pu-cat ${collapsed}" data-cat="${cat}">
       <div class="pu-cat-head" onclick="toggleRelCat('${cat}')"><span class="caret">▼</span>${cat}</div>
       <div class="pu-cat-list">`;
-    for(const e of byCat[cat]){
-      const active = e.key === _relEntryKey ? 'active' : '';
-      // Affordance : indicateur dépliable (sub avec profondeur > 0) → badge discret
+    for(const { entry: e, name } of byCat[cat]){
+      // actif si l'entrée courante partage le même indicateur (quel que soit le sens)
+      const curEntry = getFlowEntryByKey(_relEntryKey);
+      const active = (curEntry && curEntry.indicator === e.indicator) ? 'active' : '';
       const meta = getIndicatorMeta(e.indicator);
       const depth = meta && meta.profondeur ? meta.profondeur : 0;
       const badge = depth > 0
         ? `<span class="rel-deplie" title="Dépliable : ${depth} niveau${depth>1?'x':''} de détail">⊟</span>`
         : '';
-      html += `<div class="pu-ind ${active}" onclick="selectRelEntry('${e.key.replace(/'/g,"\\'")}')">
-        <span>${e.label_long}</span>${badge}
+      html += `<div class="pu-ind ${active}" onclick="selectRelIndicator('${e.indicator.replace(/'/g,"\\'")}')">
+        <span>${name}</span>${badge}
       </div>`;
     }
     html += `</div></div>`;
@@ -4440,6 +4459,33 @@ function selectRelEntry(key){
   // (structure mondiale d'abord) ; sinon partenaire. En vue Sujet : toujours partenaire.
   _relDim = relDefaultDim();
   renderRelNav(document.getElementById('relSearch')?.value || '');
+  renderRelMain();
+  syncUrl();
+}
+
+// Sélection d'un indicateur depuis la nav : on prend le sens par défaut (to si dispo, sinon from).
+function selectRelIndicator(indicator){
+  const entries = (state.flowEntries || []).filter(e => e.indicator === indicator && e.presentInDb);
+  if(!entries.length) return;
+  const def = entries.find(e => e.side === 'to') || entries[0];
+  selectRelEntry(def.key);
+}
+
+// Bascule de sens ⇄ : passe à l'autre direction du même indicateur (créditeur↔débiteur, etc.).
+// Reconfigure le contenu sans changer d'écran. Reset du drill (le chemin dépend du sens).
+function relHasBothSenses(indicator){
+  const sides = new Set((state.flowEntries || []).filter(e => e.indicator === indicator && e.presentInDb).map(e => e.side));
+  return sides.has('to') && sides.has('from');
+}
+function toggleRelSens(){
+  const cur = getFlowEntryByKey(_relEntryKey);
+  if(!cur || !relHasBothSenses(cur.indicator)) return;
+  const otherSide = cur.side === 'to' ? 'from' : 'to';
+  const other = (state.flowEntries || []).find(e => e.indicator === cur.indicator && e.side === otherSide && e.presentInDb);
+  if(!other) return;
+  _relEntryKey = other.key;
+  _relPath = [];
+  _relInfluencePinned = null;
   renderRelMain();
   syncUrl();
 }
@@ -4586,9 +4632,15 @@ function renderRelMain(){
     scopeCrumb += `<span class="scope-step current">${sflag}${state.subject.label}<span class="scope-x" onclick="relBackToWorld()" title="Enlever le filtre pays">✕</span></span>`;
   }
   scopeCrumb += `</div>`;
+  // Nom de base (sans suffixe de sens) + bascule de sens ⇄ si l'indicateur est bidirectionnel.
+  const _baseName = (() => { const i = entry.label_long.indexOf(' — '); return i >= 0 ? entry.label_long.slice(0, i) : entry.label_long; })();
+  const _sensToggle = relHasBothSenses(entry.indicator)
+    ? `<button class="rel-sens-toggle" onclick="toggleRelSens()" title="Inverser le sens du flux">${entry.label} <span class="sens-arrow">⇄</span></button>`
+    : `<span class="rel-sens-static">${entry.label || ''}</span>`;
   main.innerHTML = `
     <div class="pu-head">
-      <span class="name">${entry.label_long}</span>
+      <span class="name">${_baseName}</span>
+      ${_sensToggle}
       ${scopeCrumb}
     </div>
     <div class="rel-crumb-bar">
