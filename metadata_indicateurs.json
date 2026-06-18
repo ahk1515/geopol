@@ -1,0 +1,104 @@
+{
+  "_doc": "Métadonnées par indicateur CANONIQUE (après fusion des doublons). Pilote l'affichage adaptatif de l'espace Exploration. Le SENS et ses libellés vivent dans FLOW_DIRECTIONS (index.html), PAS ici — pas de duplication. Champs : famille (1-4, cf CONCEPTION_EXPLORATION §2), nature_sub (plat|hierarchique|parallele), profondeur (nb de niveaux de subcategory exploitables), niveaux_sub (libellés par niveau, du plus général au plus fin), perspective_riche (true si la bascule par-pays/par-sujet est non triviale = la donnée a des sub).",
+  "_mesure": "Profondeurs vérifiées sur DB réelle juin 2026 (console SQL admin).",
+
+  "_identite_simple": {
+    "_note": "Famille 1 — tout indicateur identite SANS subcategory. Pas listé un par un : valeur par défaut appliquée par le code si l'indicateur n'a pas d'entrée explicite ci-dessous.",
+    "famille": 1,
+    "nature_sub": null,
+    "profondeur": 0,
+    "niveaux_sub": [],
+    "perspective_riche": false
+  },
+
+  "energie_production": {
+    "famille": 2,
+    "nature_sub": "plat",
+    "profondeur": 1,
+    "niveaux_sub": ["source d'énergie"],
+    "perspective_riche": true
+  },
+  "energie_reserves": {
+    "famille": 2,
+    "nature_sub": "plat",
+    "profondeur": 1,
+    "niveaux_sub": ["source d'énergie"],
+    "perspective_riche": true
+  },
+  "mineraux_production": {
+    "famille": 2,
+    "nature_sub": "plat",
+    "profondeur": 1,
+    "niveaux_sub": ["minéral"],
+    "perspective_riche": true
+  },
+  "mineraux_reserves": {
+    "famille": 2,
+    "nature_sub": "plat",
+    "profondeur": 1,
+    "niveaux_sub": ["minéral"],
+    "perspective_riche": true
+  },
+
+  "refugies": {
+    "famille": 3,
+    "nature_sub": "plat",
+    "profondeur": 0,
+    "niveaux_sub": [],
+    "perspective_riche": false
+  },
+  "migrants": {
+    "famille": 3,
+    "nature_sub": "plat",
+    "profondeur": 0,
+    "niveaux_sub": [],
+    "perspective_riche": false
+  },
+  "etudiants_international": {
+    "famille": 3,
+    "nature_sub": "plat",
+    "profondeur": 0,
+    "niveaux_sub": [],
+    "perspective_riche": false
+  },
+  "commerce": {
+    "famille": 3,
+    "nature_sub": "plat",
+    "profondeur": 0,
+    "niveaux_sub": [],
+    "perspective_riche": false,
+    "_note": "Canonique de import_commercial + export_commercial. Sub unique 'total'. Décomposition par partenaire uniquement."
+  },
+  "representation_diplomatique": {
+    "famille": 3,
+    "nature_sub": "plat",
+    "profondeur": 1,
+    "niveaux_sub": ["type de poste"],
+    "perspective_riche": true
+  },
+
+  "commerce_ressources": {
+    "famille": 4,
+    "nature_sub": "plat",
+    "profondeur": 1,
+    "niveaux_sub": ["type de ressource"],
+    "perspective_riche": true,
+    "_note": "Flux avec sens + 6 types de ressources (1 niveau). Treemap dépliable par type OU par partenaire."
+  },
+  "transferts_armement": {
+    "famille": 4,
+    "nature_sub": "hierarchique",
+    "profondeur": 3,
+    "niveaux_sub": ["catégorie d'armement", "système", "sous-type"],
+    "perspective_riche": true,
+    "_note": "Canonique de export_armement + transferts_armement. 141 / 1037 / 161 valeurs distinctes par niveau. Hiérarchie d'équipements façon Atlas."
+  },
+  "dette_exterieure": {
+    "famille": 4,
+    "nature_sub": "parallele",
+    "profondeur": 2,
+    "niveaux_sub": ["type de créancier", "créancier"],
+    "perspective_riche": true,
+    "_note": "sub1 (4 types : bilatéral/multilatéral/privé...) et sub2 (107 créanciers) sont PARALLÈLES, pas imbriqués → tableau croisé, pas treemap. Sentinelles __multilateral__/__private__ exclues de la carte, gardées dans le treemap/tableau."
+  }
+}
