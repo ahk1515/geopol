@@ -976,6 +976,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 
 /* cellules treemap */
 .tm-cell rect { cursor: pointer; transition: opacity .15s; }
+.tm-cell.no-drill rect { cursor: default; }
 .tm-cell rect:hover { opacity: .85; }
 .tm-label { font-family: var(--sans); fill: #fff; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,.3); }
 .tm-label-sub { font-family: var(--mono); fill: rgba(255,255,255,.85); pointer-events: none; }
@@ -4782,6 +4783,11 @@ function drawTreemapRel(node, host){
   const items = node.children.slice().sort((a,b)=>b.value-a.value);
   const cells = squarifyTreemap(items, 0, 0, W, H);
   const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
+  // Le clic a-t-il un effet ? Vue Monde+partner → promotion en sujet (toujours).
+  // Sinon → drill possible seulement si nextRelDim ne renvoie pas null (profondeur/nature).
+  const tmEntry = getFlowEntryByKey(_relEntryKey);
+  const clickActs = (relIsWorld() && _relDim === 'partner')
+    || (!relIsWorld() && nextRelDim(_relDim, getRelDimensions(), tmEntry) != null);
   // SVG responsive : viewBox fixe pour préserver les coords du squarify,
   // mais width: 100% et height auto permettent de s'adapter à la largeur du conteneur.
   // preserveAspectRatio par défaut (xMidYMid meet) conserve le ratio sans rognage.
@@ -4803,11 +4809,11 @@ function drawTreemapRel(node, host){
       const pct = (c.item.value/total)*100;
       tipBody = `${fmtWithUnit(c.item.value, cfg?.unit_display)} · ${pct.toFixed(1)}%`;
     }
-    svg += `<g class="tm-cell">
+    svg += `<g class="tm-cell${clickActs ? '' : ' no-drill'}">
       <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
             data-tt="${escAttr((c.item.flag?c.item.flag+' ':'')+c.item.name)}" data-tb="${escAttr(tipBody)}"
             onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
-            onclick="treemapClick('${escAttr(c.item.key)}')"/>`;
+            ${clickActs ? `onclick="treemapClick('${escAttr(c.item.key)}')"` : ''}/>`;
     if(c.w > 60 && c.h > 30){
       const flag = c.item.flag || '';
       const short = c.item.name.length > 18 ? c.item.name.slice(0,17)+'…' : c.item.name;
@@ -4828,10 +4834,12 @@ function treemapClick(name){
     relPromoteToSubject(name);
     return;
   }
-  // Sinon : Drill — filtre sur (dimension active, valeur cliquée) + bascule auto de référentiel.
-  // Règle : alternance partner ↔ catégorie. Sub1 par défaut, sinon première catégorie peuplée.
+  // Drill piloté par la métadonnée : on ne déplie que si la donnée a de quoi déplier.
+  const entry = getFlowEntryByKey(_relEntryKey);
   const dims = getRelDimensions();
-  const next = nextRelDim(_relDim, dims);
+  const next = nextRelDim(_relDim, dims, entry);
+  // Pas de niveau suivant → flux plat ou impasse : le clic ne déplie pas.
+  if(next == null) return;
   // pousser le filtre avec la dimension actuelle (avant bascule)
   const level = _relDim;
   const label = (level === 'partner') ? (partnerLabel(name) || name) : name;
@@ -4841,20 +4849,38 @@ function treemapClick(name){
   syncUrl();
 }
 
-// Règle d'alternance : si on est sur partner → on bascule vers la 1ère catégorie peuplée
-// (sub1 prioritaire, sinon sub2, sinon sub3). Si on est sur une catégorie → on revient à partner.
-function nextRelDim(currentDim, dims){
+// Détermine la dimension de descente après un clic, selon la métadonnée.
+// Retourne null si aucun dépliage n'a de sens (flux plat, ou dernier niveau atteint).
+//  - hiérarchique (armement) : partner → sub1 → sub2 → sub3, en s'arrêtant à la profondeur réelle
+//  - parallèle (dette) / 1 niveau : partner → 1ère sub peuplée, puis stop (pas de chaînage)
+//  - plat (réfugiés, migrants, commerce total) : aucun dépliage → null
+function nextRelDim(currentDim, dims, entry){
   const available = dims.map(d => d.key);
+  const meta = entry ? getIndicatorMeta(entry.indicator) : null;
+  const profondeur = meta && meta.profondeur ? meta.profondeur : 0;
+  const hierarchique = meta && meta.nature_sub === 'hierarchique';
+
+  // Flux plat : rien à déplier.
+  if(profondeur === 0) return null;
+
   if(currentDim === 'partner'){
-    // chercher la première catégorie peuplée dans l'ordre sub1 → sub2 → sub3
+    // descendre vers la 1ère catégorie peuplée (sub1 → sub2 → sub3)
     for(const sub of ['sub1', 'sub2', 'sub3']){
       if(available.includes(sub)) return sub;
     }
-    return 'partner';   // aucune catégorie peuplée, on reste sur partner
+    return null;   // aucune sub peuplée malgré la métadonnée
   }
-  // sur une catégorie → retour à partner si dispo
-  if(available.includes('partner')) return 'partner';
-  return currentDim;
+  // On est déjà sur une sub.
+  if(hierarchique){
+    // descendre au niveau de sub suivant s'il existe ET est peuplé ET dans la profondeur déclarée
+    const curLevel = parseInt(currentDim.slice(-1), 10);   // 'sub1' → 1
+    const nextLevel = curLevel + 1;
+    const nextKey = 'sub' + nextLevel;
+    if(nextLevel <= profondeur && available.includes(nextKey)) return nextKey;
+    return null;   // dernier niveau hiérarchique atteint → plus de descente
+  }
+  // parallèle ou 1 niveau : pas de chaînage entre sub → impasse après la 1ère.
+  return null;
 }
 
 /* ─── Évolution : aires empilées par partenaire ─────────────────
