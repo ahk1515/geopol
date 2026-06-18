@@ -4453,8 +4453,9 @@ function renderRelations(){
 
 function renderRelNav(filter){
   const body = document.getElementById('relNavBody');
-  // Lot A : flux + identité SANS sub (famille 1). Identité+sub (famille 2) → Lot B.
-  const all = flowEntriesPresent().filter(e => !(entryIsIdentite(e) && e.hasSub));
+  // Flux + identité (familles 1 et 2). La famille 2 (énergie/minéraux) a son propre
+  // rendu treemap + carte ; elle apparaît sous la section « Identité ».
+  const all = flowEntriesPresent();
   const ql = (filter || '').trim().toLowerCase();
   // une seule ligne par indicateur
   const byInd = new Map();
@@ -4773,6 +4774,8 @@ function identWorldValue(indicator, iso){
 }
 
 function renderIdentiteMain(main, entry){
+  // Famille 2 (identité + sub) : treemap par type/pays + carte + courbe.
+  if(entry.hasSub){ renderIdentiteSubMain(main, entry); return; }
   const ind = entry.indicator;
   const cfg = state.indicators.find(c => c.indicator === ind) || {};
   const realYear = getValueYear(ind, state.year) || state.year;
@@ -4820,6 +4823,153 @@ function renderIdentiteMain(main, entry){
 }
 
 // Valeur d'un indicateur identité pour un ensemble d'isos (somme), année donnée.
+/* ─── EXPLORATEUR — RENDU IDENTITÉ + SUB (famille 2) ─────────────
+   Treemap (par type / par pays) + carte (suit la sub) + courbe.
+   Bascule de perspective sur le treemap uniquement (conception §2.2).
+   Clic sur une sub (perspective « par sujet ») → colore la carte sur cette sub.
+─────────────────────────────────────────────────────────────────── */
+function setIdentPerspective(p){ _identSubPerspective = p; renderRelMain(); }
+function identSubClick(key){
+  // Perspective « par sujet » : clic sur une sub → on filtre la carte sur cette sub.
+  // Perspective « par pays » : clic sur un pays → promotion en sujet (boucle Atlas).
+  if(_identSubPerspective === 'sujet'){
+    _identSubFilter = (_identSubFilter === key) ? null : key;   // re-clic = désélection
+    renderRelMain();
+  } else {
+    if(key && !key.startsWith('__')) setSubject([key], isoToName(key));
+  }
+}
+
+function renderIdentiteSubMain(main, entry){
+  const ind = entry.indicator;
+  const cfg = state.indicators.find(c => c.indicator === ind) || {};
+  const worldMode = relIsWorld();
+  const isos = worldMode ? null : currentIsos();
+  const realYear = identResolveYear(ind, isos);
+
+  // fil d'Ariane de portée
+  let scopeCrumb = `<div class="rel-scope-crumb">`;
+  if(worldMode){
+    scopeCrumb += `<span class="scope-step current">🌍 Monde</span>`;
+  } else {
+    const sflag = (state.subject.isos.length === 1) ? (isoToFlag(state.subject.isos[0]) + ' ') : '';
+    scopeCrumb += `<span class="scope-step link" onclick="relBackToWorld()">🌍 Monde</span><span class="scope-sep">›</span>`;
+    scopeCrumb += `<span class="scope-step current">${sflag}${state.subject.label}<span class="scope-x" onclick="relBackToWorld()">✕</span></span>`;
+  }
+  scopeCrumb += `</div>`;
+
+  // toggle de perspective (sur le treemap)
+  const persToggle = `<div class="rel-sens-seg">
+      <button class="${_identSubPerspective==='sujet'?'on':''}" onclick="setIdentPerspective('sujet')" title="De quoi est faite la production (par type)">Par type</button>
+      <button class="${_identSubPerspective==='pays'?'on':''}" onclick="setIdentPerspective('pays')" title="Qui produit (par pays)">Par pays</button>
+    </div>`;
+
+  // sous-titre carte : sub sélectionnée ou total
+  const subLabel = _identSubFilter ? prettySubLabel(_identSubFilter) : 'total';
+  const compTitle = _identSubPerspective === 'sujet' ? 'Composition par type' : 'Composition par pays';
+
+  main.innerHTML = `
+    <div class="pu-head">
+      <span class="name">${cfg.label || ind}</span>
+      ${persToggle}
+      ${scopeCrumb}
+    </div>
+    <div class="rel-crumb-bar">
+      <div class="rel-crumb">${_identSubFilter ? `<span class="step current" onclick="identSubClick('${escAttr(_identSubFilter)}')">${prettySubLabel(_identSubFilter)} ✕</span>` : '<span class="step current">Tous les types</span>'}</div>
+    </div>
+    <div class="pu-cells">
+      <div class="pu-cell">
+        <div class="pu-cell-head"><span class="pu-cell-title">${compTitle}</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear}</span></div>
+        <div class="pu-cell-body" id="identSubTree" style="min-height:340px"></div>
+      </div>
+      <div class="pu-cell">
+        <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${subLabel} · ${realYear}</span></div>
+        <div class="pu-cell-body">
+          <div id="identMapContainer"><svg id="identMap"></svg></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span></div>
+        </div>
+      </div>
+    </div>`;
+  drawIdentSubTree(ind, isos);
+  drawIdentSubMap(ind);
+}
+
+function drawIdentSubTree(indicator, isos){
+  const host = document.getElementById('identSubTree');
+  if(!host) return;
+  let items;
+  if(_identSubPerspective === 'sujet'){
+    items = getIdentSubByType(indicator, isos);
+  } else {
+    items = getIdentSubByCountry(indicator, isos, _identSubFilter);
+  }
+  if(!items.length){ host.innerHTML = `<div class="rel-empty">Aucune donnée.</div>`; return; }
+  // squarify réutilisé
+  const W = 700, H = 460;
+  const cells = squarifyTreemap(items.slice().sort((a,b)=>b.value-a.value), 0, 0, W, H);
+  const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
+  const total = items.reduce((s,d)=>s+d.value,0) || 1;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="height:auto" xmlns="http://www.w3.org/2000/svg">`;
+  cells.forEach((c,i) => {
+    const it = c.item;
+    const pct = (it.value/total*100);
+    const selected = (_identSubPerspective === 'sujet' && _identSubFilter === it.key);
+    const fill = selected ? 'var(--green)' : palette[i % palette.length];
+    const tip = (it.flag ? it.flag+' ' : '') + it.name;
+    const tb = `${fmtWithUnit(it.value, (state.indicators.find(x=>x.indicator===indicator)||{}).unit_display)} · ${pct.toFixed(1)}%`;
+    svg += `<g class="tm-cell">
+      <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
+        data-tt="${escAttr(tip)}" data-tb="${escAttr(tb)}"
+        onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
+        onclick="identSubClick('${escAttr(it.key)}')"/>`;
+    if(c.w > 54 && c.h > 22){
+      svg += `<text x="${(c.x+5).toFixed(1)}" y="${(c.y+16).toFixed(1)}" fill="#fff" style="font:600 11px var(--sans);pointer-events:none">${escAttr(it.name).slice(0,18)}</text>`;
+      svg += `<text x="${(c.x+5).toFixed(1)}" y="${(c.y+30).toFixed(1)}" fill="#fff" opacity="0.85" style="font:10px var(--mono);pointer-events:none">${pct.toFixed(1)}%</text>`;
+    }
+    svg += `</g>`;
+  });
+  svg += `</svg>`;
+  host.innerHTML = svg;
+}
+
+async function drawIdentSubMap(indicator){
+  const svgEl = document.getElementById('identMap');
+  const container = document.getElementById('identMapContainer');
+  if(!svgEl || !container) return;
+  const W = container.clientWidth || 700, H = 340;
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H);
+  svg.selectAll('*').remove();
+  const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
+  const path = d3.geoPath().projection(proj);
+  svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#dce8f0');
+  const g = svg.append('g');
+  const zoom = d3.zoom().scaleExtent([1,12]).on('zoom', ev => g.attr('transform', ev.transform));
+  svg.call(zoom);
+  svg.on('dblclick.zoom', () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity));
+  let world;
+  try { world = await loadWorldTopology(); }
+  catch(e){ svgEl.innerHTML = `<rect width="${W}" height="${H}" fill="#dce8f0"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#888" style="font:12px var(--mono)">Carte indisponible (réseau)</text>`; return; }
+  const features = topojson.feature(world, world.objects.countries).features;
+  const { colors, values } = identSubMapColors(indicator, _identSubFilter);
+  const cfg = state.indicators.find(x => x.indicator === indicator);
+  g.selectAll('.map-country').data(features).join('path')
+    .attr('class','map-country').attr('d', path)
+    .attr('data-iso3', d => numToIso3(+d.id) || '')
+    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colors[iso] ? colors[iso] : '#eef2ee'; })
+    .on('mouseover', function(ev,d){
+      const iso = numToIso3(+d.id); if(!iso) return;
+      d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
+      const v = values[iso];
+      showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, v!=null ? fmtWithUnit(v, cfg?.unit_display) : 'pas de donnée');
+    })
+    .on('mousemove', moveTip)
+    .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
+    .on('click', function(ev,d){ const iso = numToIso3(+d.id); if(iso) setSubject([iso], isoToName(iso)); });
+  const subjSet = new Set(currentIsos());
+  g.selectAll('.map-country').filter(function(){ return subjSet.has(d3.select(this).attr('data-iso3')); })
+    .attr('stroke','var(--green)').attr('stroke-width',1.3).raise();
+}
+
 function getIdentiteValueForIsos(indicator, isos, year){
   if(!isos || !isos.length) return null;
   const inList = sqlList(isos);
@@ -4934,6 +5084,74 @@ function getIdentiteWorldSeries(indicator){
                       AND country_iso3 NOT IN (${excl}) GROUP BY year ORDER BY year`);
   if(!r.length) return [];
   return r[0].values.map(([y,v,p]) => ({ year: y, value: v, projection: !!p }));
+}
+
+/* ─── DONNÉES IDENTITÉ + SUB (famille 2 : énergie/minéraux) ───────
+   Deux perspectives sur le treemap :
+   - « par sujet » (quoi)  : un poste par subcategory (type d'énergie/minéral)
+   - « par pays » (qui)    : un poste par pays (qui produit le plus)
+   Vue Monde (tous pays) ou Sujet (isos du sujet). Année avec fallback.
+─────────────────────────────────────────────────────────────────── */
+let _identSubPerspective = 'sujet';   // 'sujet' (par type) | 'pays'
+let _identSubFilter = null;           // sub sélectionnée (colore la carte) ; null = total
+
+function identResolveYear(indicator, isos){
+  let y = state.year;
+  const inClause = (isos && isos.length) ? `AND country_iso3 IN (${sqlList(isos)})` : '';
+  const chk = safeExec(`SELECT 1 FROM identite WHERE indicator='${escapeSql(indicator)}' AND year=${y} ${inClause} AND value IS NOT NULL AND value!=0 LIMIT 1`);
+  if(!chk.length){
+    const ly = safeExec(`SELECT MAX(year) FROM identite WHERE indicator='${escapeSql(indicator)}' ${inClause} AND value IS NOT NULL AND value!=0 AND year<=${y}`);
+    if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+  }
+  return y;
+}
+
+// Treemap « par type » : { sub → valeur } pour le périmètre (Monde ou isos).
+function getIdentSubByType(indicator, isos){
+  const y = identResolveYear(indicator, isos);
+  const excl = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const inClause = (isos && isos.length) ? `AND country_iso3 IN (${sqlList(isos)})` : `AND country_iso3 NOT IN (${excl})`;
+  const r = safeExec(`SELECT subcategory, SUM(value) AS v FROM identite
+                      WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                      AND subcategory IS NOT NULL AND subcategory!='' AND subcategory!='projection'
+                      AND value IS NOT NULL AND value!=0 ${inClause}
+                      GROUP BY subcategory ORDER BY v DESC`);
+  if(!r.length) return [];
+  return r[0].values.map(([sub,v]) => ({ key: sub, name: prettySubLabel(sub), value: v }));
+}
+
+// Treemap « par pays » : { pays → valeur } pour le périmètre, éventuellement filtré sur une sub.
+function getIdentSubByCountry(indicator, isos, subFilter){
+  const y = identResolveYear(indicator, isos);
+  const excl = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const inClause = (isos && isos.length) ? `AND country_iso3 IN (${sqlList(isos)})` : `AND country_iso3 NOT IN (${excl})`;
+  const subClause = subFilter ? `AND subcategory='${escapeSql(subFilter)}'` : `AND (subcategory IS NULL OR subcategory!='projection')`;
+  const r = safeExec(`SELECT country_iso3, SUM(value) AS v FROM identite
+                      WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                      AND value IS NOT NULL AND value!=0 ${inClause} ${subClause}
+                      GROUP BY country_iso3 ORDER BY v DESC`);
+  if(!r.length) return [];
+  return r[0].values.map(([iso,v]) => ({ key: iso, name: isoToName(iso), flag: isoToFlag(iso), value: v }));
+}
+
+// Carte famille 2 : valeur par pays, pour la sub sélectionnée (ou total si null).
+function identSubMapColors(indicator, subFilter){
+  const y = identResolveYear(indicator, null);
+  const excl = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const subClause = subFilter ? `AND subcategory='${escapeSql(subFilter)}'` : `AND (subcategory IS NULL OR subcategory!='projection')`;
+  const r = safeExec(`SELECT country_iso3, SUM(value) AS v FROM identite
+                      WHERE indicator='${escapeSql(indicator)}' AND year=${y}
+                      AND value IS NOT NULL AND value!=0 AND country_iso3 NOT IN (${excl}) ${subClause}
+                      GROUP BY country_iso3`);
+  const vals = {};
+  if(r.length) for(const [iso,v] of r[0].values) vals[iso] = v;
+  // rampe par quantile
+  const sorted = Object.entries(vals).map(([iso,v]) => ({iso,v})).sort((a,b)=>a.v-b.v);
+  const ramp = ['#e8f0e8','#bfe0c8','#9ec9a8','#6fb486','#4f9e6a','#2d8556','#0a6e4a','#064e34'];
+  const out = {};
+  const n = sorted.length;
+  for(let i=0;i<n;i++){ const q=i/Math.max(1,n-1); out[sorted[i].iso]=ramp[Math.min(ramp.length-1,Math.floor(q*ramp.length))]; }
+  return { colors: out, values: vals, year: y };
 }
 
 function setRelMetric(m){ _relMetric = m; _relInfluencePinned = null; renderRelMain(); syncUrl(); }
