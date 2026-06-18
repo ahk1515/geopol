@@ -261,6 +261,14 @@ MULTILATERAL_NAMES = {
 # Sentinelles
 SENTINEL_MULTILATERAL = "__multilateral__"
 SENTINEL_PRIVATE      = "__private__"
+SENTINEL_UNSPECIFIED  = "__unspecified__"   # créancier réel mais non ventilé (ex. "Multiple Lenders")
+
+# Agrégats de l'API IDS à NE PAS traiter comme des créanciers individuels.
+# - "World" = total (tous créanciers) → double comptage si conservé ⇒ exclu.
+# - "Multiple Lenders" = dette réelle non ventilée ⇒ conservée sous __unspecified__ (pas exclue).
+# Interception par NOM résolu (mesuré en base : ces deux libellés exacts).
+CREDITOR_AGG_EXCLUDE   = {"World"}             # exclu du parsing
+CREDITOR_UNSPECIFIED   = {"Multiple Lenders"}  # conservé comme non ventilé
 
 
 # -------------------------------------------------------------
@@ -388,7 +396,12 @@ def fetch_ids(debtor_iso3, series_code):
 
 def resolve_creditor(creditor_code, subcategory):
     """
-    Retourne (country_from, subcategory_1, subcategory_2).
+    Retourne (country_from, subcategory_1, subcategory_2),
+    ou None si le créancier est un agrégat à EXCLURE (ex. "World").
+
+    Agrégats interceptés en premier (mesurés en base) :
+      "World"           → None (total, exclu : double comptage)
+      "Multiple Lenders"→ __unspecified__ (dette réelle non ventilée, conservée)
 
     Bilatéral (pays identifiable) :
       country_from  = ISO3 du pays créditeur
@@ -410,6 +423,16 @@ def resolve_creditor(creditor_code, subcategory):
       subcategory_1 = type IDS
       subcategory_2 = nom complet depuis l'API ou code brut
     """
+    # Interception des agrégats par nom résolu (avant toute autre logique).
+    resolved_name = CREDITOR_NAMES.get(creditor_code)
+    if resolved_name in CREDITOR_AGG_EXCLUDE:
+        return None  # "World" : total, on n'insère pas (évite le double comptage)
+    if resolved_name in CREDITOR_UNSPECIFIED:
+        # "Multiple Lenders" : dette réelle, créancier non identifié.
+        # On préserve le type (sub1) ; sentinelle dédiée pour ne pas le confondre
+        # avec un multilatéral ni le compter comme un pays.
+        return SENTINEL_UNSPECIFIED, subcategory, resolved_name
+
     iso3 = CREDITOR_ISO3_MAP.get(creditor_code)
     if iso3:
         return iso3, subcategory, iso3
@@ -450,10 +473,13 @@ def ensure_flux_table(conn):
 
 def upsert_rows(conn, debtor_iso3, subcategory, rows):
     data = []
+    skipped_agg = 0
     for row in rows:
-        country_from, subcat1, subcat2 = resolve_creditor(
-            row["creditor_code"], subcategory
-        )
+        resolved = resolve_creditor(row["creditor_code"], subcategory)
+        if resolved is None:
+            skipped_agg += 1   # agrégat "World" : exclu (total, double comptage)
+            continue
+        country_from, subcat1, subcat2 = resolved
         data.append((
             country_from,
             debtor_iso3,
