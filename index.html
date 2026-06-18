@@ -4828,15 +4828,33 @@ function renderIdentiteMain(main, entry){
    Bascule de perspective sur le treemap uniquement (conception §2.2).
    Clic sur une sub (perspective « par sujet ») → colore la carte sur cette sub.
 ─────────────────────────────────────────────────────────────────── */
-function setIdentPerspective(p){ _identSubPerspective = p; renderRelMain(); }
+function identBackToTypes(){
+  _identSubPerspective = 'sujet';
+  _identSubFilter = null;
+  renderRelMain();
+}
+function setIdentPerspective(p){
+  if(p === _identSubPerspective) return;
+  _identSubPerspective = p;
+  // Changement manuel de perspective → on repart du total (pas de filtre type résiduel).
+  _identSubFilter = null;
+  renderRelMain();
+}
 function identSubClick(key){
-  // Perspective « par sujet » : clic sur une sub → on filtre la carte sur cette sub.
-  // Perspective « par pays » : clic sur un pays → promotion en sujet (boucle Atlas).
   if(_identSubPerspective === 'sujet'){
-    _identSubFilter = (_identSubFilter === key) ? null : key;   // re-clic = désélection
+    // On affiche les TYPES → clic sur un type = « qui produit ce type » :
+    // bascule sur la perspective pays, filtrée sur ce type, et carte colorée dessus.
+    _identSubFilter = key;
+    _identSubPerspective = 'pays';
     renderRelMain();
   } else {
-    if(key && !key.startsWith('__')) setSubject([key], isoToName(key));
+    // On affiche les PAYS → clic sur un pays = voir SA répartition par type :
+    // le pays devient sujet, on repasse en perspective « par type », filtre carte levé.
+    if(key && !key.startsWith('__')){
+      _identSubPerspective = 'sujet';
+      _identSubFilter = null;
+      setSubject([key], isoToName(key));
+    }
   }
 }
 
@@ -4875,7 +4893,11 @@ function renderIdentiteSubMain(main, entry){
       ${scopeCrumb}
     </div>
     <div class="rel-crumb-bar">
-      <div class="rel-crumb">${_identSubFilter ? `<span class="step current" onclick="identSubClick('${escAttr(_identSubFilter)}')">${prettySubLabel(_identSubFilter)} ✕</span>` : '<span class="step current">Tous les types</span>'}</div>
+      <div class="rel-crumb">${
+        (_identSubPerspective === 'pays' && _identSubFilter)
+          ? `<span class="step link" onclick="identBackToTypes()">Tous les types</span><span class="rel-crumb-sep">›</span><span class="step current">${prettySubLabel(_identSubFilter)}<span class="scope-x" onclick="identBackToTypes()">✕</span></span>`
+          : (_identSubPerspective === 'sujet' ? '<span class="step current">Par type</span>' : '<span class="step current">Par pays</span>')
+      }</div>
     </div>
     <div class="pu-cells">
       <div class="pu-cell">
@@ -5016,7 +5038,7 @@ async function drawIdentiteMap(indicator){
     })
     .on('mousemove', moveTip)
     .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
-    .on('click', function(ev,d){ const iso = numToIso3(+d.id); if(iso) setSubject([iso], isoToName(iso)); });
+    .on('click', function(ev,d){ const iso = numToIso3(+d.id); if(iso){ _identSubPerspective='sujet'; _identSubFilter=null; setSubject([iso], isoToName(iso)); } });
   const subjSet = new Set(currentIsos());
   g.selectAll('.map-country').filter(function(){ return subjSet.has(d3.select(this).attr('data-iso3')); })
     .attr('stroke','var(--green)').attr('stroke-width',1.3).raise();
