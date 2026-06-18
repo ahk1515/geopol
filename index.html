@@ -2251,12 +2251,11 @@ function getFluxWorldMap(entry){
   const rows = getFluxRows(entry);
   if(!rows.length) return {};
   let filtered = rows;
-  if(isDebtIndicator(entry.indicator)){
-    const bil = filtered.filter(r => isBilateral(r));
-    if(bil.length) filtered = bil;
-  }
+  // Dette : la carte ne peut afficher que des créanciers géographiques (pays).
+  // On NE force PLUS le bilatéral : on garde tous les types, mais les sentinelles
+  // (__multilateral__, __private__, __unspecified__) sont exclues de la carte
+  // car non géographiques (conception). Le drill (applyDrillFilter) fait le reste.
   filtered = filtered.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
-  // applique le drill cumulé (filtre partagé avec treemap et aires)
   filtered = applyDrillFilter(filtered);
   const out = {};
   for(const r of filtered){
@@ -2271,10 +2270,7 @@ function getWorldFluxMap(entry){
   const rows = getWorldFluxRows(entry);
   if(!rows.length) return {};
   let filtered = rows;
-  if(isDebtIndicator(entry.indicator)){
-    const bil = filtered.filter(r => isBilateral(r));
-    if(bil.length) filtered = bil;
-  }
+  // Idem : sentinelles exclues de la carte (non géographiques), tous types gardés.
   filtered = filtered.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   filtered = applyDrillFilter(filtered);
   const out = {};
@@ -4921,12 +4917,13 @@ function renderRelEvolution(){
   }
   let rows = worldMode ? getWorldFluxRowsTimeline(entry) : getFluxRowsTimeline(entry);
   if(!rows.length){ body.innerHTML = `<div class="rel-empty">Pas de série temporelle disponible.</div>`; return; }
-  // filtres cohérents (dette bilatéral, hors agrégats)
+  // Filtres cohérents avec le treemap. Dette : tous les types + sentinelles gardées
+  // (l'évolution peut empiler par type) ; les autres flux excluent les sentinelles.
   if(isDebtIndicator(entry.indicator)){
-    const bil = rows.filter(r => isBilateral(r));
-    if(bil.length) rows = bil;
+    rows = rows.filter(r => r.partner && !REGIONAL_CODES.has(r.partner));
+  } else {
+    rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   }
-  rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   // drill cumulé : applique tous les steps du chemin
   rows = applyDrillFilter(rows);
   // filtre zone active
@@ -5038,11 +5035,9 @@ function renderInfluenceTimeline(host, entry){
   // Timelines : volume du sujet par (année, partenaire) + total mondial par (année, partenaire)
   let subjectRows = getFluxRowsTimeline(entry);
   if(!subjectRows.length){ host.innerHTML = `<div class="rel-empty">Pas de série temporelle disponible.</div>`; return; }
-  // filtres cohérents avec le reste de Relations
-  if(isDebtIndicator(entry.indicator)){
-    const bil = subjectRows.filter(r => isBilateral(r));
-    if(bil.length) subjectRows = bil;
-  }
+  // filtres cohérents avec le reste de Relations.
+  // L'influence se calcule par partenaire géographique → sentinelles exclues ici
+  // (pour la dette, on y arrive après avoir drillé un type ; le drill cible les pays).
   subjectRows = subjectRows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   subjectRows = applyDrillFilter(subjectRows);
   subjectRows = filterByZoneFilter(subjectRows);
