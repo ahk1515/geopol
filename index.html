@@ -578,6 +578,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-ind .radar-dot.off { background: transparent; }
 .pu-ind .rel-deplie { margin-left: auto; font-size: 11px; color: var(--text3); opacity: .65; flex-shrink: 0; }
 .pu-ind:hover .rel-deplie, .pu-ind.active .rel-deplie { opacity: 1; }
+.rel-scope-seg { margin-left: auto; }
 
 /* zone principale Puissance */
 .pu-main { display: flex; flex-direction: column; gap: 14px; }
@@ -2010,7 +2011,57 @@ function getFluxRows(entryOrIndicator, dir, options){
   return rows;
 }
 
-// Toutes les années pour un flux donné (pour les aires empilées).
+/* ─── MODE MONDE (indicateur-centré) ──────────────────────────
+   Structure mondiale d'un flux, SANS sujet focalisé.
+   - perspective 'partner' → un poste par PAYS (côté subjectCol = qui émet/reçoit le plus)
+   - perspective subN      → un poste par SUBCATEGORY (de quoi est fait le flux mondial)
+   Pas de filtre sujet, pas de métrique influence (aucun sujet de référence).
+   Retourne le MÊME format que getFluxRows ({partner, sub1, sub2, sub3, value})
+   pour réutiliser les consommateurs (treemap, carte) sans les réécrire.
+─────────────────────────────────────────────────────────────── */
+function getWorldFluxRows(entry){
+  if(!entry || !entry.realIndicator) return [];
+  const realIndicator = entry.realIndicator;
+  // En mode monde, le « partner » du format de retour = le pays côté sujet
+  // (celui qu'on agrège), pour que la carte/treemap le traitent comme une entité géo.
+  let groupCol;
+  if(realIndicator === 'import_commercial') groupCol = 'country_to';
+  else if(realIndicator === 'export_commercial') groupCol = 'country_from';
+  else groupCol = (entry.side === 'to') ? 'country_to' : 'country_from';
+
+  // Fenêtre temporelle : même logique que getFluxRows (plage ou année courante)
+  let useRange, yWindow;
+  if(_relYearRange && _relYearRange.length === 2){ useRange = true; yWindow = _relYearRange; }
+  else { useRange = false; yWindow = state.year; }
+
+  const cacheKey = `WORLD|${entry.key}|${useRange ? 'R'+yWindow[0]+'-'+yWindow[1]+'-'+_relYearAggMode : 'Y'+yWindow}`;
+  if(cache.flux.has(cacheKey)) return cache.flux.get(cacheKey);
+
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  let rows = [];
+  let yClause;
+  if(useRange){ yClause = `year >= ${yWindow[0]} AND year <= ${yWindow[1]}`; }
+  else {
+    let y = yWindow;
+    const chk = safeExec(`SELECT 1 FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND year=${y} LIMIT 1`);
+    if(!chk.length){
+      const ly = safeExec(`SELECT MAX(year) FROM flux WHERE indicator='${escapeSql(realIndicator)}'`);
+      if(ly.length && ly[0].values[0][0] != null) y = ly[0].values[0][0];
+    }
+    yClause = `year=${y}`;
+  }
+  const r = safeExec(`SELECT ${groupCol} AS g, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                      FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND ${yClause}
+                      AND ${groupCol} NOT IN (${exclAgg})
+                      GROUP BY ${groupCol}, subcategory_1, subcategory_2, subcategory_3`);
+  if(r.length){
+    const useAvg = (useRange && _relYearAggMode === 'avg');
+    const divider = (useAvg && yWindow[1] > yWindow[0]) ? (yWindow[1] - yWindow[0] + 1) : 1;
+    rows = r[0].values.map(([g,s1,s2,s3,v]) => ({ partner:g, sub1:s1, sub2:s2, sub3:s3, value: v / divider, fluxYear: useRange ? `${yWindow[0]}-${yWindow[1]}` : yWindow }));
+  }
+  cache.flux.set(cacheKey, rows);
+  return rows;
+}
 // Retourne [{year, partner, sub1, sub2, sub3, value}] — agrégé sur le sujet.
 const _fluxTimelineCache = new Map();
 function getFluxRowsTimeline(entry){
@@ -4093,6 +4144,7 @@ function puMapValue(iso){
 // Le treemap est la composition principale ; le référentiel (dimension d'analyse)
 // est commutable entre partenaire / sub1 / sub2 / sub3 selon ce qui est peuplé.
 let _relEntryKey = null;          // clé d'entrée flux active (ex. 'dette_exterieure|to')
+let _relScope = 'subject';        // 'subject' (pays-centré) | 'world' (indicateur-centré, structure mondiale)
 let _relDim = 'partner';          // 'partner' | 'sub1' | 'sub2' | 'sub3' — dimension principale
 let _relPath = [];                // chemin de drill-down dans le treemap (= filtre cumulatif partagé)
 let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
@@ -4211,12 +4263,20 @@ function getRelDimensions(){
   const rows = getFluxRows(entry);
   const dims = [{ key:'partner', label:'Partenaire', count: new Set(rows.map(r => r.partner).filter(p => p && !p.startsWith('__'))).size }];
   const isDebt = isDebtIndicator(entry.indicator);
+  // Libellés réels des niveaux de subcategory, lus depuis la métadonnée.
+  const meta = getIndicatorMeta(entry.indicator);
+  const niveaux = (meta && Array.isArray(meta.niveaux_sub)) ? meta.niveaux_sub : [];
+  const subLabel = (lvl) => {
+    const idx = parseInt(lvl.slice(-1), 10) - 1;   // 'sub1' → 0, 'sub2' → 1, ...
+    const lbl = niveaux[idx];
+    return lbl ? lbl.charAt(0).toUpperCase() + lbl.slice(1) : `Catégorie ${lvl.slice(-1)}`;
+  };
   // pour la dette, sub1 = bilatérale (déjà filtré) → on l'omet
   const subs = isDebt ? ['sub2','sub3'] : ['sub1','sub2','sub3'];
   for(const lvl of subs){
     const vals = new Set();
     for(const r of rows){ const v = r[lvl]; if(v && String(v).trim() !== '') vals.add(String(v)); }
-    if(vals.size > 1) dims.push({ key: lvl, label: `Catégorie ${lvl.slice(-1)}`, count: vals.size });
+    if(vals.size > 1) dims.push({ key: lvl, label: subLabel(lvl), count: vals.size });
   }
   return dims;
 }
@@ -4235,6 +4295,24 @@ function setRelDim(dim){
   renderRelMain();
   syncUrl();
 }
+
+// Bascule pays-centré ↔ indicateur-centré (structure mondiale).
+function setRelScope(scope){
+  if(scope === _relScope) return;
+  _relScope = scope;
+  _relPath = [];
+  _relInfluencePinned = null;
+  if(scope === 'world'){
+    _relMetric = 'volume';   // l'influence n'a pas de sens sans sujet
+    // perspective par défaut : « par sujet » = par sub si l'indicateur en a (structure mondiale d'abord)
+    const dims = getRelDimensions();
+    const firstSub = dims.find(d => d.key !== 'partner');
+    _relDim = firstSub ? firstSub.key : 'partner';
+  }
+  // rerender complet : le garde-fou amont diffère selon le scope
+  renderRelations();
+  syncUrl();
+}
 function pushRelDrill(level, value){
   // value est la clé brute (ISO3 pour partner, valeur subcategory sinon)
   // on stocke aussi un label affichable pour le breadcrumb
@@ -4249,11 +4327,12 @@ function setRelPathLength(len){
 
 function renderRelations(){
   const root = document.getElementById('relationsContent');
-  if(!state.subject || !state.subject.isos.length){
+  if(_relScope !== 'world' && (!state.subject || !state.subject.isos.length)){
     root.innerHTML = `<div class="need-subject">
       <div class="big">Choisir un sujet</div>
-      <p>Sélectionnez un pays ou une zone pour explorer ses relations.</p>
+      <p>Sélectionnez un pays ou une zone pour explorer ses relations, ou basculez en vue mondiale.</p>
       <button onclick="openSearch()">⌕ Rechercher un sujet</button>
+      <button onclick="setRelScope('world')" style="margin-left:8px">🌍 Vue mondiale</button>
     </div>`;
     return;
   }
@@ -4340,9 +4419,9 @@ function renderRelMain(){
     }
     dimSelector += `</div>`;
   }
-  // sélecteur de métrique (volume vs influence) — uniquement quand dim=partner
+  // sélecteur de métrique (volume vs influence) — uniquement quand dim=partner ET mode sujet
   let metricSelector = '';
-  if(_relDim === 'partner'){
+  if(_relDim === 'partner' && _relScope !== 'world'){
     metricSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
       <span class="rel-filter-label">Mesure${helpIco('volume_vs_influence')}</span>
       <div class="seg">
@@ -4434,10 +4513,17 @@ function renderRelMain(){
   } else {
     periodSuffix = state.year;
   }
+  const worldMode = (_relScope === 'world');
+  const scopeToggle = `<div class="seg rel-scope-seg">
+      <button class="${!worldMode?'on':''}" onclick="setRelScope('subject')" title="Relations d'un pays">Sujet</button>
+      <button class="${worldMode?'on':''}" onclick="setRelScope('world')" title="Structure mondiale du flux">🌍 Monde</button>
+    </div>`;
+  const headMeta = worldMode ? 'structure mondiale' : (state.subject ? state.subject.label : '—');
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${entry.label_long}</span>
-      <span class="meta">${state.subject.label}</span>
+      <span class="meta">${headMeta}</span>
+      ${scopeToggle}
     </div>
     <div class="rel-crumb-bar">
       <div class="rel-crumb">${crumb}</div>
@@ -4494,7 +4580,8 @@ function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label
 function buildFluxAggregation(){
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry) return null;
-  let rows = getFluxRows(entry);
+  const worldMode = (_relScope === 'world');
+  let rows = worldMode ? getWorldFluxRows(entry) : getFluxRows(entry);
   if(!rows.length) return null;
   // dette : bilatéral uniquement
   if(isDebtIndicator(entry.indicator)){
@@ -4537,7 +4624,7 @@ function buildFluxAggregation(){
 
   // En mode 'influence' avec dim=partner, on remplace la valeur par le poids relatif du sujet
   // chez chaque partenaire = volume_sujet / volume_mondial_du_partenaire (en %).
-  const isInfluence = (_relMetric === 'influence' && dim === 'partner');
+  const isInfluence = (_relMetric === 'influence' && dim === 'partner' && !worldMode);
   let children;
   if(isInfluence){
     const worldTotals = getFluxPartnerWorldTotals(entry);
@@ -4713,6 +4800,10 @@ function nextRelDim(currentDim, dims){
 function renderRelEvolution(){
   const body = document.getElementById('relEvoBody');
   if(!body) return;
+  if(_relScope === 'world'){
+    body.innerHTML = `<div class="rel-empty">Évolution temporelle disponible en vue Sujet.<br><span style="font-size:11px;color:var(--text3)">Choisissez un pays pour suivre ce flux dans le temps.</span></div>`;
+    return;
+  }
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ body.innerHTML = ''; return; }
   // Mode Influence + dim=partner : courbes superposées du Top 5 (avec zoom sur sélection)
@@ -5001,6 +5092,13 @@ async function renderRelFluxMap(){
   const svgEl = document.getElementById('relMap');
   const container = document.getElementById('relMapContainer');
   if(!svgEl || !container) return;
+  if(_relScope === 'world'){
+    const leg = container.parentElement.querySelector('.rel-map-legend');
+    if(leg) leg.style.display = 'none';
+    svgEl.innerHTML = '';
+    container.innerHTML = `<div class="rel-empty" style="height:320px;display:flex;align-items:center;justify-content:center;text-align:center">Carte géographique disponible en vue Sujet.<br><span style="font-size:11px;color:var(--text3)">La vue mondiale montre la structure du flux dans la composition ci-dessus.</span></div>`;
+    return;
+  }
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ svgEl.innerHTML = ''; return; }
   const W = container.clientWidth || 600, H = 320;
