@@ -4326,8 +4326,9 @@ function getRelDimensions(){
     const lbl = niveaux[idx];
     return lbl ? lbl.charAt(0).toUpperCase() + lbl.slice(1) : `Catégorie ${lvl.slice(-1)}`;
   };
-  // pour la dette, sub1 = bilatérale (déjà filtré) → on l'omet
-  const subs = isDebt ? ['sub2','sub3'] : ['sub1','sub2','sub3'];
+  // Dette : sub1 = type de créancier (bilatéral/multilatéral/privé) — désormais affiché
+  // comme dimension de niveau 0. sub2 redondant (≈ country_from) → on ne l'expose pas.
+  const subs = isDebt ? ['sub1'] : ['sub1','sub2','sub3'];
   for(const lvl of subs){
     const vals = new Set();
     for(const r of rows){ const v = r[lvl]; if(v && String(v).trim() !== '') vals.add(String(v)); }
@@ -4449,6 +4450,10 @@ function selectRelEntry(key){
 
 // Dimension par défaut selon la portée : Monde → 1ère sub si dispo, sinon partner ; Sujet → partner.
 function relDefaultDim(){
+  const entry = getFlowEntryByKey(_relEntryKey);
+  // Dette : on montre d'abord les TYPES de créancier (sub1), puis on creuse vers
+  // les créanciers au clic. Vrai en vue Sujet comme en vue Monde.
+  if(entry && isDebtIndicator(entry.indicator)) return 'sub1';
   if(relIsWorld()){
     const firstSub = getRelDimensions().find(d => d.key !== 'partner');
     if(firstSub) return firstSub.key;
@@ -4648,13 +4653,16 @@ function buildFluxAggregation(){
   const worldMode = relIsWorld();
   let rows = worldMode ? getWorldFluxRows(entry) : getFluxRows(entry);
   if(!rows.length) return null;
-  // dette : bilatéral uniquement
-  if(isDebtIndicator(entry.indicator)){
-    const bil = rows.filter(r => isBilateral(r));
-    if(bil.length) rows = bil;
+  const isDebt = isDebtIndicator(entry.indicator);
+  // Dette : on garde TOUS les types (bilatéral/multilatéral/privé) et les sentinelles
+  // (__multilateral__, __private__, __unspecified__ sont des créanciers légitimes).
+  // L'exclusion des agrégats/sentinelles ci-dessous ne s'applique donc PAS à la dette.
+  if(!isDebt){
+    rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
+  } else {
+    // dette : on retire seulement les agrégats Banque Mondiale géographiques, jamais les sentinelles
+    rows = rows.filter(r => r.partner && !REGIONAL_CODES.has(r.partner));
   }
-  // exclure agrégats Banque Mondiale + sentinelles
-  rows = rows.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
   // filtre cumulé issu du drill (_relPath)
   rows = applyDrillFilter(rows);
   // filtre zone active (si zone choisie, ne garder que les partenaires inclus)
@@ -4865,6 +4873,13 @@ function nextRelDim(currentDim, dims, entry){
   const meta = entry ? getIndicatorMeta(entry.indicator) : null;
   const profondeur = meta && meta.profondeur ? meta.profondeur : 0;
   const hierarchique = meta && meta.nature_sub === 'hierarchique';
+
+  // Dette : parcours spécifique. Niveau 0 = type (sub1) → clic → créanciers (partner).
+  // Sur les créanciers, plus de descente (le créancier nommé est le dernier niveau utile).
+  if(entry && isDebtIndicator(entry.indicator)){
+    if(currentDim === 'sub1' && available.includes('partner')) return 'partner';
+    return null;
+  }
 
   // Flux plat : rien à déplier.
   if(profondeur === 0) return null;
