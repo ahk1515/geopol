@@ -4858,11 +4858,27 @@ function drawTreemapRel(node, host){
   const items = node.children.slice().sort((a,b)=>b.value-a.value);
   const cells = squarifyTreemap(items, 0, 0, W, H);
   const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
-  // Le clic a-t-il un effet ? Vue Monde+partner → promotion en sujet (toujours).
-  // Sinon → drill possible seulement si nextRelDim ne renvoie pas null (profondeur/nature).
+  // Le clic a-t-il un effet ?
+  //  - Vue Monde + axe partenaire → promotion du pays en sujet.
+  //  - Sinon → le clic pose un filtre, utile s'il reste au moins un autre axe à explorer
+  //    après ce filtre (une sous-catégorie OU les partenaires). On s'appuie sur le même
+  //    raisonnement que treemapClick : il agit tant qu'il existe une dimension de destination.
   const tmEntry = getFlowEntryByKey(_relEntryKey);
-  const clickActs = (relIsWorld() && _relDim === 'partner')
-    || (!relIsWorld() && nextRelDim(_relDim, getRelDimensions(), tmEntry) != null);
+  const tmDims = getRelDimensions();
+  const tmMeta = tmEntry ? getIndicatorMeta(tmEntry.indicator) : null;
+  const tmProf = tmMeta && tmMeta.profondeur ? tmMeta.profondeur : 0;
+  let clickActs;
+  if(relIsWorld() && _relDim === 'partner'){
+    clickActs = true;                          // promotion en sujet
+  } else if(_relDim === 'partner'){
+    clickActs = tmProf > 0;                     // flux plat : pas de drill sur partenaire
+  } else {
+    // on est sur une catégorie (sub) : le clic pose un filtre. Il agit s'il reste
+    // un axe de destination (sous-catégorie suivante via nextRelDim, ou partenaire).
+    const hasNext = nextRelDim(_relDim, tmDims, tmEntry) != null;
+    const hasPartner = tmDims.some(d => d.key === 'partner');
+    clickActs = hasNext || hasPartner;
+  }
   // SVG responsive : viewBox fixe pour préserver les coords du squarify,
   // mais width: 100% et height auto permettent de s'adapter à la largeur du conteneur.
   // preserveAspectRatio par défaut (xMidYMid meet) conserve le ratio sans rognage.
