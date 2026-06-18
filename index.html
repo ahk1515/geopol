@@ -576,6 +576,8 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-ind.active { background: var(--green-d); color: var(--green); border-left-color: var(--green); font-weight: 600; }
 .pu-ind .radar-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; opacity: .55; }
 .pu-ind .radar-dot.off { background: transparent; }
+.pu-ind .rel-deplie { margin-left: auto; font-size: 11px; color: var(--text3); opacity: .65; flex-shrink: 0; }
+.pu-ind:hover .rel-deplie, .pu-ind.active .rel-deplie { opacity: 1; }
 
 /* zone principale Puissance */
 .pu-main { display: flex; flex-direction: column; gap: 14px; }
@@ -4296,8 +4298,14 @@ function renderRelNav(filter){
       <div class="pu-cat-list">`;
     for(const e of byCat[cat]){
       const active = e.key === _relEntryKey ? 'active' : '';
+      // Affordance : indicateur dépliable (sub avec profondeur > 0) → badge discret
+      const meta = getIndicatorMeta(e.indicator);
+      const depth = meta && meta.profondeur ? meta.profondeur : 0;
+      const badge = depth > 0
+        ? `<span class="rel-deplie" title="Dépliable : ${depth} niveau${depth>1?'x':''} de détail">⊟</span>`
+        : '';
       html += `<div class="pu-ind ${active}" onclick="selectRelEntry('${e.key.replace(/'/g,"\\'")}')">
-        <span>${e.label_long}</span>
+        <span>${e.label_long}</span>${badge}
       </div>`;
     }
     html += `</div></div>`;
