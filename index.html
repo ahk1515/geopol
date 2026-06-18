@@ -578,7 +578,14 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-ind .radar-dot.off { background: transparent; }
 .pu-ind .rel-deplie { margin-left: auto; font-size: 11px; color: var(--text3); opacity: .65; flex-shrink: 0; }
 .pu-ind:hover .rel-deplie, .pu-ind.active .rel-deplie { opacity: 1; }
-.rel-scope-seg { margin-left: auto; }
+.rel-scope-crumb { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.rel-scope-crumb .scope-step { display: inline-flex; align-items: center; gap: 4px; color: var(--text2); }
+.rel-scope-crumb .scope-step.current { color: var(--text); font-weight: 600; }
+.rel-scope-crumb .scope-step.link { cursor: pointer; color: var(--green); }
+.rel-scope-crumb .scope-step.link:hover { text-decoration: underline; }
+.rel-scope-crumb .scope-sep { color: var(--text3); }
+.rel-scope-crumb .scope-x { cursor: pointer; margin-left: 4px; opacity: .55; font-size: 11px; }
+.rel-scope-crumb .scope-x:hover { opacity: 1; }
 
 /* zone principale Puissance */
 .pu-main { display: flex; flex-direction: column; gap: 14px; }
@@ -4144,7 +4151,6 @@ function puMapValue(iso){
 // Le treemap est la composition principale ; le référentiel (dimension d'analyse)
 // est commutable entre partenaire / sub1 / sub2 / sub3 selon ce qui est peuplé.
 let _relEntryKey = null;          // clé d'entrée flux active (ex. 'dette_exterieure|to')
-let _relScope = 'subject';        // 'subject' (pays-centré) | 'world' (indicateur-centré, structure mondiale)
 let _relDim = 'partner';          // 'partner' | 'sub1' | 'sub2' | 'sub3' — dimension principale
 let _relPath = [];                // chemin de drill-down dans le treemap (= filtre cumulatif partagé)
 let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
@@ -4257,6 +4263,11 @@ function setRelYearAggMode(mode){
    (partner + sub1/sub2/sub3 selon leur peuplement). _relDim choisit celle
    qui est affichée dans le treemap et les aires empilées.
 ─────────────────────────────────────────────────────────────── */
+/* Vue Monde (indicateur-centré) = aucun sujet sélectionné.
+   Le « mode » n'est plus un toggle : c'est la conséquence directe de
+   la présence ou non d'un sujet global. Sujet vide ⇒ structure mondiale. */
+function relIsWorld(){ return !state.subject || !state.subject.isos || !state.subject.isos.length; }
+
 function getRelDimensions(){
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry) return [{ key:'partner', label:'Partenaire' }];
@@ -4296,22 +4307,19 @@ function setRelDim(dim){
   syncUrl();
 }
 
-// Bascule pays-centré ↔ indicateur-centré (structure mondiale).
-function setRelScope(scope){
-  if(scope === _relScope) return;
-  _relScope = scope;
+// Retour à la vue Monde = effacer le sujet global. Le re-render est géré par clearSubject.
+function relBackToWorld(){
   _relPath = [];
   _relInfluencePinned = null;
-  if(scope === 'world'){
-    _relMetric = 'volume';   // l'influence n'a pas de sens sans sujet
-    // perspective par défaut : « par sujet » = par sub si l'indicateur en a (structure mondiale d'abord)
-    const dims = getRelDimensions();
-    const firstSub = dims.find(d => d.key !== 'partner');
-    _relDim = firstSub ? firstSub.key : 'partner';
-  }
-  // rerender complet : le garde-fou amont diffère selon le scope
-  renderRelations();
-  syncUrl();
+  clearSubject();
+}
+// Promotion d'un pays cliqué (vue Monde, dim=partner) en sujet global.
+function relPromoteToSubject(iso3){
+  if(!iso3 || iso3.startsWith('__')) return;
+  _relPath = [];
+  _relInfluencePinned = null;
+  const ref = COUNTRY_REF[iso3];
+  setSubject([iso3], ref?.name || iso3);
 }
 function pushRelDrill(level, value){
   // value est la clé brute (ISO3 pour partner, valeur subcategory sinon)
@@ -4327,15 +4335,7 @@ function setRelPathLength(len){
 
 function renderRelations(){
   const root = document.getElementById('relationsContent');
-  if(_relScope !== 'world' && (!state.subject || !state.subject.isos.length)){
-    root.innerHTML = `<div class="need-subject">
-      <div class="big">Choisir un sujet</div>
-      <p>Sélectionnez un pays ou une zone pour explorer ses relations, ou basculez en vue mondiale.</p>
-      <button onclick="openSearch()">⌕ Rechercher un sujet</button>
-      <button onclick="setRelScope('world')" style="margin-left:8px">🌍 Vue mondiale</button>
-    </div>`;
-    return;
-  }
+  // Plus de garde-fou bloquant : sans sujet, on affiche la structure mondiale (vue Monde).
   // focus venant d'une porte de Synthèse (clé d'entrée flux)
   if(_pendingFocus.flowEntryKey){
     _relEntryKey = _pendingFocus.flowEntryKey;
@@ -4345,7 +4345,7 @@ function renderRelations(){
   // entrée flux par défaut si on arrive sans : première dispo
   if(!_relEntryKey){
     const all = flowEntriesPresent();
-    if(all.length) _relEntryKey = all[0].key;
+    if(all.length){ _relEntryKey = all[0].key; _relDim = relDefaultDim(); }
   }
   // structure : nav indicateurs gauche + zone principale droite (comme Puissance)
   root.innerHTML = `
@@ -4394,10 +4394,22 @@ function renderRelNav(filter){
 function toggleRelCat(cat){ _relCatCollapsed[cat] = !_relCatCollapsed[cat]; renderRelNav(document.getElementById('relSearch')?.value || ''); }
 function filterRelNav(v){ renderRelNav(v); }
 function selectRelEntry(key){
-  _relEntryKey = key; _relPath = []; _relDim = 'partner'; _relInfluencePinned = null;
+  _relEntryKey = key; _relPath = []; _relInfluencePinned = null;
+  // Perspective par défaut : en vue Monde, « par sujet » = par sub si l'indicateur en a
+  // (structure mondiale d'abord) ; sinon partenaire. En vue Sujet : toujours partenaire.
+  _relDim = relDefaultDim();
   renderRelNav(document.getElementById('relSearch')?.value || '');
   renderRelMain();
   syncUrl();
+}
+
+// Dimension par défaut selon la portée : Monde → 1ère sub si dispo, sinon partner ; Sujet → partner.
+function relDefaultDim(){
+  if(relIsWorld()){
+    const firstSub = getRelDimensions().find(d => d.key !== 'partner');
+    if(firstSub) return firstSub.key;
+  }
+  return 'partner';
 }
 
 function renderRelMain(){
@@ -4421,7 +4433,7 @@ function renderRelMain(){
   }
   // sélecteur de métrique (volume vs influence) — uniquement quand dim=partner ET mode sujet
   let metricSelector = '';
-  if(_relDim === 'partner' && _relScope !== 'world'){
+  if(_relDim === 'partner' && !relIsWorld()){
     metricSelector = `<div class="rel-dim-wrap" style="margin-left:10px">
       <span class="rel-filter-label">Mesure${helpIco('volume_vs_influence')}</span>
       <div class="seg">
@@ -4513,17 +4525,23 @@ function renderRelMain(){
   } else {
     periodSuffix = state.year;
   }
-  const worldMode = (_relScope === 'world');
-  const scopeToggle = `<div class="seg rel-scope-seg">
-      <button class="${!worldMode?'on':''}" onclick="setRelScope('subject')" title="Relations d'un pays">Sujet</button>
-      <button class="${worldMode?'on':''}" onclick="setRelScope('world')" title="Structure mondiale du flux">🌍 Monde</button>
-    </div>`;
-  const headMeta = worldMode ? 'structure mondiale' : (state.subject ? state.subject.label : '—');
+  const worldMode = relIsWorld();
+  // Fil d'Ariane de portée : Monde (toujours) › Pays sélectionné (si sujet).
+  // Cliquer « Monde » ou la croix efface le sujet global et revient à la structure mondiale.
+  let scopeCrumb = `<div class="rel-scope-crumb">`;
+  if(worldMode){
+    scopeCrumb += `<span class="scope-step current">🌍 Monde</span>`;
+  } else {
+    const sflag = (state.subject.isos.length === 1) ? (isoToFlag(state.subject.isos[0]) + ' ') : '';
+    scopeCrumb += `<span class="scope-step link" onclick="relBackToWorld()" title="Revenir à la structure mondiale">🌍 Monde</span>`;
+    scopeCrumb += `<span class="scope-sep">›</span>`;
+    scopeCrumb += `<span class="scope-step current">${sflag}${state.subject.label}<span class="scope-x" onclick="relBackToWorld()" title="Enlever le filtre pays">✕</span></span>`;
+  }
+  scopeCrumb += `</div>`;
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${entry.label_long}</span>
-      <span class="meta">${headMeta}</span>
-      ${scopeToggle}
+      ${scopeCrumb}
     </div>
     <div class="rel-crumb-bar">
       <div class="rel-crumb">${crumb}</div>
@@ -4580,7 +4598,7 @@ function dimLabelOf(key, dims){ return (dims.find(d => d.key === key) || { label
 function buildFluxAggregation(){
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry) return null;
-  const worldMode = (_relScope === 'world');
+  const worldMode = relIsWorld();
   let rows = worldMode ? getWorldFluxRows(entry) : getFluxRows(entry);
   if(!rows.length) return null;
   // dette : bilatéral uniquement
@@ -4764,7 +4782,13 @@ function drawTreemapRel(node, host){
   host.innerHTML = svg;
 }
 function treemapClick(name){
-  // Drill : filtre sur (dimension active, valeur cliquée) + bascule auto de référentiel.
+  // Vue Monde + clic sur un pays (dim=partner) → promotion en sujet global
+  // (le « pays agrégé » se recentre sur ce pays). Façon Atlas : le clic recentre.
+  if(relIsWorld() && _relDim === 'partner'){
+    relPromoteToSubject(name);
+    return;
+  }
+  // Sinon : Drill — filtre sur (dimension active, valeur cliquée) + bascule auto de référentiel.
   // Règle : alternance partner ↔ catégorie. Sub1 par défaut, sinon première catégorie peuplée.
   const dims = getRelDimensions();
   const next = nextRelDim(_relDim, dims);
@@ -4800,7 +4824,7 @@ function nextRelDim(currentDim, dims){
 function renderRelEvolution(){
   const body = document.getElementById('relEvoBody');
   if(!body) return;
-  if(_relScope === 'world'){
+  if(relIsWorld()){
     body.innerHTML = `<div class="rel-empty">Évolution temporelle disponible en vue Sujet.<br><span style="font-size:11px;color:var(--text3)">Choisissez un pays pour suivre ce flux dans le temps.</span></div>`;
     return;
   }
@@ -5092,7 +5116,7 @@ async function renderRelFluxMap(){
   const svgEl = document.getElementById('relMap');
   const container = document.getElementById('relMapContainer');
   if(!svgEl || !container) return;
-  if(_relScope === 'world'){
+  if(relIsWorld()){
     const leg = container.parentElement.querySelector('.rel-map-legend');
     if(leg) leg.style.display = 'none';
     svgEl.innerHTML = '';
