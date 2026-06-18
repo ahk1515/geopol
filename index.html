@@ -70,10 +70,11 @@ header {
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
   padding: 0 18px;
-  display: flex; align-items: center; gap: 16px;
-  height: 50px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  min-height: 50px; flex-shrink: 0;
   position: sticky; top: 0; z-index: 50;
 }
+.header-vars { display: inline-flex; align-items: center; gap: 10px; padding-left: 6px; }
 .logo {
   font-family: var(--mono); font-size: 12px; font-weight: 600;
   letter-spacing: .22em; color: var(--green);
@@ -132,14 +133,7 @@ header {
 .dot.demo { background: var(--blue); }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-/* ── Barre de contexte (sujet + année) ───────────────────────── */
-#contextBar {
-  background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 9px 18px; display: flex; align-items: center; gap: 12px;
-  flex-wrap: wrap; flex-shrink: 0;
-  position: sticky; top: 50px; z-index: 40;
-  box-shadow: 0 1px 0 var(--border);
-}
+/* ── Variables globales (sujet + année), désormais dans le header ── */
 .ctx-label {
   font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
   color: var(--text3); text-transform: uppercase;
@@ -578,11 +572,10 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-ind .radar-dot.off { background: transparent; }
 .pu-ind .rel-deplie { margin-left: auto; font-size: 11px; color: var(--text3); opacity: .65; flex-shrink: 0; }
 .pu-ind:hover .rel-deplie, .pu-ind.active .rel-deplie { opacity: 1; }
-.rel-sens-toggle { display: inline-flex; align-items: center; gap: 5px; margin-left: 10px; padding: 3px 10px;
-  background: var(--green-d); color: var(--green); border: 1px solid var(--green); border-radius: 5px;
-  font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
-.rel-sens-toggle:hover { background: var(--green); color: var(--bg); }
-.rel-sens-toggle .sens-arrow { font-size: 13px; }
+.rel-sens-seg { display: inline-flex; margin-left: 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: 2px; gap: 2px; }
+.rel-sens-seg button { border: none; background: transparent; color: var(--text2); font-family: inherit; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 5px; cursor: pointer; }
+.rel-sens-seg button.on { background: var(--green); color: #fff; }
+.rel-sens-seg button:not(.on):hover { color: var(--text); background: var(--bg3); }
 .rel-sens-static { margin-left: 10px; font-size: 12px; color: var(--text2); }
 .rel-scope-crumb { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
 .rel-scope-crumb .scope-step { display: inline-flex; align-items: center; gap: 4px; color: var(--text2); }
@@ -675,7 +668,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-crumb-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
   padding: 8px 10px; flex-wrap: wrap;
-  position: sticky; top: 90px; z-index: 30;
+  position: sticky; top: 50px; z-index: 30;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   margin: 0 -10px 12px;
@@ -1204,21 +1197,19 @@ main { flex: 1; padding: 16px 18px 28px; }
       <button class="tab" data-view="croise">Croisé</button>
       <button class="tab" data-view="comparaisons">Comparaisons</button>
     </nav>
+    <div class="header-vars">
+      <span class="ctx-label">Sujet</span>
+      <div id="subjectSlot"></div>
+      <span class="ctx-sep"></span>
+      <span class="ctx-label">Année</span>
+      <div id="yearSlot"></div>
+    </div>
     <div class="header-spacer"></div>
     <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
     <button class="hbtn" id="exportBtn" onclick="exportCurrentView()"><span>⬇</span> Exporter</button>
     <button class="hbtn" id="aboutBtn" onclick="openAbout()" title="À propos de GÉOPOL"><span>ℹ</span></button>
     <div class="db-badge"><span class="dot" id="dbDot"></span><span id="dbName">—</span></div>
   </header>
-
-  <!-- ░░ BARRE DE CONTEXTE ░░ -->
-  <div id="contextBar">
-    <span class="ctx-label">Sujet</span>
-    <div id="subjectSlot"></div>
-    <span class="ctx-sep"></span>
-    <span class="ctx-label">Année</span>
-    <div id="yearSlot"></div>
-  </div>
 
   <!-- ░░ ZONE PRINCIPALE — 3 ONGLETS ░░ -->
   <main>
@@ -4317,8 +4308,12 @@ function getRelDimensions(){
   if(!entry) return [{ key:'partner', label:'Partenaire' }];
   // En vue Monde, les rows viennent de la structure mondiale (sinon getFluxRows
   // renvoie [] sans sujet → aucune sub détectée → sélecteur masqué à tort).
-  const rows = relIsWorld() ? getWorldFluxRows(entry) : getFluxRows(entry);
-  const dims = [{ key:'partner', label:'Partenaire', count: new Set(rows.map(r => r.partner).filter(p => p && !p.startsWith('__'))).size }];
+  let rows = relIsWorld() ? getWorldFluxRows(entry) : getFluxRows(entry);
+  // Appliquer le filtre courant : les axes proposés doivent être pertinents DANS
+  // le contexte filtré (ex. après avoir filtré « avions », proposer « par pays » a du sens,
+  // mais re-proposer « catégorie » non — ce niveau est déjà fixé).
+  rows = applyDrillFilter(rows);
+  const filteredLevels = new Set(_relPath.map(s => s.level));
   const isDebt = isDebtIndicator(entry.indicator);
   // Libellés réels des niveaux de subcategory, lus depuis la métadonnée.
   const meta = getIndicatorMeta(entry.indicator);
@@ -4328,14 +4323,22 @@ function getRelDimensions(){
     const lbl = niveaux[idx];
     return lbl ? lbl.charAt(0).toUpperCase() + lbl.slice(1) : `Catégorie ${lvl.slice(-1)}`;
   };
-  // Dette : sub1 = type de créancier (bilatéral/multilatéral/privé) — désormais affiché
-  // comme dimension de niveau 0. sub2 redondant (≈ country_from) → on ne l'expose pas.
+  const dims = [];
+  // L'axe « Partenaire » (qui) est proposé sauf s'il est déjà le niveau filtré.
+  if(!filteredLevels.has('partner')){
+    const nPartners = new Set(rows.map(r => r.partner).filter(p => p && !p.startsWith('__'))).size;
+    dims.push({ key:'partner', label:'Partenaire', count: nPartners });
+  }
+  // Dette : sub1 = type de créancier (bilatéral/multilatéral/privé). sub2 redondant → non exposé.
   const subs = isDebt ? ['sub1'] : ['sub1','sub2','sub3'];
   for(const lvl of subs){
+    if(filteredLevels.has(lvl)) continue;   // niveau déjà fixé par le filtre
     const vals = new Set();
     for(const r of rows){ const v = r[lvl]; if(v && String(v).trim() !== '') vals.add(String(v)); }
     if(vals.size > 1) dims.push({ key: lvl, label: subLabel(lvl), count: vals.size });
   }
+  // toujours garantir au moins un axe
+  if(!dims.length) dims.push({ key:'partner', label:'Partenaire' });
   return dims;
 }
 
@@ -4348,8 +4351,9 @@ function applyDrillFilter(rows){
   return rows;
 }
 function setRelDim(dim){
+  // Changer d'axe NE réinitialise PAS le filtre courant (_relPath) : on regarde
+  // la même sélection sous un autre angle (quoi ↔ qui), façon Atlas.
   _relDim = dim;
-  _relPath = [];   // on reset le drill quand on change de dimension
   renderRelMain();
   syncUrl();
 }
@@ -4477,15 +4481,15 @@ function relHasBothSenses(indicator){
   const sides = new Set((state.flowEntries || []).filter(e => e.indicator === indicator && e.presentInDb).map(e => e.side));
   return sides.has('to') && sides.has('from');
 }
-function toggleRelSens(){
+function setRelSens(side){
   const cur = getFlowEntryByKey(_relEntryKey);
-  if(!cur || !relHasBothSenses(cur.indicator)) return;
-  const otherSide = cur.side === 'to' ? 'from' : 'to';
-  const other = (state.flowEntries || []).find(e => e.indicator === cur.indicator && e.side === otherSide && e.presentInDb);
-  if(!other) return;
-  _relEntryKey = other.key;
+  if(!cur || cur.side === side) return;
+  const target = (state.flowEntries || []).find(e => e.indicator === cur.indicator && e.side === side && e.presentInDb);
+  if(!target) return;
+  _relEntryKey = target.key;
   _relPath = [];
   _relInfluencePinned = null;
+  _relDim = relDefaultDim();
   renderRelMain();
   syncUrl();
 }
@@ -4632,11 +4636,20 @@ function renderRelMain(){
     scopeCrumb += `<span class="scope-step current">${sflag}${state.subject.label}<span class="scope-x" onclick="relBackToWorld()" title="Enlever le filtre pays">✕</span></span>`;
   }
   scopeCrumb += `</div>`;
-  // Nom de base (sans suffixe de sens) + bascule de sens ⇄ si l'indicateur est bidirectionnel.
+  // Nom de base (sans suffixe de sens) + toggle de sens à 2 boutons si bidirectionnel.
   const _baseName = (() => { const i = entry.label_long.indexOf(' — '); return i >= 0 ? entry.label_long.slice(0, i) : entry.label_long; })();
-  const _sensToggle = relHasBothSenses(entry.indicator)
-    ? `<button class="rel-sens-toggle" onclick="toggleRelSens()" title="Inverser le sens du flux">${entry.label} <span class="sens-arrow">⇄</span></button>`
-    : `<span class="rel-sens-static">${entry.label || ''}</span>`;
+  let _sensToggle = '';
+  if(relHasBothSenses(entry.indicator)){
+    const sides = (state.flowEntries || []).filter(e => e.indicator === entry.indicator && e.presentInDb);
+    const to = sides.find(e => e.side === 'to');
+    const from = sides.find(e => e.side === 'from');
+    _sensToggle = `<div class="rel-sens-seg">
+      <button class="${entry.side==='to'?'on':''}" onclick="setRelSens('to')">${to ? to.label : 'Sens A'}</button>
+      <button class="${entry.side==='from'?'on':''}" onclick="setRelSens('from')">${from ? from.label : 'Sens B'}</button>
+    </div>`;
+  } else if(entry.label){
+    _sensToggle = `<span class="rel-sens-static">${entry.label}</span>`;
+  }
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${_baseName}</span>
@@ -4896,17 +4909,28 @@ function treemapClick(name){
     relPromoteToSubject(name);
     return;
   }
-  // Drill piloté par la métadonnée : on ne déplie que si la donnée a de quoi déplier.
   const entry = getFlowEntryByKey(_relEntryKey);
   const dims = getRelDimensions();
-  const next = nextRelDim(_relDim, dims, entry);
-  // Pas de niveau suivant → flux plat ou impasse : le clic ne déplie pas.
-  if(next == null) return;
-  // pousser le filtre avec la dimension actuelle (avant bascule)
+  // Flux plat (aucune sub) sur l'axe partenaire : rien à filtrer.
+  const meta = entry ? getIndicatorMeta(entry.indicator) : null;
+  const profondeur = meta && meta.profondeur ? meta.profondeur : 0;
+  if(profondeur === 0 && _relDim === 'partner') return;
+
+  // Le clic POSE un filtre sur la valeur cliquée (dimension courante).
   const level = _relDim;
   const label = (level === 'partner') ? (partnerLabel(name) || name) : name;
   _relPath = [..._relPath, { level, value: name, label }];
-  _relDim = next;
+
+  // Axe d'affichage par défaut après le filtre : on descend d'un cran sur le « quoi »
+  // s'il existe (nextRelDim), sinon on bascule sur « qui » (partner). L'utilisateur peut
+  // ensuite changer librement via le sélecteur de référentiel — le filtre reste actif.
+  const next = nextRelDim(level, dims, entry);
+  if(next != null){
+    _relDim = next;
+  } else {
+    const hasPartner = dims.some(d => d.key === 'partner');
+    _relDim = hasPartner ? 'partner' : level;
+  }
   renderRelMain();
   syncUrl();
 }
