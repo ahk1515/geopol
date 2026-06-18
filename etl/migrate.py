@@ -94,6 +94,59 @@ def migrate_identite_subcategory(conn):
     return True
 
 
+def clean_dette_aggregats(conn):
+    """
+    Nettoyage des agrégats mal rangés de la dette (bug fallback IDS).
+    La DB persiste entre runs : ces lignes existent déjà et ne sont pas
+    corrigées par le simple re-run du parser. Migration idempotente.
+
+    1. "World" (sub2='World') = total bilatéral → SUPPRIMÉ (double comptage).
+    2. "Multiple Lenders" rangé à tort en __multilateral__ → ré-étiqueté
+       __unspecified__ (dette réelle, créancier non ventilé), type (sub1) préservé.
+    """
+    if not _table_exists(conn, "flux"):
+        print("  flux absente — pas de nettoyage dette.")
+        return
+
+    # 1) Supprimer le total "World"
+    n_world = conn.execute(
+        "SELECT COUNT(*) FROM flux WHERE indicator='dette_exterieure' AND subcategory_2='World'"
+    ).fetchone()[0]
+    if n_world:
+        conn.execute(
+            "DELETE FROM flux WHERE indicator='dette_exterieure' AND subcategory_2='World'"
+        )
+        print(f"  dette : {n_world} ligne(s) 'World' (total) supprimée(s).")
+
+    # 2) Ré-étiqueter "Multiple Lenders" mal rangé en __multilateral__ → __unspecified__.
+    #    country_from fait partie de la PK : on vérifie qu'il n'y a pas de collision
+    #    (impossible ici car __unspecified__ est nouveau, mais on reste défensif).
+    n_ml = conn.execute(
+        "SELECT COUNT(*) FROM flux WHERE indicator='dette_exterieure' "
+        "AND subcategory_2='Multiple Lenders' AND country_from='__multilateral__'"
+    ).fetchone()[0]
+    if n_ml:
+        try:
+            conn.execute(
+                "UPDATE flux SET country_from='__unspecified__' "
+                "WHERE indicator='dette_exterieure' AND subcategory_2='Multiple Lenders' "
+                "AND country_from='__multilateral__'"
+            )
+            print(f"  dette : {n_ml} ligne(s) 'Multiple Lenders' ré-étiquetée(s) __unspecified__.")
+        except sqlite3.IntegrityError:
+            # collision PK improbable : on supprime les doublons résiduels par sécurité
+            conn.execute(
+                "DELETE FROM flux WHERE indicator='dette_exterieure' "
+                "AND subcategory_2='Multiple Lenders' AND country_from='__multilateral__'"
+            )
+            print(f"  dette : collision PK — {n_ml} ligne(s) 'Multiple Lenders' supprimée(s).")
+
+    if n_world or n_ml:
+        conn.commit()
+    else:
+        print("  dette : agrégats déjà propres — rien à faire.")
+
+
 def run():
     """Applique toutes les migrations de schéma. Appelé en tête de pipeline."""
     print("=" * 60)
@@ -108,6 +161,7 @@ def run():
     conn = sqlite3.connect(PATH_DB)
     try:
         migrate_identite_subcategory(conn)
+        clean_dette_aggregats(conn)
     finally:
         conn.close()
 
