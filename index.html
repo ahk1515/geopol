@@ -2099,7 +2099,27 @@ function getFluxRowsTimeline(entry){
   return rows;
 }
 
-// Pour la carte mondiale d'un flux : valeur agrégée par pays partenaire sur l'année courante.
+// Vue Monde : série temporelle de la structure mondiale du flux (sans sujet).
+// « partner » = pays côté sujet agrégé. Permet l'évolution empilée par pays ou par sub.
+function getWorldFluxRowsTimeline(entry){
+  if(!entry || !entry.realIndicator) return [];
+  const realIndicator = entry.realIndicator;
+  let groupCol;
+  if(realIndicator === 'import_commercial') groupCol = 'country_to';
+  else if(realIndicator === 'export_commercial') groupCol = 'country_from';
+  else groupCol = (entry.side === 'to') ? 'country_to' : 'country_from';
+  const key = entry.key + '|WTL';
+  if(_fluxTimelineCache.has(key)) return _fluxTimelineCache.get(key);
+  const exclAgg = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const r = safeExec(`SELECT year, ${groupCol} AS partner, subcategory_1, subcategory_2, subcategory_3, SUM(value) AS v
+                      FROM flux WHERE indicator='${escapeSql(realIndicator)}'
+                      AND ${groupCol} NOT IN (${exclAgg})
+                      GROUP BY year, ${groupCol}, subcategory_1, subcategory_2, subcategory_3
+                      ORDER BY year`);
+  const rows = r.length ? r[0].values.map(([y,p,s1,s2,s3,v]) => ({ year:y, partner:p, sub1:s1, sub2:s2, sub3:s3, value:v })) : [];
+  _fluxTimelineCache.set(key, rows);
+  return rows;
+}
 // Pour chaque partenaire du sujet, son TOTAL MONDIAL sur ce flux à l'année courante.
 // Utile pour la colonne « Pour qui le sujet pèse » (Synthèse colonne 2) et Relations sens influence.
 // Le partenaire envoie/reçoit du flux à de nombreux pays — on somme sur tous SAUF le sujet.
@@ -2241,6 +2261,23 @@ function getFluxWorldMap(entry){
   for(const r of filtered){
     out[r.partner] = (out[r.partner] || 0) + (r.value || 0);
   }
+  return out;
+}
+
+// Vue Monde : valeurs par PAYS (côté sujet agrégé) pour la choroplèthe mondiale.
+// « partner » dans getWorldFluxRows = le pays émetteur/récepteur agrégé.
+function getWorldFluxMap(entry){
+  const rows = getWorldFluxRows(entry);
+  if(!rows.length) return {};
+  let filtered = rows;
+  if(isDebtIndicator(entry.indicator)){
+    const bil = filtered.filter(r => isBilateral(r));
+    if(bil.length) filtered = bil;
+  }
+  filtered = filtered.filter(r => r.partner && !r.partner.startsWith('__') && !REGIONAL_CODES.has(r.partner));
+  filtered = applyDrillFilter(filtered);
+  const out = {};
+  for(const r of filtered){ out[r.partner] = (out[r.partner] || 0) + (r.value || 0); }
   return out;
 }
 
@@ -4416,6 +4453,7 @@ function renderRelMain(){
   const main = document.getElementById('relMain');
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ main.innerHTML = `<div class="rel-empty">Aucun flux disponible.</div>`; return; }
+  const worldMode = relIsWorld();
   const dims = getRelDimensions();
   // breadcrumb : flux + chemin de drill
   let crumb = `<span class="step current" onclick="setRelPathLength(0)">${entry.label_long}</span>`;
@@ -4509,13 +4547,16 @@ function renderRelMain(){
       </div>`;
     }
   }
-  // sous-titres dynamiques selon la métrique
-  const metricLabel = _relMetric === 'influence' ? 'influence chez les partenaires' : 'volume du sujet';
-  const mapSubtitle = (_relDim === 'partner' && _relMetric === 'influence')
-    ? 'poids du sujet chez chaque partenaire (%)'
-    : 'part de chaque partenaire dans le total du sujet (%)';
-  const legendLeft = (_relDim === 'partner' && _relMetric === 'influence') ? 'sujet peu présent' : 'faible part';
-  const legendRight = (_relDim === 'partner' && _relMetric === 'influence') ? 'sujet dominant' : 'forte part';
+  // sous-titres dynamiques selon la métrique et la portée
+  const metricLabel = worldMode ? 'structure mondiale'
+    : (_relMetric === 'influence' ? 'influence chez les partenaires' : 'volume du sujet');
+  const mapSubtitle = worldMode
+    ? (_relDim === 'partner' ? 'part de chaque pays dans le flux mondial (%)' : 'flux mondial réparti par ' + dimLabelOf(_relDim, dims).toLowerCase())
+    : ((_relDim === 'partner' && _relMetric === 'influence')
+      ? 'poids du sujet chez chaque partenaire (%)'
+      : 'part de chaque partenaire dans le total du sujet (%)');
+  const legendLeft = (!worldMode && _relDim === 'partner' && _relMetric === 'influence') ? 'sujet peu présent' : 'faible part';
+  const legendRight = (!worldMode && _relDim === 'partner' && _relMetric === 'influence') ? 'sujet dominant' : 'forte part';
   // suffixe période pour les libellés
   let periodSuffix;
   if(_relYearRange){
@@ -4525,7 +4566,6 @@ function renderRelMain(){
   } else {
     periodSuffix = state.year;
   }
-  const worldMode = relIsWorld();
   // Fil d'Ariane de portée : Monde (toujours) › Pays sélectionné (si sujet).
   // Cliquer « Monde » ou la croix efface le sujet global et revient à la structure mondiale.
   let scopeCrumb = `<div class="rel-scope-crumb">`;
@@ -4824,18 +4864,15 @@ function nextRelDim(currentDim, dims){
 function renderRelEvolution(){
   const body = document.getElementById('relEvoBody');
   if(!body) return;
-  if(relIsWorld()){
-    body.innerHTML = `<div class="rel-empty">Évolution temporelle disponible en vue Sujet.<br><span style="font-size:11px;color:var(--text3)">Choisissez un pays pour suivre ce flux dans le temps.</span></div>`;
-    return;
-  }
+  const worldMode = relIsWorld();
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ body.innerHTML = ''; return; }
-  // Mode Influence + dim=partner : courbes superposées du Top 5 (avec zoom sur sélection)
-  if(_relMetric === 'influence' && _relDim === 'partner'){
+  // Mode Influence + dim=partner : courbes superposées du Top 5 (vue Sujet uniquement)
+  if(!worldMode && _relMetric === 'influence' && _relDim === 'partner'){
     renderInfluenceTimeline(body, entry);
     return;
   }
-  let rows = getFluxRowsTimeline(entry);
+  let rows = worldMode ? getWorldFluxRowsTimeline(entry) : getFluxRowsTimeline(entry);
   if(!rows.length){ body.innerHTML = `<div class="rel-empty">Pas de série temporelle disponible.</div>`; return; }
   // filtres cohérents (dette bilatéral, hors agrégats)
   if(isDebtIndicator(entry.indicator)){
@@ -4878,7 +4915,12 @@ function renderRelEvolution(){
     totalPerKey.set(k, (totalPerKey.get(k) || 0) + (r.value || 0));
   }
   const yearList = [...years].sort((a,b) => a - b);
-  const keys = [...keysSet].sort((a,b) => totalPerKey.get(b) - totalPerKey.get(a));
+  let keys = [...keysSet].sort((a,b) => totalPerKey.get(b) - totalPerKey.get(a));
+  // Vue Monde + dim=partner : 200+ pays empilés seraient illisibles → Top 12.
+  // Le détail d'un pays s'obtient en cliquant dessus (bascule en sujet).
+  if(worldMode && dim === 'partner' && keys.length > 12){
+    keys = keys.slice(0, 12);
+  }
   const palette = ['#0a6e4a','#2d8556','#b45309','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#c2410c','#4f9e6a','#6fb486','#6a5d4e','#8b3a62','#3b6b8c','#92723a','#5c8a5c','#a0826d','#7d6b8c','#6b8a7d'];
   const colorOf = (i) => palette[i % palette.length];
 
@@ -5116,13 +5158,9 @@ async function renderRelFluxMap(){
   const svgEl = document.getElementById('relMap');
   const container = document.getElementById('relMapContainer');
   if(!svgEl || !container) return;
-  if(relIsWorld()){
-    const leg = container.parentElement.querySelector('.rel-map-legend');
-    if(leg) leg.style.display = 'none';
-    svgEl.innerHTML = '';
-    container.innerHTML = `<div class="rel-empty" style="height:320px;display:flex;align-items:center;justify-content:center;text-align:center">Carte géographique disponible en vue Sujet.<br><span style="font-size:11px;color:var(--text3)">La vue mondiale montre la structure du flux dans la composition ci-dessus.</span></div>`;
-    return;
-  }
+  const worldMode = relIsWorld();
+  const leg = container.parentElement.querySelector('.rel-map-legend');
+  if(leg) leg.style.display = '';
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ svgEl.innerHTML = ''; return; }
   const W = container.clientWidth || 600, H = 320;
@@ -5142,8 +5180,8 @@ async function renderRelFluxMap(){
   catch { svgEl.innerHTML = `<rect width="${W}" height="${H}" fill="#dce8f0"/><text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#888">Carte indisponible</text>`; return; }
   const features = topojson.feature(world, world.objects.countries).features;
 
-  // valeurs par partenaire (déjà filtrées : bilatéral pour la dette, hors agrégats)
-  let byPartner = getFluxWorldMap(entry);
+  // valeurs par pays : en vue Monde = pays émetteurs/récepteurs agrégés ; en vue Sujet = partenaires
+  let byPartner = worldMode ? getWorldFluxMap(entry) : getFluxWorldMap(entry);
   // appliquer le filtre zone : ne garder que les partenaires inclus dans la zone active
   const zoneSet = getZoneFilterIsos();
   if(zoneSet){
@@ -5153,7 +5191,7 @@ async function renderRelFluxMap(){
     }
     byPartner = filtered;
   }
-  const isInfluence = (_relMetric === 'influence');
+  const isInfluence = (_relMetric === 'influence' && !worldMode);
   // Quel que soit le mode, on colore la carte par UN POURCENTAGE pour rester lisible :
   //   - Volume    : part dans le total du sujet (recalculé sur la zone filtrée si filtre actif)
   //   - Influence : poids du sujet chez chaque partenaire (% de son marché mondial)
@@ -5216,7 +5254,7 @@ async function renderRelFluxMap(){
       } else {
         // Mode Volume : on a stocké le pct du sujet dans displayByIso
         const pct = displayByIso[iso] || 0;
-        body = `${pct.toFixed(1)}% du sujet · volume ${fmtWithUnit(v, cfg.unit_display)}`;
+        body = `${pct.toFixed(1)}% ${worldMode ? 'du flux mondial' : 'du sujet'} · volume ${fmtWithUnit(v, cfg.unit_display)}`;
       }
       showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, body);
     })
