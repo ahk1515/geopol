@@ -669,7 +669,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-crumb-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
   padding: 8px 10px; flex-wrap: wrap;
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: 90px; z-index: 30;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   margin: 0 -10px 12px;
@@ -2619,7 +2619,11 @@ function renderContextBar(){
 function renderSubjectSlot(){
   const slot = document.getElementById('subjectSlot');
   if(!state.subject || !state.subject.isos.length){
-    slot.innerHTML = `<span class="subject-chip empty" onclick="openSearch()">aucun sujet — cliquer pour choisir</span>`;
+    // En Relations, « pas de sujet » = vue Monde (état valide) → libellé adapté.
+    // Ailleurs (Synthèse/Puissance/Comparaisons), c'est un vrai état d'attente.
+    const enRelations = (state.view === 'relations');
+    const txt = enRelations ? '🌍 Monde — cliquer pour filtrer un pays' : 'aucun sujet — cliquer pour choisir';
+    slot.innerHTML = `<span class="subject-chip empty" onclick="openSearch()">${txt}</span>`;
     return;
   }
   const s = state.subject;
@@ -4309,7 +4313,9 @@ function relIsWorld(){ return !state.subject || !state.subject.isos || !state.su
 function getRelDimensions(){
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry) return [{ key:'partner', label:'Partenaire' }];
-  const rows = getFluxRows(entry);
+  // En vue Monde, les rows viennent de la structure mondiale (sinon getFluxRows
+  // renvoie [] sans sujet → aucune sub détectée → sélecteur masqué à tort).
+  const rows = relIsWorld() ? getWorldFluxRows(entry) : getFluxRows(entry);
   const dims = [{ key:'partner', label:'Partenaire', count: new Set(rows.map(r => r.partner).filter(p => p && !p.startsWith('__'))).size }];
   const isDebt = isDebtIndicator(entry.indicator);
   // Libellés réels des niveaux de subcategory, lus depuis la métadonnée.
