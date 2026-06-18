@@ -560,6 +560,13 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pu-nav-search input:focus { border-color: var(--green); }
 .pu-nav-body { flex: 1; overflow-y: auto; padding: 4px 0 8px; }
 .pu-cat { }
+.pu-section { border-bottom: 1px solid var(--border); }
+.pu-section:last-child { border-bottom: none; }
+.pu-section-head { display: flex; align-items: center; gap: 7px; padding: 10px 12px; cursor: pointer; font-family: var(--display); font-size: 12px; font-weight: 600; color: var(--text); }
+.pu-section-head:hover { color: var(--green); }
+.pu-section-head .caret { transition: transform .15s; font-size: 9px; color: var(--text3); }
+.pu-section.collapsed .caret { transform: rotate(-90deg); }
+.pu-section.collapsed .pu-section-body { display: none; }
 .pu-cat-head { display: flex; align-items: center; gap: 6px; padding: 8px 12px 4px; cursor: pointer; font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); }
 .pu-cat-head:hover { color: var(--text2); }
 .pu-cat-head .caret { transition: transform .15s; font-size: 8px; }
@@ -4221,6 +4228,7 @@ let _relEntryKey = null;          // clé d'entrée flux active (ex. 'dette_exte
 let _relDim = 'partner';          // 'partner' | 'sub1' | 'sub2' | 'sub3' — dimension principale
 let _relPath = [];                // chemin de drill-down dans le treemap (= filtre cumulatif partagé)
 let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
+let _relSecCollapsed = {};        // état plié/déplié des grandes sections (flux / identité)
 let _relMetric = 'volume';        // 'volume' | 'influence' — métrique d'affichage
 let _relInfluencePinned = null;   // en mode Influence, ISO3 du partenaire sélectionné pour zoom courbe
 let _relZoneFilter = null;        // zone_id (zone géo ou organisation) qui filtre les partenaires affichés, null = monde entier
@@ -4445,51 +4453,61 @@ function renderRelations(){
 
 function renderRelNav(filter){
   const body = document.getElementById('relNavBody');
-  // Lot A : on liste les flux + l'identité SANS sub (famille 1). L'identité+sub
-  // (famille 2, hasSub) est réservée au Lot B → exclue temporairement de la nav.
+  // Lot A : flux + identité SANS sub (famille 1). Identité+sub (famille 2) → Lot B.
   const all = flowEntriesPresent().filter(e => !(entryIsIdentite(e) && e.hasSub));
   const ql = (filter || '').trim().toLowerCase();
-  // Une seule ligne par indicateur canonique : le sens (to/from) est géré par le
-  // toggle ⇄ dans l'écran principal, plus par deux entrées séparées dans la nav.
+  // une seule ligne par indicateur
   const byInd = new Map();
-  for(const e of all){
-    if(!byInd.has(e.indicator)) byInd.set(e.indicator, e);
-  }
-  const baseName = (e) => {
-    // nom de base sans le suffixe de sens (« Dette — Créanciers » → « Dette »)
-    const i = e.label_long.indexOf(' — ');
-    return i >= 0 ? e.label_long.slice(0, i) : e.label_long;
+  for(const e of all){ if(!byInd.has(e.indicator)) byInd.set(e.indicator, e); }
+  const baseName = (e) => { const i = e.label_long.indexOf(' — '); return i >= 0 ? e.label_long.slice(0, i) : e.label_long; };
+
+  // Deux grandes sections : Flux et Identité (selon kind). Chacune dépliable.
+  const sections = {
+    flux:     { label: 'Flux',     byCat: {} },
+    identite: { label: 'Identité', byCat: {} },
   };
-  const byCat = {};
   for(const e of byInd.values()){
     const nm = baseName(e);
     if(ql && !nm.toLowerCase().includes(ql)) continue;
-    (byCat[e.category || 'autre'] ??= []).push({ entry: e, name: nm });
+    const sec = entryIsIdentite(e) ? sections.identite : sections.flux;
+    (sec.byCat[e.category || 'autre'] ??= []).push({ entry: e, name: nm });
   }
+
+  const curEntry = getFlowEntryByKey(_relEntryKey);
   let html = '';
-  for(const cat of Object.keys(byCat).sort()){
-    const collapsed = _relCatCollapsed[cat] && !ql ? 'collapsed' : '';
-    html += `<div class="pu-cat ${collapsed}" data-cat="${cat}">
-      <div class="pu-cat-head" onclick="toggleRelCat('${cat}')"><span class="caret">▼</span>${cat}</div>
-      <div class="pu-cat-list">`;
-    for(const { entry: e, name } of byCat[cat]){
-      // actif si l'entrée courante partage le même indicateur (quel que soit le sens)
-      const curEntry = getFlowEntryByKey(_relEntryKey);
-      const active = (curEntry && curEntry.indicator === e.indicator) ? 'active' : '';
-      const meta = getIndicatorMeta(e.indicator);
-      const depth = meta && meta.profondeur ? meta.profondeur : 0;
-      const badge = depth > 0
-        ? `<span class="rel-deplie" title="Dépliable : ${depth} niveau${depth>1?'x':''} de détail">⊟</span>`
-        : '';
-      html += `<div class="pu-ind ${active}" onclick="selectRelIndicator('${e.indicator.replace(/'/g,"\\'")}')">
-        <span>${name}</span>${badge}
-      </div>`;
+  for(const secKey of ['flux','identite']){
+    const sec = sections[secKey];
+    const cats = Object.keys(sec.byCat);
+    if(!cats.length) continue;   // section vide (ex. filtre actif) → masquée
+    const secCollapsed = _relSecCollapsed[secKey] && !ql ? 'collapsed' : '';
+    html += `<div class="pu-section ${secCollapsed}" data-sec="${secKey}">
+      <div class="pu-section-head" onclick="toggleRelSection('${secKey}')"><span class="caret">▼</span>${sec.label}</div>
+      <div class="pu-section-body">`;
+    for(const cat of cats.sort()){
+      const catKey = secKey + ':' + cat;
+      const collapsed = _relCatCollapsed[catKey] && !ql ? 'collapsed' : '';
+      html += `<div class="pu-cat ${collapsed}" data-cat="${catKey}">
+        <div class="pu-cat-head" onclick="toggleRelCat('${catKey}')"><span class="caret">▼</span>${cat}</div>
+        <div class="pu-cat-list">`;
+      for(const { entry: e, name } of sec.byCat[cat]){
+        const active = (curEntry && curEntry.indicator === e.indicator) ? 'active' : '';
+        const meta = getIndicatorMeta(e.indicator);
+        const depth = meta && meta.profondeur ? meta.profondeur : 0;
+        const badge = depth > 0
+          ? `<span class="rel-deplie" title="Dépliable : ${depth} niveau${depth>1?'x':''} de détail">⊟</span>`
+          : '';
+        html += `<div class="pu-ind ${active}" onclick="selectRelIndicator('${e.indicator.replace(/'/g,"\\'")}')">
+          <span>${name}</span>${badge}
+        </div>`;
+      }
+      html += `</div></div>`;
     }
     html += `</div></div>`;
   }
-  body.innerHTML = html || `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Aucun flux</div>`;
+  body.innerHTML = html || `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">Aucun indicateur</div>`;
 }
 function toggleRelCat(cat){ _relCatCollapsed[cat] = !_relCatCollapsed[cat]; renderRelNav(document.getElementById('relSearch')?.value || ''); }
+function toggleRelSection(sec){ _relSecCollapsed[sec] = !_relSecCollapsed[sec]; renderRelNav(document.getElementById('relSearch')?.value || ''); }
 function filterRelNav(v){ renderRelNav(v); }
 function selectRelEntry(key){
   _relEntryKey = key; _relPath = []; _relInfluencePinned = null;
@@ -4786,15 +4804,15 @@ function renderIdentiteMain(main, entry){
     </div>
     <div class="pu-cells">
       <div class="pu-cell">
+        <div class="pu-cell-head"><span class="pu-cell-title">Évolution</span><span class="meta" style="font-size:10px;color:var(--text3)">${worldMode ? 'agrégat mondial' : state.subject.label}</span></div>
+        <div class="pu-cell-body"><div id="identCurve" style="min-height:240px"></div></div>
+      </div>
+      <div class="pu-cell">
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear} · cliquez un pays pour le cibler</span></div>
         <div class="pu-cell-body">
           <div id="identMapContainer"><svg id="identMap"></svg></div>
           <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span></div>
         </div>
-      </div>
-      <div class="pu-cell">
-        <div class="pu-cell-head"><span class="pu-cell-title">Évolution</span><span class="meta" style="font-size:10px;color:var(--text3)">${worldMode ? 'agrégat mondial' : state.subject.label}</span></div>
-        <div class="pu-cell-body"><div id="identCurve" style="min-height:240px"></div></div>
       </div>
     </div>`;
   drawIdentiteMap(ind);
@@ -4876,32 +4894,46 @@ function drawIdentiteCurve(indicator){
   const xS = y => m.l + (xMax===xMin ? 0 : (y - xMin)/(xMax - xMin)) * (W - m.l - m.r);
   const yS = v => H - m.b - (yHi===yLo ? 0 : (v - yLo)/(yHi - yLo)) * (H - m.t - m.b);
   const cfg = state.indicators.find(c => c.indicator === indicator);
-  let pts = series.map(d => `${xS(d.year).toFixed(1)},${yS(d.value).toFixed(1)}`).join(' ');
+  // Sépare historique (trait plein) et projection (pointillés). On relie le dernier
+  // point historique au premier point projeté pour la continuité visuelle.
+  const histPts = [], projPts = [];
+  let lastHistIdx = -1;
+  series.forEach((d, i) => { if(!d.projection){ histPts.push(d); lastHistIdx = i; } });
+  series.forEach((d, i) => { if(d.projection){ if(projPts.length === 0 && lastHistIdx >= 0) projPts.push(series[lastHistIdx]); projPts.push(d); } });
+  const toPoly = arr => arr.map(d => `${xS(d.year).toFixed(1)},${yS(d.value).toFixed(1)}`).join(' ');
   let svg = `<svg width="${W}" height="${H}">`;
-  svg += `<polyline points="${pts}" fill="none" stroke="var(--green)" stroke-width="2"/>`;
-  for(const d of series){ svg += `<circle cx="${xS(d.year).toFixed(1)}" cy="${yS(d.value).toFixed(1)}" r="2.5" fill="var(--green)"/>`; }
+  if(histPts.length >= 2) svg += `<polyline points="${toPoly(histPts)}" fill="none" stroke="var(--green)" stroke-width="2"/>`;
+  if(projPts.length >= 2) svg += `<polyline points="${toPoly(projPts)}" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="4 3" opacity="0.7"/>`;
+  for(const d of series){ svg += `<circle cx="${xS(d.year).toFixed(1)}" cy="${yS(d.value).toFixed(1)}" r="2.5" fill="${d.projection ? 'none' : 'var(--green)'}" stroke="${d.projection ? 'var(--green)' : 'none'}" stroke-width="${d.projection ? 1 : 0}"/>`; }
   // axes minimalistes
   svg += `<text x="${m.l}" y="${H-6}" fill="var(--text3)" style="font:10px var(--mono)">${xMin}</text>`;
   svg += `<text x="${W-m.r}" y="${H-6}" text-anchor="end" fill="var(--text3)" style="font:10px var(--mono)">${xMax}</text>`;
   svg += `<text x="4" y="${yS(yMax).toFixed(1)}" fill="var(--text3)" style="font:10px var(--mono)">${fmtNumber(yMax, cfg?.unit_display)}</text>`;
+  // légende projection si présente
+  if(projPts.length >= 2) svg += `<text x="${W-m.r}" y="${m.t+4}" text-anchor="end" fill="var(--text3)" style="font:9px var(--mono)">- - - projection</text>`;
   svg += `</svg>`;
   wrap.innerHTML = svg;
 }
 
 // Série temporelle d'un indicateur identité pour un ensemble d'isos (somme par année).
+// Distingue historique (subcategory NULL) et projection (subcategory='projection').
 function getIdentiteSeriesForIsos(indicator, isos){
   if(!isos || !isos.length) return [];
   const inList = sqlList(isos);
-  const r = safeExec(`SELECT year, SUM(value) AS v FROM identite WHERE indicator='${escapeSql(indicator)}' AND country_iso3 IN (${inList}) AND value IS NOT NULL AND value!=0 GROUP BY year ORDER BY year`);
+  const r = safeExec(`SELECT year, SUM(value) AS v, MAX(CASE WHEN subcategory='projection' THEN 1 ELSE 0 END) AS proj
+                      FROM identite WHERE indicator='${escapeSql(indicator)}' AND country_iso3 IN (${inList})
+                      AND value IS NOT NULL AND value!=0 GROUP BY year ORDER BY year`);
   if(!r.length) return [];
-  return r[0].values.map(([y,v]) => ({ year: y, value: v }));
+  return r[0].values.map(([y,v,p]) => ({ year: y, value: v, projection: !!p }));
 }
 // Série mondiale agrégée (somme de tous les pays, hors agrégats régionaux).
 function getIdentiteWorldSeries(indicator){
   const excl = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
-  const r = safeExec(`SELECT year, SUM(value) AS v FROM identite WHERE indicator='${escapeSql(indicator)}' AND value IS NOT NULL AND value!=0 AND country_iso3 NOT IN (${excl}) GROUP BY year ORDER BY year`);
+  const r = safeExec(`SELECT year, SUM(value) AS v, MAX(CASE WHEN subcategory='projection' THEN 1 ELSE 0 END) AS proj
+                      FROM identite WHERE indicator='${escapeSql(indicator)}' AND value IS NOT NULL AND value!=0
+                      AND country_iso3 NOT IN (${excl}) GROUP BY year ORDER BY year`);
   if(!r.length) return [];
-  return r[0].values.map(([y,v]) => ({ year: y, value: v }));
+  return r[0].values.map(([y,v,p]) => ({ year: y, value: v, projection: !!p }));
 }
 
 function setRelMetric(m){ _relMetric = m; _relInfluencePinned = null; renderRelMain(); syncUrl(); }
