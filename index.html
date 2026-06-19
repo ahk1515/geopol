@@ -169,6 +169,14 @@ header {
 }
 .year-select:hover { border-color: var(--border2); }
 .year-select:focus { outline: none; border-color: var(--green); }
+.ident-sub-select {
+  font-family: var(--sans); font-size: 12px; font-weight: 500; margin-left: 10px;
+  padding: 4px 24px 4px 9px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg2) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" fill="none" stroke="%23666" stroke-width="1.5"/></svg>') no-repeat right 7px center;
+  appearance: none; cursor: pointer; color: var(--text); max-width: 160px;
+}
+.ident-sub-select:hover { border-color: var(--border2); }
+.ident-sub-select:focus { outline: none; border-color: var(--green); }
 
 /* ── Zone principale ─────────────────────────────────────────── */
 main { flex: 1; padding: 16px 18px 28px; }
@@ -4860,6 +4868,14 @@ function setIdentPerspective(p){
   _identSubFilter = null;
   renderRelMain();
 }
+// Sélection via le menu déroulant : même effet que le clic sur le treemap.
+// '' = revenir à « Tous les types » (perspective par type, filtre levé).
+function selectIdentSub(key){
+  if(!key){ identBackToTypes(); return; }
+  _identSubFilter = key;
+  _identSubPerspective = 'pays';   // comme le clic : on montre « qui produit ce type »
+  renderRelMain();
+}
 function identSubClick(key){
   if(_identSubPerspective === 'sujet'){
     // On affiche les TYPES → clic sur un type = « qui produit ce type » :
@@ -4902,6 +4918,17 @@ function renderIdentiteSubMain(main, entry){
       <button class="${_identSubPerspective==='pays'?'on':''}" onclick="setIdentPerspective('pays')" title="Qui produit (par pays)">Par pays</button>
     </div>`;
 
+  // Menu déroulant des types : permet de cibler une sub indépendamment de sa taille
+  // dans le treemap (le lithium noyé derrière le fer reste sélectionnable ici).
+  // Lié au même état (_identSubFilter) que le clic sur le treemap.
+  const allSubs = getIdentSubByType(ind, null).slice().sort((a,b) => a.name.localeCompare(b.name));
+  const subOptions = ['<option value="">Tous les types</option>']
+    .concat(allSubs.map(s => `<option value="${escAttr(s.key)}" ${_identSubFilter===s.key?'selected':''}>${escAttr(s.name)}</option>`))
+    .join('');
+  const subMenu = allSubs.length
+    ? `<select class="ident-sub-select" onchange="selectIdentSub(this.value)" title="Cibler un type précis">${subOptions}</select>`
+    : '';
+
   // sous-titre carte : sub sélectionnée ou total
   const subLabel = _identSubFilter ? prettySubLabel(_identSubFilter) : 'total';
   const compTitle = _identSubPerspective === 'sujet' ? 'Composition par type' : 'Composition par pays';
@@ -4911,6 +4938,7 @@ function renderIdentiteSubMain(main, entry){
     <div class="pu-head">
       <span class="name">${cfg.label || ind}</span>
       ${persToggle}
+      ${subMenu}
       ${scopeCrumb}
     </div>
     <div class="rel-crumb-bar">
