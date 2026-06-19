@@ -1221,6 +1221,7 @@ main { flex: 1; padding: 16px 18px 28px; }
     <div class="header-spacer"></div>
     <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
     <button class="hbtn" id="exportBtn" onclick="exportCurrentView()"><span>⬇</span> Exporter</button>
+    <button class="hbtn" id="importDbBtn" onclick="requestLocalDbImport()" title="Charger une base de données locale (.db)"><span>📂</span></button>
     <button class="hbtn" id="aboutBtn" onclick="openAbout()" title="À propos de GÉOPOL"><span>ℹ</span></button>
     <div class="db-badge"><span class="dot" id="dbDot"></span><span id="dbName">—</span></div>
   </header>
@@ -1255,6 +1256,12 @@ main { flex: 1; padding: 16px 18px 28px; }
   <div class="load-bar-wrap"><div class="load-bar" id="loadPbar"></div></div>
   <div id="loadingMsg">Initialisation…</div>
   <div id="loadingDetail" style="font-family:var(--mono);font-size:10px;color:var(--text3);opacity:.7;min-height:13px"></div>
+  <div id="loadLocalZone" style="display:none;margin-top:16px;text-align:center">
+    <button class="hbtn" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="document.getElementById('localDbInput').click()">📂 Charger une base locale (.db)</button>
+    <button class="hbtn" id="fallbackDemoBtn" style="display:none;margin-left:8px" onclick="startDemoMode()">Continuer en mode démo</button>
+    <div style="font-size:10px;color:var(--text3);margin-top:6px;font-family:var(--mono)">si le téléchargement est bloqué par votre réseau</div>
+  </div>
+  <input type="file" id="localDbInput" accept=".db,.sqlite,.sqlite3" style="display:none" onchange="onLocalDbPicked(event)">
   <div id="loadingIntro" style="max-width:520px;margin-top:18px;font-size:12px;line-height:1.65;color:var(--text2);text-align:left;padding:0 24px">
     <p style="margin:0 0 8px"><strong>Explorateur de données géopolitiques, open-source.</strong></p>
     <p style="margin:0 0 8px">Deux familles : les <strong>indicateurs</strong> d'un pays (population, PIB, production…) et les <strong>flux</strong> entre pays (commerce, dette, armes, réfugiés). <span id="introTempo"></span></p>
@@ -2319,6 +2326,7 @@ async function boot(){
   let SQL;
   try {
     SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}` });
+    state.SQL = SQL;   // conservé pour l'import de base locale à tout moment
   } catch(e){ setLoadingMsg('Erreur WebAssembly : ' + e.message, 0); return; }
 
   setLoadingMsg('Chargement de la base…', 35);
@@ -2378,9 +2386,12 @@ async function boot(){
       msg = 'Base distante indisponible — mode démo';
     }
     setLoadingMsg(msg, 60);
-    setLoadingDetail('Vérifiez votre connexion. Les données affichées sont fictives.');
-    await sleep(1200);
-    initDemo(SQL);
+    setLoadingDetail('Chargez une base locale, ou continuez en mode démo.');
+    // Proposer l'import local au lieu de basculer directement en démo (cas réseau bloqué).
+    const zone = document.getElementById('loadLocalZone');
+    if(zone) zone.style.display = 'block';
+    const demoBtn = document.getElementById('fallbackDemoBtn');
+    if(demoBtn) demoBtn.style.display = 'inline-flex';
     return;
   }
   setLoadingMsg('Ouverture de la base…', 78);
@@ -8366,6 +8377,77 @@ function initDemo(SQL){
   buildIndicatorRegistry();
   buildCountryList();
   finishBoot('Mode démo', 'demo');
+}
+
+/* ─── IMPORT DE BASE LOCALE (.db) ─────────────────────────────
+   Charge une base SQLite depuis le disque de l'utilisateur, sans réseau.
+   Sert quand le téléchargement distant est bloqué (pare-feu d'entreprise)
+   ou pour travailler hors-ligne. Suit le même chemin qu'une base distante.
+─────────────────────────────────────────────────────────────── */
+function startDemoMode(){
+  if(state.db) return;
+  const SQL = state.SQL;
+  if(!SQL){ setLoadingMsg('Moteur non initialisé', 0); return; }
+  initDemo(SQL);
+}
+
+// Bouton permanent du header : confirme si une base est déjà chargée, puis ouvre le sélecteur.
+function requestLocalDbImport(){
+  if(state.db && !state.isDemo){
+    if(!confirm('Remplacer la base actuelle par un fichier local ?')) return;
+  }
+  document.getElementById('localDbInput').click();
+}
+
+async function onLocalDbPicked(event){
+  const file = event.target.files && event.target.files[0];
+  event.target.value = '';   // permet de re-sélectionner le même fichier plus tard
+  if(!file) return;
+  const SQL = state.SQL;
+  if(!SQL){ alert('Moteur de base non initialisé — rechargez la page.'); return; }
+
+  // Affiche l'écran de chargement (au cas où on importe depuis le header, app déjà ouverte)
+  const ls = document.getElementById('loadingScreen');
+  if(ls) ls.classList.remove('hidden');
+  setLoadingMsg('Lecture du fichier local…', 40);
+  setLoadingDetail(file.name + ' · ' + fmtMo(file.size));
+
+  try {
+    const buf = await file.arrayBuffer();
+    setLoadingMsg('Ouverture de la base…', 70);
+    let db;
+    try {
+      db = new SQL.Database(new Uint8Array(buf));
+    } catch(e){
+      setLoadingMsg('Fichier illisible ou non SQLite', 0);
+      setLoadingDetail(e.message || 'format invalide');
+      return;
+    }
+    // Validation minimale : la base doit contenir les tables attendues.
+    try {
+      const chk = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('identite','flux')");
+      const tables = chk.length ? chk[0].values.map(v => v[0]) : [];
+      if(!tables.includes('identite') && !tables.includes('flux')){
+        setLoadingMsg('Base non reconnue', 0);
+        setLoadingDetail("Ce fichier ne contient pas les tables attendues (identite / flux).");
+        return;
+      }
+    } catch(e){
+      setLoadingMsg('Base illisible', 0); setLoadingDetail(e.message || ''); return;
+    }
+    // Adoption de la base
+    if(state.db){ try { state.db.close(); } catch {} }
+    state.db = db;
+    state.isDemo = false;
+    cache.flux?.clear?.(); cache.world?.clear?.();
+    setLoadingMsg('Chargement de la configuration…', 90);
+    await loadConfig();
+    await loadMetadata();
+    finishBoot('Base locale', 'ok');
+  } catch(e){
+    setLoadingMsg('Échec de la lecture du fichier', 0);
+    setLoadingDetail(e.message || '');
+  }
 }
 </script>
 </body>
