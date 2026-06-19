@@ -4905,6 +4905,7 @@ function renderIdentiteSubMain(main, entry){
   // sous-titre carte : sub sélectionnée ou total
   const subLabel = _identSubFilter ? prettySubLabel(_identSubFilter) : 'total';
   const compTitle = _identSubPerspective === 'sujet' ? 'Composition par type' : 'Composition par pays';
+  const curveTitle = _identSubFilter ? `Évolution · ${prettySubLabel(_identSubFilter)}` : 'Évolution · total';
 
   main.innerHTML = `
     <div class="pu-head">
@@ -4920,9 +4921,15 @@ function renderIdentiteSubMain(main, entry){
       }</div>
     </div>
     <div class="pu-cells">
-      <div class="pu-cell">
-        <div class="pu-cell-head"><span class="pu-cell-title">${compTitle}</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear}</span></div>
-        <div class="pu-cell-body" id="identSubTree" style="min-height:340px"></div>
+      <div class="top-row">
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">${compTitle}</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear}</span></div>
+          <div class="pu-cell-body" id="identSubTree" style="min-height:230px"></div>
+        </div>
+        <div class="pu-cell">
+          <div class="pu-cell-head"><span class="pu-cell-title">${curveTitle}</span><span class="meta" style="font-size:10px;color:var(--text3)">${worldMode ? 'monde' : state.subject.label}</span></div>
+          <div class="pu-cell-body"><div id="identSubCurve" style="min-height:230px"></div></div>
+        </div>
       </div>
       <div class="pu-cell">
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${subLabel} · ${realYear}</span></div>
@@ -4933,6 +4940,7 @@ function renderIdentiteSubMain(main, entry){
       </div>
     </div>`;
   drawIdentSubTree(ind, isos);
+  drawSeriesCurve(document.getElementById('identSubCurve'), getIdentSubSeries(ind, isos, _identSubFilter), cfg.unit_display);
   drawIdentSubMap(ind);
 }
 
@@ -4947,7 +4955,7 @@ function drawIdentSubTree(indicator, isos){
   }
   if(!items.length){ host.innerHTML = `<div class="rel-empty">Aucune donnée.</div>`; return; }
   // squarify réutilisé
-  const W = 700, H = 460;
+  const W = 700, H = 320;
   const cells = squarifyTreemap(items.slice().sort((a,b)=>b.value-a.value), 0, 0, W, H);
   const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
   const total = items.reduce((s,d)=>s+d.value,0) || 1;
@@ -4978,7 +4986,7 @@ async function drawIdentSubMap(indicator){
   const svgEl = document.getElementById('identMap');
   const container = document.getElementById('identMapContainer');
   if(!svgEl || !container) return;
-  const W = container.clientWidth || 700, H = 340;
+  const W = container.clientWidth || 700, H = 280;
   const svg = d3.select(svgEl).attr('width', W).attr('height', H);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
@@ -5029,7 +5037,7 @@ async function drawIdentiteMap(indicator){
   const svgEl = document.getElementById('identMap');
   const container = document.getElementById('identMapContainer');
   if(!svgEl || !container) return;
-  const W = container.clientWidth || 700, H = 340;
+  const W = container.clientWidth || 700, H = 280;
   const svg = d3.select(svgEl).attr('width', W).attr('height', H);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
@@ -5068,26 +5076,32 @@ function drawIdentiteCurve(indicator){
   const wrap = document.getElementById('identCurve');
   if(!wrap) return;
   // En vue Sujet : série du sujet. En vue Monde : série agrégée mondiale.
-  let series;
-  if(relIsWorld()){
-    series = getIdentiteWorldSeries(indicator);
-  } else {
-    series = getIdentiteSeriesForIsos(indicator, currentIsos());
-  }
-  if(!series || series.length < 2){
-    wrap.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Série temporelle insuffisante</div>`;
+  const series = relIsWorld() ? getIdentiteWorldSeries(indicator) : getIdentiteSeriesForIsos(indicator, currentIsos());
+  const cfg = state.indicators.find(c => c.indicator === indicator);
+  drawSeriesCurve(wrap, series, cfg?.unit_display);
+}
+
+// Courbe temporelle générique (réutilisée famille 1 et famille 2 / sub).
+// Gère : historique (trait plein) + projection (pointillés), infobulle au survol,
+// et le cas dégénéré d'un seul point (affiche la valeur, pas de courbe trompeuse).
+function drawSeriesCurve(wrap, series, unitDisplay){
+  if(!wrap) return;
+  if(!series || !series.length){
+    wrap.innerHTML = `<div style="padding:30px;text-align:center;color:var(--text3);font-size:12px">Pas de donnée temporelle</div>`;
     return;
   }
-  const W = wrap.clientWidth || 600, H = 240, m = { t:14, r:16, b:24, l:52 };
+  if(series.length === 1){
+    const d = series[0];
+    wrap.innerHTML = `<div style="padding:30px;text-align:center"><div style="font-family:var(--display);font-size:22px;color:var(--text)">${fmtWithUnit(d.value, unitDisplay)}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">${d.year}${d.projection?' · projection':''} · point unique</div></div>`;
+    return;
+  }
+  const W = wrap.clientWidth || 600, H = 210, m = { t:14, r:16, b:24, l:52 };
   const years = series.map(d => d.year), vals = series.map(d => d.value);
   const xMin = Math.min(...years), xMax = Math.max(...years);
   const yMin = Math.min(...vals), yMax = Math.max(...vals);
   const yLo = yMin - (yMax-yMin)*0.08, yHi = yMax + (yMax-yMin)*0.08 || 1;
   const xS = y => m.l + (xMax===xMin ? 0 : (y - xMin)/(xMax - xMin)) * (W - m.l - m.r);
   const yS = v => H - m.b - (yHi===yLo ? 0 : (v - yLo)/(yHi - yLo)) * (H - m.t - m.b);
-  const cfg = state.indicators.find(c => c.indicator === indicator);
-  // Sépare historique (trait plein) et projection (pointillés). On relie le dernier
-  // point historique au premier point projeté pour la continuité visuelle.
   const histPts = [], projPts = [];
   let lastHistIdx = -1;
   series.forEach((d, i) => { if(!d.projection){ histPts.push(d); lastHistIdx = i; } });
@@ -5097,11 +5111,17 @@ function drawIdentiteCurve(indicator){
   if(histPts.length >= 2) svg += `<polyline points="${toPoly(histPts)}" fill="none" stroke="var(--green)" stroke-width="2"/>`;
   if(projPts.length >= 2) svg += `<polyline points="${toPoly(projPts)}" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="4 3" opacity="0.7"/>`;
   for(const d of series){ svg += `<circle cx="${xS(d.year).toFixed(1)}" cy="${yS(d.value).toFixed(1)}" r="2.5" fill="${d.projection ? 'none' : 'var(--green)'}" stroke="${d.projection ? 'var(--green)' : 'none'}" stroke-width="${d.projection ? 1 : 0}"/>`; }
-  // axes minimalistes
+  // zones de survol invisibles (rayon large) pour l'infobulle
+  for(const d of series){
+    const tip = `${d.year}${d.projection?' · projection':''}`;
+    const body = fmtWithUnit(d.value, unitDisplay);
+    svg += `<circle cx="${xS(d.year).toFixed(1)}" cy="${yS(d.value).toFixed(1)}" r="10" fill="transparent" style="cursor:pointer"
+      data-tt="${escAttr(tip)}" data-tb="${escAttr(body)}"
+      onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"/>`;
+  }
   svg += `<text x="${m.l}" y="${H-6}" fill="var(--text3)" style="font:10px var(--mono)">${xMin}</text>`;
   svg += `<text x="${W-m.r}" y="${H-6}" text-anchor="end" fill="var(--text3)" style="font:10px var(--mono)">${xMax}</text>`;
-  svg += `<text x="4" y="${yS(yMax).toFixed(1)}" fill="var(--text3)" style="font:10px var(--mono)">${fmtNumber(yMax, cfg?.unit_display)}</text>`;
-  // légende projection si présente
+  svg += `<text x="4" y="${yS(yMax).toFixed(1)}" fill="var(--text3)" style="font:10px var(--mono)">${fmtNumber(yMax, unitDisplay)}</text>`;
   if(projPts.length >= 2) svg += `<text x="${W-m.r}" y="${m.t+4}" text-anchor="end" fill="var(--text3)" style="font:9px var(--mono)">- - - projection</text>`;
   svg += `</svg>`;
   wrap.innerHTML = svg;
@@ -5149,6 +5169,28 @@ function identResolveYear(indicator, isos){
 }
 
 // Treemap « par type » : { sub → valeur } pour le périmètre (Monde ou isos).
+// Série temporelle d'un indicateur identité+sub, pour une sub donnée (ou total si null),
+// sur le périmètre (Monde ou isos). Distingue projection.
+function getIdentSubSeries(indicator, isos, subFilter){
+  const excl = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
+  const inClause = (isos && isos.length) ? `AND country_iso3 IN (${sqlList(isos)})` : `AND country_iso3 NOT IN (${excl})`;
+  // 'projection' est une valeur de subcategory réservée → on la lit comme marqueur, pas comme sub.
+  let subClause, projExpr;
+  if(subFilter){
+    subClause = `AND subcategory='${escapeSql(subFilter)}'`;
+    projExpr = `0`;
+  } else {
+    subClause = `AND subcategory IS NOT NULL AND subcategory!=''`;
+    projExpr = `MAX(CASE WHEN subcategory='projection' THEN 1 ELSE 0 END)`;
+  }
+  const r = safeExec(`SELECT year, SUM(CASE WHEN subcategory!='projection' THEN value ELSE 0 END) AS v, ${projExpr} AS proj
+                      FROM identite WHERE indicator='${escapeSql(indicator)}'
+                      AND value IS NOT NULL ${inClause} ${subClause}
+                      GROUP BY year HAVING v!=0 ORDER BY year`);
+  if(!r.length) return [];
+  return r[0].values.map(([y,v,p]) => ({ year: y, value: v, projection: !!p }));
+}
+
 function getIdentSubByType(indicator, isos){
   const y = identResolveYear(indicator, isos);
   const excl = [...REGIONAL_CODES].map(c => `'${c}'`).join(',');
