@@ -4384,8 +4384,16 @@ function getRelDimensions(){
     const nPartners = new Set(rows.map(r => r.partner).filter(p => p && !p.startsWith('__'))).size;
     dims.push({ key:'partner', label:'Partenaire', count: nPartners });
   }
-  // Dette : sub1 = type de créancier (bilatéral/multilatéral/privé). sub2 redondant → non exposé.
-  const subs = isDebt ? ['sub1'] : ['sub1','sub2','sub3'];
+  // Dette : sub1 = type de créancier. sub2 = institution nommée (multilatéral/privé),
+  // exposée UNIQUEMENT quand on a filtré sur un type non-bilatéral (sinon hors de propos).
+  let subs;
+  if(isDebt){
+    const lastType = [..._relPath].reverse().find(s => s.level === 'sub1');
+    const onSentinelType = lastType && !/bilat/i.test(String(lastType.value));
+    subs = onSentinelType ? ['sub1','sub2'] : ['sub1'];
+  } else {
+    subs = ['sub1','sub2','sub3'];
+  }
   for(const lvl of subs){
     if(filteredLevels.has(lvl)) continue;   // niveau déjà fixé par le filtre
     const vals = new Set();
@@ -5542,11 +5550,21 @@ function nextRelDim(currentDim, dims, entry){
   const profondeur = meta && meta.profondeur ? meta.profondeur : 0;
   const hierarchique = meta && meta.nature_sub === 'hierarchique';
 
-  // Dette : parcours spécifique. Niveau 0 = type (sub1) → clic → créanciers (partner).
-  // Sur les créanciers, plus de descente (le créancier nommé est le dernier niveau utile).
+  // Dette : parcours spécifique selon le TYPE de créancier cliqué.
+  //  - bilatéral  → créanciers = pays (partner, géographique)
+  //  - multilatéral / privé → créanciers = institutions nommées (sub2, non géographique)
+  // Le type cliqué est le dernier filtre posé sur sub1.
   if(entry && isDebtIndicator(entry.indicator)){
-    if(currentDim === 'sub1' && available.includes('partner')) return 'partner';
-    return null;
+    if(currentDim === 'sub1'){
+      const lastType = [..._relPath].reverse().find(s => s.level === 'sub1');
+      const typeVal = lastType ? String(lastType.value) : '';
+      if(/bilat/i.test(typeVal)){
+        return available.includes('partner') ? 'partner' : null;
+      }
+      // multilatéral / privé → descendre sur les institutions (sub2)
+      return available.includes('sub2') ? 'sub2' : null;
+    }
+    return null;   // sur les créanciers/institutions : dernier niveau
   }
 
   // Flux plat : rien à déplier.
@@ -5877,6 +5895,17 @@ async function renderRelFluxMap(){
   if(leg) leg.style.display = '';
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry){ svgEl.innerHTML = ''; return; }
+  // Dette : si on explore les institutions (multilatéral/privé), il n'y a pas de
+  // géographie à colorer → message explicite, carte vide.
+  if(isDebtIndicator(entry.indicator)){
+    const onSentinelType = [..._relPath].reverse().find(s => s.level === 'sub1' && !/bilat/i.test(String(s.value)));
+    if(_relDim === 'sub2' || onSentinelType){
+      if(leg) leg.style.display = 'none';
+      svgEl.innerHTML = '';
+      container.innerHTML = `<div class="rel-empty" style="height:320px;display:flex;align-items:center;justify-content:center;text-align:center">Créanciers non géographiques<br><span style="font-size:11px;color:var(--text3)">institutions multilatérales / privées — pas de localisation sur la carte</span></div>`;
+      return;
+    }
+  }
   const W = container.clientWidth || 600, H = 320;
   const svg = d3.select(svgEl).attr('width', W).attr('height', H);
   svg.selectAll('*').remove();
