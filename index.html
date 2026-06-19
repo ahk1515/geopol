@@ -4493,19 +4493,22 @@ function renderRelNav(filter){
 
   // Deux grandes sections : Flux et Identité (selon kind). Chacune dépliable.
   const sections = {
-    flux:     { label: 'Flux',     byCat: {} },
-    identite: { label: 'Identité', byCat: {} },
+    flux:       { label: 'Flux',       byCat: {} },
+    ressources: { label: 'Ressources', byCat: {} },
+    identite:   { label: 'Identité',   byCat: {} },
   };
   for(const e of byInd.values()){
     const nm = baseName(e);
     if(ql && !nm.toLowerCase().includes(ql)) continue;
-    const sec = entryIsIdentite(e) ? sections.identite : sections.flux;
+    let sec;
+    if(entryIsIdentite(e)) sec = e.hasSub ? sections.ressources : sections.identite;
+    else sec = sections.flux;
     (sec.byCat[e.category || 'autre'] ??= []).push({ entry: e, name: nm });
   }
 
   const curEntry = getFlowEntryByKey(_relEntryKey);
   let html = '';
-  for(const secKey of ['flux','identite']){
+  for(const secKey of ['flux','ressources','identite']){
     const sec = sections[secKey];
     const cats = Object.keys(sec.byCat);
     if(!cats.length) continue;   // section vide (ex. filtre actif) → masquée
@@ -4611,6 +4614,21 @@ function renderRelMain(){
       dimSelector += `<button class="${_relDim===d.key?'on':''}" onclick="setRelDim('${d.key}')">${d.label}</button>`;
     }
     dimSelector += `</div>`;
+  }
+  // Menu filtre adaptatif : liste les valeurs du niveau courant pour en cibler une
+  // précisément (utile quand un petit poste est noyé dans le treemap, ex. « missiles »).
+  // S'applique quand on regarde une dimension de sous-catégorie (pas l'axe partenaire).
+  let filterMenu = '';
+  if(_relDim && _relDim.startsWith('sub')){
+    const agg = buildFluxAggregation();
+    if(agg && agg.children && agg.children.length > 1){
+      const opts = agg.children.slice().sort((a,b) => (a.name||'').localeCompare(b.name||''))
+        .map(c => `<option value="${escAttr(c.key)}">${escAttr(c.name || c.key)}</option>`).join('');
+      filterMenu = `<div class="rel-dim-wrap"><span class="rel-filter-label">Cibler</span>
+        <select class="ident-sub-select" onchange="relFilterPick(this.value)">
+          <option value="">— choisir —</option>${opts}
+        </select></div>`;
+    }
   }
   // sélecteur de métrique (volume vs influence) — uniquement quand dim=partner ET mode sujet
   let metricSelector = '';
@@ -4744,6 +4762,7 @@ function renderRelMain(){
     <div class="rel-crumb-bar">
       <div class="rel-crumb">${crumb}</div>
       ${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}
+      ${filterMenu}
       ${metricSelector}
       ${zoneSelector}
       ${yearRangeSelector}
@@ -5506,6 +5525,12 @@ function drawTreemapRel(node, host){
   svg += `</svg>`;
   host.innerHTML = svg;
 }
+// Sélection d'une valeur via le menu « Cibler » : équivalent d'un clic sur ce poste
+// du treemap (pose le filtre au niveau courant + descend d'un cran si possible).
+function relFilterPick(value){
+  if(!value) return;
+  treemapClick(value);
+}
 function treemapClick(name){
   // Vue Monde + clic sur un pays (dim=partner) → promotion en sujet global
   // (le « pays agrégé » se recentre sur ce pays). Façon Atlas : le clic recentre.
@@ -5525,14 +5550,15 @@ function treemapClick(name){
   const label = (level === 'partner') ? (partnerLabel(name) || name) : name;
   _relPath = [..._relPath, { level, value: name, label }];
 
-  // Axe d'affichage par défaut après le filtre : on descend d'un cran sur le « quoi »
-  // s'il existe (nextRelDim), sinon on bascule sur « qui » (partner). L'utilisateur peut
-  // ensuite changer librement via le sélecteur de référentiel — le filtre reste actif.
-  const next = nextRelDim(level, dims, entry);
+  // Axe d'affichage par défaut après le filtre : on recalcule les dimensions DANS le
+  // contexte filtré (ex. dette : filtrer « multilatéral » expose alors sub2 = institutions),
+  // puis on descend d'un cran sur le « quoi » s'il existe, sinon on bascule sur « qui ».
+  const dimsAfter = getRelDimensions();
+  const next = nextRelDim(level, dimsAfter, entry);
   if(next != null){
     _relDim = next;
   } else {
-    const hasPartner = dims.some(d => d.key === 'partner');
+    const hasPartner = dimsAfter.some(d => d.key === 'partner');
     _relDim = hasPartner ? 'partner' : level;
   }
   renderRelMain();
