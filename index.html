@@ -1199,8 +1199,7 @@ main { flex: 1; padding: 16px 18px 28px; }
     <div class="logo"><span class="logo-mark"></span>GÉOPOL <span class="logo-sub">atelier</span></div>
     <nav class="tabs" id="tabs">
       <button class="tab active" data-view="synthese">Synthèse</button>
-      <button class="tab" data-view="puissance">Puissance</button>
-      <button class="tab" data-view="relations">Relations</button>
+      <button class="tab" data-view="relations">Exploration</button>
       <button class="tab" data-view="croise">Croisé</button>
       <button class="tab" data-view="comparaisons">Comparaisons</button>
     </nav>
@@ -2635,6 +2634,9 @@ function latestYearWithData(){
 
 /* ─── ONGLETS ─────────────────────────────────────────────────── */
 function switchView(v){
+  // Puissance a été fusionné dans l'explorateur (Exploration). Toute demande
+  // de l'ancienne vue est redirigée. Le code Puissance reste en réserve (Analyse).
+  if(v === 'puissance') v = 'relations';
   state.view = v;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
@@ -3779,8 +3781,13 @@ function partnerFlag(code){
 }
 
 // Portes vers les autres onglets (état mémorisé ; rendu cible aux étapes 5/6).
-let _pendingFocus = { indicator: null, fluxDir: null };
-function goToPuissance(indicator){ _pendingFocus.indicator = indicator; switchView('puissance'); }
+let _pendingFocus = { indicator: null, fluxDir: null, flowEntryKey: null, identiteIndicator: null };
+function goToPuissance(indicator){
+  // Puissance est désormais absorbé par l'explorateur (Exploration).
+  // On ouvre l'explorateur sur l'entrée identité correspondante.
+  _pendingFocus.identiteIndicator = indicator;
+  switchView('relations');
+}
 function goToRelations(indicator, dir){ _pendingFocus.indicator = indicator; _pendingFocus.fluxDir = dir; switchView('relations'); }
 
 /* ════════════════════════════════════════════════════════════════
@@ -4433,6 +4440,12 @@ function renderRelations(){
     _pendingFocus.flowEntryKey = null;
     _relPath = []; _relDim = 'partner';
   }
+  // focus identité (ex. clic depuis Synthèse sur un indicateur identité)
+  if(_pendingFocus.identiteIndicator){
+    const ie = (state.flowEntries || []).find(e => e.kind === 'identite' && e.indicator === _pendingFocus.identiteIndicator && e.presentInDb);
+    _pendingFocus.identiteIndicator = null;
+    if(ie){ _relEntryKey = ie.key; _relPath = []; }
+  }
   // entrée flux par défaut si on arrive sans : première dispo
   if(!_relEntryKey){
     const all = flowEntriesPresent();
@@ -4795,7 +4808,14 @@ function renderIdentiteMain(main, entry){
   let headVal = '';
   if(!worldMode){
     const v = getIdentiteValueForIsos(ind, currentIsos(), realYear);
-    if(v != null) headVal = `<span class="meta">${fmtWithUnit(v, cfg.unit_display)} · ${realYear}</span>`;
+    if(v != null){
+      let rankLine = '';
+      if(currentIsos().length === 1){
+        const rp = rankPercentile(ind, v, realYear);
+        if(rp) rankLine = ` · ${ordinalFr(rp.rank)} / ${rp.total} mondial`;
+      }
+      headVal = `<span class="meta">${fmtWithUnit(v, cfg.unit_display)}${rankLine} · ${realYear}</span>`;
+    }
   } else {
     headVal = `<span class="meta">répartition mondiale · ${realYear}</span>`;
   }
