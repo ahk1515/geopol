@@ -152,6 +152,8 @@ header {
 }
 .legend-nodata { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; font-size: 10px; color: var(--text3); }
 .state-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid rgba(0,0,0,.15); border-radius: 2px; }
+.hatch-uncov { display: inline-block; width: 12px; height: 12px; border: 1px solid rgba(0,0,0,.15); border-radius: 2px;
+  background-image: repeating-linear-gradient(45deg, #f2efe8 0 2px, #c4bba8 2px 3px); }
 .frise-wrap { display: inline-flex; align-items: center; gap: 10px; }
 .frise { display: inline-flex; gap: 3px; align-items: flex-end; }
 .frise-cell { width: 24px; height: 30px; border-radius: 4px; background: var(--bg3); display: flex; align-items: flex-end; justify-content: center;
@@ -4142,7 +4144,7 @@ function renderPuMain(){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear||state.year}</span></div>
         <div class="pu-cell-body">
           <div id="puMapContainer"><svg id="puMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aab2bc"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="state-swatch" style="background:#ddd6c8"></span>hors source</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aeb6c0"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="hatch-uncov"></span>hors source</span></div>
         </div>
       </div>
       ${buildCompoBlock(_puIndicator)}
@@ -4291,7 +4293,7 @@ async function buildPuMap(){
   if(!svgEl || !container) return;
   const W = container.clientWidth || 700, H = 340;
   // (re)construction propre à chaque rendu
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectMapPatterns(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -4946,7 +4948,7 @@ function renderRelMain(){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">${mapSubtitle} · ${periodSuffix}</span></div>
         <div class="pu-cell-body">
           <div id="relMapContainer"><svg id="relMap"></svg></div>
-          <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
+          <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span><span class="legend-nodata" title="Pays suivi par la source mais sans flux ici"><span class="state-swatch" style="background:#aeb6c0"></span>sans flux</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="hatch-uncov"></span>hors source</span></div>
         </div>
       </div>
     </div>`;
@@ -4962,11 +4964,24 @@ function renderRelMain(){
 ─────────────────────────────────────────────────────────────────── */
 let _identMapState = {};
 // Couleurs des états d'absence sur les cartes (fort contraste avec la mer #dce8f0).
-// Couvert-mais-vide : gris froid franc. Hors-couverture : beige chaud. Les deux teintes
-// (froide vs chaude) restent distinctes même à clarté proche, et tranchent sur la mer.
-const FILL_COVERED_EMPTY = '#aab2bc';   // pays suivi par la source, pas de valeur cette année
-const FILL_UNCOVERED     = '#ddd6c8';   // pays hors du périmètre de la source
-const FILL_NO_ISO        = '#cfd6dd';   // territoire sans code pays (neutre)
+// Couvert-mais-vide : gris froid franc plein. Hors-couverture : hachures sur fond clair
+// franc (≠ mer). Frontières toujours visibles (stroke permanent).
+const FILL_COVERED_EMPTY = '#aeb6c0';   // pays suivi par la source, pas de valeur cette année
+const FILL_UNCOVERED     = 'url(#uncoveredHatch)';  // hors périmètre de la source (hachuré)
+const FILL_NO_ISO        = '#e3e8ec';   // territoire sans code pays (neutre clair)
+const MAP_BORDER         = '#7d8895';   // frontières entre pays (visible au repos)
+
+// Injecte les patterns de carte (hachures hors-périmètre) dans un <svg> d3.
+function injectMapPatterns(svgSel){
+  if(svgSel.select('#uncoveredHatch').empty()){
+    const defs = svgSel.append('defs');
+    const p = defs.append('pattern')
+      .attr('id','uncoveredHatch').attr('patternUnits','userSpaceOnUse')
+      .attr('width',5).attr('height',5).attr('patternTransform','rotate(45)');
+    p.append('rect').attr('width',5).attr('height',5).attr('fill','#f2efe8');   // fond clair chaud
+    p.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',5).attr('stroke','#c4bba8').attr('stroke-width',1.3);
+  }
+}
 
 // Pays « couverts » par un indicateur identité = ayant au moins une donnée (toutes années).
 const _identCoveredCache = new Map();
@@ -4977,13 +4992,30 @@ function getIdentCoveredSet(indicator){
   _identCoveredCache.set(indicator, set);
   return set;
 }
+// Pays « couverts » par un indicateur flux = apparaissant (from ou to), toutes années.
+const _fluxCoveredCache = new Map();
+function getFluxCoveredSet(realIndicator){
+  if(_fluxCoveredCache.has(realIndicator)) return _fluxCoveredCache.get(realIndicator);
+  const r = safeExec(`SELECT DISTINCT country_from AS c FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND value IS NOT NULL
+                      UNION SELECT DISTINCT country_to FROM flux WHERE indicator='${escapeSql(realIndicator)}' AND value IS NOT NULL`);
+  const set = new Set();
+  if(r.length) for(const row of r[0].values){ const c = row[0]; if(c && !String(c).startsWith('__')) set.add(c); }
+  _fluxCoveredCache.set(realIndicator, set);
+  return set;
+}
 
 // Couleur finale d'un pays selon les 3 états : valeur / couvert-vide / hors-couverture.
 function mapFillFor(iso, colorByIso, coveredSet){
   if(!iso) return FILL_NO_ISO;
   if(colorByIso && colorByIso[iso]) return colorByIso[iso];        // a une valeur
   if(coveredSet && coveredSet.has(iso)) return FILL_COVERED_EMPTY;  // couvert mais vide ici
-  return FILL_UNCOVERED;                                            // hors couverture
+  return FILL_UNCOVERED;                                            // hors couverture (hachuré)
+}
+// Libellé d'état pour l'infobulle (tous pays, même sans valeur).
+function mapStateLabel(iso, hasValue, coveredSet){
+  if(hasValue) return null;
+  if(coveredSet && coveredSet.has(iso)) return 'suivi par la source · pas de valeur cette année';
+  return 'hors du périmètre de la source';
 }
 
 function identWorldColors(indicator){
@@ -5058,7 +5090,7 @@ function renderIdentiteMain(main, entry){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear} · cliquez un pays pour le cibler</span></div>
         <div class="pu-cell-body">
           <div id="identMapContainer"><svg id="identMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aab2bc"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="state-swatch" style="background:#ddd6c8"></span>hors source</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aeb6c0"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="hatch-uncov"></span>hors source</span></div>
         </div>
       </div>
     </div>`;
@@ -5179,7 +5211,7 @@ function renderIdentiteSubMain(main, entry){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${subLabel} · ${realYear}</span></div>
         <div class="pu-cell-body">
           <div id="identMapContainer"><svg id="identMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aab2bc"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="state-swatch" style="background:#ddd6c8"></span>hors source</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aeb6c0"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="hatch-uncov"></span>hors source</span></div>
         </div>
       </div>
     </div>`;
@@ -5231,7 +5263,7 @@ async function drawIdentSubMap(indicator){
   const container = document.getElementById('identMapContainer');
   if(!svgEl || !container) return;
   const W = container.clientWidth || 700, H = 280;
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectMapPatterns(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -5251,6 +5283,7 @@ async function drawIdentSubMap(indicator){
     .attr('class','map-country').attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
     .style('fill', d => mapFillFor(numToIso3(+d.id), colors, coveredSet))
+    .attr('stroke', MAP_BORDER).attr('stroke-width', 0.5)
     .on('mouseover', function(ev,d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
@@ -5258,7 +5291,7 @@ async function drawIdentSubMap(indicator){
       showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, v!=null ? fmtWithUnit(v, cfg?.unit_display) : (coveredSet.has(iso) ? 'suivi par la source · pas de valeur cette année' : 'hors du périmètre de la source'));
     })
     .on('mousemove', moveTip)
-    .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
+    .on('mouseout', function(){ d3.select(this).attr('stroke',MAP_BORDER).attr('stroke-width',0.5); hideTip(); })
     .on('click', function(ev,d){ const iso = numToIso3(+d.id); if(iso) setSubject([iso], isoToName(iso)); });
   const subjSet = new Set(currentIsos());
   g.selectAll('.map-country').filter(function(){ return subjSet.has(d3.select(this).attr('data-iso3')); })
@@ -5283,7 +5316,7 @@ async function drawIdentiteMap(indicator){
   const container = document.getElementById('identMapContainer');
   if(!svgEl || !container) return;
   const W = container.clientWidth || 700, H = 280;
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectMapPatterns(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -5304,6 +5337,7 @@ async function drawIdentiteMap(indicator){
     .attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
     .style('fill', d => mapFillFor(numToIso3(+d.id), colorByIso, coveredSet))
+    .attr('stroke', MAP_BORDER).attr('stroke-width', 0.5)
     .on('mouseover', function(ev,d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
@@ -5311,7 +5345,7 @@ async function drawIdentiteMap(indicator){
       showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, v!=null ? fmtWithUnit(v, cfg?.unit_display) : (coveredSet.has(iso) ? 'suivi par la source · pas de valeur cette année' : 'hors du périmètre de la source'));
     })
     .on('mousemove', moveTip)
-    .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
+    .on('mouseout', function(){ d3.select(this).attr('stroke',MAP_BORDER).attr('stroke-width',0.5); hideTip(); })
     .on('click', function(ev,d){ const iso = numToIso3(+d.id); if(iso){ _identSubPerspective='sujet'; _identSubFilter=null; setSubject([iso], isoToName(iso)); } });
   const subjSet = new Set(currentIsos());
   g.selectAll('.map-country').filter(function(){ return subjSet.has(d3.select(this).attr('data-iso3')); })
@@ -6124,7 +6158,7 @@ async function renderRelFluxMap(){
     }
   }
   const W = container.clientWidth || 600, H = 320;
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectMapPatterns(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.5).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -6181,18 +6215,20 @@ async function renderRelFluxMap(){
     colorByIso[sorted[i].iso] = palette[idx];
   }
 
+  const fluxCovered = getFluxCoveredSet(entry.realIndicator);
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country')
     .attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
     .style('fill', d => {
       const iso = numToIso3(+d.id);
-      if(!iso) return '#eef2ee';
-      // Hors zone : grisé plus marqué (signal visuel "hors périmètre")
+      if(!iso) return FILL_NO_ISO;
+      // Hors zone (filtre actif) : grisé « hors périmètre d'analyse » (distinct des états de données)
       if(zoneSet && !zoneSet.has(iso)) return '#dde4dd';
-      // Dans zone (ou pas de filtre) avec data : couleur normale ; sans data : neutre
-      return colorByIso[iso] || NO_DATA_FILL;
+      // Sinon : 3 états valeur / couvert-vide / hors-couverture
+      return mapFillFor(iso, colorByIso, fluxCovered);
     })
+    .attr('stroke', MAP_BORDER).attr('stroke-width', 0.5)
     .on('mouseover', function(ev, d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--orange)').attr('stroke-width', 1);
@@ -6202,7 +6238,7 @@ async function renderRelFluxMap(){
       if(zoneSet && !zoneSet.has(iso)){
         body = 'hors zone sélectionnée';
       } else if(v <= 0){
-        body = 'pas de flux';
+        body = fluxCovered.has(iso) ? 'pas de flux cette période · pays suivi par la source' : 'hors du périmètre de la source';
       } else if(isInfluence){
         const wt = worldTotals[iso] || 0;
         if(wt > 0){
@@ -6219,7 +6255,7 @@ async function renderRelFluxMap(){
       showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, body);
     })
     .on('mousemove', moveTip)
-    .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width', 0.4); hideTip(); })
+    .on('mouseout', function(){ d3.select(this).attr('stroke',MAP_BORDER).attr('stroke-width',0.5); hideTip(); })
     .on('click', function(ev, d){
       const iso = numToIso3(+d.id); if(iso) setSubject([iso], isoToName(iso));
     });
