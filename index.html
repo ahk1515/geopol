@@ -151,18 +151,19 @@ header {
   border-bottom: 1px solid #92400e;
 }
 .legend-nodata { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; font-size: 10px; color: var(--text3); }
-.frise-wrap { display: inline-flex; align-items: center; gap: 8px; }
-.frise { display: inline-flex; gap: 2px; align-items: flex-end; }
-.frise-cell { width: 15px; height: 22px; border-radius: 3px; background: var(--bg3); display: flex; align-items: flex-end; justify-content: center;
+.state-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid rgba(0,0,0,.15); border-radius: 2px; }
+.frise-wrap { display: inline-flex; align-items: center; gap: 10px; }
+.frise { display: inline-flex; gap: 3px; align-items: flex-end; }
+.frise-cell { width: 24px; height: 30px; border-radius: 4px; background: var(--bg3); display: flex; align-items: flex-end; justify-content: center;
   cursor: pointer; position: relative; transition: background .1s; border: 1px solid transparent; }
-.frise-cell .frise-yr { font-family: var(--mono); font-size: 7px; color: var(--text3); padding-bottom: 1px; pointer-events: none; }
+.frise-cell .frise-yr { font-family: var(--mono); font-size: 9px; color: var(--text2); padding-bottom: 3px; pointer-events: none; }
 .frise-cell:hover:not(.empty) { background: var(--green-d); border-color: var(--green); }
 .frise-cell.sel { background: var(--green); }
 .frise-cell.sel .frise-yr { color: #fff; }
 .frise-cell.anchor { outline: 2px solid var(--green); outline-offset: 1px; }
-.frise-cell.empty { cursor: default; background-image: repeating-linear-gradient(45deg, var(--bg2) 0 2px, var(--bg3) 2px 4px); opacity: .55; }
-.frise-cell.empty .frise-yr { color: var(--text3); opacity: .5; }
-.frise-label { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); min-width: 70px; }
+.frise-cell.empty { cursor: default; background: var(--bg2); opacity: .5; }
+.frise-cell.empty .frise-yr { color: var(--text3); opacity: .6; }
+.frise-label { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); min-width: 78px; }
 .hatch-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--border2); border-radius: 2px;
   background-image: repeating-linear-gradient(45deg, #e9ecef 0 2px, #b9c2cc 2px 3px); }
 .subject-chip {
@@ -4141,7 +4142,7 @@ function renderPuMain(){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear||state.year}</span></div>
         <div class="pu-cell-body">
           <div id="puMapContainer"><svg id="puMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aab2bc"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="state-swatch" style="background:#ddd6c8"></span>hors source</span></div>
         </div>
       </div>
       ${buildCompoBlock(_puIndicator)}
@@ -4960,6 +4961,31 @@ function renderRelMain(){
    n'a pas de partenaire. Le sujet est optionnel (vue Monde par défaut).
 ─────────────────────────────────────────────────────────────────── */
 let _identMapState = {};
+// Couleurs des états d'absence sur les cartes (fort contraste avec la mer #dce8f0).
+// Couvert-mais-vide : gris froid franc. Hors-couverture : beige chaud. Les deux teintes
+// (froide vs chaude) restent distinctes même à clarté proche, et tranchent sur la mer.
+const FILL_COVERED_EMPTY = '#aab2bc';   // pays suivi par la source, pas de valeur cette année
+const FILL_UNCOVERED     = '#ddd6c8';   // pays hors du périmètre de la source
+const FILL_NO_ISO        = '#cfd6dd';   // territoire sans code pays (neutre)
+
+// Pays « couverts » par un indicateur identité = ayant au moins une donnée (toutes années).
+const _identCoveredCache = new Map();
+function getIdentCoveredSet(indicator){
+  if(_identCoveredCache.has(indicator)) return _identCoveredCache.get(indicator);
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM identite WHERE indicator='${escapeSql(indicator)}' AND value IS NOT NULL`);
+  const set = new Set(r.length ? r[0].values.map(v => v[0]) : []);
+  _identCoveredCache.set(indicator, set);
+  return set;
+}
+
+// Couleur finale d'un pays selon les 3 états : valeur / couvert-vide / hors-couverture.
+function mapFillFor(iso, colorByIso, coveredSet){
+  if(!iso) return FILL_NO_ISO;
+  if(colorByIso && colorByIso[iso]) return colorByIso[iso];        // a une valeur
+  if(coveredSet && coveredSet.has(iso)) return FILL_COVERED_EMPTY;  // couvert mais vide ici
+  return FILL_UNCOVERED;                                            // hors couverture
+}
+
 function identWorldColors(indicator){
   const year = getValueYear(indicator, state.year) || state.year;
   const { sorted } = getWorldStats(indicator, year);
@@ -5032,7 +5058,7 @@ function renderIdentiteMain(main, entry){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear} · cliquez un pays pour le cibler</span></div>
         <div class="pu-cell-body">
           <div id="identMapContainer"><svg id="identMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aab2bc"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="state-swatch" style="background:#ddd6c8"></span>hors source</span></div>
         </div>
       </div>
     </div>`;
@@ -5153,7 +5179,7 @@ function renderIdentiteSubMain(main, entry){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${subLabel} · ${realYear}</span></div>
         <div class="pu-cell-body">
           <div id="identMapContainer"><svg id="identMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays suivi par la source mais sans valeur cette année"><span class="state-swatch" style="background:#aab2bc"></span>sans valeur</span><span class="legend-nodata" title="Pays hors du périmètre de la source"><span class="state-swatch" style="background:#ddd6c8"></span>hors source</span></div>
         </div>
       </div>
     </div>`;
@@ -5220,15 +5246,16 @@ async function drawIdentSubMap(indicator){
   const features = topojson.feature(world, world.objects.countries).features;
   const { colors, values } = identSubMapColors(indicator, _identSubFilter);
   const cfg = state.indicators.find(x => x.indicator === indicator);
+  const coveredSet = getIdentCoveredSet(indicator);
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country').attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
-    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colors[iso] ? colors[iso] : NO_DATA_FILL; })
+    .style('fill', d => mapFillFor(numToIso3(+d.id), colors, coveredSet))
     .on('mouseover', function(ev,d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
       const v = values[iso];
-      showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, v!=null ? fmtWithUnit(v, cfg?.unit_display) : 'pas de donnée');
+      showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, v!=null ? fmtWithUnit(v, cfg?.unit_display) : (coveredSet.has(iso) ? 'suivi par la source · pas de valeur cette année' : 'hors du périmètre de la source'));
     })
     .on('mousemove', moveTip)
     .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
@@ -5271,16 +5298,17 @@ async function drawIdentiteMap(indicator){
   const features = topojson.feature(world, world.objects.countries).features;
   const colorByIso = identWorldColors(indicator);
   const cfg = state.indicators.find(x => x.indicator === indicator);
+  const coveredSet = getIdentCoveredSet(indicator);
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country')
     .attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
-    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : NO_DATA_FILL; })
+    .style('fill', d => mapFillFor(numToIso3(+d.id), colorByIso, coveredSet))
     .on('mouseover', function(ev,d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
       const v = identWorldValue(indicator, iso);
-      showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, v!=null ? fmtWithUnit(v, cfg?.unit_display) : 'pas de donnée');
+      showTip2(ev, `${isoToFlag(iso)} ${isoToName(iso)}`, v!=null ? fmtWithUnit(v, cfg?.unit_display) : (coveredSet.has(iso) ? 'suivi par la source · pas de valeur cette année' : 'hors du périmètre de la source'));
     })
     .on('mousemove', moveTip)
     .on('mouseout', function(){ d3.select(this).attr('stroke','var(--border)').attr('stroke-width',0.4); hideTip(); })
