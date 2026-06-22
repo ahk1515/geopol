@@ -19,6 +19,11 @@
    à conserver) + ajout d'une famille d'affichage (Fraunces) pour les titres.
 ═════════════════════════════════════════════════════════════════ */
 :root {
+  /* Hauteurs des barres fixes (sticky) — centralisées pour un empilement cohérent.
+     Tout top: sticky se cale dessus via calc(), pour qu'aucune barre ne se chevauche. */
+  --h-header:  50px;   /* bandeau onglets + outils */
+  --h-context: 48px;   /* barre Sujet + temps (logée la frise) */
+  --h-topbars: 98px;   /* = header + context : base des barres de 2e niveau et volets */
   --bg:       #f7f5f0;
   --bg2:      #ffffff;
   --bg3:      #f0ede6;
@@ -76,10 +81,12 @@ header {
 }
 .header-vars { display: inline-flex; align-items: center; gap: 10px; padding-left: 6px; }
 #contextBar {
-  position: sticky; top: 50px; z-index: 46;
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 7px 18px; background: var(--bg2);
+  position: sticky; top: var(--h-header); z-index: 46;
+  display: flex; align-items: center; gap: 10px;
+  height: var(--h-context); box-sizing: border-box;
+  padding: 0 18px; background: var(--bg2);
   border-bottom: 1px solid var(--border);
+  overflow-x: auto; overflow-y: hidden;
 }
 .logo {
   font-family: var(--mono); font-size: 12px; font-weight: 600;
@@ -590,7 +597,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 /* navigateur d'indicateurs */
 .pu-nav {
   background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden;
-  position: sticky; top: 12px; max-height: calc(100vh - 24px);
+  position: sticky; top: var(--h-topbars); max-height: calc(100vh - var(--h-topbars));
   display: flex; flex-direction: column;
 }
 .pu-nav-search { padding: 10px; border-bottom: 1px solid var(--border); }
@@ -713,7 +720,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-crumb-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
   padding: 8px 10px; flex-wrap: wrap;
-  position: sticky; top: 92px; z-index: 30;
+  position: sticky; top: var(--h-topbars); z-index: 30;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   margin: 0 -10px 12px;
@@ -778,7 +785,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .cross-nav {
   background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
   box-shadow: var(--shadow); overflow: hidden;
-  position: sticky; top: 12px; max-height: calc(100vh - 24px);
+  position: sticky; top: var(--h-topbars); max-height: calc(100vh - var(--h-topbars));
   display: flex; flex-direction: column;
 }
 .cross-nav-head {
@@ -823,7 +830,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .cross-filter-bar {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   padding: 8px 10px;
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: var(--h-topbars); z-index: 29;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
