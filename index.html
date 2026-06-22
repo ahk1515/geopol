@@ -138,6 +138,16 @@ header {
   font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
   color: var(--text3); text-transform: uppercase;
 }
+#demoBanner {
+  position: sticky; top: 50px; z-index: 45;
+  background: #b45309; color: #fff;
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  text-align: center; padding: 6px 12px;
+  border-bottom: 1px solid #92400e;
+}
+.legend-nodata { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; font-size: 10px; color: var(--text3); }
+.hatch-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--border2); border-radius: 2px;
+  background-image: repeating-linear-gradient(45deg, #e9ecef 0 2px, #b9c2cc 2px 3px); }
 .subject-chip {
   display: inline-flex; align-items: center; gap: 7px;
   padding: 5px 12px; border-radius: 20px;
@@ -1226,6 +1236,8 @@ main { flex: 1; padding: 16px 18px 28px; }
     <div class="db-badge"><span class="dot" id="dbDot"></span><span id="dbName">—</span></div>
   </header>
 
+  <div id="demoBanner" style="display:none">⚠️ DONNÉES FICTIVES — mode démonstration. Les chiffres affichés ne sont pas réels.</div>
+
   <!-- ░░ ZONE PRINCIPALE — 3 ONGLETS ░░ -->
   <main>
     <section class="view active" id="view-synthese">
@@ -2311,8 +2323,25 @@ function fmtMo(octets){ return (octets/1024/1024).toFixed(1) + ' Mo'; }
 function setDbBadge(name, st){
   document.getElementById('dbDot').className = 'dot ' + st;
   document.getElementById('dbName').textContent = name;
+  const banner = document.getElementById('demoBanner');
+  if(banner) banner.style.display = (st === 'demo' || state.isDemo) ? 'block' : 'none';
 }
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+// Pattern de hachures pour les pays SANS donnée sur les cartes (≠ valeur faible).
+// Convention cartographique : « non renseigné » se distingue de la rampe de valeurs.
+const NO_DATA_FILL = 'url(#noDataHatch)';
+function injectNoDataPattern(svgSel){
+  // svgSel = sélection d3 du <svg>. Ajoute le <defs> une seule fois.
+  if(svgSel.select('#noDataHatch').empty()){
+    const defs = svgSel.append('defs');
+    const p = defs.append('pattern')
+      .attr('id','noDataHatch').attr('patternUnits','userSpaceOnUse')
+      .attr('width',6).attr('height',6).attr('patternTransform','rotate(45)');
+    p.append('rect').attr('width',6).attr('height',6).attr('fill','#e9ecef');
+    p.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',6).attr('stroke','#b9c2cc').attr('stroke-width',1.4);
+  }
+}
 
 /* ─── BOOT (repris/adapté de l'ancien) ────────────────────────── */
 async function boot(){
@@ -4016,7 +4045,7 @@ function renderPuMain(){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear||state.year}</span></div>
         <div class="pu-cell-body">
           <div id="puMapContainer"><svg id="puMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
         </div>
       </div>
       ${buildCompoBlock(_puIndicator)}
@@ -4165,7 +4194,7 @@ async function buildPuMap(){
   if(!svgEl || !container) return;
   const W = container.clientWidth || 700, H = 340;
   // (re)construction propre à chaque rendu
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -4188,7 +4217,7 @@ async function buildPuMap(){
     .attr('class','map-country')
     .attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
-    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
+    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : NO_DATA_FILL; })
     .on('mouseover', function(ev,d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
@@ -4793,7 +4822,7 @@ function renderRelMain(){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte du flux</span><span class="meta" style="font-size:10px;color:var(--text3)">${mapSubtitle} · ${periodSuffix}</span></div>
         <div class="pu-cell-body">
           <div id="relMapContainer"><svg id="relMap"></svg></div>
-          <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span></div>
+          <div class="rel-map-legend"><span>${legendLeft}</span><span class="bar"></span><span>${legendRight}</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
         </div>
       </div>
     </div>`;
@@ -4880,7 +4909,7 @@ function renderIdentiteMain(main, entry){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${realYear} · cliquez un pays pour le cibler</span></div>
         <div class="pu-cell-body">
           <div id="identMapContainer"><svg id="identMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
         </div>
       </div>
     </div>`;
@@ -5001,7 +5030,7 @@ function renderIdentiteSubMain(main, entry){
         <div class="pu-cell-head"><span class="pu-cell-title">Carte mondiale</span><span class="meta" style="font-size:10px;color:var(--text3)">${subLabel} · ${realYear}</span></div>
         <div class="pu-cell-body">
           <div id="identMapContainer"><svg id="identMap"></svg></div>
-          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span></div>
+          <div class="pu-map-legend"><span>faible</span><span class="bar"></span><span>élevé</span><span class="legend-nodata" title="Pays sans donnée disponible"><span class="hatch-swatch"></span>pas de donnée</span></div>
         </div>
       </div>
     </div>`;
@@ -5053,7 +5082,7 @@ async function drawIdentSubMap(indicator){
   const container = document.getElementById('identMapContainer');
   if(!svgEl || !container) return;
   const W = container.clientWidth || 700, H = 280;
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -5071,7 +5100,7 @@ async function drawIdentSubMap(indicator){
   g.selectAll('.map-country').data(features).join('path')
     .attr('class','map-country').attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
-    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colors[iso] ? colors[iso] : '#eef2ee'; })
+    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colors[iso] ? colors[iso] : NO_DATA_FILL; })
     .on('mouseover', function(ev,d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
@@ -5104,7 +5133,7 @@ async function drawIdentiteMap(indicator){
   const container = document.getElementById('identMapContainer');
   if(!svgEl || !container) return;
   const W = container.clientWidth || 700, H = 280;
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.2).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -5123,7 +5152,7 @@ async function drawIdentiteMap(indicator){
     .attr('class','map-country')
     .attr('d', path)
     .attr('data-iso3', d => numToIso3(+d.id) || '')
-    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : '#eef2ee'; })
+    .style('fill', d => { const iso = numToIso3(+d.id); return iso && colorByIso[iso] ? colorByIso[iso] : NO_DATA_FILL; })
     .on('mouseover', function(ev,d){
       const iso = numToIso3(+d.id); if(!iso) return;
       d3.select(this).attr('stroke','var(--green)').attr('stroke-width',1);
@@ -5944,7 +5973,7 @@ async function renderRelFluxMap(){
     }
   }
   const W = container.clientWidth || 600, H = 320;
-  const svg = d3.select(svgEl).attr('width', W).attr('height', H);
+  const svg = d3.select(svgEl).attr('width', W).attr('height', H); injectNoDataPattern(svg);
   svg.selectAll('*').remove();
   const proj = d3.geoNaturalEarth1().scale(W/6.5).translate([W/2, H/2]);
   const path = d3.geoPath().projection(proj);
@@ -6011,7 +6040,7 @@ async function renderRelFluxMap(){
       // Hors zone : grisé plus marqué (signal visuel "hors périmètre")
       if(zoneSet && !zoneSet.has(iso)) return '#dde4dd';
       // Dans zone (ou pas de filtre) avec data : couleur normale ; sans data : neutre
-      return colorByIso[iso] || '#eef2ee';
+      return colorByIso[iso] || NO_DATA_FILL;
     })
     .on('mouseover', function(ev, d){
       const iso = numToIso3(+d.id); if(!iso) return;
@@ -6964,7 +6993,7 @@ function _crossDrawTreemap(host, displayMap, volumeMap, entry){
   const W = 360, H = 220;
   const placed = squarifyTreemap(nodes, 0, 0, W, H);
   const cfg = state.indicators.find(c => c.indicator === entry.realIndicator);
-  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;display:block"><defs><pattern id="noDataHatch" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><rect width="6" height="6" fill="#e9ecef"/><line x1="0" y1="0" x2="0" y2="6" stroke="#b9c2cc" stroke-width="1.4"/></pattern></defs>`;
   // ÉCHELLE ABSOLUE alignée sur celle de la carte : la couleur d'une cellule dépend
   // uniquement de sa valeur en pourcentage, pas de son rang dans le treemap.
   for(const p of placed){
@@ -7037,7 +7066,7 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
       let fill;
       if(!iso) fill = '#eef2ee';
       else if(zoneSet && !zoneSet.has(iso)) fill = '#dde4dd';
-      else fill = colorByIso[iso] || '#eef2ee';
+      else fill = colorByIso[iso] || NO_DATA_FILL;
       const d = path(f);
       if(!d) continue;
       // data-iso3 et events hover seulement sur pays identifiés (pas eaux/Antarctique non-mappés)
