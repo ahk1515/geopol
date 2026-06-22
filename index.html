@@ -88,6 +88,16 @@ header {
   border-bottom: 1px solid var(--border);
   overflow-x: auto; overflow-y: hidden;
 }
+.facette-pane { display: none; }
+.facette-pane.active { display: block; }
+.analyse-head { position: sticky; top: var(--h-topbars); z-index: 28; background: var(--bg);
+  padding: 10px 4px 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+.analyse-facettes { display: inline-flex; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+.facette-btn { border: none; background: transparent; color: var(--text2); font-family: var(--display); font-size: 13px; font-weight: 600;
+  padding: 5px 16px; border-radius: 6px; cursor: pointer; }
+.facette-btn.on { background: var(--green); color: #fff; }
+.facette-btn:not(.on):hover { color: var(--text); background: var(--bg3); }
+.analyse-finalite { margin-top: 7px; font-size: 12px; color: var(--text3); padding-left: 4px; }
 .logo {
   font-family: var(--mono); font-size: 12px; font-weight: 600;
   letter-spacing: .22em; color: var(--green);
@@ -1243,10 +1253,8 @@ main { flex: 1; padding: 16px 18px 28px; }
   <header>
     <div class="logo"><span class="logo-mark"></span>GÉOPOL <span class="logo-sub">atelier</span></div>
     <nav class="tabs" id="tabs">
-      <button class="tab active" data-view="synthese">Synthèse</button>
       <button class="tab" data-view="relations">Exploration</button>
-      <button class="tab" data-view="croise">Croisé</button>
-      <button class="tab" data-view="comparaisons">Comparaisons</button>
+      <button class="tab active" data-view="analyse">Analyse</button>
     </nav>
     <div class="header-spacer"></div>
     <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
@@ -1269,24 +1277,27 @@ main { flex: 1; padding: 16px 18px 28px; }
 
   <!-- ░░ ZONE PRINCIPALE — 3 ONGLETS ░░ -->
   <main>
-    <section class="view active" id="view-synthese">
-      <div id="syntheseContent"></div>
-    </section>
-
-    <section class="view" id="view-puissance">
-      <div id="puissanceContent"></div>
-    </section>
-
     <section class="view" id="view-relations">
       <div id="relationsContent"></div>
     </section>
 
-    <section class="view" id="view-croise">
-      <div id="croiseContent"></div>
+    <section class="view active" id="view-analyse">
+      <div class="analyse-head">
+        <div class="analyse-facettes" id="analyseFacettes">
+          <button class="facette-btn" data-facette="profil" onclick="setFacette('profil')">Profil</button>
+          <button class="facette-btn" data-facette="faceaface" onclick="setFacette('faceaface')">Face-à-face</button>
+          <button class="facette-btn" data-facette="zone" onclick="setFacette('zone')">Zone</button>
+        </div>
+        <div class="analyse-finalite" id="analyseFinalite"></div>
+      </div>
+      <div id="facette-profil" class="facette-pane"><div id="syntheseContent"></div></div>
+      <div id="facette-faceaface" class="facette-pane"><div id="comparaisonsContent"></div></div>
+      <div id="facette-zone" class="facette-pane"><div id="croiseContent"></div></div>
     </section>
 
-    <section class="view" id="view-comparaisons">
-      <div id="comparaisonsContent"></div>
+    <!-- conteneur Puissance conservé en réserve (masqué), non rattaché à un onglet -->
+    <section class="view" id="view-puissance">
+      <div id="puissanceContent"></div>
     </section>
   </main>
 </div>
@@ -1767,7 +1778,7 @@ const state = {
   allCountries: [],        // pays présents en DB (enrichis du référentiel)
   year: 2022,
   yearBounds: { min: 2000, max: 2024 },
-  view: 'synthese',        // onglet actif
+  view: 'analyse',        // espace actif (Exploration | Analyse)
   subject: null,           // { isos:[iso3,...], label }  — null si vide
   isDemo: false,
   // caches perf (récupérés/étendus depuis l'ancien code aux étapes suivantes)
@@ -2711,9 +2722,10 @@ function latestYearWithData(){
 
 /* ─── ONGLETS ─────────────────────────────────────────────────── */
 function switchView(v){
-  // Puissance a été fusionné dans l'explorateur (Exploration). Toute demande
-  // de l'ancienne vue est redirigée. Le code Puissance reste en réserve (Analyse).
-  if(v === 'puissance') v = 'relations';
+  if(v === 'puissance') v = 'relations';   // réserve
+  // Anciennes vues → espace Analyse + facette correspondante (compat liens/URL).
+  const oldToFacette = { synthese:'profil', comparaisons:'faceaface', croise:'zone' };
+  if(oldToFacette[v]){ _facette = oldToFacette[v]; v = 'analyse'; }
   state.view = v;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
@@ -2817,19 +2829,19 @@ function friseClick(y){
 function renderYearSlot(){
   const slot = document.getElementById('yearSlot');
   const lbl = document.getElementById('timeLabel');
-  // 3 formes de temps selon l'onglet (modèle 2) :
-  if(state.view === 'synthese'){
-    // (a) année FIGÉE : dernière donnée disponible, non éditable
+  // Forme du temps selon l'espace/facette (modèle 2) :
+  //  Exploration → plage ; Analyse/Profil → année figée ; Analyse/Face-à-face|Zone → année choisie.
+  const isProfil = (state.view === 'analyse' && _facette === 'profil');
+  if(isProfil){
     if(lbl) lbl.textContent = 'Année';
     if(state.subject) state.year = latestYearWithData();
     slot.innerHTML = `<span class="year-out" style="font-family:var(--mono);font-size:13px;font-weight:600">${state.subject ? state.year : '—'}</span>
       <span style="font-size:10px;color:var(--text3);margin-left:6px">dernière donnée</span>`;
   } else if(state.view === 'relations'){
-    // (c) PLAGE (ou année) propre à l'Exploration
     if(lbl) lbl.textContent = 'Période';
     slot.innerHTML = buildYearRangeControl();
   } else {
-    // (b) année CHOISIE (Croisé, Comparaisons)
+    // année choisie (Analyse : Face-à-face, Zone)
     if(lbl) lbl.textContent = 'Année';
     const mn = state.yearBounds.min, mx = state.yearBounds.max;
     let opts = '';
@@ -2867,11 +2879,38 @@ function onYearChange(v){
 // brancheront ici le vrai rendu de l'onglet actif.
 // Dispatcher : rend l'onglet actif. Branché aux étapes 3/5/6.
 function refreshActiveView(){
-  if(state.view === 'synthese') renderSynthese();
-  else if(state.view === 'puissance') renderPuissance();
-  else if(state.view === 'relations') renderRelations();
-  else if(state.view === 'croise') renderCroise();
-  else if(state.view === 'comparaisons') renderComparaisons();
+  if(state.view === 'relations') renderRelations();
+  else if(state.view === 'analyse') renderAnalyse();
+  else if(state.view === 'puissance') renderPuissance();  // réserve
+}
+
+// ── Espace ANALYSE : 3 facettes (Profil / Face-à-face / Zone) ──
+let _facette = 'profil';
+const FACETTE_FINALITE = {
+  profil:    'Profil — caractériser un pays à travers ses indicateurs (identité et flux).',
+  faceaface: 'Face-à-face — comparer deux pays terme à terme, et la relation entre eux.',
+  zone:      'Zone — l’influence d’un pays dans une région, et les équilibres entre les pays d’une zone.',
+};
+const FACETTE_RENDER = { profil: renderSynthese, faceaface: renderComparaisons, zone: renderCroise };
+function setFacette(f){
+  if(!FACETTE_RENDER[f]) return;
+  _facette = f;
+  renderAnalyse();
+  syncUrl();
+}
+function renderAnalyse(){
+  // boutons + finalité
+  document.querySelectorAll('#analyseFacettes .facette-btn').forEach(b =>
+    b.classList.toggle('on', b.dataset.facette === _facette));
+  const fin = document.getElementById('analyseFinalite');
+  if(fin) fin.textContent = FACETTE_FINALITE[_facette] || '';
+  // panneau actif
+  document.querySelectorAll('.facette-pane').forEach(p => p.classList.remove('active'));
+  const paneId = { profil:'facette-profil', faceaface:'facette-faceaface', zone:'facette-zone' }[_facette];
+  const pane = document.getElementById(paneId);
+  if(pane) pane.classList.add('active');
+  // rendu de la facette
+  (FACETTE_RENDER[_facette] || function(){})();
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -8525,7 +8564,10 @@ function applyUrlState(){
   }
 }
 function switchViewSilent(v){
-  if(!['synthese','puissance','relations','croise','comparaisons'].includes(v)) return;
+  if(v === 'puissance') v = 'relations';
+  const oldToFacette = { synthese:'profil', comparaisons:'faceaface', croise:'zone' };
+  if(oldToFacette[v]){ _facette = oldToFacette[v]; v = 'analyse'; }
+  if(!['relations','analyse'].includes(v)) return;
   state.view = v;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
   document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.id === 'view-' + v));
