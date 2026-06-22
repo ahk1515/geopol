@@ -151,6 +151,18 @@ header {
   border-bottom: 1px solid #92400e;
 }
 .legend-nodata { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; font-size: 10px; color: var(--text3); }
+.frise-wrap { display: inline-flex; align-items: center; gap: 8px; }
+.frise { display: inline-flex; gap: 2px; align-items: flex-end; }
+.frise-cell { width: 15px; height: 22px; border-radius: 3px; background: var(--bg3); display: flex; align-items: flex-end; justify-content: center;
+  cursor: pointer; position: relative; transition: background .1s; border: 1px solid transparent; }
+.frise-cell .frise-yr { font-family: var(--mono); font-size: 7px; color: var(--text3); padding-bottom: 1px; pointer-events: none; }
+.frise-cell:hover:not(.empty) { background: var(--green-d); border-color: var(--green); }
+.frise-cell.sel { background: var(--green); }
+.frise-cell.sel .frise-yr { color: #fff; }
+.frise-cell.anchor { outline: 2px solid var(--green); outline-offset: 1px; }
+.frise-cell.empty { cursor: default; background-image: repeating-linear-gradient(45deg, var(--bg2) 0 2px, var(--bg3) 2px 4px); opacity: .55; }
+.frise-cell.empty .frise-yr { color: var(--text3); opacity: .5; }
+.frise-label { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); min-width: 70px; }
 .hatch-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid var(--border2); border-radius: 2px;
   background-image: repeating-linear-gradient(45deg, #e9ecef 0 2px, #b9c2cc 2px 3px); }
 .subject-chip {
@@ -2728,38 +2740,67 @@ function renderSubjectSlot(){
 // en Puissance/Relations on garde un menu déroulant pour explorer le détail temporel.
 // Contrôle de plage d'années (Exploration) — autonome, lit l'état global.
 // Affiché dans la barre de contexte quand on est dans l'Exploration.
+// Contrôle de plage d'années (Exploration) — frise cliquable des années disponibles.
+// Années pleines = données présentes (cliquables) ; vides = hachurées (non cliquables).
+// Clic = 1re borne ; 2e clic = 2e borne (plage) ; re-clic même année = année seule.
+let _friseAnchor = null;   // 1re borne en attente lors d'une sélection en 2 clics
 function buildYearRangeControl(){
   const entry = getFlowEntryByKey(_relEntryKey);
   if(!entry) return '<span class="year-out" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</span>';
-  const yearsAvail = getFluxYearsAvailable(entry);
-  if(!yearsAvail) return '<span class="year-out" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</span>';
-  const [yAvMin, yAvMax] = yearsAvail;
+  const avail = getFluxYearsAvailable(entry);
+  if(!avail) return '<span class="year-out" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</span>';
+  const [yMin, yMax] = avail;
+  const present = new Set(getFluxYearsList(entry));
   const useRange = (_relYearRange && _relYearRange.length === 2);
-  const curMin = useRange ? _relYearRange[0] : yAvMax;
-  const curMax = useRange ? _relYearRange[1] : yAvMax;
-  let optsMin = '', optsMax = '', optsPunct = '';
-  for(let y = yAvMin; y <= yAvMax; y++){
-    optsMin += `<option value="${y}"${y===curMin?' selected':''}>${y}</option>`;
-    optsMax += `<option value="${y}"${y===curMax?' selected':''}>${y}</option>`;
-    optsPunct += `<option value="${y}"${y===state.year?' selected':''}>${y}</option>`;
+  const selMin = useRange ? _relYearRange[0] : state.year;
+  const selMax = useRange ? _relYearRange[1] : state.year;
+
+  let cells = '';
+  for(let y = yMin; y <= yMax; y++){
+    const has = present.has(y);
+    const inSel = (y >= selMin && y <= selMax);
+    const isAnchor = (_friseAnchor === y);
+    let cls = 'frise-cell';
+    if(!has) cls += ' empty';
+    if(inSel) cls += ' sel';
+    if(isAnchor) cls += ' anchor';
+    const click = has ? `onclick="friseClick(${y})"` : '';
+    const title = has ? y + (inSel ? ' · sélectionné' : '') : y + ' · pas de donnée';
+    cells += `<div class="${cls}" ${click} title="${title}"><span class="frise-yr">${String(y).slice(2)}</span></div>`;
   }
-  if(useRange){
-    return `<div class="year-range-ctl">
-      <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(+this.value, ${curMax})">${optsMin}</select>
-      <span style="color:var(--text3);font-family:var(--mono);font-size:11px">→</span>
-      <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(${curMin}, +this.value)">${optsMax}</select>
-      <div class="seg" style="margin-left:4px">
-        <button class="${_relYearAggMode==='sum'?'on':''}" onclick="setRelYearAggMode('sum')" title="Cumul sur la période">Σ</button>
-        <button class="${_relYearAggMode==='avg'?'on':''}" onclick="setRelYearAggMode('avg')" title="Moyenne annuelle">x̄</button>
-      </div>
-      <button class="rel-range-clear" onclick="clearRelYearRange()" title="Revenir à une année">×</button>
-    </div>`;
+  const aggSeg = useRange ? `<div class="seg" style="margin-left:6px">
+      <button class="${_relYearAggMode==='sum'?'on':''}" onclick="setRelYearAggMode('sum')" title="Cumul sur la période">Σ</button>
+      <button class="${_relYearAggMode==='avg'?'on':''}" onclick="setRelYearAggMode('avg')" title="Moyenne annuelle">x̄</button>
+    </div>` : '';
+  const label = useRange ? `${selMin}–${selMax}` : `${state.year}`;
+  return `<div class="frise-wrap">
+    <div class="frise">${cells}</div>
+    <span class="frise-label">${label}</span>
+    ${aggSeg}
+  </div>`;
+}
+
+// Clic sur une année de la frise (gestion 1re/2e borne).
+function friseClick(y){
+  if(_friseAnchor == null){
+    // 1er clic : on pose l'ancre et on sélectionne cette année seule
+    _friseAnchor = y;
+    _relYearRange = null;
+    state.year = y;
+    cache.flux.clear(); _fluxPartnerTotalsCache.clear(); _relInfluencePinned = null;
+    renderYearSlot(); renderRelMain(); syncUrl();
+  } else if(_friseAnchor === y){
+    // re-clic même année : année seule, on referme la sélection
+    _friseAnchor = null;
+    _relYearRange = null;
+    state.year = y;
+    cache.flux.clear(); _fluxPartnerTotalsCache.clear(); _relInfluencePinned = null;
+    renderYearSlot(); renderRelMain(); syncUrl();
   } else {
-    const yStart = Math.max(yAvMin, yAvMax - 4);
-    return `<div class="year-range-ctl">
-      <select id="yearSelect" class="year-select" onchange="onYearChange(this.value)">${optsPunct}</select>
-      <button class="rel-range-toggle" onclick="setRelYearRange(${yStart}, ${yAvMax})" title="Activer une plage d'années">Plage…</button>
-    </div>`;
+    // 2e clic différent : on définit la plage entre l'ancre et cette année
+    const a = Math.min(_friseAnchor, y), b = Math.max(_friseAnchor, y);
+    _friseAnchor = null;
+    setRelYearRange(a, b);   // ce setter rerend déjà tout (y compris la frise)
   }
 }
 
@@ -2792,6 +2833,7 @@ function renderYearSlot(){
 function setSubject(isos, label){
   state.subject = { isos: isos.slice(), label: label || detectZoneLabel(isos) };
   _relInfluencePinned = null;  // reset sélection mode Influence : un nouveau sujet → nouvelle sélection
+  _friseAnchor = null;  _fluxYearsListCache.clear();  // la dispo des années dépend du sujet
   renderContextBar();
   syncUrl();
   refreshActiveView();
@@ -4414,6 +4456,31 @@ function getFluxYearsAvailable(entry){
   return res;
 }
 
+// Liste des années DISTINCTES ayant des données pour l'entrée flux.
+// Critère « pour le sujet » (le sujet apparaît comme émetteur ou partenaire) ;
+// repli global (toutes années de l'indicateur) en vue Monde / sans sujet.
+const _fluxYearsListCache = new Map();
+function getFluxYearsList(entry){
+  if(!entry) return [];
+  const isos = (!relIsWorld() && state.subject && state.subject.isos.length) ? state.subject.isos : null;
+  const ckey = entry.key + '|' + (isos ? isos.join(',') : 'WORLD');
+  if(_fluxYearsListCache.has(ckey)) return _fluxYearsListCache.get(ckey);
+  let q;
+  if(isos){
+    const inList = sqlList(isos);
+    q = `SELECT DISTINCT year FROM flux WHERE indicator='${escapeSql(entry.realIndicator)}'
+         AND (country_from IN (${inList}) OR country_to IN (${inList}))
+         AND value IS NOT NULL AND value!=0 ORDER BY year`;
+  } else {
+    q = `SELECT DISTINCT year FROM flux WHERE indicator='${escapeSql(entry.realIndicator)}'
+         AND value IS NOT NULL AND value!=0 ORDER BY year`;
+  }
+  const r = safeExec(q);
+  const list = r.length ? r[0].values.map(v => v[0]).filter(y => y != null) : [];
+  _fluxYearsListCache.set(ckey, list);
+  return list;
+}
+
 // Setter de plage : reset les caches dépendants
 function setRelYearRange(yMin, yMax){
   // Valider que yMin <= yMax
@@ -4640,7 +4707,7 @@ function toggleRelCat(cat){ _relCatCollapsed[cat] = !_relCatCollapsed[cat]; rend
 function toggleRelSection(sec){ _relSecCollapsed[sec] = !_relSecCollapsed[sec]; renderRelNav(document.getElementById('relSearch')?.value || ''); }
 function filterRelNav(v){ renderRelNav(v); }
 function selectRelEntry(key){
-  _relEntryKey = key; _relPath = []; _relInfluencePinned = null;
+  _relEntryKey = key; _relPath = []; _relInfluencePinned = null; _friseAnchor = null;
   // Perspective par défaut : en vue Monde, « par sujet » = par sub si l'indicateur en a
   // (structure mondiale d'abord) ; sinon partenaire. En vue Sujet : toujours partenaire.
   _relDim = relDefaultDim();
