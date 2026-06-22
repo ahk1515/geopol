@@ -90,14 +90,12 @@ header {
 }
 .facette-pane { display: none; }
 .facette-pane.active { display: block; }
-.analyse-head { position: sticky; top: var(--h-topbars); z-index: 28; background: var(--bg);
-  padding: 10px 4px 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
-.analyse-facettes { display: inline-flex; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
-.facette-btn { border: none; background: transparent; color: var(--text2); font-family: var(--display); font-size: 13px; font-weight: 600;
-  padding: 5px 16px; border-radius: 6px; cursor: pointer; }
+.ctx-facettes { margin-left: auto; display: inline-flex; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+.facette-btn { border: none; background: transparent; color: var(--text2); font-family: var(--display); font-size: 12.5px; font-weight: 600;
+  padding: 4px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
 .facette-btn.on { background: var(--green); color: #fff; }
-.facette-btn:not(.on):hover { color: var(--text); background: var(--bg3); }
-.analyse-finalite { margin-top: 7px; font-size: 12px; color: var(--text3); padding-left: 4px; }
+.facette-btn:not(.on):hover { color: var(--text); background: var(--bg2); }
+.analyse-finalite { font-size: 12px; color: var(--text3); padding: 4px 4px 10px; }
 .logo {
   font-family: var(--mono); font-size: 12px; font-weight: 600;
   letter-spacing: .22em; color: var(--green);
@@ -1271,25 +1269,23 @@ main { flex: 1; padding: 16px 18px 28px; }
     <span class="ctx-sep"></span>
     <span class="ctx-label" id="timeLabel">Année</span>
     <div id="yearSlot"></div>
+    <div class="ctx-facettes" id="analyseFacettes">
+      <button class="facette-btn" data-facette="profil" onclick="setFacette('profil')">Profil</button>
+      <button class="facette-btn" data-facette="faceaface" onclick="setFacette('faceaface')">Face-à-face</button>
+      <button class="facette-btn" data-facette="zone" onclick="setFacette('zone')">Zone</button>
+    </div>
   </div>
 
   <div id="demoBanner" style="display:none">⚠️ DONNÉES FICTIVES — mode démonstration. Les chiffres affichés ne sont pas réels.</div>
 
-  <!-- ░░ ZONE PRINCIPALE — 3 ONGLETS ░░ -->
+  <!-- ░░ ZONE PRINCIPALE ░░ -->
   <main>
     <section class="view" id="view-relations">
       <div id="relationsContent"></div>
     </section>
 
     <section class="view active" id="view-analyse">
-      <div class="analyse-head">
-        <div class="analyse-facettes" id="analyseFacettes">
-          <button class="facette-btn" data-facette="profil" onclick="setFacette('profil')">Profil</button>
-          <button class="facette-btn" data-facette="faceaface" onclick="setFacette('faceaface')">Face-à-face</button>
-          <button class="facette-btn" data-facette="zone" onclick="setFacette('zone')">Zone</button>
-        </div>
-        <div class="analyse-finalite" id="analyseFinalite"></div>
-      </div>
+      <div class="analyse-finalite" id="analyseFinalite"></div>
       <div id="facette-profil" class="facette-pane"><div id="syntheseContent"></div></div>
       <div id="facette-faceaface" class="facette-pane"><div id="comparaisonsContent"></div></div>
       <div id="facette-zone" class="facette-pane"><div id="croiseContent"></div></div>
@@ -2738,6 +2734,9 @@ function switchView(v){
 function renderContextBar(){
   renderSubjectSlot();
   renderYearSlot();
+  // Les facettes (Profil/Face-à-face/Zone) n'apparaissent que dans l'espace Analyse.
+  const fac = document.getElementById('analyseFacettes');
+  if(fac) fac.style.display = (state.view === 'analyse') ? 'inline-flex' : 'none';
 }
 function renderSubjectSlot(){
   const slot = document.getElementById('subjectSlot');
@@ -4391,16 +4390,13 @@ function computePuMapColors(){
   const { sorted } = getWorldStats(_puIndicator, year);
   if(!sorted || !sorted.length) return {};
   const cfg = state.indicators.find(c => c.indicator === _puIndicator);
-  const inverted = cfg && cfg.rank_inverted;
   const ramp = ['#e8f0e8','#bfe0c8','#9ec9a8','#6fb486','#4f9e6a','#2d8556','#0a6e4a','#064e34'];
   const n = sorted.length;
-  // sorted est trié croissant : sorted[i] a le rang (i+1)
-  // bucket par quantile : floor(rang_relatif * nbBuckets), borné à nbBuckets-1
+  // Convention unique : foncé = valeur élevée, toujours (pas d'inversion de couleur).
   const out = {};
   for(let i = 0; i < n; i++){
     const d = sorted[i];
-    let q = i / Math.max(1, n - 1);                  // 0 (plus faible) → 1 (plus élevé)
-    if(inverted) q = 1 - q;
+    const q = i / Math.max(1, n - 1);                  // 0 (plus faible) → 1 (plus élevé)
     const idx = Math.min(ramp.length - 1, Math.floor(q * ramp.length));
     out[d.iso] = ramp[idx];
   }
@@ -5069,13 +5065,12 @@ function identWorldColors(indicator){
   const { sorted } = getWorldStats(indicator, year);
   if(!sorted || !sorted.length) return {};
   const cfg = state.indicators.find(c => c.indicator === indicator);
-  const inverted = cfg && cfg.rank_inverted;
   const ramp = ['#e8f0e8','#bfe0c8','#9ec9a8','#6fb486','#4f9e6a','#2d8556','#0a6e4a','#064e34'];
   const out = {};
   const n = sorted.length;
+  // Convention unique : foncé = valeur élevée, toujours.
   for(let i = 0; i < n; i++){
-    let q = i / Math.max(1, n - 1);
-    if(inverted) q = 1 - q;
+    const q = i / Math.max(1, n - 1);
     const idx = Math.min(ramp.length - 1, Math.floor(q * ramp.length));
     out[sorted[i].iso] = ramp[idx];
   }
