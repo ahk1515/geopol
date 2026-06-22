@@ -75,6 +75,12 @@ header {
   position: sticky; top: 0; z-index: 50;
 }
 .header-vars { display: inline-flex; align-items: center; gap: 10px; padding-left: 6px; }
+#contextBar {
+  position: sticky; top: 50px; z-index: 46;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 7px 18px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
 .logo {
   font-family: var(--mono); font-size: 12px; font-weight: 600;
   letter-spacing: .22em; color: var(--green);
@@ -139,7 +145,6 @@ header {
   color: var(--text3); text-transform: uppercase;
 }
 #demoBanner {
-  position: sticky; top: 50px; z-index: 45;
   background: #b45309; color: #fff;
   font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: .04em;
   text-align: center; padding: 6px 12px;
@@ -693,7 +698,7 @@ main { flex: 1; padding: 16px 18px 28px; }
 .rel-crumb-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 14px;
   padding: 8px 10px; flex-wrap: wrap;
-  position: sticky; top: 50px; z-index: 30;
+  position: sticky; top: 92px; z-index: 30;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   margin: 0 -10px 12px;
@@ -1221,13 +1226,6 @@ main { flex: 1; padding: 16px 18px 28px; }
       <button class="tab" data-view="croise">Croisé</button>
       <button class="tab" data-view="comparaisons">Comparaisons</button>
     </nav>
-    <div class="header-vars">
-      <span class="ctx-label">Sujet</span>
-      <div id="subjectSlot"></div>
-      <span class="ctx-sep"></span>
-      <span class="ctx-label">Année</span>
-      <div id="yearSlot"></div>
-    </div>
     <div class="header-spacer"></div>
     <button class="hbtn" id="searchBtn" onclick="openSearch()"><span>⌕</span> Rechercher <span class="kbd">⌘K</span></button>
     <button class="hbtn" id="exportBtn" onclick="exportCurrentView()"><span>⬇</span> Exporter</button>
@@ -1235,6 +1233,15 @@ main { flex: 1; padding: 16px 18px 28px; }
     <button class="hbtn" id="aboutBtn" onclick="openAbout()" title="À propos de GÉOPOL"><span>ℹ</span></button>
     <div class="db-badge"><span class="dot" id="dbDot"></span><span id="dbName">—</span></div>
   </header>
+
+  <!-- ░░ BARRE DE CONTEXTE (Sujet + temps contextuel) ░░ -->
+  <div id="contextBar">
+    <span class="ctx-label">Sujet</span>
+    <div id="subjectSlot"></div>
+    <span class="ctx-sep"></span>
+    <span class="ctx-label" id="timeLabel">Année</span>
+    <div id="yearSlot"></div>
+  </div>
 
   <div id="demoBanner" style="display:none">⚠️ DONNÉES FICTIVES — mode démonstration. Les chiffres affichés ne sont pas réels.</div>
 
@@ -2719,13 +2726,60 @@ function renderSubjectSlot(){
 }
 // Année : en Synthèse on affiche juste la dernière année dispo (pas de curseur) ;
 // en Puissance/Relations on garde un menu déroulant pour explorer le détail temporel.
+// Contrôle de plage d'années (Exploration) — autonome, lit l'état global.
+// Affiché dans la barre de contexte quand on est dans l'Exploration.
+function buildYearRangeControl(){
+  const entry = getFlowEntryByKey(_relEntryKey);
+  if(!entry) return '<span class="year-out" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</span>';
+  const yearsAvail = getFluxYearsAvailable(entry);
+  if(!yearsAvail) return '<span class="year-out" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</span>';
+  const [yAvMin, yAvMax] = yearsAvail;
+  const useRange = (_relYearRange && _relYearRange.length === 2);
+  const curMin = useRange ? _relYearRange[0] : yAvMax;
+  const curMax = useRange ? _relYearRange[1] : yAvMax;
+  let optsMin = '', optsMax = '', optsPunct = '';
+  for(let y = yAvMin; y <= yAvMax; y++){
+    optsMin += `<option value="${y}"${y===curMin?' selected':''}>${y}</option>`;
+    optsMax += `<option value="${y}"${y===curMax?' selected':''}>${y}</option>`;
+    optsPunct += `<option value="${y}"${y===state.year?' selected':''}>${y}</option>`;
+  }
+  if(useRange){
+    return `<div class="year-range-ctl">
+      <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(+this.value, ${curMax})">${optsMin}</select>
+      <span style="color:var(--text3);font-family:var(--mono);font-size:11px">→</span>
+      <select class="rel-zone-select" style="max-width:80px" onchange="setRelYearRange(${curMin}, +this.value)">${optsMax}</select>
+      <div class="seg" style="margin-left:4px">
+        <button class="${_relYearAggMode==='sum'?'on':''}" onclick="setRelYearAggMode('sum')" title="Cumul sur la période">Σ</button>
+        <button class="${_relYearAggMode==='avg'?'on':''}" onclick="setRelYearAggMode('avg')" title="Moyenne annuelle">x̄</button>
+      </div>
+      <button class="rel-range-clear" onclick="clearRelYearRange()" title="Revenir à une année">×</button>
+    </div>`;
+  } else {
+    const yStart = Math.max(yAvMin, yAvMax - 4);
+    return `<div class="year-range-ctl">
+      <select id="yearSelect" class="year-select" onchange="onYearChange(this.value)">${optsPunct}</select>
+      <button class="rel-range-toggle" onclick="setRelYearRange(${yStart}, ${yAvMax})" title="Activer une plage d'années">Plage…</button>
+    </div>`;
+  }
+}
+
 function renderYearSlot(){
   const slot = document.getElementById('yearSlot');
+  const lbl = document.getElementById('timeLabel');
+  // 3 formes de temps selon l'onglet (modèle 2) :
   if(state.view === 'synthese'){
+    // (a) année FIGÉE : dernière donnée disponible, non éditable
+    if(lbl) lbl.textContent = 'Année';
     if(state.subject) state.year = latestYearWithData();
     slot.innerHTML = `<span class="year-out" style="font-family:var(--mono);font-size:13px;font-weight:600">${state.subject ? state.year : '—'}</span>
       <span style="font-size:10px;color:var(--text3);margin-left:6px">dernière donnée</span>`;
+  } else if(state.view === 'relations'){
+    // (c) PLAGE (ou année) propre à l'Exploration
+    if(lbl) lbl.textContent = 'Période';
+    slot.innerHTML = buildYearRangeControl();
   } else {
+    // (b) année CHOISIE (Croisé, Comparaisons)
+    if(lbl) lbl.textContent = 'Année';
     const mn = state.yearBounds.min, mx = state.yearBounds.max;
     let opts = '';
     for(let y = mx; y >= mn; y--){
@@ -4368,6 +4422,7 @@ function setRelYearRange(yMin, yMax){
   cache.flux.clear();   // les valeurs agrégées dépendent de la plage
   _fluxPartnerTotalsCache.clear();
   _relInfluencePinned = null;
+  renderYearSlot();
   renderRelMain();
   syncUrl();
 }
@@ -4376,6 +4431,7 @@ function clearRelYearRange(){
   cache.flux.clear();
   _fluxPartnerTotalsCache.clear();
   _relInfluencePinned = null;
+  renderYearSlot();
   renderRelMain();
   syncUrl();
 }
@@ -4384,6 +4440,7 @@ function setRelYearAggMode(mode){
   _relYearAggMode = mode;
   cache.flux.clear();
   _fluxPartnerTotalsCache.clear();
+  renderYearSlot();
   renderRelMain();
   syncUrl();
 }
@@ -4796,16 +4853,15 @@ function renderRelMain(){
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${_baseName}</span>
-      ${_sensToggle}
       ${scopeCrumb}
     </div>
     <div class="rel-crumb-bar">
       <div class="rel-crumb">${crumb}</div>
+      ${_sensToggle}
       ${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}
       ${filterMenu}
       ${metricSelector}
       ${zoneSelector}
-      ${yearRangeSelector}
     </div>
     <div class="pu-cells">
       <div class="top-row">
