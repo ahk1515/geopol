@@ -2427,7 +2427,7 @@ async function boot(){
   setLoadingMsg('Chargement de la base…', 35);
   setLoadingDetail('Connexion au serveur…');
   let buf;
-  const DB_URL = 'https://github.com/ahk1515/geopol/releases/download/db-latest/geopolitique.db?v=' + Date.now();
+  const DB_URL = 'https://pub-710d496c94c74cb3837b8229bc8f4410.r2.dev/geopolitique.db?v=' + Date.now();
   const t0 = performance.now();
   try {
     const res = await fetch(DB_URL);
