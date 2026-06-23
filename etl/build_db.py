@@ -33,6 +33,12 @@ R2_SECRET_KEY    = os.environ.get("R2_SECRET_KEY")
 R2_BUCKET        = os.environ.get("R2_BUCKET", "geopol-db")
 R2_PUBLIC_URL    = os.environ.get("R2_PUBLIC_URL")  # URL pub R2
 
+# GitHub Releases (distribution publique de la DB, en plus de R2).
+# Le domaine github.com passe les pare-feux d'entreprise (≠ r2.dev).
+GITHUB_REPO    = os.environ.get("GITHUB_REPOSITORY", "ahk1515/geopol")
+GITHUB_TOKEN   = os.environ.get("GITHUB_TOKEN")
+GH_RELEASE_TAG = "db-latest"   # tag fixe → URL de téléchargement stable
+
 # -------------------------------------------------------------
 # PURGE DONNÉES HORS BORNES
 # -------------------------------------------------------------
@@ -292,6 +298,79 @@ def upload_to_r2(local_path, remote_key):
 
 
 # -------------------------------------------------------------
+# PUBLICATION VERS GITHUB RELEASES (distribution publique)
+# -------------------------------------------------------------
+# R2 reste le stockage de travail de l'ETL (cycle download/build/upload).
+# GitHub Releases sert UNIQUEMENT de point de distribution pour l'app :
+# le domaine github.com passe les pare-feux d'entreprise (≠ r2.dev).
+# Tag fixe 'db-latest' : l'asset est écrasé à chaque run, l'URL reste stable.
+
+def publish_to_github_release(local_path, asset_name="geopolitique.db", tag=GH_RELEASE_TAG):
+    """
+    Publie la DB comme asset d'une release GitHub (tag fixe).
+    Crée la release si absente, sinon écrase l'asset existant.
+    Best-effort : un échec n'interrompt pas le pipeline (retourne False).
+    """
+    if not GITHUB_TOKEN:
+        print("  ⚠️  GITHUB_TOKEN manquant — publication GitHub ignorée.")
+        return False
+
+    api        = "https://api.github.com"
+    upload_api = "https://uploads.github.com"
+    headers = {
+        "Authorization":        f"Bearer {GITHUB_TOKEN}",
+        "Accept":               "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    try:
+        # 1. Récupérer la release du tag, ou la créer si absente (404)
+        r = requests.get(f"{api}/repos/{GITHUB_REPO}/releases/tags/{tag}", headers=headers)
+        if r.status_code == 404:
+            print(f"  Release '{tag}' absente — création...")
+            r = requests.post(
+                f"{api}/repos/{GITHUB_REPO}/releases",
+                headers=headers,
+                json={
+                    "tag_name": tag,
+                    "name":     "Base de données (dernière version)",
+                    "body":     "Asset mis à jour automatiquement par l'ETL.",
+                },
+            )
+        r.raise_for_status()
+        release    = r.json()
+        release_id = release["id"]
+
+        # 2. Supprimer l'ancien asset homonyme s'il existe
+        for asset in release.get("assets", []):
+            if asset["name"] == asset_name:
+                print(f"  Suppression de l'ancien asset {asset_name}...")
+                requests.delete(
+                    f"{api}/repos/{GITHUB_REPO}/releases/assets/{asset['id']}",
+                    headers=headers,
+                )
+
+        # 3. Uploader le nouvel asset
+        file_size = os.path.getsize(local_path)
+        print(f"  Upload GitHub de {asset_name} ({file_size / 1024 / 1024:.1f} Mo)...")
+        with open(local_path, "rb") as f:
+            up = requests.post(
+                f"{upload_api}/repos/{GITHUB_REPO}/releases/{release_id}/assets?name={asset_name}",
+                headers={**headers, "Content-Type": "application/octet-stream"},
+                data=f,
+            )
+        up.raise_for_status()
+
+        url = up.json().get("browser_download_url", "")
+        print(f"  ✅ Publié sur GitHub Releases : {url}")
+        return True
+
+    except Exception as e:
+        print(f"  ❌ Erreur publication GitHub : {e}")
+        return False
+
+
+# -------------------------------------------------------------
 # STATUS.JSON
 # -------------------------------------------------------------
 
@@ -504,6 +583,10 @@ def run(sources_status=None):
         upload_ok = False
     else:
         upload_ok = upload_to_r2(PATH_DB, "geopolitique.db")
+
+    # 7 bis. Publication vers GitHub Releases (distribution publique)
+    print("\n→ Publication GitHub Releases")
+    publish_to_github_release(PATH_DB)
 
     # 5. Écriture status.json
     print("\n→ Écriture status.json")
