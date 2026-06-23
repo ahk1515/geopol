@@ -95,7 +95,12 @@ header {
   padding: 4px 14px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
 .facette-btn.on { background: var(--green); color: #fff; }
 .facette-btn:not(.on):hover { color: var(--text); background: var(--bg2); }
-.analyse-finalite { font-size: 12px; color: var(--text3); padding: 4px 4px 10px; }
+.analyse-finalite { font-size: 12px; color: var(--text3); padding: 4px 4px 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.finalite-txt { flex: 1; min-width: 200px; }
+.passerelles { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.passerelle-btn { border: 1px solid var(--border); background: var(--bg2); color: var(--green);
+  font-family: var(--display); font-size: 11.5px; font-weight: 600; padding: 4px 11px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.passerelle-btn:hover { background: var(--green); color: #fff; border-color: var(--green); }
 .logo {
   font-family: var(--mono); font-size: 12px; font-weight: 600;
   letter-spacing: .22em; color: var(--green);
@@ -193,6 +198,7 @@ header {
 .subject-chip:hover { background: var(--green-b); }
 .subject-chip .flag { font-size: 15px; }
 .subject-chip.empty { background: var(--bg3); border-color: var(--border); color: var(--text3); font-style: italic; }
+.subject-chip.empty.world { background: rgba(10,110,74,.08); border-color: var(--green); color: var(--green); font-style: normal; font-weight: 600; }
 .subject-chip .x { opacity: .5; font-size: 13px; line-height: 1; }
 .subject-chip .x:hover { opacity: 1; }
 
@@ -362,7 +368,13 @@ main { flex: 1; padding: 16px 18px 28px; }
 .kv-rank { font-family: var(--mono); font-size: 10.5px; color: var(--text3); text-align: right; white-space: nowrap; }
 .kv-spark { height: 26px; }
 .kv-spark svg { display: block; width: 100%; height: 100%; }
-.kv-empty { padding: 30px; text-align: center; color: var(--text3); font-size: 12px; }
+.kv-empty { padding: 30px; text-align: center; color: var(--text3); font-size: 12.5px; line-height: 1.6; }
+/* Uniformité des états vides : tons, espacement et ligne cohérents partout. */
+.kv-empty, .rel-empty, .cross-tile-empty, .pano-empty,
+.cmp-empty-sub, .need-subject p {
+  color: var(--text3); line-height: 1.6;
+}
+.need-subject .big, .cmp-empty-title { font-family: var(--display); font-weight: 600; color: var(--text); }
 
 /* panorama des flux */
 .flux-block { margin-bottom: 6px; }
@@ -2748,11 +2760,11 @@ function renderContextBar(){
 function renderSubjectSlot(){
   const slot = document.getElementById('subjectSlot');
   if(!state.subject || !state.subject.isos.length){
-    // En Relations, « pas de sujet » = vue Monde (état valide) → libellé adapté.
-    // Ailleurs (Synthèse/Puissance/Comparaisons), c'est un vrai état d'attente.
-    const enRelations = (state.view === 'relations');
-    const txt = enRelations ? '🌍 Monde — cliquer pour filtrer un pays' : 'aucun sujet — cliquer pour choisir';
-    slot.innerHTML = `<span class="subject-chip empty" onclick="openSearch()">${txt}</span>`;
+    // « Pas de sujet » : en Exploration et en Zone, c'est la vue Monde (état valide).
+    // En Profil et Face-à-face, c'est un vrai état d'attente (un sujet est requis).
+    const isWorldOk = (state.view === 'relations') || (state.view === 'analyse' && _facette === 'zone');
+    const txt = isWorldOk ? '🌍 Monde — cliquer pour cibler un pays' : 'Choisir un sujet…';
+    slot.innerHTML = `<span class="subject-chip empty${isWorldOk?' world':''}" onclick="openSearch()">${txt}</span>`;
     return;
   }
   const s = state.subject;
@@ -2773,7 +2785,13 @@ function renderSubjectSlot(){
 // Clic = 1re borne ; 2e clic = 2e borne (plage) ; re-clic même année = année seule.
 let _friseAnchor = null;   // 1re borne en attente lors d'une sélection en 2 clics
 function buildYearRangeControl(){
-  const entry = getFlowEntryByKey(_relEntryKey);
+  let entry = getFlowEntryByKey(_relEntryKey);
+  // Si aucun indicateur courant (ex. arrivée en vue Monde avant renderRelMain),
+  // prendre le premier disponible pour que la frise s'affiche quand même.
+  if(!entry){
+    const all = (typeof flowEntriesPresent === 'function') ? flowEntriesPresent() : [];
+    if(all.length){ entry = all[0]; }
+  }
   if(!entry) return '<span class="year-out" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</span>';
   const avail = getFluxYearsAvailable(entry);
   if(!avail) return '<span class="year-out" style="font-family:var(--mono);font-size:12px;color:var(--text3)">—</span>';
@@ -2836,8 +2854,16 @@ function renderYearSlot(){
   const slot = document.getElementById('yearSlot');
   const lbl = document.getElementById('timeLabel');
   // Forme du temps selon l'espace/facette (modèle 2) :
-  //  Exploration → plage ; Analyse/Profil → année figée ; Analyse/Face-à-face|Zone → année choisie.
+  //  Exploration → plage ; Analyse/Profil → année figée ; Analyse/Face-à-face → année choisie ;
+  //  Analyse/Zone → rien ici (le Croisé gère sa période en interne, avec période par tuile).
   const isProfil = (state.view === 'analyse' && _facette === 'profil');
+  const isZone = (state.view === 'analyse' && _facette === 'zone');
+  if(isZone){
+    if(lbl) lbl.style.display = 'none';
+    slot.innerHTML = '';
+    return;
+  }
+  if(lbl) lbl.style.display = '';
   if(isProfil){
     if(lbl) lbl.textContent = 'Année';
     if(state.subject) state.year = latestYearWithData();
@@ -2901,6 +2927,7 @@ const FACETTE_RENDER = { profil: renderSynthese, faceaface: renderComparaisons, 
 function setFacette(f){
   if(!FACETTE_RENDER[f]) return;
   _facette = f;
+  renderYearSlot();   // la forme du temps dépend de la facette (Profil/Face-à-face/Zone)
   renderAnalyse();
   syncUrl();
 }
@@ -2909,7 +2936,7 @@ function renderAnalyse(){
   document.querySelectorAll('#analyseFacettes .facette-btn').forEach(b =>
     b.classList.toggle('on', b.dataset.facette === _facette));
   const fin = document.getElementById('analyseFinalite');
-  if(fin) fin.textContent = FACETTE_FINALITE[_facette] || '';
+  if(fin) fin.innerHTML = `<span class="finalite-txt">${FACETTE_FINALITE[_facette] || ''}</span>${buildFacettePasserelles()}`;
   // panneau actif
   document.querySelectorAll('.facette-pane').forEach(p => p.classList.remove('active'));
   const paneId = { profil:'facette-profil', faceaface:'facette-faceaface', zone:'facette-zone' }[_facette];
@@ -2917,6 +2944,31 @@ function renderAnalyse(){
   if(pane) pane.classList.add('active');
   // rendu de la facette
   (FACETTE_RENDER[_facette] || function(){})();
+}
+
+// Passerelles contextuelles entre facettes (n'apparaissent que si pertinentes).
+function buildFacettePasserelles(){
+  const s = state.subject;
+  if(!s || !s.isos.length) return '';
+  const name = s.label || '';
+  const single = s.isos.length === 1;
+  let btns = '';
+  if(_facette === 'profil'){
+    if(single) btns += `<button class="passerelle-btn" onclick="gotoFacette('faceaface')">Comparer ${escAttr(name)} →</button>`;
+    btns += `<button class="passerelle-btn" onclick="gotoFacette('zone')">Voir sa zone →</button>`;
+  } else if(_facette === 'faceaface'){
+    btns += `<button class="passerelle-btn" onclick="gotoFacette('profil')">Profil de ${escAttr(name)} →</button>`;
+    btns += `<button class="passerelle-btn" onclick="gotoFacette('zone')">Voir sa zone →</button>`;
+  } else if(_facette === 'zone'){
+    btns += `<button class="passerelle-btn" onclick="gotoFacette('profil')">Profil de ${escAttr(name)} →</button>`;
+    if(single) btns += `<button class="passerelle-btn" onclick="gotoFacette('faceaface')">Comparer →</button>`;
+  }
+  return btns ? `<span class="passerelles">${btns}</span>` : '';
+}
+
+// Navigue vers une facette en conservant le sujet courant.
+function gotoFacette(f){
+  setFacette(f);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -8244,7 +8296,7 @@ function renderComparaisons(){
 
   // Pas de sujet A : message identique aux autres onglets.
   if(!state.subject || !state.subject.isos.length){
-    host.innerHTML = `<div class="need-subject"><p>Choisissez d'abord un sujet (barre du haut) pour démarrer une comparaison.</p></div>`;
+    host.innerHTML = `<div class="need-subject"><div class="big">Choisir un sujet</div><p>Sélectionnez un pays dans la barre du haut pour démarrer une comparaison.</p></div>`;
     return;
   }
 
