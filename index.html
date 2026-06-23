@@ -675,6 +675,11 @@ main { flex: 1; padding: 16px 18px 28px; }
 .radar-median { stroke: var(--text3); stroke-width: 1; stroke-dasharray: 3 3; fill: none; opacity: .55; }
 .radar-poly { fill: var(--green); fill-opacity: .15; stroke: var(--green); stroke-width: 1.8; }
 .radar-pt { fill: var(--green); }
+.radar-axis-label { font-family: var(--mono); font-size: 9px; fill: var(--text2); }
+.radar-legend { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 11.5px; color: var(--text2); }
+.radar-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.radar-key { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.radar-note { font-family: var(--mono); font-size: 9.5px; color: var(--text3); }
 .radar-pt.active { fill: var(--orange); r: 4.5; stroke: #fff; stroke-width: 1.5; }
 .radar-lbl { font-family: var(--sans); font-size: 10px; fill: var(--text2); }
 .radar-lbl.active { fill: var(--orange); font-weight: 600; }
@@ -8573,55 +8578,83 @@ function renderCmpPowerNav(){
 }
 
 function renderCmpPowerTornado(){
+  // Radar superposé A (sujet, vert) vs B (partenaire, bleu-ardoise).
+  // Chaque axe = un indicateur sélectionné ; position = percentile mondial (axes comparables).
   const host = document.getElementById('cmpPowerBody');
   if(!host) return;
   const sel = _cmpLoadPowerSelected();
   const isosA = state.subject.isos;
   const { isos: isosB } = _cmpBIsos();
+  const labelB = _cmpPartnerBLabel || 'B';
   const year = _cmpGetYear();
+  const axes = _cmpPowerIndicators().filter(c => sel.has(c.indicator) && c.presentInDb !== false);
 
-  // ordre : catégorie alpha, puis ordre de sélection naturel
-  const inds = _cmpPowerIndicators().filter(c => sel.has(c.indicator));
-  const byCat = {};
-  for(const c of inds){ (byCat[c.category || 'autre'] ??= []).push(c); }
-  const cats = Object.keys(byCat).sort();
-
-  if(!inds.length){ host.innerHTML = `<div class="cmp-placeholder">Aucun indicateur sélectionné.</div>`; return; }
-
-  let html = '';
-  for(const cat of cats){
-    html += `<div class="cmp-section-head">${cat.toUpperCase()}</div>`;
-    for(const c of byCat[cat]){
-      const a = _cmpIdentiteValue(isosA, c.indicator, year);
-      const b = _cmpIdentiteValue(isosB, c.indicator, year);
-      const va = a.value, vb = b.value;
-      // normalisation linéaire sur max, seuil 5%
-      const mx = Math.max(va || 0, vb || 0) || 1;
-      const wA = va != null ? Math.max(5, (va/mx)*100) : 0;
-      const wB = vb != null ? Math.max(5, (vb/mx)*100) : 0;
-      // ratio
-      let ratio = '';
-      if(va != null && vb != null && va !== 0 && vb !== 0){
-        const hi = Math.max(va, vb), lo = Math.min(va, vb);
-        const n = hi / lo;
-        ratio = '×' + (n > 10 ? Math.round(n) : n.toFixed(1));
-      }
-      // tendances ±5% sur 5 ans
-      const trA = getEvolutionTrend(_cmpIdentiteSeries(isosA, c.indicator, year, 4), 0.05);
-      const trB = getEvolutionTrend(_cmpIdentiteSeries(isosB, c.indicator, year, 4), 0.05);
-      const arrow = t => t === 'up' ? '<span class="tr up">↗</span>' : t === 'down' ? '<span class="tr down">↘</span>' : '<span class="tr flat">→</span>';
-      const aStr = va != null ? fmtWithUnit(va, c.unit_display) : '—';
-      const bStr = vb != null ? fmtWithUnit(vb, c.unit_display) : '—';
-      html += `<div class="cmp-torn-row" onmouseenter="_cmpPowerTip(event,'${escAttr(c.indicator)}')" onmousemove="moveTip(event)" onmouseleave="hideTip()">
-        <div class="cmp-torn-val a">${arrow(trA)}${aStr}</div>
-        <div class="cmp-torn-bar a"><div class="cmp-torn-fill a" style="width:${wA.toFixed(1)}%"></div></div>
-        <div class="cmp-torn-mid">${c.label || c.indicator}${ratio ? `<span class="cmp-torn-ratio">${ratio}</span>` : ''}</div>
-        <div class="cmp-torn-bar b"><div class="cmp-torn-fill b" style="width:${wB.toFixed(1)}%"></div></div>
-        <div class="cmp-torn-val b">${bStr}${arrow(trB)}</div>
-      </div>`;
-    }
+  if(axes.length < 3){
+    host.innerHTML = `<div class="cmp-placeholder">Choisissez au moins 3 indicateurs (à droite) pour afficher le radar comparatif.</div>`;
+    return;
   }
-  host.innerHTML = html;
+
+  const labelA = state.subject.label || 'A';
+  const W = 380, H = 360, cx = W/2, cy = H/2 + 4, R = Math.min(W,H)/2 - 54;
+  const N = axes.length;
+  const COL_A = '#0a6e4a', COL_B = '#5b6b8c';   // A vert identité, B bleu-ardoise neutre
+
+  const pts = axes.map((ax, i) => {
+    const angle = -Math.PI/2 + i * (2*Math.PI / N);
+    const yA = getValueYear(ax.indicator, year) || year;
+    const vA = _cmpIdentiteValue(isosA, ax.indicator, year).value;
+    const vB = _cmpIdentiteValue(isosB, ax.indicator, year).value;
+    const pA = vA != null ? (rankPercentile(ax.indicator, vA, yA)?.percentile ?? null) : null;
+    const pB = vB != null ? (rankPercentile(ax.indicator, vB, yA)?.percentile ?? null) : null;
+    return { axis: ax, angle, vA, vB, pA, pB };
+  });
+
+  // axes + grille
+  let axesSvg = '', gridSvg = '', labelsSvg = '';
+  for(const f of [0.25, 0.5, 0.75, 1]) gridSvg += `<circle class="radar-grid" cx="${cx}" cy="${cy}" r="${(R*f).toFixed(1)}"/>`;
+  for(let i=0;i<pts.length;i++){
+    const p = pts[i];
+    const x = cx + Math.cos(p.angle)*R, y = cy + Math.sin(p.angle)*R;
+    axesSvg += `<line class="radar-axis" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+    // libellé d'axe
+    const lx = cx + Math.cos(p.angle)*(R+18), ly = cy + Math.sin(p.angle)*(R+18);
+    const anchor = Math.abs(Math.cos(p.angle)) < 0.3 ? 'middle' : (Math.cos(p.angle) > 0 ? 'start' : 'end');
+    const short = (p.axis.label || p.axis.indicator);
+    labelsSvg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" class="radar-axis-label">${escAttr(short.length>16?short.slice(0,15)+'…':short)}</text>`;
+  }
+
+  function polyFor(key){
+    const coords = pts.map(p => {
+      const pct = p[key];
+      const r = (pct != null) ? R * pct : 0;
+      return [cx + Math.cos(p.angle)*r, cy + Math.sin(p.angle)*r];
+    });
+    if(!coords.some(c => c[0]!==cx || c[1]!==cy)) return '';
+    return coords.map((c,i)=>(i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ')+' Z';
+  }
+  const dA = polyFor('pA'), dB = polyFor('pB');
+
+  // points (petits cercles) par pays
+  let dotsSvg = '';
+  for(const p of pts){
+    if(p.pA != null){ const r=R*p.pA; dotsSvg += `<circle cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3" fill="${COL_A}"/>`; }
+    if(p.pB != null){ const r=R*p.pB; dotsSvg += `<circle cx="${(cx+Math.cos(p.angle)*r).toFixed(1)}" cy="${(cy+Math.sin(p.angle)*r).toFixed(1)}" r="3" fill="${COL_B}"/>`; }
+  }
+
+  const svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;max-width:420px;margin:0 auto">
+    ${gridSvg}${axesSvg}
+    ${dB ? `<path d="${dB}" fill="${COL_B}" fill-opacity="0.16" stroke="${COL_B}" stroke-width="1.8"/>` : ''}
+    ${dA ? `<path d="${dA}" fill="${COL_A}" fill-opacity="0.16" stroke="${COL_A}" stroke-width="1.8"/>` : ''}
+    ${dotsSvg}${labelsSvg}
+  </svg>`;
+
+  const legend = `<div class="radar-legend">
+    <span><span class="radar-key" style="background:${COL_A}"></span>${escAttr(labelA)}</span>
+    <span><span class="radar-key" style="background:${COL_B}"></span>${escAttr(labelB || 'B')}</span>
+    <span class="radar-note">position = rang mondial sur chaque axe</span>
+  </div>`;
+
+  host.innerHTML = svg + legend;
 }
 
 // Tooltip tornado : valeur exacte + série 5 ans + rang mondial de chaque pays.
