@@ -2665,6 +2665,10 @@ function buildIndicatorRegistry(){
 // Helpers pour les entrées (flux + identité).
 function getFlowEntryByKey(key){ return (state.flowEntries || []).find(e => e.key === key); }
 function flowEntriesPresent(){ return (state.flowEntries || []).filter(e => e.presentInDb); }
+// Vrais flux uniquement (exclut les entrées identité). À utiliser partout où le
+// contexte est relationnel (panorama Profil, onglet Flux de Zone), pour ne pas
+// mélanger identité et flux.
+function fluxEntriesPresent(){ return (state.flowEntries || []).filter(e => e.presentInDb && e.kind !== 'identite'); }
 function entryIsIdentite(e){ return e && e.kind === 'identite'; }
 
 function buildCountryList(){
@@ -3236,7 +3240,7 @@ function pinnedRadarIndicators(){
 // Entrées flux épinglées pour une colonne du panorama (Partenaire OU Influence).
 // Renvoie des objets entrée flux complets {key, indicator, realIndicator, side, label, label_long, ...}.
 function pinnedFlowEntries(column){
-  const all = flowEntriesPresent();
+  const all = fluxEntriesPresent();
   const storageKey = (column === 'partner') ? PIN_FLUX_PARTNER_KEY : PIN_FLUX_INFLUENCE_KEY;
   const perso = loadPins(storageKey);
   if(perso && perso.size){
@@ -3259,7 +3263,7 @@ function openPinModal(mode){
   if(isFlux){
     const column = (mode === 'flux_partner') ? 'partner' : 'influence';
     currentSet = new Set(pinnedFlowEntries(column).map(e => e.key));
-    pool = flowEntriesPresent();
+    pool = fluxEntriesPresent();
   } else if(isRadar){
     currentSet = new Set(pinnedRadarIndicators().map(c => c.indicator));
     pool = state.indicators.filter(c => c.table === 'identite');
@@ -6971,8 +6975,8 @@ function renderCroise(){
     return;
   }
 
-  // 1. Construire la nav latérale : toutes les entrées flux disponibles
-  const allEntries = flowEntriesPresent().filter(e => e.presentInDb !== false);
+  // 1. Construire la nav latérale : entrées FLUX uniquement (l'identité a son propre onglet).
+  const allEntries = fluxEntriesPresent();
   // Grouper par catégorie d'indicateur (lit config.json)
   const byCat = new Map();
   for(const e of allEntries){
