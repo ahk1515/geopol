@@ -3246,10 +3246,16 @@ function pinnedFlowEntries(column){
   if(perso && perso.size){
     return all.filter(e => perso.has(e.key)).slice(0, 12);
   }
-  // défauts : par colonne, on prend un sens « naturel »
-  //  - partner = sens 'to' (qui pèse pour le sujet : ses créanciers, fournisseurs, accueils...)
-  //  - influence = sens 'from' (pour qui le sujet pèse : ses débiteurs, clients, originaires...)
-  const naturalSide = (column === 'partner') ? 'to' : 'from';
+  // défauts selon la colonne :
+  //  - partner (« qui pèse pour le sujet ») → TOUS les flux, LES DEUX sens.
+  //    La pertinence est tranchée ensuite par le seuil de dépendance (F3),
+  //    pas par une présélection arbitraire. L'interdépendance se lit dans les
+  //    deux sens (ex. armement fournisseurs ET bénéficiaires, import ET export).
+  //  - influence (« pour qui le sujet pèse ») → sens 'from', comportement inchangé.
+  if(column === 'partner'){
+    return all.slice();   // tous les flux présents, tous sens ; F3 filtrera
+  }
+  const naturalSide = 'from';
   return all.filter(e => e.side === naturalSide).slice(0, 10);
 }
 
