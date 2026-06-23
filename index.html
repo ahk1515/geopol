@@ -412,6 +412,14 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pano-caret { font-size: 9px; color: var(--text3); text-align: center; }
 .pano-detail { display: none; padding: 4px 6px 10px 6px; }
 .pano-detail.open { display: block; animation: fadeIn .2s ease; }
+/* F3 : bandeau dépliable des flux moins saillants */
+.pano-replie-wrap { border-top: 1px dashed var(--border); margin-top: 4px; }
+.pano-replie-toggle { font-size: 11px; color: var(--text3); cursor: pointer; padding: 7px 6px 4px;
+  font-family: var(--mono); letter-spacing: .02em; user-select: none; }
+.pano-replie-toggle:hover { color: var(--text2); }
+.dep-seuil-select { font-family: var(--mono); font-size: 10px; color: var(--text3); background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 5px; padding: 2px 4px; cursor: pointer; }
+.dep-seuil-select:hover { border-color: var(--border2); color: var(--text2); }
 .pano-detail-title { font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin: 4px 0 6px; }
 .pano-sub { display: grid; grid-template-columns: 16px 1fr 80px 36px; gap: 8px; align-items: center; padding: 3px 0; font-size: 11.5px; }
 .pano-sub .flag { font-size: 13px; }
@@ -3582,6 +3590,23 @@ function setResThreshold(v){
   localStorage.setItem(RES_THRESHOLD_KEY, String(v));
   renderSynthese();
 }
+
+// ── F3 — Seuil de dépendance (présélection des flux pertinents) ──
+// Un flux est "pertinent" (affiché d'emblée) si son 1er partenaire dépasse
+// ce seuil de part. Sépare le levier net (armement, fournisseur dominant)
+// du diffus (dette éparpillée). Réglable, persistant, façon seuil ressources.
+// Appliqué à la colonne Volume du panorama (Profil), partagé avec Face-à-face.
+const DEP_THRESHOLD_KEY = 'geopol_dep_threshold';
+const DEP_THRESHOLD_OPTIONS = [25, 40, 60];   // inclusif / équilibré / sélectif
+function getDepThreshold(){
+  const v = parseFloat(localStorage.getItem(DEP_THRESHOLD_KEY));
+  return (DEP_THRESHOLD_OPTIONS.includes(v)) ? v : 40;   // défaut : 40%
+}
+function setDepThreshold(v){
+  if(!DEP_THRESHOLD_OPTIONS.includes(v)) return;
+  localStorage.setItem(DEP_THRESHOLD_KEY, String(v));
+  renderSynthese();
+}
 // Libellés français pour les sub-catégories de ressources qui méritent une correction (accents, sigles).
 // Si une sub n'est pas dans ce dictionnaire, fallback : majuscule initiale + _ remplacés par espaces.
 const RES_SUB_LABELS = {
@@ -3896,7 +3921,11 @@ function renderSynthese(){
           <div class="flux-block">
             <div class="flux-block-head">
               <span class="t">Qui pèse pour le sujet${helpIco('panorama_col1')}</span>
-              <span style="display:flex;align-items:center;gap:6px"><span class="h">${partnerEntries.length} flux</span><button class="card-cog" onclick="openPinModal('flux_partner')" title="Choisir les flux">⚙</button></span>
+              <span style="display:flex;align-items:center;gap:6px"><span class="h">${partnerEntries.length} flux</span><select class="dep-seuil-select" onchange="setDepThreshold(+this.value)" title="Seuil de dépendance : un flux est mis en avant si son 1er partenaire dépasse ce seuil">
+                <option value="25" ${getDepThreshold()===25?'selected':''}>seuil 25%</option>
+                <option value="40" ${getDepThreshold()===40?'selected':''}>seuil 40%</option>
+                <option value="60" ${getDepThreshold()===60?'selected':''}>seuil 60%</option>
+              </select><button class="card-cog" onclick="openPinModal('flux_partner')" title="Choisir les flux">⚙</button></span>
             </div>
             ${partnersHtml}
           </div>
@@ -3932,6 +3961,10 @@ function buildPanorama(entries, columnId){
   const isInfluence = (columnId === 'influence');
   if(!entries.length) return `<div class="pano-empty">Aucun flux sélectionné. <button onclick="openPinModal('flux_${colSuffix==='partner'?'partner':'influence'}')" style="background:none;border:none;color:var(--green);text-decoration:underline;cursor:pointer">configurer</button></div>`;
   let html = '';
+  let htmlReplie = '';        // F3 : flux sous le seuil de dépendance (colonne Volume)
+  let nReplie = 0;
+  const depThreshold = getDepThreshold();
+  const presel = !isInfluence;   // présélection seulement en colonne Volume
   let any = false;
   for(const e of entries){
     // IMPORTANT : on force punctualYear=state.year pour que Synthèse soit indépendante
@@ -3998,7 +4031,7 @@ function buildPanorama(entries, columnId){
         <span class="v">${p.toFixed(0)}%</span>
       </div>`;
     }).join('');
-    html += `<div class="pano-wrap">
+    const ligne = `<div class="pano-wrap">
       <div class="pano-row" onclick="togglePano('${rowId}')">
         <div class="pano-flux" title="${e.label_long}">${e.label_long}</div>
         <div class="pano-partner"><span class="flag">${partnerFlag(top[0])}</span><span class="nm">${partnerLabel(top[0])}</span></div>
@@ -4012,8 +4045,25 @@ function buildPanorama(entries, columnId){
         <div class="pano-detail-link" onclick="event.stopPropagation();goToRelationsEntry('${e.key}')">→ explorer dans Relations</div>
       </div>
     </div>`;
+    // F3 : en colonne Volume, replier les flux dont le 1er partenaire < seuil (relation diffuse).
+    if(presel && pct < depThreshold){ htmlReplie += ligne; nReplie++; }
+    else html += ligne;
   }
-  return any ? html : `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
+  if(!any) return `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
+  // F3 : section dépliable des flux moins saillants (sous le seuil de dépendance).
+  let replieBloc = '';
+  if(nReplie){
+    const repId = ('panoReplie_' + colSuffix).replace(/[^a-zA-Z0-9_]/g,'_');
+    replieBloc = `<div class="pano-replie-wrap">
+      <div class="pano-replie-toggle" onclick="togglePano('${repId}')">
+        <span id="caret_${repId}">▸</span> ${nReplie} flux moins saillant${nReplie>1?'s':''} (1er partenaire < ${depThreshold}%)
+      </div>
+      <div class="pano-detail" id="${repId}">${htmlReplie}</div>
+    </div>`;
+  }
+  // Si tout est replié (aucun flux pertinent), on déplie d'office pour ne pas laisser un vide.
+  if(!html && htmlReplie){ return htmlReplie; }
+  return html + replieBloc;
 }
 function goToRelationsEntry(key){
   // routage vers Relations sur cette entrée (sera lu par renderRelations)
