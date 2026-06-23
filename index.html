@@ -848,6 +848,12 @@ main { flex: 1; padding: 16px 18px 28px; }
   padding: 12px 14px 4px; border-top: 1px solid var(--border); margin-top: 6px;
 }
 .cross-nav-section:first-child { border-top: none; margin-top: 0; }
+/* Onglets Flux / Identité de la nav Zone */
+.cross-nav-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.cross-nav-tab { flex: 1; border: none; background: var(--bg3); color: var(--text2);
+  font-family: var(--display); font-size: 12.5px; font-weight: 600; padding: 9px 0; cursor: pointer; }
+.cross-nav-tab.on { background: var(--bg2); color: var(--green); box-shadow: inset 0 -2px 0 var(--green); }
+.cross-nav-tab:not(.on):hover { color: var(--text); }
 .cross-tile-ident-badge { font-family: var(--mono); font-size: 8px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--green); background: rgba(10,110,74,.1); border-radius: 4px; padding: 2px 6px; }
 .cross-flux-item {
@@ -6509,6 +6515,7 @@ let _crossZoneFilter = null;      // zone_id ou null
 let _crossVolumeScale = 'absolute';
 let _crossYearRange = null;       // [yMin, yMax] ou null = ponctuel (état GLOBAL)
 let _crossYearAggMode = 'sum';    // 'sum' | 'avg' (état GLOBAL)
+let _crossNavTab = 'flux';        // onglet actif de la nav gauche : 'flux' | 'identite'
 
 // État per-tile : surcharge de la période par tuile.
 // Si une clé n'est PAS dans la Map → la tuile suit l'état global.
@@ -6885,6 +6892,14 @@ function setCrossYearAggMode(mode){
   renderCroise();
   if(typeof syncUrl === 'function') syncUrl();
 }
+// Bascule l'onglet de la nav gauche (Flux / Identité) sans toucher aux tuiles.
+function setCrossNavTab(tab){
+  _crossNavTab = (tab === 'identite') ? 'identite' : 'flux';
+  const nav = document.querySelector('#crossNav .cross-nav-scroll');
+  const navHost = document.getElementById('crossNav');
+  // Re-render complet (simple et sûr) ; les tuiles ne changent pas.
+  renderCroise();
+}
 
 // ─── Rendu principal ───
 function renderCroise(){
@@ -6918,7 +6933,7 @@ function renderCroise(){
     migration: 'Migrations', education: 'Éducation', diplomatie: 'Diplomatie',
     autres: 'Autres',
   };
-  let navHtml = '<div class="cross-nav-section">Flux</div>';
+  let fluxNavHtml = '';
   for(const [cat, entries] of byCat){
     const catLab = catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
     let items = '';
@@ -6929,7 +6944,7 @@ function renderCroise(){
         <span>${escAttr(e.label_long || e.label || e.key)}</span>
       </label>`;
     }
-    navHtml += `<div class="cross-cat">
+    fluxNavHtml += `<div class="cross-cat">
       <div class="cross-cat-head">${catLab}</div>
       ${items}
     </div>`;
@@ -6937,6 +6952,7 @@ function renderCroise(){
 
   // Section Identité : qualités intrinsèques des pays (une carte verte par indicateur coché).
   const identEntries = (state.flowEntries || []).filter(e => entryIsIdentite(e) && e.presentInDb !== false);
+  let identNavHtml = '';
   if(identEntries.length){
     // grouper par catégorie d'indicateur
     const identByCat = new Map();
@@ -6946,7 +6962,6 @@ function renderCroise(){
       if(!identByCat.has(cat)) identByCat.set(cat, []);
       identByCat.get(cat).push(e);
     }
-    navHtml += '<div class="cross-nav-section">Identité</div>';
     for(const [cat, entries] of identByCat){
       const catLab = catLabels[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1));
       let items = '';
@@ -6957,12 +6972,24 @@ function renderCroise(){
           <span>${escAttr(e.label || e.indicator)}</span>
         </label>`;
       }
-      navHtml += `<div class="cross-cat">
+      identNavHtml += `<div class="cross-cat">
         <div class="cross-cat-head">${catLab}</div>
         ${items}
       </div>`;
     }
   }
+
+  // Onglets Flux / Identité : un seul bloc visible à la fois (défaut Flux).
+  const hasIdent = identEntries.length > 0;
+  const tabFlux = (_crossNavTab === 'flux' || !hasIdent);
+  let navHtml = '';
+  if(hasIdent){
+    navHtml += `<div class="cross-nav-tabs">
+      <button class="cross-nav-tab ${tabFlux?'on':''}" onclick="setCrossNavTab('flux')">Flux</button>
+      <button class="cross-nav-tab ${!tabFlux?'on':''}" onclick="setCrossNavTab('identite')">Identité</button>
+    </div>`;
+  }
+  navHtml += tabFlux ? fluxNavHtml : identNavHtml;
 
   // 2. Construire la barre de filtres communs (Mesure / Partenaires / Période)
   const zones = getAllZones();
