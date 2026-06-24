@@ -417,6 +417,40 @@ main { flex: 1; padding: 16px 18px 28px; }
 .pano-replie-toggle { font-size: 11px; color: var(--text3); cursor: pointer; padding: 7px 6px 4px;
   font-family: var(--mono); letter-spacing: .02em; user-select: none; }
 .pano-replie-toggle:hover { color: var(--text2); }
+/* ── Organisations (Profil) ── */
+.org-card { margin-top: 14px; }
+.org-fam { margin-bottom: 11px; }
+.org-fam-head { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--text2); }
+.org-fam-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.org-fam-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 15px; }
+.org-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 9px; border-radius: 6px; line-height: 1.3; }
+.org-chip.org-membre { background: color-mix(in srgb, var(--ohex) 12%, transparent); color: var(--ohex); border: 0.5px solid color-mix(in srgb, var(--ohex) 45%, transparent); font-weight: 500; }
+.org-chip.org-partiel { background: transparent; color: var(--ohex); border: 1px dashed color-mix(in srgb, var(--ohex) 60%, transparent); }
+.org-chip.org-degrade { background: transparent; color: var(--text3); border: 0.5px solid var(--border2); text-decoration: line-through; }
+.org-chip .org-st { opacity: .7; font-size: 10.5px; }
+.org-chip .org-univ { font-size: 9.5px; opacity: .6; }
+.org-abs { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+.org-abs-head { font-size: 12px; color: #b45309; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.org-abs-ico { font-size: 13px; }
+.org-abs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.org-abs-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 6px;
+  background: rgba(220,80,60,.10); color: #b04030; border: 0.5px solid rgba(220,80,60,.45); }
+/* ── Organisations Face-à-face (3 colonnes) ── */
+.cmp-orga-card { margin-top: 14px; }
+.cmp-orga-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.cmp-orga-col { border: 0.5px solid var(--border); border-radius: 8px; padding: 9px 10px; min-width: 0; }
+.cmp-orga-col.mid { background: var(--bg3); border-color: var(--border2); }
+.cmp-orga-col-head { font-size: 11.5px; font-weight: 600; color: var(--text2); margin-bottom: 7px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.cmp-orga-col-head .n { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+.cmp-orga-col.mid .cmp-orga-col-head { color: var(--green); }
+.cmp-orga-col-body { display: flex; flex-wrap: wrap; gap: 5px; }
+.cmp-orga-empty { color: var(--text3); font-size: 12px; }
+.cmp-orga-diverg { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 10px; }
+.cmp-orga-diverg-head { font-size: 12px; color: #b45309; font-weight: 600; margin-bottom: 7px; }
+.cmp-orga-diverg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cmp-orga-diverg-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 3px 9px; border-radius: 6px;
+  background: rgba(220,130,20,.10); color: #b45309; border: 0.5px solid rgba(220,130,20,.40); }
+.cmp-orga-diverg-chip .who { opacity: .75; font-size: 10.5px; }
 .dep-seuil-select { font-family: var(--mono); font-size: 10px; color: var(--text3); background: var(--bg3);
   border: 1px solid var(--border); border-radius: 5px; padding: 2px 4px; cursor: pointer; }
 .dep-seuil-select:hover { border-color: var(--border2); color: var(--text2); }
@@ -3905,6 +3939,105 @@ function closeResThresholdModal(){
   document.getElementById('resThresholdModal')?.remove();
 }
 
+// ── ORGANISATIONS (bloc Profil) ──────────────────────────────────
+// Vocabulaire visuel : couleur = famille, plein/pointillé/barré = statut,
+// rouge = absence d'un traité universel. Réutilisable en marqueur ailleurs.
+const ORG_FAMILLES = {
+  militaire:    { label:'Militaire',     hex:'#A32D2D' },
+  economique:   { label:'Économique',    hex:'#185FA5' },
+  financier:    { label:'Financier',     hex:'#534AB7' },
+  energie:      { label:'Énergie',       hex:'#BA7517' },
+  politique:    { label:'Politique',     hex:'#993556' },
+  environnement:{ label:'Environnement', hex:'#0F6E56' },
+  juridique:    { label:'Juridique',     hex:'#5F5E5A' },
+  autre:        { label:'Autre',         hex:'#5F5E5A' },
+};
+const ORG_FAM_ORDER = ['militaire','economique','politique','energie','financier','juridique','environnement','autre'];
+
+// Appartenances d'un pays : [{zone_id, nom, statut, famille, portee}]
+function orgMembershipsOf(iso3){
+  if(!iso3) return [];
+  const r = safeExec(`SELECT zone_id, zone_nom, statut, famille, portee FROM zones WHERE country_iso3='${escapeSql(iso3)}' AND zone_id NOT LIKE 'GEO_%'`);
+  if(!r || !r.length) return [];
+  return r[0].values.map(v => ({ zone_id:v[0], nom:v[1], statut:v[2], famille:v[3]||'autre', portee:v[4] }));
+}
+// Organisations universelles dont le pays est ABSENT (signal fort).
+function orgUniversalAbsences(iso3){
+  const all = safeExec(`SELECT DISTINCT zone_id, zone_nom FROM zones WHERE portee='universelle'`);
+  if(!all || !all.length) return [];
+  const mine = new Set(orgMembershipsOf(iso3)
+    .filter(o => MEMBRE_STATUTS.includes(o.statut))
+    .map(o => o.zone_id));
+  return all[0].values
+    .filter(v => !mine.has(v[0]))
+    .map(v => ({ zone_id:v[0], nom:v[1] }));
+}
+
+function _orgChip(o){
+  const fam = ORG_FAMILLES[o.famille] || ORG_FAMILLES.autre;
+  const hex = fam.hex;
+  const cat = statutCategorie(o.statut);
+  const univ = (o.portee === 'universelle') ? ` <span class="org-univ" title="Quasi-universel">◆</span>` : '';
+  if(cat === 'membre'){
+    return `<span class="org-chip org-membre" style="--ohex:${hex}">${escAttr(o.nom)}${univ}</span>`;
+  }
+  if(cat === 'degrade'){
+    return `<span class="org-chip org-degrade">${escAttr(o.nom)} <span class="org-st">· ${escAttr(o.statut)}</span></span>`;
+  }
+  return `<span class="org-chip org-partiel" style="--ohex:${hex}">${escAttr(o.nom)} <span class="org-st">· ${escAttr(o.statut)}</span></span>`;
+}
+
+function buildOrganisationsBlock(){
+  // Uniquement pour un pays unique
+  if(!state.subject || state.subject.isos.length !== 1) return '';
+  const iso = state.subject.isos[0];
+  const mems = orgMembershipsOf(iso);
+  if(!mems.length) return '';   // pas de données orga pour ce pays
+
+  // Grouper par famille, trier chaque famille par sélectivité (peu de membres d'abord).
+  // On a besoin du nb de membres par orga : une passe SQL groupée.
+  const counts = {};
+  const cr = safeExec(`SELECT zone_id, COUNT(*) FROM zones WHERE zone_id NOT LIKE 'GEO_%' AND statut IN (${MEMBRE_STATUTS_SQL}) GROUP BY zone_id`);
+  if(cr && cr.length) cr[0].values.forEach(v => { counts[v[0]] = v[1]; });
+
+  const byFam = {};
+  for(const o of mems){
+    (byFam[o.famille] = byFam[o.famille] || []).push(o);
+  }
+  let famsHtml = '';
+  for(const fam of ORG_FAM_ORDER){
+    const items = byFam[fam];
+    if(!items || !items.length) continue;
+    items.sort((a,b) => (counts[a.zone_id]||999) - (counts[b.zone_id]||999));
+    const f = ORG_FAMILLES[fam] || ORG_FAMILLES.autre;
+    famsHtml += `<div class="org-fam">
+      <div class="org-fam-head"><span class="org-fam-dot" style="background:${f.hex}"></span>${f.label}</div>
+      <div class="org-fam-chips">${items.map(_orgChip).join('')}</div>
+    </div>`;
+  }
+
+  // Absences universelles
+  const abs = orgUniversalAbsences(iso);
+  let absHtml = '';
+  if(abs.length){
+    absHtml = `<div class="org-abs">
+      <div class="org-abs-head"><span class="org-abs-ico">⚠</span> Absent de traité${abs.length>1?'s':''} quasi-universel${abs.length>1?'s':''}</div>
+      <div class="org-abs-chips">${abs.map(o => `<span class="org-abs-chip">✕ ${escAttr(o.nom)}</span>`).join('')}</div>
+    </div>`;
+  }
+
+  return `<div class="card org-card">
+    <div class="card-head">
+      <span class="card-title">Organisations</span>
+      <span class="card-sub">${mems.length} appartenance${mems.length>1?'s':''}</span>
+    </div>
+    <div class="card-body">
+      ${famsHtml}
+      ${absHtml}
+    </div>
+  </div>`;
+}
+
 function renderSynthese(){
   const root = document.getElementById('syntheseContent');
   if(!state.subject || !state.subject.isos.length){
@@ -3996,7 +4129,8 @@ function renderSynthese(){
         </div>
       </div>
     </div>
-    ${buildResourcesBlock()}`;
+    ${buildResourcesBlock()}
+    ${buildOrganisationsBlock()}`;
 
   bindKvTips();
 }
@@ -8491,11 +8625,80 @@ function renderComparaisons(){
           <div class="cmp-nav right" id="cmpPowerNav"></div>
         </div>
       </section>
-    </div>`;
+    </div>
+    <div id="cmpOrgaBlock"></div>`;
   renderCmpFluxNav();
   renderCmpFluxProfile();
   renderCmpPowerNav();
   renderCmpPowerTornado();
+  renderCmpOrganisations();
+}
+
+// Section organisationnelle de Face-à-face : 3 colonnes (A seul / communes / B seul)
+// + divergences sur traités universels. N'apparaît que si B est un pays.
+function renderCmpOrganisations(){
+  const host = document.getElementById('cmpOrgaBlock');
+  if(!host) return;
+  const { isos: isosB, isCountry } = _cmpBIsos();
+  if(!isCountry || !isosB.length || !state.subject || state.subject.isos.length !== 1){
+    host.innerHTML = ''; return;
+  }
+  const isoA = state.subject.isos[0];
+  const isoB = isosB[0];
+
+  const memA = orgMembershipsOf(isoA).filter(o => MEMBRE_STATUTS.includes(o.statut));
+  const memB = orgMembershipsOf(isoB).filter(o => MEMBRE_STATUTS.includes(o.statut));
+  if(!memA.length && !memB.length){ host.innerHTML = ''; return; }
+
+  const mapA = new Map(memA.map(o => [o.zone_id, o]));
+  const mapB = new Map(memB.map(o => [o.zone_id, o]));
+  const communes = [], propreA = [], propreB = [];
+  for(const o of memA){ (mapB.has(o.zone_id) ? communes : propreA).push(o); }
+  for(const o of memB){ if(!mapA.has(o.zone_id)) propreB.push(o); }
+
+  const pill = o => {
+    const fam = ORG_FAMILLES[o.famille] || ORG_FAMILLES.autre;
+    return `<span class="org-chip org-membre" style="--ohex:${fam.hex}">${escAttr(o.nom)}</span>`;
+  };
+  const col = (titre, items, cls) => `<div class="cmp-orga-col ${cls}">
+    <div class="cmp-orga-col-head">${titre} <span class="n">${items.length}</span></div>
+    <div class="cmp-orga-col-body">${items.length ? items.map(pill).join('') : '<span class="cmp-orga-empty">—</span>'}</div>
+  </div>`;
+
+  // Divergences universelles : l'un absent, l'autre non
+  const absA = new Set(orgUniversalAbsences(isoA).map(o => o.zone_id));
+  const absB = new Set(orgUniversalAbsences(isoB).map(o => o.zone_id));
+  const univ = safeExec(`SELECT DISTINCT zone_id, zone_nom FROM zones WHERE portee='universelle'`);
+  let diverg = [];
+  if(univ && univ.length){
+    for(const [zid, znom] of univ[0].values){
+      const aAbs = absA.has(zid), bAbs = absB.has(zid);
+      if(aAbs !== bAbs){ diverg.push({ nom: znom, absent: aAbs ? 'A' : 'B' }); }
+    }
+  }
+  let divHtml = '';
+  if(diverg.length){
+    const aLab = escAttr(state.subject.label), bLab = escAttr(_cmpPartnerBLabel);
+    divHtml = `<div class="cmp-orga-diverg">
+      <div class="cmp-orga-diverg-head">Divergences sur traités universels</div>
+      <div class="cmp-orga-diverg-chips">${diverg.map(d =>
+        `<span class="cmp-orga-diverg-chip">${escAttr(d.nom)} <span class="who">· ${d.absent==='A'?aLab:bLab} absent</span></span>`
+      ).join('')}</div>
+    </div>`;
+  }
+
+  host.innerHTML = `<div class="card cmp-orga-card">
+    <div class="card-head"><span class="card-title">Organisations</span>
+      <span class="card-sub">${communes.length} commune${communes.length>1?'s':''}</span></div>
+    <div class="card-body">
+      <div class="cmp-orga-cols">
+        ${col(escAttr(state.subject.label)+' seul', propreA, 'a')}
+        ${col('Communes', communes, 'mid')}
+        ${col(escAttr(_cmpPartnerBLabel)+' seul', propreB, 'b')}
+      </div>
+      ${divHtml}
+    </div>
+  </div>`;
 }
 
 function _cmpSetYear(v){
