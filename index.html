@@ -3251,8 +3251,10 @@ function pinnedFlowEntries(column){
   //    La pertinence est tranchée ensuite par le seuil de dépendance (F3),
   //    pas par une présélection arbitraire. L'interdépendance se lit dans les
   //    deux sens (ex. armement fournisseurs ET bénéficiaires, import ET export).
-  //  - influence (« pour qui le sujet pèse ») → sens 'from', comportement inchangé.
-  if(column === 'partner'){
+  //  - influence (« pour qui le sujet pèse ») → TOUS les flux, les deux sens.
+  //    Le seuil (partagé) y signifie « influence dominante » : le sujet pèse une
+  //    grande part du marché d'au moins un partenaire. F3 tranche, libellé adapté.
+  if(column === 'partner' || column === 'influence'){
     return all.slice();   // tous les flux présents, tous sens ; F3 filtrera
   }
   const naturalSide = 'from';
@@ -3617,6 +3619,21 @@ function setDepThreshold(v){
   localStorage.setItem(DEP_THRESHOLD_KEY, String(v));
   renderSynthese();
 }
+// F3 — Seuil d'INFLUENCE distinct (colonne « pour qui le sujet pèse »).
+// Sémantique différente du seuil de dépendance : ici le pct = poids du sujet
+// dans le marché du partenaire. Un flux est mis en avant si le sujet pèse au
+// moins ce seuil chez au moins un partenaire (influence dominante).
+const INF_THRESHOLD_KEY = 'geopol_inf_threshold';
+const INF_THRESHOLD_OPTIONS = [25, 40, 60];
+function getInfThreshold(){
+  const v = parseFloat(localStorage.getItem(INF_THRESHOLD_KEY));
+  return (INF_THRESHOLD_OPTIONS.includes(v)) ? v : 40;   // défaut : 40%
+}
+function setInfThreshold(v){
+  if(!INF_THRESHOLD_OPTIONS.includes(v)) return;
+  localStorage.setItem(INF_THRESHOLD_KEY, String(v));
+  renderSynthese();
+}
 // Libellés français pour les sub-catégories de ressources qui méritent une correction (accents, sigles).
 // Si une sub n'est pas dans ce dictionnaire, fallback : majuscule initiale + _ remplacés par espaces.
 const RES_SUB_LABELS = {
@@ -3942,7 +3959,11 @@ function renderSynthese(){
           <div class="flux-block">
             <div class="flux-block-head">
               <span class="t">Pour qui le sujet pèse${helpIco('panorama_col2')}</span>
-              <span style="display:flex;align-items:center;gap:6px"><span class="h">${influenceEntries.length} flux</span><button class="card-cog" onclick="openPinModal('flux_influence')" title="Choisir les flux">⚙</button></span>
+              <span style="display:flex;align-items:center;gap:6px"><span class="h">${influenceEntries.length} flux</span><select class="dep-seuil-select" onchange="setInfThreshold(+this.value)" title="Seuil d'influence : un flux est mis en avant si le sujet pèse au moins ce seuil chez un partenaire">
+                <option value="25" ${getInfThreshold()===25?'selected':''}>seuil 25%</option>
+                <option value="40" ${getInfThreshold()===40?'selected':''}>seuil 40%</option>
+                <option value="60" ${getInfThreshold()===60?'selected':''}>seuil 60%</option>
+              </select><button class="card-cog" onclick="openPinModal('flux_influence')" title="Choisir les flux">⚙</button></span>
             </div>
             ${influenceHtml}
           </div>
@@ -3973,8 +3994,8 @@ function buildPanorama(entries, columnId){
   let html = '';
   let htmlReplie = '';        // F3 : flux sous le seuil de dépendance (colonne Volume)
   let nReplie = 0;
-  const depThreshold = getDepThreshold();
-  const presel = !isInfluence;   // présélection seulement en colonne Volume
+  const seuil = isInfluence ? getInfThreshold() : getDepThreshold();   // F3 : seuil propre à chaque colonne
+  const presel = true;   // présélection par seuil sur les deux colonnes, seuils distincts
   let any = false;
   for(const e of entries){
     // IMPORTANT : on force punctualYear=state.year pour que Synthèse soit indépendante
@@ -4056,7 +4077,7 @@ function buildPanorama(entries, columnId){
       </div>
     </div>`;
     // F3 : en colonne Volume, replier les flux dont le 1er partenaire < seuil (relation diffuse).
-    if(presel && pct < depThreshold){ htmlReplie += ligne; nReplie++; }
+    if(presel && pct < seuil){ htmlReplie += ligne; nReplie++; }
     else html += ligne;
   }
   if(!any) return `<div class="pano-empty">Pas de flux renseigné pour ce sujet.</div>`;
@@ -4066,7 +4087,7 @@ function buildPanorama(entries, columnId){
     const repId = ('panoReplie_' + colSuffix).replace(/[^a-zA-Z0-9_]/g,'_');
     replieBloc = `<div class="pano-replie-wrap">
       <div class="pano-replie-toggle" onclick="togglePano('${repId}')">
-        <span id="caret_${repId}">▸</span> ${nReplie} flux moins saillant${nReplie>1?'s':''} (1er partenaire < ${depThreshold}%)
+        <span id="caret_${repId}">▸</span> ${nReplie} flux moins saillant${nReplie>1?'s':''} (${isInfluence ? `le sujet pèse < ${seuil}% partout` : `1er partenaire < ${seuil}%`})
       </div>
       <div class="pano-detail" id="${repId}">${htmlReplie}</div>
     </div>`;
