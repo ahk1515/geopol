@@ -8578,17 +8578,20 @@ function renderCmpFluxProfile(){
 
   if(!rows.length){ host.innerHTML = `<div class="cmp-placeholder">Aucun flux sélectionné.</div>`; return; }
 
-  let html = '';
-  let lastCat = null;
-  for(const r of rows){
-    if(r.cat !== lastCat){ html += `<div class="cmp-section-head">${r.cat.toUpperCase()}</div>`; lastCat = r.cat; }
+  // F3 — présélection : un flux est pertinent si la relation A↔B est forte d'au
+  // moins un côté (partA ou partB ≥ seuil). Les flux faibles des deux côtés sont
+  // repliés (relation négligeable). Seuil de dépendance partagé avec Profil.
+  const seuilCmp = getDepThreshold() / 100;
+  const estPertinent = r => (r.partA != null && r.partA >= seuilCmp) || (r.partB != null && r.partB >= seuilCmp);
+
+  function ligneFlux(r){
     const e = r.entry;
     const volStr = r.vol != null ? fmtWithUnit(r.vol, e.unit_display) : '—';
     const pctA = r.partA != null ? (r.partA*100).toFixed(r.partA < 0.1 ? 1 : 0) + '%' : '—';
     const pctB = r.partB != null ? (r.partB*100).toFixed(r.partB < 0.1 ? 1 : 0) + '%' : '—';
     const rankAStr = r.rkA.rank ? `#${r.rkA.rank}` : '—';
     const rankBStr = r.rkB.rank ? `#${r.rkB.rank}` : '—';
-    html += `<div class="cmp-flux-row" onmouseenter="_cmpFluxTip(event,'${escAttr(e.key)}')" onmousemove="moveTip(event)" onmouseleave="hideTip()">
+    return `<div class="cmp-flux-row" onmouseenter="_cmpFluxTip(event,'${escAttr(e.key)}')" onmousemove="moveTip(event)" onmouseleave="hideTip()">
       <div class="cmp-spark left">${_cmpSparkline(r.sparkA, '#0a6e4a')}</div>
       <div class="cmp-gauge-col">
         ${_cmpGauge(r.partA, '#0a6e4a', 'right')}
@@ -8605,7 +8608,34 @@ function renderCmpFluxProfile(){
       <div class="cmp-spark right">${_cmpSparkline(r.sparkB, '#b45309')}</div>
     </div>`;
   }
-  host.innerHTML = html;
+
+  let html = '';
+  let htmlReplie = '';
+  let nReplie = 0;
+  let lastCat = null;
+  for(const r of rows){
+    if(estPertinent(r)){
+      if(r.cat !== lastCat){ html += `<div class="cmp-section-head">${r.cat.toUpperCase()}</div>`; lastCat = r.cat; }
+      html += ligneFlux(r);
+    } else {
+      htmlReplie += ligneFlux(r);
+      nReplie++;
+    }
+  }
+  // Bandeau dépliable des flux faibles des deux côtés
+  let replieBloc = '';
+  if(nReplie){
+    const seuilPct = getDepThreshold();
+    replieBloc = `<div class="pano-replie-wrap">
+      <div class="pano-replie-toggle" onclick="togglePano('cmpFluxReplie')">
+        <span id="caret_cmpFluxReplie">▸</span> ${nReplie} flux moins saillant${nReplie>1?'s':''} (relation < ${seuilPct}% des deux côtés)
+      </div>
+      <div class="pano-detail" id="cmpFluxReplie">${htmlReplie}</div>
+    </div>`;
+  }
+  // Si rien n'est pertinent, on déplie d'office pour ne pas laisser un vide.
+  if(!html && htmlReplie){ host.innerHTML = htmlReplie; return; }
+  host.innerHTML = html + replieBloc;
 }
 
 // Tooltip flux : volume exact, top 3 concurrents A et B, rang mondial du couple, série 10 ans.
