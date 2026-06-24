@@ -4983,7 +4983,12 @@ function getRelDimensions(){
     if(filteredLevels.has(lvl)) continue;   // niveau déjà fixé par le filtre
     const vals = new Set();
     for(const r of rows){ const v = r[lvl]; if(v && String(v).trim() !== '') vals.add(String(v)); }
-    if(vals.size > 1) dims.push({ key: lvl, label: subLabel(lvl), count: vals.size });
+    // Cas normal : un axe n'est utile que s'il a plusieurs valeurs à distinguer.
+    // Exception dette : sur un type non-bilatéral (multilatéral/privé), on expose
+    // l'axe des institutions (sub2) dès UNE valeur, pour toujours nommer le détenteur
+    // (ex. « AfDB ») plutôt que de rester sur « multilatéral » à 100%.
+    const seuil = (isDebt && lvl === 'sub2') ? 1 : 2;
+    if(vals.size >= seuil) dims.push({ key: lvl, label: subLabel(lvl), count: vals.size });
   }
   // toujours garantir au moins un axe
   if(!dims.length) dims.push({ key:'partner', label:'Partenaire' });
