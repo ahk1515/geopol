@@ -2684,6 +2684,32 @@ function buildCountryList(){
 // Codes d'agrégats Banque Mondiale à exclure (repris de l'ancien set REGIONAL).
 const REGIONAL_CODES = new Set(['AFE','AFW','ARB','CEB','CSS','EAP','EAR','EAS','ECA','ECS','EMU','EUU','FCS','HIC','HPC','IBD','IBT','IDA','IDB','IDX','LAC','LCN','LDC','LIC','LMC','LMY','LTE','MEA','MIC','MNA','NAC','OED','OSS','PRE','PSS','PST','SAS','SSA','SSF','SST','TEA','TEC','TLA','TMN','TSA','TSS','UMC','WLD','INX','OEC']);
 
+// ── Statuts d'appartenance aux organisations (table zones, colonne statut) ──
+// Partition unique réutilisée partout. Les zones géographiques ont statut NULL.
+// MEMBRE_STATUTS = appartenance effective → seuls ceux-ci comptent pour les FILTRES de zone.
+const MEMBRE_STATUTS  = ['membre','ratifié','allié','partenaire'];
+const PARTIEL_STATUTS = ['signataire','candidat','observateur','associé'];      // lien partiel/trajectoire
+const DEGRADE_STATUTS = ['suspendu','membre_suspendu','non_signataire','retrait']; // lien dégradé/rompu
+// Liste SQL prête à l'emploi pour les clauses IN (...)
+const MEMBRE_STATUTS_SQL = MEMBRE_STATUTS.map(s => `'${s}'`).join(',');
+// Catégorie d'un statut (pour l'affichage futur : couleur/icône selon le niveau)
+function statutCategorie(st){
+  if(st == null) return 'geo';
+  if(MEMBRE_STATUTS.includes(st))  return 'membre';
+  if(DEGRADE_STATUTS.includes(st)) return 'degrade';
+  if(PARTIEL_STATUTS.includes(st)) return 'partiel';
+  return 'partiel';   // statut inconnu → traité comme lien partiel par prudence
+}
+// Pays d'une zone, sécurisé : pour une organisation, seuls les MEMBRES effectifs
+// comptent ; pour une zone géographique (statut NULL), tous les pays passent.
+// Renvoie un tableau d'iso3. Centralise la logique pour tous les filtres de zone.
+function paysDeZone(zoneId){
+  if(!zoneId) return [];
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(zoneId)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
+  if(!r || !r.length) return [];
+  return r[0].values.map(v => v[0]);
+}
+
 /* ─── FLUX : libellés contextuels par sens + sources spéciales ────
    Pour chaque indicateur de flux, les libellés des deux sens.
    `to`   = sujet en country_to (récepteur du flux)
@@ -4616,7 +4642,7 @@ function getAllZones(){
 function getZoneFilterIsos(){
   if(!_relZoneFilter) return null;
   if(_relZonePartnersCache) return _relZonePartnersCache;
-  const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_relZoneFilter)}'`);
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_relZoneFilter)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
   if(!r.length){ _relZonePartnersCache = new Set(); return _relZonePartnersCache; }
   _relZonePartnersCache = new Set(r[0].values.map(row => row[0]));
   return _relZonePartnersCache;
@@ -7334,7 +7360,7 @@ function _renderCrossTile(key){
   // Appliquer filtre zone (AFTER subjectTotal calculation)
   if(_crossZoneFilter){
     const zoneSet = (function(){
-      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
+      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
       if(!r.length) return new Set();
       return new Set(r[0].values.map(row => row[0]));
     })();
@@ -7485,7 +7511,7 @@ async function _renderCrossTileIdentite(host, key, entry){
     // Zone d'analyse (filtre zone du Croisé), sinon monde
     let zoneSet = null;
     if(_crossZoneFilter){
-      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
+      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
       if(r.length) zoneSet = new Set(r[0].values.map(row => row[0]));
     }
     let projection;
@@ -7549,7 +7575,7 @@ async function _crossDrawMap(host, displayMap, volumeMap, entry){
     // Calculer le zoneSet AVANT la projection, pour pouvoir zoomer dessus si filtre actif
     let zoneSet = null;
     if(_crossZoneFilter){
-      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
+      const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
       if(r.length) zoneSet = new Set(r[0].values.map(row => row[0]));
     }
     // Projection : fitSize sur la zone si filtre actif (option B : tous les pays restent dessinés,
@@ -7643,7 +7669,7 @@ function _crossDrawAreaOrCurves(host, entry, period, key){
   // Filtre zone : appliquer si actif
   let zoneSet = null;
   if(_crossZoneFilter){
-    const z = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}'`);
+    const z = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(_crossZoneFilter)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
     if(z.length) zoneSet = new Set(z[0].values.map(row => row[0]));
   }
 
@@ -7971,7 +7997,7 @@ function onSearchInput(q){
     const r = safeExec(`SELECT DISTINCT zone_id, zone_nom FROM zones${ql ? ` WHERE LOWER(zone_nom) LIKE '%${escapeSql(ql)}%' OR LOWER(zone_id) LIKE '%${escapeSql(ql)}%'` : ''} ORDER BY zone_nom LIMIT 5`);
     if(r.length){
       for(const [zid, znom] of r[0].values){
-        const zr = safeExec(`SELECT country_iso3 FROM zones WHERE zone_id='${escapeSql(zid)}'`);
+        const zr = safeExec(`SELECT country_iso3 FROM zones WHERE zone_id='${escapeSql(zid)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
         const isos = zr.length ? zr[0].values.map(v => v[0]).filter(Boolean) : [];
         if(isos.length) items.push({ kind: 'zone', isos, label: znom, flag: '⊞', iso: zid });
       }
@@ -8129,7 +8155,7 @@ function _cmpPartnerBFlag(){
 const _cmpZoneIsosCache = new Map();
 function getZoneIsos(zoneId){
   if(_cmpZoneIsosCache.has(zoneId)) return _cmpZoneIsosCache.get(zoneId);
-  const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(zoneId)}'`);
+  const r = safeExec(`SELECT DISTINCT country_iso3 FROM zones WHERE zone_id='${escapeSql(zoneId)}' AND (statut IS NULL OR statut IN (${MEMBRE_STATUTS_SQL}))`);
   const isos = (r.length ? r[0].values.map(v => v[0]).filter(Boolean) : []).filter(i => !REGIONAL_CODES.has(i));
   _cmpZoneIsosCache.set(zoneId, isos);
   return isos;
