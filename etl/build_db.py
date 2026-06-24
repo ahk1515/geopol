@@ -454,6 +454,26 @@ def build_zones(referentiel_path=None):
         "CWC": "Convention Armes Chimiques", "ATT": "Traité Commerce Armes",
     }
 
+    # Métadonnée éditoriale des organisations : famille (domaine) + portée forcée
+    # éventuelle. Indexée par NOM complet (ex. "Accord de Paris"). On fait le pont
+    # code → nom via ORG_NOMS. Fichier facultatif : sans lui, famille/portée = NULL.
+    ORG_META = {}
+    meta_candidates = [
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "metadata_organisations.json"),
+        "metadata_organisations.json",
+    ]
+    for mc in meta_candidates:
+        if os.path.exists(mc):
+            with open(mc, encoding="utf-8") as f:
+                raw = json.load(f)
+            ORG_META = {k: v for k, v in raw.items() if not k.startswith("_") and isinstance(v, dict) and "famille" in v}
+            print(f"  Métadonnée organisations chargée : {len(ORG_META)} classées")
+            break
+    if not ORG_META:
+        print("  ⚠️  metadata_organisations.json absent — famille/portée vides")
+
+    SEUIL_UNIVERSEL = 100   # ≥ ce nb de membres → universelle (sauf override JSON)
+
     # Groupes géographiques depuis continent/région
     GEO_GROUPES = {}
     for iso3, data in referentiel.items():
@@ -467,16 +487,36 @@ def build_zones(referentiel_path=None):
             GEO_GROUPES.setdefault(key, {"nom": region, "pays": []})
             GEO_GROUPES[key]["pays"].append(iso3)
 
-    # Construction des zones organisations
-    zones = {}  # zone_id -> {nom, pays: set}
-    STATUTS_MEMBRES = {"membre", "ratifié", "signataire", "allié", "partenaire"}
+    # Construction des zones organisations.
+    # AGNOSTIQUE : on garde TOUT statut non vide (membre, signataire, ratifié,
+    # observateur, retiré...). L'app décidera quels statuts comptent comme
+    # « membre actif ». On préserve l'info à la source plutôt que de l'écraser.
+    zones = {}  # zone_id -> {nom, membres: {iso3: statut}}
 
     for iso3, data in referentiel.items():
         for org, statut in data.get("organisations", {}).items():
-            if statut in STATUTS_MEMBRES:
-                if org not in zones:
-                    zones[org] = {"nom": ORG_NOMS.get(org, org), "pays": set()}
-                zones[org]["pays"].add(iso3)
+            if not statut:        # ignore valeurs vides/None uniquement
+                continue
+            if org not in zones:
+                zones[org] = {"nom": ORG_NOMS.get(org, org), "membres": {}}
+            zones[org]["membres"][iso3] = str(statut)
+
+    # Portée de chaque organisation : universelle si ≥ SEUIL_UNIVERSEL membres,
+    # sauf override explicite dans la métadonnée ("portee": "selective"/"universelle").
+    def portee_de(zone_id, nom, n_membres):
+        meta = ORG_META.get(nom) or ORG_META.get(zone_id) or {}
+        if meta.get("portee") in ("universelle", "selective"):
+            return meta["portee"]
+        return "universelle" if n_membres >= SEUIL_UNIVERSEL else "selective"
+
+    def famille_de(zone_id, nom):
+        meta = ORG_META.get(nom) or ORG_META.get(zone_id) or {}
+        return meta.get("famille")   # None si non classée
+
+    # Avertir des organisations non classées (famille manquante)
+    non_classees = [z["nom"] for zid, z in zones.items() if famille_de(zid, z["nom"]) is None]
+    if non_classees:
+        print(f"  ⚠️  {len(non_classees)} organisation(s) sans famille : {', '.join(sorted(non_classees))}")
 
     # Insertion en DB
     conn = sqlite3.connect(PATH_DB)
@@ -485,24 +525,32 @@ def build_zones(referentiel_path=None):
         CREATE TABLE zones (
             zone_id      TEXT,
             zone_nom     TEXT,
-            country_iso3 TEXT
+            country_iso3 TEXT,
+            statut       TEXT,
+            famille      TEXT,
+            portee       TEXT
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_zones_id ON zones(zone_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_zones_country ON zones(country_iso3)")
 
     rows = []
-    # Organisations
+    # Organisations : statut réel + famille + portée
     for zone_id, data in zones.items():
-        for iso3 in sorted(data["pays"]):
-            rows.append((zone_id, data["nom"], iso3))
+        nom = data["nom"]
+        n = len(data["membres"])
+        fam = famille_de(zone_id, nom)
+        por = portee_de(zone_id, nom, n)
+        for iso3 in sorted(data["membres"]):
+            rows.append((zone_id, nom, iso3, data["membres"][iso3], fam, por))
 
-    # Groupes géographiques
+    # Groupes géographiques : pas de statut/famille/portée (NULL)
     for zone_id, data in GEO_GROUPES.items():
         for iso3 in sorted(data["pays"]):
-            rows.append((zone_id, data["nom"], iso3))
+            rows.append((zone_id, data["nom"], iso3, None, None, None))
 
     conn.executemany(
-        "INSERT INTO zones (zone_id, zone_nom, country_iso3) VALUES (?, ?, ?)",
+        "INSERT INTO zones (zone_id, zone_nom, country_iso3, statut, famille, portee) VALUES (?, ?, ?, ?, ?, ?)",
         rows
     )
     conn.commit()
