@@ -1,0 +1,72 @@
+{
+  "_doc": {
+    "description": "Classement éditorial des organisations pour GÉOPOL. Chaque entrée est indexée par le zone_id de la table zones (ou par son nom si pas de code court). 'famille' = domaine (obligatoire). 'portee' = optionnel : à ne renseigner QUE pour forcer une exception au calcul automatique (sinon la portée universel/sélectif est déduite du nombre de membres, seuil par défaut 100).",
+    "familles": [
+      "militaire", "economique", "financier", "energie",
+      "politique", "environnement", "juridique"
+    ],
+    "seuil_universel_defaut": 100,
+    "statuts_membres_source": ["membre", "ratifié", "signataire", "allié", "partenaire"]
+  },
+
+  "_universelles_par_taille": {
+    "_note": "Ces 8 dépassent 100 membres → universelles par calcul. Pour elles, l'ABSENCE d'un pays est le signal. BRI est l'exception : grande mais sélective (influence), portée forcée."
+  },
+  "Accord de Paris":            { "famille": "environnement" },
+  "TNP":                        { "famille": "militaire" },
+  "CNUDM":                      { "famille": "juridique" },
+  "Convention Armes Chimiques": { "famille": "militaire" },
+  "OMC":                        { "famille": "economique" },
+  "Traité Commerce Armes":      { "famille": "militaire" },
+  "CPI":                        { "famille": "juridique" },
+  "Initiative Ceinture et Route": { "famille": "politique", "portee": "selective" },
+
+  "_selectives": {
+    "_note": "Sous le seuil → sélectives par calcul. Pour elles, la PRÉSENCE est le signal."
+  },
+  "AIIB":          { "famille": "financier" },
+  "Commonwealth":  { "famille": "politique" },
+  "Francophonie":  { "famille": "politique" },
+  "Union Africaine": { "famille": "politique" },
+  "Conseil de l'Europe": { "famille": "politique" },
+  "GAFI":          { "famille": "financier" },
+  "OCDE":          { "famille": "economique" },
+  "CELAC":         { "famille": "economique" },
+  "IEA":           { "famille": "energie" },
+  "OTAN":          { "famille": "militaire" },
+  "OEA":           { "famille": "politique" },
+  "Union Européenne": { "famille": "politique" },
+  "CEN-SAD":       { "famille": "economique" },
+  "APEC":          { "famille": "economique" },
+  "COMESA":        { "famille": "economique" },
+  "Ligue Arabe":   { "famille": "politique" },
+  "BRICS":         { "famille": "politique" },
+  "G20":           { "famille": "politique" },
+  "Forum Îles du Pacifique": { "famille": "politique" },
+  "SADC":          { "famille": "economique" },
+  "RCEP":          { "famille": "economique" },
+  "CARICOM":       { "famille": "economique" },
+  "GECF":          { "famille": "energie" },
+  "OPEP":          { "famille": "energie" },
+  "CEDEAO":        { "famille": "economique" },
+  "UNASUR":        { "famille": "economique" },
+  "CEEAC":         { "famille": "economique" },
+  "ALBA":          { "famille": "politique" },
+  "ASEAN":         { "famille": "economique" },
+  "Organisation de Coopération de Shanghai": { "famille": "politique" },
+  "OPEP+":         { "famille": "energie" },
+  "CEI":           { "famille": "politique" },
+  "EAC":           { "famille": "economique" },
+  "IGAD":          { "famille": "economique" },
+  "SAARC":         { "famille": "economique" },
+  "Commission Océan Indien": { "famille": "economique" },
+  "G7":            { "famille": "politique" },
+  "Organisation du Traité de Sécurité Collective": { "famille": "militaire" },
+  "Five Eyes":     { "famille": "militaire" },
+  "Union du Maghreb Arabe": { "famille": "economique" },
+  "MERCOSUR":      { "famille": "economique" },
+  "QUAD":          { "famille": "militaire" },
+  "ACEUM":         { "famille": "economique" },
+  "ANZUS":         { "famille": "militaire" },
+  "AUKUS":         { "famille": "militaire" }
+}
