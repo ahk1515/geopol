@@ -6363,12 +6363,16 @@ function squarifyOrdered(items, x, y, w, h){
     }
   }
   function rec(arr, X, Y, W, H){
-    if(arr.length <= 3){ place(arr, X, Y, W, H); return; }
+    // Conditions d'arrêt : peu d'items, zone dégénérée → placement direct linéaire.
+    if(arr.length <= 3 || W < 2 || H < 2){ place(arr, X, Y, W, H); return; }
     const total = arr.reduce((s,c)=>s+c.value, 0) || 1;
-    let acc = 0, split = 1;
+    let acc = 0, split = 0;
     for(let i = 0; i < arr.length; i++){ acc += arr[i].value; if(acc >= total/2){ split = i+1; break; } }
+    // Garde-fous anti-boucle : split doit produire DEUX sous-groupes non vides.
+    if(split <= 0 || split >= arr.length){ place(arr, X, Y, W, H); return; }
     const a = arr.slice(0, split), b = arr.slice(split);
     const aFrac = a.reduce((s,c)=>s+c.value,0) / total;
+    if(!(aFrac > 0 && aFrac < 1)){ place(arr, X, Y, W, H); return; }
     if(W >= H){
       const aw = W * aFrac;
       rec(a, X, Y, aw, H); rec(b, X+aw, Y, W-aw, H);
