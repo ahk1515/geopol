@@ -6159,33 +6159,41 @@ function buildExposureAggregation(){
     total += v;
     const sub1 = String(r.sub1 || '').toLowerCase();
     const partner = String(r.partner || '');
+    const isPays = !partner.startsWith('__') && partner.length === 3;
 
-    // 1) Bilatéral : le partenaire est un pays (code ISO3, pas une sentinelle __)
-    if(/bilat/.test(sub1) || (!partner.startsWith('__') && numToIso3 && partner.length === 3)){
-      const iso = partner;
-      add('BIL_' + iso, { name: partnerLabel(iso), kind: 'bilateral', country: iso, flag: partnerFlag(iso) }, v);
+    // 1) Bilatéral d'État : créancier = pays, type bilatéral
+    if(/bilat/.test(sub1) && isPays){
+      add('BIL_' + partner, { name: partnerLabel(partner), kind: 'etat', country: partner, flag: partnerFlag(partner) }, v);
       continue;
     }
-    // 2) Privé
+    // 2) Privé rattaché à un pays (crediteurs_prives avec pays créancier)
+    if(/priv/.test(sub1) && !/obligation/.test(sub1) && isPays){
+      add('PRIVP_' + partner, { name: partnerLabel(partner) + ' · privé', kind: 'prive_pays', country: partner, flag: partnerFlag(partner) }, v);
+      continue;
+    }
+    // 3) Privé anonyme : obligations, ou privé sans pays identifié → bloc neutre
     if(/priv|obligation/.test(sub1)){
-      add('PRIVE', { name: 'Créanciers privés', kind: 'prive', country: null, flag: '' }, v);
+      add('PRIVE_DIFFUS', { name: 'Privé diffus / obligations', kind: 'prive_diffus', country: null, flag: '' }, v);
       continue;
     }
-    // 3) Multilatéral : l'institution est dans sub2
+    // 4) Multilatéral : institution dans sub2
     if(/multilat/.test(sub1)){
       const inst = String(r.sub2 || '').trim();
       const info = inst ? institutionInfo(inst) : null;
       if(info && info.actionnaire_1 && info.part_1_pct != null && info.part_1_pct >= seuil){
-        // réattribué au pays de contrôle, marqué « influence »
         const iso = info.actionnaire_1;
-        add('INFL_' + iso, { name: partnerLabel(iso) + ' · via institutions', kind: 'influence', country: iso, flag: partnerFlag(iso) }, v);
+        add('INFL_' + iso, { name: partnerLabel(iso) + ' · via institutions', kind: 'institutions', country: iso, flag: partnerFlag(iso) }, v);
       } else {
         add('MULTI', { name: 'Multilatéral neutre', kind: 'multi', country: null, flag: '' }, v);
       }
       continue;
     }
-    // 4) Non spécifié / autre
-    add('AUTRE', { name: 'Non précisé', kind: 'autre', country: null, flag: '' }, v);
+    // 5) Autre / non précisé : si pays → bilatéral d'État par défaut, sinon neutre
+    if(isPays){
+      add('BIL_' + partner, { name: partnerLabel(partner), kind: 'etat', country: partner, flag: partnerFlag(partner) }, v);
+    } else {
+      add('AUTRE', { name: 'Non précisé', kind: 'autre', country: null, flag: '' }, v);
+    }
   }
 
   if(!total) return { value: 0, children: [], dim: 'exposure', metric: 'volume' };
@@ -6200,19 +6208,17 @@ function buildExposureAggregation(){
   for(const n of list){
     if(n.country){ poleTotal[n.country] = (poleTotal[n.country] || 0) + n.volume; }
   }
-  const RANK_TAIL = { multi: 1e15, prive: 2e15, autre: 3e15 };  // rejetés en fin
+  const RANK_TAIL = { multi: 1e15, prive_diffus: 2e15, autre: 3e15 };  // rejetés en fin
+  const KIND_ORDER = { etat: 0, prive_pays: 1, institutions: 2 };       // ordre dans un pôle pays
   list.sort((a, b) => {
     const aTail = RANK_TAIL[a.kind], bTail = RANK_TAIL[b.kind];
     if(aTail || bTail){
-      // au moins un est un bloc de queue : les blocs de queue après les pôles pays
       if(aTail && bTail) return aTail - bTail;
       return aTail ? 1 : -1;
     }
-    // deux tuiles « pays » : trier par poids du pôle pays, puis directe avant influence
+    // deux tuiles « pays » : trier par poids du pôle pays, puis État→privé→institutions
     if(a.country !== b.country){ return poleTotal[b.country] - poleTotal[a.country]; }
-    // même pays : bilatéral (directe) avant influence
-    if(a.kind !== b.kind){ return a.kind === 'bilateral' ? -1 : 1; }
-    return 0;
+    return (KIND_ORDER[a.kind] ?? 9) - (KIND_ORDER[b.kind] ?? 9);
   });
 
   return { value: total, children: list, dim: 'exposure', metric: 'volume', isExposure: true };
@@ -6301,20 +6307,21 @@ function toggleInfluencePinned(key){
 }
 
 /* ─── Treemap (squarified) ───────────────────────────────────── */
-// Couleur stable par pays (hash du code ISO3 → teinte HSL).
-function _exposureColor(iso){
+// Couleur stable par pays (hash du code ISO3 → teinte HSL). lum ajuste la clarté.
+function _exposureColor(iso, lum){
   if(!iso) return '#8a93a0';
   let h = 0;
   for(let i = 0; i < iso.length; i++){ h = (h * 31 + iso.charCodeAt(i)) % 360; }
-  return `hsl(${h}, 52%, 42%)`;
+  return `hsl(${h}, 52%, ${lum != null ? lum : 42}%)`;
 }
-// Remplissage d'une tuile en mode exposition selon son type.
+// Remplissage d'une tuile en mode exposition selon sa nature.
 function _exposureFill(item){
-  if(item.kind === 'bilateral') return _exposureColor(item.country);
-  if(item.kind === 'influence') return `url(#exhatch_${item.country})`;
-  if(item.kind === 'prive')     return '#6b7280';   // gris privé
-  if(item.kind === 'multi')     return '#9aa3af';   // gris clair multilatéral neutre
-  return '#b8bec7';                                  // non précisé
+  if(item.kind === 'etat')         return _exposureColor(item.country, 38);   // État : foncé plein
+  if(item.kind === 'prive_pays')   return _exposureColor(item.country, 60);   // Privé : clair plein
+  if(item.kind === 'institutions') return `url(#exhatch_${item.country})`;    // Institutions : hachuré
+  if(item.kind === 'prive_diffus') return '#6b7280';   // privé diffus / obligations
+  if(item.kind === 'multi')        return '#9aa3af';   // multilatéral neutre
+  return '#b8bec7';                                      // non précisé
 }
 
 function drawTreemapRel(node, host){
@@ -6357,8 +6364,8 @@ function drawTreemapRel(node, host){
   if(isExposure){
     const hatchDefs = new Map();
     cells.forEach(c => {
-      if(c.item.kind === 'influence' && c.item.country){
-        hatchDefs.set(c.item.country, _exposureColor(c.item.country));
+      if(c.item.kind === 'institutions' && c.item.country){
+        hatchDefs.set(c.item.country, _exposureColor(c.item.country, 42));
       }
     });
     if(hatchDefs.size){
@@ -6400,12 +6407,16 @@ function drawTreemapRel(node, host){
     if(isExposure){
       const pct = (c.item.value/total)*100;
       const volStr = fmtWithUnit(c.item.value, cfg?.unit_display);
-      if(c.item.kind === 'influence'){
+      if(c.item.kind === 'etat'){
+        tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Dette bilatérale d'État (${partnerLabel(c.item.country)})`;
+      } else if(c.item.kind === 'prive_pays'){
+        tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Dette envers le secteur privé de ${partnerLabel(c.item.country)} (banques commerciales)`;
+      } else if(c.item.kind === 'institutions'){
         tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Dette multilatérale réattribuée à ${partnerLabel(c.item.country)} (actionnaire dominant ≥ ${getExpoThreshold()}%)`;
-      } else if(c.item.kind === 'bilateral'){
-        tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Dette bilatérale directe`;
       } else if(c.item.kind === 'multi'){
         tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Multilatéral neutre (aucun actionnaire ≥ ${getExpoThreshold()}%)`;
+      } else if(c.item.kind === 'prive_diffus'){
+        tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Privé diffus / porteurs d'obligations (anonyme)`;
       } else {
         tipBody = `${volStr} · ${pct.toFixed(1)}%`;
       }
