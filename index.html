@@ -4857,6 +4857,24 @@ function puMapValue(iso){
 // Le treemap est la composition principale ; le référentiel (dimension d'analyse)
 // est commutable entre partenaire / sub1 / sub2 / sub3 selon ce qui est peuplé.
 let _relEntryKey = null;          // clé d'entrée flux active (ex. 'dette_exterieure|to')
+// Mode « exposition réelle » (dette) : recompose les créanciers par pôle de contrôle.
+// Réattribue la dette d'une institution à son actionnaire dominant si sa part ≥ seuil.
+let _relExposureMode = false;
+const EXPO_THRESHOLD_KEY = 'geopol_expo_threshold';
+const EXPO_THRESHOLD_OPTIONS = [10, 25, 40, 50];
+function getExpoThreshold(){
+  const v = parseFloat(localStorage.getItem(EXPO_THRESHOLD_KEY));
+  return EXPO_THRESHOLD_OPTIONS.includes(v) ? v : 25;   // défaut : 25% (veto)
+}
+function setExpoThreshold(v){
+  if(!EXPO_THRESHOLD_OPTIONS.includes(v)) return;
+  localStorage.setItem(EXPO_THRESHOLD_KEY, String(v));
+  renderRelMain();
+}
+function toggleExposureMode(){
+  _relExposureMode = !_relExposureMode;
+  renderRelMain();
+}
 let _relDim = 'partner';          // 'partner' | 'sub1' | 'sub2' | 'sub3' — dimension principale
 let _relPath = [];                // chemin de drill-down dans le treemap (= filtre cumulatif partagé)
 let _relCatCollapsed = {};        // état plié/déplié des catégories dans la nav gauche
@@ -5403,6 +5421,22 @@ function renderRelMain(){
   } else if(entry.label){
     _sensToggle = `<span class="rel-sens-static">${entry.label}</span>`;
   }
+  // Mode exposition réelle : bouton + seuil (dette uniquement)
+  let exposureCtrl = '';
+  if(isDebtIndicator(entry.indicator)){
+    let seuilOpts = '';
+    for(const s of EXPO_THRESHOLD_OPTIONS){
+      seuilOpts += `<option value="${s}" ${getExpoThreshold()===s?'selected':''}>≥ ${s}%</option>`;
+    }
+    exposureCtrl = `<div class="rel-dim-wrap" style="margin-left:10px">
+      <span class="rel-filter-label">Lecture</span>
+      <div class="seg">
+        <button class="${!_relExposureMode?'on':''}" onclick="if(_relExposureMode)toggleExposureMode()" title="Qui détient juridiquement la dette">Brute</button>
+        <button class="${_relExposureMode?'on':''}" onclick="if(!_relExposureMode)toggleExposureMode()" title="Réattribution des institutions à leur pays de contrôle">Exposition réelle</button>
+      </div>
+      ${_relExposureMode ? `<select class="dep-seuil-select" style="margin-left:6px" onchange="setExpoThreshold(+this.value)" title="Seuil de contrôle pour réattribuer une institution à un pays">${seuilOpts}</select>` : ''}
+    </div>`;
+  }
   main.innerHTML = `
     <div class="pu-head">
       <span class="name">${_baseName}</span>
@@ -5414,6 +5448,7 @@ function renderRelMain(){
       ${dimSelector ? `<div class="rel-dim-wrap"><span class="rel-filter-label">Référentiel</span>${dimSelector}</div>` : ''}
       ${filterMenu}
       ${metricSelector}
+      ${exposureCtrl}
       ${zoneSelector}
     </div>
     <div class="pu-cells">
@@ -6094,10 +6129,109 @@ function buildFluxAggregation(){
   }
 }
 
+// ── Mode EXPOSITION RÉELLE (dette) ───────────────────────────────
+// Recompose les créanciers par « pôle de contrôle » : bilatéral (pays nommé),
+// institution réattribuée à son actionnaire dominant (si part ≥ seuil) marquée
+// « influence », multilatéral neutre (institution sous le seuil/inconnue), privé.
+// Tuiles d'un même pôle pays placées côte à côte (directe puis influence).
+function buildExposureAggregation(){
+  const entry = getFlowEntryByKey(_relEntryKey);
+  if(!entry || !isDebtIndicator(entry.indicator)) return null;
+  const worldMode = relIsWorld();
+  let rows = worldMode ? getWorldFluxRows(entry) : getFluxRows(entry);
+  if(!rows.length) return null;
+  rows = rows.filter(r => r.partner && !REGIONAL_CODES.has(r.partner));
+  rows = filterByZoneFilter(rows);
+  if(!rows.length) return { value: 0, children: [], dim: 'exposure', metric: 'volume' };
+
+  const seuil = getExpoThreshold();
+  // Accumulateurs par clé de pôle
+  const poles = new Map();   // key -> { name, volume, kind, country, flag, key }
+  function add(key, meta, v){
+    if(!poles.has(key)) poles.set(key, { ...meta, volume: 0, key });
+    poles.get(key).volume += v;
+  }
+
+  let total = 0;
+  for(const r of rows){
+    const v = r.value || 0;
+    if(v <= 0) continue;
+    total += v;
+    const sub1 = String(r.sub1 || '').toLowerCase();
+    const partner = String(r.partner || '');
+
+    // 1) Bilatéral : le partenaire est un pays (code ISO3, pas une sentinelle __)
+    if(/bilat/.test(sub1) || (!partner.startsWith('__') && numToIso3 && partner.length === 3)){
+      const iso = partner;
+      add('BIL_' + iso, { name: partnerLabel(iso), kind: 'bilateral', country: iso, flag: partnerFlag(iso) }, v);
+      continue;
+    }
+    // 2) Privé
+    if(/priv|obligation/.test(sub1)){
+      add('PRIVE', { name: 'Créanciers privés', kind: 'prive', country: null, flag: '' }, v);
+      continue;
+    }
+    // 3) Multilatéral : l'institution est dans sub2
+    if(/multilat/.test(sub1)){
+      const inst = String(r.sub2 || '').trim();
+      const info = inst ? institutionInfo(inst) : null;
+      if(info && info.actionnaire_1 && info.part_1_pct != null && info.part_1_pct >= seuil){
+        // réattribué au pays de contrôle, marqué « influence »
+        const iso = info.actionnaire_1;
+        add('INFL_' + iso, { name: partnerLabel(iso) + ' · via institutions', kind: 'influence', country: iso, flag: partnerFlag(iso) }, v);
+      } else {
+        add('MULTI', { name: 'Multilatéral neutre', kind: 'multi', country: null, flag: '' }, v);
+      }
+      continue;
+    }
+    // 4) Non spécifié / autre
+    add('AUTRE', { name: 'Non précisé', kind: 'autre', country: null, flag: '' }, v);
+  }
+
+  if(!total) return { value: 0, children: [], dim: 'exposure', metric: 'volume' };
+
+  // Construire la liste, puis trier par PÔLE de contrôle :
+  // - regrouper bilatéral + influence d'un même pays (côte à côte), pôle trié par volume total décroissant
+  // - puis multilatéral neutre, privé, autre à la fin
+  const list = [...poles.values()].map(n => ({ ...n, value: n.volume }));
+
+  // volume total par pays (directe + influence) pour ordonner les pôles
+  const poleTotal = {};
+  for(const n of list){
+    if(n.country){ poleTotal[n.country] = (poleTotal[n.country] || 0) + n.volume; }
+  }
+  const RANK_TAIL = { multi: 1e15, prive: 2e15, autre: 3e15 };  // rejetés en fin
+  list.sort((a, b) => {
+    const aTail = RANK_TAIL[a.kind], bTail = RANK_TAIL[b.kind];
+    if(aTail || bTail){
+      // au moins un est un bloc de queue : les blocs de queue après les pôles pays
+      if(aTail && bTail) return aTail - bTail;
+      return aTail ? 1 : -1;
+    }
+    // deux tuiles « pays » : trier par poids du pôle pays, puis directe avant influence
+    if(a.country !== b.country){ return poleTotal[b.country] - poleTotal[a.country]; }
+    // même pays : bilatéral (directe) avant influence
+    if(a.kind !== b.kind){ return a.kind === 'bilateral' ? -1 : 1; }
+    return 0;
+  });
+
+  return { value: total, children: list, dim: 'exposure', metric: 'volume', isExposure: true };
+}
+
 // Pour le treemap (drill-down classique), on descend dans l'arbre.
 function renderRelComposition(){
   const body = document.getElementById('relCompBody');
   if(!body) return;
+  // Mode exposition réelle (dette) : recomposition par pôle de contrôle, treemap sans drill.
+  if(_relExposureMode){
+    const ex = buildExposureAggregation();
+    if(!ex || !ex.children.length){
+      body.innerHTML = `<div class="rel-empty">Pas de dette à recomposer pour ce filtre.</div>`;
+      return;
+    }
+    drawTreemapRel(ex, body);
+    return;
+  }
   const agg = buildFluxAggregation();
   if(!agg || !agg.children.length){
     body.innerHTML = `<div class="rel-empty">Pas de flux pour ce filtre.</div>`;
@@ -6167,9 +6301,28 @@ function toggleInfluencePinned(key){
 }
 
 /* ─── Treemap (squarified) ───────────────────────────────────── */
+// Couleur stable par pays (hash du code ISO3 → teinte HSL).
+function _exposureColor(iso){
+  if(!iso) return '#8a93a0';
+  let h = 0;
+  for(let i = 0; i < iso.length; i++){ h = (h * 31 + iso.charCodeAt(i)) % 360; }
+  return `hsl(${h}, 52%, 42%)`;
+}
+// Remplissage d'une tuile en mode exposition selon son type.
+function _exposureFill(item){
+  if(item.kind === 'bilateral') return _exposureColor(item.country);
+  if(item.kind === 'influence') return `url(#exhatch_${item.country})`;
+  if(item.kind === 'prive')     return '#6b7280';   // gris privé
+  if(item.kind === 'multi')     return '#9aa3af';   // gris clair multilatéral neutre
+  return '#b8bec7';                                  // non précisé
+}
+
 function drawTreemapRel(node, host){
   const W = 700, H = 460;
-  const items = node.children.slice().sort((a,b)=>b.value-a.value);
+  const isExposure = !!node.isExposure;
+  // En mode exposition, on PRÉSERVE l'ordre des pôles (déjà trié par contrôle) ;
+  // sinon tri par valeur décroissante comme d'habitude.
+  const items = isExposure ? node.children.slice() : node.children.slice().sort((a,b)=>b.value-a.value);
   const cells = squarifyTreemap(items, 0, 0, W, H);
   const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
   // Le clic a-t-il un effet ?
@@ -6182,7 +6335,9 @@ function drawTreemapRel(node, host){
   const tmMeta = tmEntry ? getIndicatorMeta(tmEntry.indicator) : null;
   const tmProf = tmMeta && tmMeta.profondeur ? tmMeta.profondeur : 0;
   let clickActs;
-  if(relIsWorld() && _relDim === 'partner'){
+  if(isExposure){
+    clickActs = false;                         // mode exposition : pas de drill
+  } else if(relIsWorld() && _relDim === 'partner'){
     clickActs = true;                          // promotion en sujet
   } else if(_relDim === 'partner'){
     clickActs = tmProf > 0;                     // flux plat : pas de drill sur partenaire
@@ -6197,12 +6352,37 @@ function drawTreemapRel(node, host){
   // mais width: 100% et height auto permettent de s'adapter à la largeur du conteneur.
   // preserveAspectRatio par défaut (xMidYMid meet) conserve le ratio sans rognage.
   let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="width:100%;height:auto;max-width:${W}px;display:block">`;
+  // Mode exposition : patterns de hachure (un par pays réattribué) pour distinguer
+  // la dette « influence » (indirecte) de la dette bilatérale directe (même teinte).
+  if(isExposure){
+    const hatchDefs = new Map();
+    cells.forEach(c => {
+      if(c.item.kind === 'influence' && c.item.country){
+        hatchDefs.set(c.item.country, _exposureColor(c.item.country));
+      }
+    });
+    if(hatchDefs.size){
+      svg += `<defs>`;
+      for(const [iso, col] of hatchDefs){
+        svg += `<pattern id="exhatch_${iso}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+          <rect width="6" height="6" fill="${col}"/>
+          <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+        </pattern>`;
+      }
+      svg += `</defs>`;
+    }
+  }
   const total = items.reduce((s,c)=>s+c.value, 0) || 1;
   const isInfluence = (node.metric === 'influence');
   const entry = getFlowEntryByKey(_relEntryKey);
   const cfg = state.indicators.find(cc => cc.indicator === entry?.realIndicator) || entry;
   cells.forEach((c, i) => {
-    const fill = palette[i % palette.length];
+    let fill;
+    if(isExposure){
+      fill = _exposureFill(c.item);
+    } else {
+      fill = palette[i % palette.length];
+    }
     // En mode influence : item.value EST le pourcentage (poids du sujet chez ce partenaire).
     // L'infobulle indique alors : "X% du marché total · volume Y M USD"
     // En mode volume : item.value EST le volume. L'infobulle indique : "Y M USD · X% du sujet"
@@ -6217,11 +6397,25 @@ function drawTreemapRel(node, host){
     // Si la cellule est une institution créancière connue, enrichir l'infobulle :
     // titre = nom complet, corps = siège/membres/actionnaire/zone + la valeur.
     let tipTitle = (c.item.flag?c.item.flag+' ':'')+c.item.name;
-    const instTip = institutionTipHtml(c.item.key);
-    if(instTip){
-      const info = institutionInfo(c.item.key);
-      tipTitle = info.nom_fr || c.item.name;
-      tipBody = instTip + '<br><br>' + tipBody;
+    if(isExposure){
+      const pct = (c.item.value/total)*100;
+      const volStr = fmtWithUnit(c.item.value, cfg?.unit_display);
+      if(c.item.kind === 'influence'){
+        tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Dette multilatérale réattribuée à ${partnerLabel(c.item.country)} (actionnaire dominant ≥ ${getExpoThreshold()}%)`;
+      } else if(c.item.kind === 'bilateral'){
+        tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Dette bilatérale directe`;
+      } else if(c.item.kind === 'multi'){
+        tipBody = `${volStr} · ${pct.toFixed(1)}%<br>Multilatéral neutre (aucun actionnaire ≥ ${getExpoThreshold()}%)`;
+      } else {
+        tipBody = `${volStr} · ${pct.toFixed(1)}%`;
+      }
+    } else {
+      const instTip = institutionTipHtml(c.item.key);
+      if(instTip){
+        const info = institutionInfo(c.item.key);
+        tipTitle = info.nom_fr || c.item.name;
+        tipBody = instTip + '<br><br>' + tipBody;
+      }
     }
     svg += `<g class="tm-cell${clickActs ? '' : ' no-drill'}">
       <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
