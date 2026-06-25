@@ -564,6 +564,152 @@ def build_zones(referentiel_path=None):
 
 
 # -------------------------------------------------------------
+# F1 — RÉDUCTION DES FLUX EN INDICATEURS IDENTITÉ
+# -------------------------------------------------------------
+# Chaque flux est réduit à une valeur par (pays, année) et inséré dans `identite`
+# comme un indicateur dérivé, consommable comme n'importe quel indicateur identité
+# (cartes, radar, rangs). Entrant et sortant traités séparément.
+#
+# Table déclarative : pour chaque indicateur source de flux, la liste des réductions
+# à produire. Chaque réduction définit :
+#   - col      : colonne d'agrégation ('country_to' = entrant, 'country_from' = sortant)
+#   - suffixe  : suffixe du nouvel indicateur (sinon dérivé de col)
+#   - label    : libellé métier
+#   - categorie: catégorie thématique pour le référentiel
+#   - filtre   : clause SQL additionnelle optionnelle (ex. part bilatérale)
+#   - excl_sent: exclure les sentinelles __xxx__ de la colonne d'agrégation
+REDUCTIONS_FLUX = {
+    "dette_exterieure": [
+        {"suffixe": "totale",     "col": "country_to",   "label": "Dette extérieure totale",   "categorie": "finance"},
+        {"suffixe": "bilaterale", "col": "country_to",   "label": "Dette bilatérale",          "categorie": "finance",
+         "filtre": "subcategory_1 = 'bilaterale'"},
+        {"suffixe": "creances",   "col": "country_from", "label": "Créances détenues",         "categorie": "finance",
+         "excl_sent": True},
+    ],
+    "import_commercial":   [{"col": "country_to",   "label": "Importations commerciales", "categorie": "economie"}],
+    "export_commercial":   [{"col": "country_from", "label": "Exportations commerciales", "categorie": "economie"}],
+    "transferts_armement": [{"col": "country_to",   "label": "Armement reçu",            "categorie": "militaire"}],
+    "export_armement":     [{"col": "country_from", "label": "Armement exporté",         "categorie": "militaire"}],
+    "etudiants_international": [
+        {"suffixe": "accueillis", "col": "country_to",   "label": "Étudiants accueillis", "categorie": "demographie"},
+        {"suffixe": "expatries",  "col": "country_from", "label": "Étudiants expatriés",  "categorie": "demographie"},
+    ],
+    "refugies": [
+        {"suffixe": "accueillis", "col": "country_to",   "label": "Réfugiés accueillis",  "categorie": "demographie"},
+        {"suffixe": "origine",    "col": "country_from", "label": "Réfugiés (origine)",   "categorie": "demographie"},
+    ],
+    "migrants": [
+        {"suffixe": "immigres", "col": "country_to",   "label": "Immigrés",  "categorie": "demographie"},
+        {"suffixe": "emigres",  "col": "country_from", "label": "Émigrés",   "categorie": "demographie"},
+    ],
+    "representation_diplomatique": [
+        {"suffixe": "accueillies", "col": "country_to",   "label": "Représentations accueillies", "categorie": "politique"},
+        {"suffixe": "envoyees",    "col": "country_from", "label": "Représentations envoyées",    "categorie": "politique"},
+    ],
+    "commerce_ressources": [
+        {"suffixe": "importees", "col": "country_to",   "label": "Ressources importées", "categorie": "economie"},
+        {"suffixe": "exportees", "col": "country_from", "label": "Ressources exportées", "categorie": "economie"},
+    ],
+}
+
+
+def build_flux_reductions():
+    """Réduit chaque flux en indicateur(s) identité par (pays, année)."""
+    conn = sqlite3.connect(PATH_DB)
+
+    # Colonnes réelles de identite (robustesse : on s'adapte au schéma existant).
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(identite)").fetchall()]
+    if not cols:
+        print("  ⚠️  table identite absente — F1 ignoré")
+        conn.close()
+        return 0
+    # Colonnes attendues
+    has_unit = "unit" in cols
+    # Colonnes présentes dans flux
+    flux_cols = [r[1] for r in conn.execute("PRAGMA table_info(flux)").fetchall()]
+    if not flux_cols:
+        print("  ⚠️  table flux absente — F1 ignoré")
+        conn.close()
+        return 0
+
+    total_inserts = 0
+    indic_crees = []
+
+    for source_ind, reductions in REDUCTIONS_FLUX.items():
+        # le flux source existe-t-il ?
+        present = conn.execute(
+            "SELECT 1 FROM flux WHERE indicator = ? LIMIT 1", (source_ind,)
+        ).fetchone()
+        if not present:
+            continue
+
+        for red in reductions:
+            col = red["col"]                       # country_to / country_from
+            suffixe = red.get("suffixe") or ("entrant" if col == "country_to" else "sortant")
+            new_ind = f"{source_ind}__{suffixe}"   # double underscore = marqueur dérivé
+            label = red["label"]
+
+            where = [f"indicator = '{source_ind}'", f"{col} IS NOT NULL", f"{col} != ''"]
+            if red.get("filtre"):
+                where.append(red["filtre"])
+            if red.get("excl_sent"):
+                where.append(f"{col} NOT LIKE '\\_\\_%' ESCAPE '\\'")
+            where_sql = " AND ".join(where)
+
+            # Agrégation par (pays, année)
+            rows = conn.execute(f"""
+                SELECT {col} AS iso, year, SUM(value) AS v
+                FROM flux
+                WHERE {where_sql}
+                GROUP BY {col}, year
+                HAVING v IS NOT NULL
+            """).fetchall()
+
+            if not rows:
+                continue
+
+            # Insertion dans identite (on supprime d'abord un éventuel reliquat)
+            conn.execute("DELETE FROM identite WHERE indicator = ?", (new_ind,))
+            if has_unit:
+                conn.executemany(
+                    "INSERT INTO identite (country_iso3, indicator, year, value, unit) VALUES (?, ?, ?, ?, ?)",
+                    [(r[0], new_ind, r[1], r[2], None) for r in rows]
+                )
+            else:
+                conn.executemany(
+                    "INSERT INTO identite (country_iso3, indicator, year, value) VALUES (?, ?, ?, ?)",
+                    [(r[0], new_ind, r[1], r[2]) for r in rows]
+                )
+            total_inserts += len(rows)
+            indic_crees.append((new_ind, label, red.get("categorie", "autre"), len(rows)))
+
+    conn.commit()
+
+    # Référentiel des indicateurs dérivés (pour libellés/catégories côté app).
+    # Écrit un JSON à côté de la DB ; l'app peut le fusionner avec metadata_indicateurs.
+    ref = {}
+    for new_ind, label, categorie, n in indic_crees:
+        ref[new_ind] = {
+            "label": label,
+            "category": categorie,
+            "derived_from_flux": True,   # flag d'origine (transparent pour l'utilisateur)
+        }
+    try:
+        ref_path = os.path.join(os.path.dirname(PATH_DB), "metadata_indicateurs_derives.json")
+        with open(ref_path, "w", encoding="utf-8") as f:
+            json.dump(ref, f, ensure_ascii=False, indent=2)
+        print(f"  Référentiel dérivés écrit : {len(ref)} indicateurs")
+    except Exception as e:
+        print(f"  ⚠️  Écriture référentiel dérivés échouée : {e}")
+
+    conn.close()
+    print(f"  ✅ F1 : {len(indic_crees)} indicateurs dérivés, {total_inserts} lignes (pays×année)")
+    for new_ind, label, categorie, n in indic_crees:
+        print(f"     · {new_ind:42} {label:30} [{categorie}] {n}")
+    return total_inserts
+
+
+# -------------------------------------------------------------
 # POINT D'ENTRÉE
 # -------------------------------------------------------------
 
@@ -596,6 +742,10 @@ def run(sources_status=None):
     # 3. Construction table zones
     print("\n→ Construction table zones")
     build_zones()
+
+    # 3bis. F1 — Réduction des flux en indicateurs identité dérivés
+    print("\n→ F1 — Réduction des flux (indicateurs dérivés)")
+    build_flux_reductions()
 
     # 4. Optimisation (index + VACUUM)
     # VACUUM libère l'espace des lignes supprimées par la purge.
