@@ -1,0 +1,374 @@
+{
+  "_doc": {
+    "description": "Référentiel des institutions créancières (multilatérales et agrégats) apparaissant en subcategory_2 de la dette extérieure. Indexé par le sigle EXACT tel qu'il figure dans la base. Sert à nommer en clair les détenteurs et à exposer l'actionnariat (concentration de contrôle). Les créanciers-pays (codes ISO3 : FRA, CHN, USA...) ne sont PAS ici : ils sont gérés par isoToName.",
+    "champs": {
+      "nom_fr": "nom complet en français",
+      "nom_en": "nom officiel anglais",
+      "siege_ville": "ville du siège",
+      "siege_pays": "ISO3 du pays du siège",
+      "zone": "zone de couverture (Afrique, Asie, Amérique latine, mondial...)",
+      "type": "banque_dev_regionale | banque_dev_multilaterale | fonds | agregat",
+      "nb_membres": "nombre de membres/actionnaires (null si inconnu)",
+      "actionnaire_1": "ISO3 du 1er actionnaire (null si dilué/inconnu)",
+      "part_1_pct": "part de vote/capital du 1er actionnaire en % (null si inconnu)",
+      "veto": "true si le 1er actionnaire dispose d'un veto de fait (>=25% sur votes à supermajorité)",
+      "confiance": "verifie_web | haute | a_relire | introuvable",
+      "zones_geo": "liste de zone_id GEO de l'app couverts par l'institution ([] = mondial ou sans objet)"
+    },
+    "seuil_captation_suggere_pct": 25
+  },
+  "AfDB": {
+    "nom_fr": "Banque africaine de développement",
+    "nom_en": "African Development Bank",
+    "siege_ville": "Abidjan",
+    "siege_pays": "CIV",
+    "zone": "Afrique",
+    "type": "banque_dev_regionale",
+    "nb_membres": 81,
+    "actionnaire_1": "NGA",
+    "part_1_pct": 8.5,
+    "veto": false,
+    "confiance": "verifie_web",
+    "zones_geo": [
+      "GEO_AFR_AUSTRALE",
+      "GEO_AFR_CENTRALE",
+      "GEO_AFR_EST",
+      "GEO_AFR_OCCIDENTALE",
+      "GEO_AFR_SEPTENTRIONALE"
+    ],
+    "_note": "Actionnariat très dispersé. Top : Nigeria 8,5%, USA 6,6%, Égypte 5,6%, Japon 5,5%, Afrique du Sud 5,1%. Régionaux 60% / non-régionaux 40%."
+  },
+  "ADB": {
+    "nom_fr": "Banque asiatique de développement",
+    "nom_en": "Asian Development Bank",
+    "siege_ville": "Mandaluyong (Manille)",
+    "siege_pays": "PHL",
+    "zone": "Asie-Pacifique",
+    "type": "banque_dev_regionale",
+    "nb_membres": 68,
+    "actionnaire_1": "JPN",
+    "part_1_pct": 15.6,
+    "veto": false,
+    "confiance": "haute",
+    "_note": "Japon et USA quasi à égalité (~15,6% et ~15,5%). ADB = Asian Development Bank ici (pas African).",
+    "zones_geo": [
+      "GEO_ASIE_CENTRALE",
+      "GEO_ASIE_DU_SUD",
+      "GEO_ASIE_DU_SUD_EST",
+      "GEO_ASIE_ORIENTALE",
+      "GEO_OCEANIE"
+    ]
+  },
+  "AIIB": {
+    "nom_fr": "Banque asiatique d'investissement pour les infrastructures",
+    "nom_en": "Asian Infrastructure Investment Bank",
+    "siege_ville": "Pékin",
+    "siege_pays": "CHN",
+    "zone": "Asie et au-delà",
+    "type": "banque_dev_multilaterale",
+    "nb_membres": 111,
+    "actionnaire_1": "CHN",
+    "part_1_pct": 26.6,
+    "veto": true,
+    "confiance": "verifie_web",
+    "_note": "Chine 1er actionnaire avec veto de fait (>25% sur supermajorité). Inde 2e (~8%).",
+    "zones_geo": [
+      "GEO_ASIE_CENTRALE",
+      "GEO_ASIE_DU_SUD",
+      "GEO_ASIE_DU_SUD_EST",
+      "GEO_ASIE_OCCIDENTALE",
+      "GEO_ASIE_ORIENTALE",
+      "GEO_OCEANIE"
+    ]
+  },
+  "EBRD": {
+    "nom_fr": "Banque européenne pour la reconstruction et le développement",
+    "nom_en": "European Bank for Reconstruction and Development",
+    "siege_ville": "Londres",
+    "siege_pays": "GBR",
+    "zone": "Europe de l'Est, Asie centrale, Méditerranée",
+    "type": "banque_dev_multilaterale",
+    "nb_membres": 77,
+    "actionnaire_1": "USA",
+    "part_1_pct": 10.0,
+    "veto": false,
+    "confiance": "verifie_web",
+    "_note": "Actionnariat dilué. USA 1er mais 10%. UE+BEI = ~63% collectivement.",
+    "zones_geo": [
+      "GEO_EURO_ORIENTALE",
+      "GEO_EURO_MERIDIONALE",
+      "GEO_ASIE_CENTRALE",
+      "GEO_ASIE_OCCIDENTALE",
+      "GEO_AFR_SEPTENTRIONALE"
+    ]
+  },
+  "EIB": {
+    "nom_fr": "Banque européenne d'investissement",
+    "nom_en": "European Investment Bank",
+    "siege_ville": "Luxembourg",
+    "siege_pays": "LUX",
+    "zone": "Union européenne",
+    "type": "banque_dev_multilaterale",
+    "nb_membres": 27,
+    "actionnaire_1": "DEU",
+    "part_1_pct": 16.0,
+    "veto": false,
+    "confiance": "haute",
+    "_note": "Détenue par les 27 États membres de l'UE. DE, FR, IT à parts ~égales en tête (~16% chacun).",
+    "zones_geo": [
+      "GEO_EURO_MERIDIONALE",
+      "GEO_EURO_OCCIDENTALE",
+      "GEO_EURO_ORIENTALE",
+      "GEO_EURO_SEPTENTRIONALE"
+    ]
+  },
+  "IADB": {
+    "nom_fr": "Banque interaméricaine de développement",
+    "nom_en": "Inter-American Development Bank",
+    "siege_ville": "Washington",
+    "siege_pays": "USA",
+    "zone": "Amérique latine et Caraïbes",
+    "type": "banque_dev_regionale",
+    "nb_membres": 48,
+    "actionnaire_1": "USA",
+    "part_1_pct": 30.0,
+    "veto": false,
+    "confiance": "verifie_web",
+    "_note": "USA 30% (plus gros actionnaire unique). Amérique latine+Caraïbes 50,02% collectivement.",
+    "zones_geo": [
+      "GEO_AMERIQUE_CENTRALE",
+      "GEO_AMERIQUE_DU_SUD",
+      "GEO_CARAIBES"
+    ]
+  },
+  "CAF": {
+    "nom_fr": "Banque de développement d'Amérique latine et des Caraïbes",
+    "nom_en": "Development Bank of Latin America and the Caribbean (CAF)",
+    "siege_ville": "Caracas",
+    "siege_pays": "VEN",
+    "zone": "Amérique latine et Caraïbes",
+    "type": "banque_dev_regionale",
+    "nb_membres": 21,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "verifie_web",
+    "_note": "Actionnariat andin dominant (Venezuela, Colombie, Pérou, Équateur, Bolivie). Répartition fine non confirmée.",
+    "zones_geo": [
+      "GEO_AMERIQUE_CENTRALE",
+      "GEO_AMERIQUE_DU_SUD",
+      "GEO_CARAIBES"
+    ]
+  },
+  "BCIE": {
+    "nom_fr": "Banque centraméricaine d'intégration économique",
+    "nom_en": "Central American Bank for Economic Integration (CABEI)",
+    "siege_ville": "Tegucigalpa",
+    "siege_pays": "HND",
+    "zone": "Amérique centrale",
+    "type": "banque_dev_regionale",
+    "nb_membres": null,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "verifie_web",
+    "_note": "Fondateurs : Guatemala, Honduras, Salvador, Nicaragua, Costa Rica. Répartition non confirmée.",
+    "zones_geo": [
+      "GEO_AMERIQUE_CENTRALE"
+    ]
+  },
+  "AFESD": {
+    "nom_fr": "Fonds arabe pour le développement économique et social",
+    "nom_en": "Arab Fund for Economic and Social Development",
+    "siege_ville": "Koweït",
+    "siege_pays": "KWT",
+    "zone": "Pays de la Ligue arabe",
+    "type": "fonds",
+    "nb_membres": 22,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "verifie_web",
+    "_note": "Membres = tous les pays de la Ligue arabe. Répartition non confirmée.",
+    "zones_geo": [
+      "GEO_ASIE_OCCIDENTALE",
+      "GEO_AFR_SEPTENTRIONALE"
+    ]
+  },
+  "Arab Monetary Fund": {
+    "nom_fr": "Fonds monétaire arabe",
+    "nom_en": "Arab Monetary Fund",
+    "siege_ville": "Abou Dabi",
+    "siege_pays": "ARE",
+    "zone": "Pays de la Ligue arabe",
+    "type": "fonds",
+    "nb_membres": 22,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "haute",
+    "zones_geo": [
+      "GEO_ASIE_OCCIDENTALE",
+      "GEO_AFR_SEPTENTRIONALE"
+    ]
+  },
+  "African Export-Import Bank": {
+    "nom_fr": "Banque africaine d'import-export (Afreximbank)",
+    "nom_en": "African Export-Import Bank",
+    "siege_ville": "Le Caire",
+    "siege_pays": "EGY",
+    "zone": "Afrique",
+    "type": "banque_dev_regionale",
+    "nb_membres": null,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "haute",
+    "zones_geo": [
+      "GEO_AFR_AUSTRALE",
+      "GEO_AFR_CENTRALE",
+      "GEO_AFR_EST",
+      "GEO_AFR_OCCIDENTALE",
+      "GEO_AFR_SEPTENTRIONALE"
+    ]
+  },
+  "Caribbean Dev. Bank": {
+    "nom_fr": "Banque de développement des Caraïbes",
+    "nom_en": "Caribbean Development Bank",
+    "siege_ville": "Saint Michael (Bridgetown)",
+    "siege_pays": "BRB",
+    "zone": "Caraïbes",
+    "type": "banque_dev_regionale",
+    "nb_membres": null,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "a_relire",
+    "zones_geo": [
+      "GEO_CARAIBES"
+    ]
+  },
+  "IFAD": {
+    "nom_fr": "Fonds international de développement agricole",
+    "nom_en": "International Fund for Agricultural Development",
+    "siege_ville": "Rome",
+    "siege_pays": "ITA",
+    "zone": "Mondial",
+    "type": "fonds",
+    "nb_membres": 177,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "haute",
+    "_note": "Agence de l'ONU. Gouvernance par listes (pays OCDE, OPEP, en développement).",
+    "zones_geo": []
+  },
+  "EDB": {
+    "nom_fr": "Banque eurasienne de développement",
+    "nom_en": "Eurasian Development Bank",
+    "siege_ville": "Almaty",
+    "siege_pays": "KAZ",
+    "zone": "Eurasie (espace post-soviétique)",
+    "type": "banque_dev_regionale",
+    "nb_membres": 6,
+    "actionnaire_1": "RUS",
+    "part_1_pct": 44.0,
+    "veto": true,
+    "confiance": "a_relire",
+    "_note": "Russie ~44%, Kazakhstan ~34% : forte concentration russe. % à reconfirmer.",
+    "zones_geo": [
+      "GEO_EURO_ORIENTALE",
+      "GEO_ASIE_CENTRALE"
+    ]
+  },
+  "ECO Trade and Dev. Bank": {
+    "nom_fr": "Banque de commerce et de développement de l'OCE",
+    "nom_en": "ECO Trade and Development Bank",
+    "siege_ville": "Istanbul",
+    "siege_pays": "TUR",
+    "zone": "Organisation de coopération économique",
+    "type": "banque_dev_regionale",
+    "nb_membres": null,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "a_relire",
+    "_note": "Fondateurs principaux : Turquie, Iran, Pakistan (à parts ~égales).",
+    "zones_geo": [
+      "GEO_ASIE_OCCIDENTALE",
+      "GEO_ASIE_CENTRALE",
+      "GEO_ASIE_DU_SUD"
+    ]
+  },
+  "CoE": {
+    "nom_fr": "Banque de développement du Conseil de l'Europe",
+    "nom_en": "Council of Europe Development Bank (CEB)",
+    "siege_ville": "Paris",
+    "siege_pays": "FRA",
+    "zone": "Europe",
+    "type": "banque_dev_multilaterale",
+    "nb_membres": 43,
+    "actionnaire_1": "FRA",
+    "part_1_pct": 16.7,
+    "veto": false,
+    "confiance": "a_relire",
+    "_note": "FR, DE, IT principaux actionnaires (~16,7% chacun). Sigle 'CoE' = Council of Europe Dev Bank ici (à confirmer vs Conseil de l'Europe lui-même).",
+    "zones_geo": [
+      "GEO_EURO_MERIDIONALE",
+      "GEO_EURO_OCCIDENTALE",
+      "GEO_EURO_ORIENTALE",
+      "GEO_EURO_SEPTENTRIONALE"
+    ]
+  },
+  "Multiple Lenders": {
+    "nom_fr": "Prêteurs multiples (non détaillés)",
+    "nom_en": "Multiple Lenders",
+    "siege_ville": null,
+    "siege_pays": null,
+    "zone": null,
+    "type": "agregat",
+    "nb_membres": null,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "haute",
+    "_note": "Agrégat, pas une institution. Pas de siège ni d'actionnariat.",
+    "zones_geo": []
+  },
+  "Caribbean Community (CARICOM)": {
+    "nom_fr": "Communauté caribéenne (CARICOM)",
+    "nom_en": "Caribbean Community",
+    "siege_ville": "Georgetown",
+    "siege_pays": "GUY",
+    "zone": "Caraïbes",
+    "type": "agregat",
+    "nb_membres": null,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "a_relire",
+    "_note": "Organisation régionale recensée comme créancier — vérifier ce que recouvre cette entrée.",
+    "zones_geo": [
+      "GEO_CARAIBES"
+    ]
+  },
+  "Bolivarian Alliance for the Americas (ALBA)": {
+    "nom_fr": "Alliance bolivarienne pour les Amériques (ALBA)",
+    "nom_en": "Bolivarian Alliance for the Americas",
+    "siege_ville": "Caracas",
+    "siege_pays": "VEN",
+    "zone": "Amérique latine",
+    "type": "agregat",
+    "nb_membres": null,
+    "actionnaire_1": null,
+    "part_1_pct": null,
+    "veto": false,
+    "confiance": "a_relire",
+    "_note": "Bloc politique — vérifier ce que recouvre cette entrée comme créancier.",
+    "zones_geo": [
+      "GEO_AMERIQUE_DU_SUD",
+      "GEO_CARAIBES",
+      "GEO_AMERIQUE_CENTRALE"
+    ]
+  }
+}
