@@ -635,6 +635,10 @@ def build_flux_reductions():
     total_inserts = 0
     indic_crees = []
 
+    # Présence des colonnes optionnelles dans identite
+    has_source = "source" in cols
+    F1_SOURCE = "GÉOPOL (réduction flux)"
+
     for source_ind, reductions in REDUCTIONS_FLUX.items():
         # le flux source existe-t-il ?
         present = conn.execute(
@@ -642,6 +646,16 @@ def build_flux_reductions():
         ).fetchone()
         if not present:
             continue
+
+        # unité du flux source (si la table flux porte une colonne unit)
+        unit_src = None
+        if "unit" in flux_cols:
+            row_u = conn.execute(
+                "SELECT unit FROM flux WHERE indicator = ? AND unit IS NOT NULL AND unit != '' LIMIT 1",
+                (source_ind,)
+            ).fetchone()
+            if row_u:
+                unit_src = row_u[0]
 
         for red in reductions:
             col = red["col"]                       # country_to / country_from
@@ -670,16 +684,19 @@ def build_flux_reductions():
 
             # Insertion dans identite (on supprime d'abord un éventuel reliquat)
             conn.execute("DELETE FROM identite WHERE indicator = ?", (new_ind,))
+            # Construction dynamique des colonnes selon le schéma réel
+            insert_cols = ["country_iso3", "indicator", "year", "value"]
+            base_extra = []
             if has_unit:
-                conn.executemany(
-                    "INSERT INTO identite (country_iso3, indicator, year, value, unit) VALUES (?, ?, ?, ?, ?)",
-                    [(r[0], new_ind, r[1], r[2], None) for r in rows]
-                )
-            else:
-                conn.executemany(
-                    "INSERT INTO identite (country_iso3, indicator, year, value) VALUES (?, ?, ?, ?)",
-                    [(r[0], new_ind, r[1], r[2]) for r in rows]
-                )
+                insert_cols.append("unit"); base_extra.append(unit_src)
+            if has_source:
+                insert_cols.append("source"); base_extra.append(F1_SOURCE)
+            placeholders = ", ".join(["?"] * len(insert_cols))
+            sql_ins = f"INSERT INTO identite ({', '.join(insert_cols)}) VALUES ({placeholders})"
+            conn.executemany(
+                sql_ins,
+                [(r[0], new_ind, r[1], r[2], *base_extra) for r in rows]
+            )
             total_inserts += len(rows)
             indic_crees.append((new_ind, label, red.get("categorie", "autre"), len(rows)))
 
