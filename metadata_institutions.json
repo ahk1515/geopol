@@ -219,18 +219,19 @@
     "siege_pays": "EGY",
     "zone": "Afrique",
     "type": "banque_dev_regionale",
-    "nb_membres": null,
+    "nb_membres": 53,
     "actionnaire_1": null,
     "part_1_pct": null,
     "veto": false,
-    "confiance": "haute",
+    "confiance": "verifie_web",
     "zones_geo": [
       "GEO_AFR_AUSTRALE",
       "GEO_AFR_CENTRALE",
       "GEO_AFR_EST",
       "GEO_AFR_OCCIDENTALE",
       "GEO_AFR_SEPTENTRIONALE"
-    ]
+    ],
+    "_note": "164 actionnaires en 4 classes, très dispersé. 53 États africains + 12 caribéens (partenariat CARICOM). Siège Le Caire depuis 1994."
   },
   "Caribbean Dev. Bank": {
     "nom_fr": "Banque de développement des Caraïbes",
@@ -270,12 +271,12 @@
     "siege_pays": "KAZ",
     "zone": "Eurasie (espace post-soviétique)",
     "type": "banque_dev_regionale",
-    "nb_membres": 6,
+    "nb_membres": 7,
     "actionnaire_1": "RUS",
-    "part_1_pct": 44.0,
+    "part_1_pct": 44.8,
     "veto": true,
-    "confiance": "a_relire",
-    "_note": "Russie ~44%, Kazakhstan ~34% : forte concentration russe. % à reconfirmer.",
+    "confiance": "verifie_web",
+    "_note": "Russie 44,8% (1er), Kazakhstan 37,3% (2e) après redistribution 2023 (avant : Russie 66%). Forte concentration russo-kazakhe. Veto de fait Russie.",
     "zones_geo": [
       "GEO_EURO_ORIENTALE",
       "GEO_ASIE_CENTRALE"
@@ -288,12 +289,12 @@
     "siege_pays": "TUR",
     "zone": "Organisation de coopération économique",
     "type": "banque_dev_regionale",
-    "nb_membres": null,
-    "actionnaire_1": null,
+    "nb_membres": 6,
+    "actionnaire_1": "TUR",
     "part_1_pct": null,
     "veto": false,
-    "confiance": "a_relire",
-    "_note": "Fondateurs principaux : Turquie, Iran, Pakistan (à parts ~égales).",
+    "confiance": "verifie_web",
+    "_note": "Fondateurs Turquie, Iran, Pakistan à parts égales en tête. 6 membres (+ Afghanistan, Azerbaïdjan, Kirghizistan). Siège Istanbul.",
     "zones_geo": [
       "GEO_ASIE_OCCIDENTALE",
       "GEO_ASIE_CENTRALE",
@@ -311,8 +312,8 @@
     "actionnaire_1": "FRA",
     "part_1_pct": 16.7,
     "veto": false,
-    "confiance": "a_relire",
-    "_note": "FR, DE, IT principaux actionnaires (~16,7% chacun). Sigle 'CoE' = Council of Europe Dev Bank ici (à confirmer vs Conseil de l'Europe lui-même).",
+    "confiance": "verifie_web",
+    "_note": "France, Allemagne, Italie sont les plus gros actionnaires (~16,7% chacun). Mandat social. Siège Paris depuis 1956.",
     "zones_geo": [
       "GEO_EURO_MERIDIONALE",
       "GEO_EURO_OCCIDENTALE",
@@ -347,7 +348,7 @@
     "part_1_pct": null,
     "veto": false,
     "confiance": "a_relire",
-    "_note": "Organisation régionale recensée comme créancier — vérifier ce que recouvre cette entrée.",
+    "_note": "Recensé comme créancier — probablement via le partenariat de financement Afreximbank-CARICOM ou des prêts CARICOM Development Fund. À élucider précisément dans la donnée source.",
     "zones_geo": [
       "GEO_CARAIBES"
     ]
