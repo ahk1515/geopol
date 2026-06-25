@@ -2601,6 +2601,63 @@ async function loadMetadata(){
     console.info('metadata_indicateurs.json non chargé :', e.message);
     state.indicatorMeta = {};
   }
+  // Métadonnée des institutions créancières (noms, sièges, actionnariat).
+  try {
+    const r = await fetch('./metadata_institutions.json?v=' + Date.now());
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const raw = await r.json();
+    state.institutionMeta = {};
+    for(const [k, v] of Object.entries(raw)){
+      if(!k.startsWith('_') && v && typeof v === 'object') state.institutionMeta[k] = v;
+    }
+  } catch(e) {
+    console.info('metadata_institutions.json non chargé :', e.message);
+    state.institutionMeta = {};
+  }
+}
+
+// Renvoie la métadonnée d'une institution créancière par son sigle (clé exacte
+// de subcategory_2), ou null. Les créanciers-pays (ISO3) ne sont pas ici.
+function institutionInfo(sigle){
+  const m = state.institutionMeta || {};
+  return m[sigle] || null;
+}
+// Libellé court enrichi : nom complet si connu, sinon le sigle nettoyé.
+function institutionLabel(sigle){
+  const info = institutionInfo(sigle);
+  return info ? (info.nom_fr || sigle) : null;
+}
+// Corps d'infobulle complet pour une institution (nom, siège, membres, actionnaire, zone).
+function institutionTipHtml(sigle){
+  const info = institutionInfo(sigle);
+  if(!info) return null;
+  const lignes = [];
+  if(info.siege_ville){
+    const pays = info.siege_pays ? `${isoToName(info.siege_pays)}` : '';
+    lignes.push(`Siège : ${info.siege_ville}${pays ? ', ' + pays : ''}`);
+  }
+  if(info.nb_membres) lignes.push(`${info.nb_membres} membres`);
+  if(info.actionnaire_1 && info.part_1_pct != null){
+    const veto = info.veto ? ' · ⚠ veto de fait' : '';
+    lignes.push(`1er actionnaire : ${isoToName(info.actionnaire_1)} (${info.part_1_pct}%)${veto}`);
+  } else if(info.type === 'agregat'){
+    lignes.push('Agrégat (prêteurs multiples)');
+  }
+  if(info.zones_geo && info.zones_geo.length){
+    const noms = info.zones_geo.map(z => zoneIdToLabel(z)).filter(Boolean);
+    if(noms.length) lignes.push(`Couverture : ${noms.join(', ')}`);
+  }
+  return lignes.join('<br>');
+}
+// Libellé lisible d'une zone GEO (à partir de son zone_id), via la table zones.
+let _zoneLabelCache = null;
+function zoneIdToLabel(zid){
+  if(!_zoneLabelCache){
+    _zoneLabelCache = {};
+    const r = safeExec(`SELECT DISTINCT zone_id, zone_nom FROM zones WHERE zone_id LIKE 'GEO_%'`);
+    if(r && r.length) r[0].values.forEach(v => { _zoneLabelCache[v[0]] = v[1]; });
+  }
+  return _zoneLabelCache[zid] || null;
 }
 
 // Métadonnées d'un indicateur canonique. Repli sur le défaut identité
@@ -3729,6 +3786,9 @@ const RES_SUB_LABELS = {
   'wind': 'Éolien',
 };
 function prettySubLabel(sub){
+  // Institution créancière connue (sigle en casse exacte) → nom complet.
+  const inst = institutionLabel(sub);
+  if(inst) return inst;
   const key = String(sub || '').toLowerCase();
   if(RES_SUB_LABELS[key]) return RES_SUB_LABELS[key];
   return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
@@ -6154,9 +6214,18 @@ function drawTreemapRel(node, host){
       const pct = (c.item.value/total)*100;
       tipBody = `${fmtWithUnit(c.item.value, cfg?.unit_display)} · ${pct.toFixed(1)}%`;
     }
+    // Si la cellule est une institution créancière connue, enrichir l'infobulle :
+    // titre = nom complet, corps = siège/membres/actionnaire/zone + la valeur.
+    let tipTitle = (c.item.flag?c.item.flag+' ':'')+c.item.name;
+    const instTip = institutionTipHtml(c.item.key);
+    if(instTip){
+      const info = institutionInfo(c.item.key);
+      tipTitle = info.nom_fr || c.item.name;
+      tipBody = instTip + '<br><br>' + tipBody;
+    }
     svg += `<g class="tm-cell${clickActs ? '' : ' no-drill'}">
       <rect x="${c.x.toFixed(1)}" y="${c.y.toFixed(1)}" width="${c.w.toFixed(1)}" height="${c.h.toFixed(1)}" fill="${fill}"
-            data-tt="${escAttr((c.item.flag?c.item.flag+' ':'')+c.item.name)}" data-tb="${escAttr(tipBody)}"
+            data-tt="${escAttr(tipTitle)}" data-tb="${escAttr(tipBody)}"
             onmouseenter="showTip2(event,this.dataset.tt,this.dataset.tb)" onmousemove="moveTip(event)" onmouseleave="hideTip()"
             ${clickActs ? `onclick="treemapClick('${escAttr(c.item.key)}')"` : ''}/>`;
     if(c.w > 60 && c.h > 30){
