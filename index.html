@@ -6324,13 +6324,70 @@ function _exposureFill(item){
   return '#b8bec7';                                      // non précisé
 }
 
+// Placement hiérarchique pour le mode exposition : chaque PÔLE (pays ou bloc neutre)
+// occupe une zone contiguë, subdivisée entre ses natures (État/privé/institutions).
+// Garantit que les tuiles d'un même pays restent côte à côte (≠ squarify global).
+function exposureTreemapLayout(items, W, H){
+  // Grouper en pôles en PRÉSERVANT l'ordre d'arrivée (déjà trié par pôle puis nature).
+  const poles = [];
+  const idx = new Map();
+  for(const it of items){
+    const pk = it.country ? ('C_' + it.country) : ('N_' + it.kind);
+    if(!idx.has(pk)){ idx.set(pk, poles.length); poles.push({ key: pk, value: 0, items: [] }); }
+    const p = poles[idx.get(pk)];
+    p.items.push(it);
+    p.value += it.value;
+  }
+  // Placer les pôles (par leur volume) dans la zone globale, en préservant l'ordre.
+  const poleCells = squarifyOrdered(poles, 0, 0, W, H);
+  // Subdiviser chaque pôle entre ses natures (ordre préservé aussi).
+  const out = [];
+  for(const pc of poleCells){
+    const sub = squarifyOrdered(pc.item.items, pc.x, pc.y, pc.w, pc.h);
+    for(const s of sub) out.push(s);
+  }
+  return out;
+}
+// Variante de squarify qui NE re-trie PAS (préserve l'ordre fourni), en coupant
+// le long du grand axe, avec découpe en deux bandes équilibrées si beaucoup d'items.
+function squarifyOrdered(items, x, y, w, h){
+  const out = [];
+  function place(arr, X, Y, W, H){
+    const horiz = W >= H;
+    const total = arr.reduce((s,c)=>s+c.value, 0) || 1;
+    let off = 0;
+    for(const it of arr){
+      const frac = it.value / total;
+      if(horiz){ const cw = W * frac; out.push({ x: X+off, y: Y, w: cw, h: H, item: it }); off += cw; }
+      else     { const ch = H * frac; out.push({ x: X, y: Y+off, w: W, h: ch, item: it }); off += ch; }
+    }
+  }
+  function rec(arr, X, Y, W, H){
+    if(arr.length <= 3){ place(arr, X, Y, W, H); return; }
+    const total = arr.reduce((s,c)=>s+c.value, 0) || 1;
+    let acc = 0, split = 1;
+    for(let i = 0; i < arr.length; i++){ acc += arr[i].value; if(acc >= total/2){ split = i+1; break; } }
+    const a = arr.slice(0, split), b = arr.slice(split);
+    const aFrac = a.reduce((s,c)=>s+c.value,0) / total;
+    if(W >= H){
+      const aw = W * aFrac;
+      rec(a, X, Y, aw, H); rec(b, X+aw, Y, W-aw, H);
+    } else {
+      const ah = H * aFrac;
+      rec(a, X, Y, W, ah); rec(b, X, Y+ah, W, H-ah);
+    }
+  }
+  rec(items, x, y, w, h);
+  return out;
+}
+
 function drawTreemapRel(node, host){
   const W = 700, H = 460;
   const isExposure = !!node.isExposure;
   // En mode exposition, on PRÉSERVE l'ordre des pôles (déjà trié par contrôle) ;
   // sinon tri par valeur décroissante comme d'habitude.
   const items = isExposure ? node.children.slice() : node.children.slice().sort((a,b)=>b.value-a.value);
-  const cells = squarifyTreemap(items, 0, 0, W, H);
+  const cells = isExposure ? exposureTreemapLayout(items, W, H) : squarifyTreemap(items, 0, 0, W, H);
   const palette = ['#0a6e4a','#2d8556','#4f9e6a','#6fb486','#b45309','#c2410c','#1d4ed8','#5b6b8c','#7a8b6c','#a08654','#8a6d4e','#6a5d4e'];
   // Le clic a-t-il un effet ?
   //  - Vue Monde + axe partenaire → promotion du pays en sujet.
