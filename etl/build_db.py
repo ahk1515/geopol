@@ -578,6 +578,16 @@ def build_zones(referentiel_path=None):
 #   - categorie: catégorie thématique pour le référentiel
 #   - filtre   : clause SQL additionnelle optionnelle (ex. part bilatérale)
 #   - excl_sent: exclure les sentinelles __xxx__ de la colonne d'agrégation
+# Codes d'agrégats Banque mondiale (régions, groupes de revenu) : NE SONT PAS des
+# pays, à exclure des indicateurs réduits (sinon ils écrasent les vrais pays dans
+# les cartes et classements). Aligné sur REGIONAL_CODES de l'app.
+REGIONAL_CODES_F1 = {
+    'AFE','AFW','ARB','CEB','CSS','EAP','EAR','EAS','ECA','ECS','EMU','EUU','FCS',
+    'HIC','HPC','IBD','IBT','IDA','IDB','IDX','LAC','LCN','LDC','LIC','LMC','LMY',
+    'LTE','MEA','MIC','MNA','NAC','OED','OSS','PRE','PSS','PST','SAS','SSA','SSF',
+    'SST','TEA','TEC','TLA','TMN','TSA','TSS','UMC','WLD','INX','OEC',
+}
+
 REDUCTIONS_FLUX = {
     "dette_exterieure": [
         {"suffixe": "totale",     "col": "country_to",   "label": "Dette extérieure totale",   "categorie": "finance"},
@@ -664,6 +674,10 @@ def build_flux_reductions():
             label = red["label"]
 
             where = [f"indicator = '{source_ind}'", f"{col} IS NOT NULL", f"{col} != ''"]
+            # Exclure les agrégats régionaux/de revenu (ne sont pas des pays)
+            if REGIONAL_CODES_F1:
+                codes_sql = ",".join(f"'{c}'" for c in sorted(REGIONAL_CODES_F1))
+                where.append(f"{col} NOT IN ({codes_sql})")
             if red.get("filtre"):
                 where.append(red["filtre"])
             if red.get("excl_sent"):
